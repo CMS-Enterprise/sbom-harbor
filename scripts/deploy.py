@@ -7,8 +7,12 @@ from aws_cdk import aws_lambda as lambda_
 from aws_cdk import Stack
 from constructs import Construct
 
+BUCKET_NAME = "SBOMBucket"
+LAMBDA_NAME = "SBOMIngest"
+REST_API_NAME = "SBOMApi"
 
 class SBOMApiDeploy(Stack):
+
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -17,9 +21,9 @@ class SBOMApiDeploy(Stack):
 
         code = lambda_.AssetCode.from_asset("%s/../dist/lambda.zip" % cwd)
 
-        bucket = s3.Bucket(self, "SBOMBucket")
+        bucket = s3.Bucket(self, BUCKET_NAME)
         sbom_ingest_func = lambda_.Function(
-            self, "SBOMIngest",
+            self, LAMBDA_NAME,
             runtime=lambda_.Runtime.PYTHON_3_9,
             handler="cyclonedx.api.lambda_handler",
             code=code,
@@ -31,7 +35,7 @@ class SBOMApiDeploy(Stack):
 
         bucket.grant_put(sbom_ingest_func)
 
-        apigw.LambdaRestApi(self, "SbomApi", handler=sbom_ingest_func, proxy=True)
+        apigw.LambdaRestApi(self, REST_API_NAME, handler=sbom_ingest_func, proxy=True)
 
 
 def dodep() -> None:
