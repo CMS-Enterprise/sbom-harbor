@@ -8,7 +8,7 @@ from aws_cdk import Stack
 from constructs import Construct
 
 
-class AquiaSbomApiDeploy(Stack):
+class SBOMApiDeploy(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -17,9 +17,9 @@ class AquiaSbomApiDeploy(Stack):
 
         code = lambda_.AssetCode.from_asset("%s/../dist/lambda.zip" % cwd)
 
-        bucket = s3.Bucket(self, "sbomBucket")
+        bucket = s3.Bucket(self, "SBOMBucket")
         sbom_ingest_func = lambda_.Function(
-            self, "sbomIngestFunction",
+            self, "SBOMIngest",
             runtime=lambda_.Runtime.PYTHON_3_9,
             handler="cyclonedx.api.lambda_handler",
             code=code,
@@ -36,7 +36,7 @@ class AquiaSbomApiDeploy(Stack):
 
 def dodep() -> None:
     app = cdk.App()
-    AquiaSbomApiDeploy(app, "AquiaSbomApiDeploy")
+    SBOMApiDeploy(app, "SBOMApiDeploy")
     app.synth()
 
 def run() -> None:
