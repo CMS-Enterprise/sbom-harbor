@@ -1,6 +1,11 @@
+import json
+
 
 def lambda_handler(event, context):
-    pass
+    return {
+        'statusCode': 200,
+        'body': "Looks like it came from me"
+    }
 
 
 def say_hello():

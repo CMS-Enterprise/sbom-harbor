@@ -11,6 +11,7 @@ clean = "scripts.build:clean"
 [tool.poetry.dependencies]
 python = "^3.9"
 boto3 = "^1.21.8"
+jsonschema = "^4.4.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

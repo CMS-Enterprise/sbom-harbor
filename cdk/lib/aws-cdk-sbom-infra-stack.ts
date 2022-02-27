@@ -20,13 +20,12 @@ export class AwsCdkSbomInfraStack extends cdk.Stack {
     const sbomIngestFunction = new lambda.Function(this, 'sbomIngestFunction', {
       runtime: lambda.Runtime.PYTHON_3_9,
       code: new lambda.AssetCode('../dist/lambda.zip'),
-      handler: "example.Handler::handleRequest",
+      handler: "cyclonedx.api.lambda_handler",
       environment: {
         SBOM_BUCKET_NAME: sbomBucket.bucketName
       },
       timeout: cdk.Duration.minutes(2),
       memorySize: 512
-      
     })
 
     sbomBucket.grantPut(sbomIngestFunction)
