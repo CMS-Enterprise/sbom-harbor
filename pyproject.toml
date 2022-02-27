@@ -7,6 +7,7 @@ authors = ["qtpeters <quinn.t.peters@gmail.com>"]
 [tool.poetry.scripts]
 package = "scripts.build:package"
 clean = "scripts.build:clean"
+deploy = "scripts.deploy:run"
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -15,6 +16,8 @@ jsonschema = "^4.4.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
+aws-cdk-lib = "^2.14.0"
+constructs = "^10.0.74"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
