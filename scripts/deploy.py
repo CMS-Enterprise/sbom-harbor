@@ -1,6 +1,6 @@
 import aws_cdk as cdk
 from aws_cdk import Duration as duration
-from os import path
+from os import path, system
 from aws_cdk import aws_apigateway as apigw
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_lambda as lambda_
@@ -34,7 +34,10 @@ class AquiaSbomApiDeploy(Stack):
         apigw.LambdaRestApi(self, "SbomApi", handler=sbom_ingest_func, proxy=True)
 
 
-def run() -> None:
+def dodep() -> None:
     app = cdk.App()
     AquiaSbomApiDeploy(app, "AquiaSbomApiDeploy")
     app.synth()
+
+def run() -> None:
+    system("cdk deploy")

@@ -1,5 +1,5 @@
 {
-  "app": "poetry run deploy",
+  "app": "poetry run dodep",
   "watch": {
     "include": [
       "**"

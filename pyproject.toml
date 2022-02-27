@@ -5,9 +5,11 @@ description = ""
 authors = ["qtpeters <quinn.t.peters@gmail.com>"]
 
 [tool.poetry.scripts]
-package = "scripts.build:package"
 clean = "scripts.build:clean"
+build = "scripts.build:run"
+package = "scripts.build:package"
 deploy = "scripts.deploy:run"
+dodep = "scripts.deploy:dodep"
 
 [tool.poetry.dependencies]
 python = "^3.9"

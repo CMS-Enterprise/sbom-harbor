@@ -1,17 +1,20 @@
-import json
 import boto3
-import uuid
+from uuid import uuid4
+from json import dumps
 
 def lambda_handler(event, context):
 
     bucket_name = "sbomBucket"
     
-    key = "aquia-%s" % uuid.uuid4()
+    key = "aquia-%s" % uuid4()
 
+    json = dumps(event)
     s3 = boto3.resource('s3')
     bucket = s3.Bucket('name')
-    bucket.put_object(Key=key, Body=bytearray(event, "utf-8"))
+    bytes = bytearray(json, "utf-8")
+    bucket.put_object(Key=key, Body=bytes)
+    
     return {
         'statusCode': 200,
-        'body': "Looks like it came from me"
+        'body': json
     }

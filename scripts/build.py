@@ -1,6 +1,9 @@
 from shutil import rmtree
 from os import system
 
+def run():
+    system("poetry build")
+
 
 def package():
     system("poetry run pip install --upgrade -t tmp dist/*.whl")
@@ -19,4 +22,8 @@ def clean():
     except OSError as e:
         print("Error: %s : %s" % ("tmp", e.strerror))
 
+    try:
+        rmtree("cdk.out")
+    except OSError as e:
+        print("Error: %s : %s" % ("tmp", e.strerror))
 
