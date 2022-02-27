@@ -4,8 +4,12 @@ version = "0.1.0"
 description = ""
 authors = ["qtpeters <quinn.t.peters@gmail.com>"]
 
+[tool.poetry.scripts]
+package = "scripts.build:package"
+clean = "scripts.build:clean"
+
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.9"
 boto3 = "^1.21.8"
 
 [tool.poetry.dev-dependencies]
