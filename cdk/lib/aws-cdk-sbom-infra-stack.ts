@@ -18,8 +18,8 @@ export class AwsCdkSbomInfraStack extends cdk.Stack {
     })
 
     const sbomIngestFunction = new lambda.Function(this, 'sbomIngestFunction', {
-      runtime: lambda.Runtime.JAVA_11,
-      code: new lambda.AssetCode('../target/java-basic-1.0-SNAPSHOT.jar'), 
+      runtime: lambda.Runtime.PYTHON_3_9,
+      code: new lambda.AssetCode('../dist/lambda.zip'),
       handler: "example.Handler::handleRequest",
       environment: {
         SBOM_BUCKET_NAME: sbomBucket.bucketName
