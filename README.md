@@ -1,6 +1,11 @@
 
 #### Python version
-3.10.2
+3.9.10
+
+#### Build Dependencies
+- [Python Version Management](https://github.com/pyenv/pyenv) (pyenv)
+- The [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#getting_started_install)
+- The [Poetry](https://python-poetry.org/docs/) build tool
 
 #### Build and Deploy
 ##### poetry run build
