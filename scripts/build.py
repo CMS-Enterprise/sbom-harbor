@@ -11,19 +11,11 @@ def package():
 
 
 def clean():
+    for dir in ["dist", "tmp", "cdk.out"]:    
+        try:
+            rmtree(dir)
+        except OSError as e:
+            print("Error: %s : %s" % (dir, e.strerror))
 
-    try:
-        rmtree("dist")
-    except OSError as e:
-        print("Error: %s : %s" % ("dist", e.strerror))
-
-    try:
-        rmtree("tmp")
-    except OSError as e:
-        print("Error: %s : %s" % ("tmp", e.strerror))
-
-    try:
-        rmtree("cdk.out")
-    except OSError as e:
-        print("Error: %s : %s" % ("tmp", e.strerror))
+    
 
