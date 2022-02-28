@@ -1,11 +1,15 @@
+import jsonschema
 import boto3
+import os
+
 from uuid import uuid4
 from json import dumps
 
 def lambda_handler(event, context):
 
-    bucket_name = "SBOMBucket"
-    
+    bucket_name = os.environ["SBOM_BUCKET_NAME"]
+    print("Bucket name from env(SBOM_BUCKET_NAME): %s" % bucket_name)
+
     key = "aquia-%s" % uuid4()
 
     json = dumps(event)

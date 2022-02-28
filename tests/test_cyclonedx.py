@@ -1,5 +1,7 @@
-from cyclonedx import __version__
+from cyclonedx import core
 
 
-def test_version():
-    assert __version__ == '0.1.0'
+def test_get_schemas() -> None:
+    cdx_core = core.CycloneDxCore()
+    schema = cdx_core.get_schema("1.2")
+    assert schema != None
