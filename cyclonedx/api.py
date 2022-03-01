@@ -2,16 +2,41 @@ import boto3
 import os
 
 from jsonschema.exceptions import ValidationError
-from urllib import response
 from uuid import uuid4
 from json import loads, dumps
 
 from cyclonedx.core import CycloneDxCore
 
+def has_req_context(event):
+    try:
+        event["requestContext"]
+        return True
+    except KeyError:
+        return False
+
+def get_bom_obj(event):
+    if has_req_context(event):
+        return loads(event["body"])
+    else:
+        return event
+
+def create_response_obj(bucket_name, key):
+    return {
+        'statusCode': 200,
+        'isBase64Encoded': False,
+        'body': dumps({
+            'valid': True,
+            's3BucketName': bucket_name,
+            's3ObjectKey': key
+        })
+    }
+
 def lambda_handler(event, context):
 
-    # Extract the body from the event
-    bom_obj = event
+    print("Event: %s" % str(event))
+    print("Context: %s" % str(context))
+
+    bom_obj = get_bom_obj(event)
 
     # Get the bucket name from the environment variable
     # This is set during deployment
@@ -26,14 +51,7 @@ def lambda_handler(event, context):
     core = CycloneDxCore()
 
     # Create a response object to add values to.
-    response_obj = {
-        'statusCode': 200,
-        'body': {
-            'valid': True,
-            's3BucketName': bucket_name,
-            's3ObjectKey': key
-        }
-    }
+    response_obj = create_response_obj(bucket_name, key)
 
     try:
 
@@ -47,7 +65,6 @@ def lambda_handler(event, context):
         # Actually put the object in S3
         bytes = bytearray(dumps(bom_obj), "utf-8")
         bucket.put_object(Key=key, Body=bytes)
-        response_obj['body']['s3ObjectKey'] = key
 
     except ValidationError as e:
         response_obj['statusCode'] = 400

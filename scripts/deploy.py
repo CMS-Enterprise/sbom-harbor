@@ -35,7 +35,13 @@ class SBOMApiDeploy(Stack):
 
         bucket.grant_put(sbom_ingest_func)
 
-        apigw.LambdaRestApi(self, REST_API_NAME, handler=sbom_ingest_func, proxy=True)
+        lambda_api = apigw.LambdaRestApi(
+            self, REST_API_NAME,
+            handler=sbom_ingest_func, 
+            proxy=False)
+
+        store_ep = lambda_api.root.add_resource("store")
+        store_ep.add_method("POST")
 
 
 def dodep() -> None:
