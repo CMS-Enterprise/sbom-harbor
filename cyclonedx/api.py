@@ -21,7 +21,7 @@ def has_req_context(event):
     except KeyError:
         return False
 
-def get_bom_obj(event):
+def get_bom_obj(event) -> dict:
 
     """
     If the request context exists, then there will
