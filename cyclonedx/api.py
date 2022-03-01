@@ -8,6 +8,13 @@ from json import loads, dumps
 from cyclonedx.core import CycloneDxCore
 
 def has_req_context(event):
+
+    """
+    Looks for the 'requestContext' key in the event.
+    If 'requestContext' exists, then that means the request is
+    not coming from a AWS Lambda test.
+    """
+
     try:
         event["requestContext"]
         return True
@@ -15,12 +22,25 @@ def has_req_context(event):
         return False
 
 def get_bom_obj(event):
+
+    """
+    If the request context exists, then there will
+    be a 'body' key and it will contain the JSON object 
+    as a **string** that the POST body contained.
+    """
+
     if has_req_context(event):
         return loads(event["body"])
     else:
         return event
 
-def create_response_obj(bucket_name, key):
+def create_response_obj(bucket_name: str, key: str) -> dict:
+
+    """
+    Creates a dict that is used as the response from the Lambda
+    call.  It has all the necessary elements to satisfy AWS's crtieria. 
+    """
+
     return {
         'statusCode': 200,
         'isBase64Encoded': False,
@@ -31,7 +51,13 @@ def create_response_obj(bucket_name, key):
         })
     }
 
-def lambda_handler(event, context):
+def store_handler(event, context) -> dict:
+
+    """
+    This is the Lambda Handler that validates an incoming SBOM
+    and if valid, puts the SBOM into the S3 bucket associated
+    to the application.  
+    """
 
     print("Event: %s" % str(event))
     print("Context: %s" % str(context))

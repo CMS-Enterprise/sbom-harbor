@@ -36,7 +36,7 @@ class SBOMApiDeploy(Stack):
         sbom_ingest_func = lambda_.Function(
             self, LAMBDA_NAME,
             runtime=lambda_.Runtime.PYTHON_3_9,
-            handler="cyclonedx.api.lambda_handler",
+            handler="cyclonedx.api.store_handler",
             code=code,
             environment={
                 'SBOM_BUCKET_NAME': bucket.bucket_name
