@@ -8,50 +8,28 @@ from json import loads, dumps
 from cyclonedx.core import CycloneDxCore
 
 
-def __has_req_context(event):
-
-    """
-    Looks for the 'requestContext' key in the event.
-    If 'requestContext' exists, then that means the request is
-    not coming from AWS Lambda test.
-    """
-
-    try:
-        event["requestContext"]
-        return True
-    except KeyError:
-        return False
-
-
 def __get_bom_obj(event) -> dict:
 
     """
     If the request context exists, then there will
-    be a 'body' key and it will contain the JSON object 
+    be a 'body' key, and it will contain the JSON object
     as a **string** that the POST body contained.
     """
 
-    if __has_req_context(event):
-        return loads(event["body"])
-    else:
-        return event
+    return loads(event["body"]) if "requestContext" in event else event
 
 
 def __create_response_obj(bucket_name: str, key: str) -> dict:
 
     """
     Creates a dict that is used as the response from the Lambda
-    call.  It has all the necessary elements to satisfy AWS's crtieria. 
+    call.  It has all the necessary elements to satisfy AWS's criteria.
     """
 
     return {
-        'statusCode': 200,
-        'isBase64Encoded': False,
-        'body': dumps({
-            'valid': True,
-            's3BucketName': bucket_name,
-            's3ObjectKey': key
-        })
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "body": dumps({"valid": True, "s3BucketName": bucket_name, "s3ObjectKey": key}),
     }
 
 
@@ -60,11 +38,8 @@ def store_handler(event, context) -> dict:
     """
     This is the Lambda Handler that validates an incoming SBOM
     and if valid, puts the SBOM into the S3 bucket associated
-    to the application.  
+    to the application.
     """
-
-    print("Event: %s" % str(event))
-    print("Context: %s" % str(context))
 
     bom_obj = __get_bom_obj(event)
 
@@ -89,7 +64,7 @@ def store_handler(event, context) -> dict:
         core.validate(bom_obj)
 
         # Get S3 Bucket
-        s3 = boto3.resource('s3')
+        s3 = boto3.resource("s3")
         bucket = s3.Bucket(bucket_name)
 
         # Actually put the object in S3
@@ -97,7 +72,7 @@ def store_handler(event, context) -> dict:
         bucket.put_object(Key=key, Body=bom_bytes)
 
     except ValidationError as e:
-        response_obj['statusCode'] = 400
-        response_obj['body'] = str(e)
+        response_obj["statusCode"] = 400
+        response_obj["body"] = str(e)
 
     return response_obj

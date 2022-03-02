@@ -13,14 +13,7 @@ def test_get_schemas() -> None:
 
 def test_store_handler() -> None:
     pr.read_text(sboms, "bom-1.2.schema.json")
-    mock_bom = dumps({
-        'bomFormat': 'CycloneDX',
-        'specVersion': "1.4"
-    })
-    mock_event = {
-        "requestContext": "TestContext",
-        "body": mock_bom
-    }
+    mock_bom = dumps({"bomFormat": "CycloneDX", "specVersion": "1.4"})
+    mock_event = {"requestContext": "TestContext", "body": mock_bom}
 
     cyclonedx.api.store_handler(mock_event, {})
-    

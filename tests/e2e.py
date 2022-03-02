@@ -3,9 +3,10 @@ import importlib.resources as pr
 import tests.sboms as sboms
 from json import loads
 
-INVOKE_URL = 'https://bqetkv0bbh.execute-api.us-east-1.amazonaws.com/prod/store'
+INVOKE_URL = "https://bqetkv0bbh.execute-api.us-east-1.amazonaws.com/prod/store"
 SAAS_BOM = loads(pr.read_text(sboms, "SaasBOM.json"))
 BIG_BOM = loads(pr.read_text(sboms, "keycloak.json"))
+
 
 def post_test():
 

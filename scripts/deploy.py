@@ -11,11 +11,12 @@ BUCKET_NAME = "SBOMBucket"
 LAMBDA_NAME = "SBOMIngest"
 REST_API_NAME = "SBOMApi"
 
+
 class SBOMApiDeploy(Stack):
 
     """
     This class is where the infrastructure to run the application
-    is built.  This class inherits from the Stack class, which is part of 
+    is built.  This class inherits from the Stack class, which is part of
     the AWS CDK.
     """
 
@@ -24,7 +25,7 @@ class SBOMApiDeploy(Stack):
         # Run the constructor of the Stack superclass.
         super().__init__(scope, construct_id, **kwargs)
 
-        # Get the Current Working Directory so we can construct a path to the 
+        # Get the Current Working Directory so we can construct a path to the
         # zip file for the Lambda
         cwd = path.dirname(__file__)
         code = lambda_.AssetCode.from_asset("%s/../dist/lambda.zip" % cwd)
@@ -34,32 +35,34 @@ class SBOMApiDeploy(Stack):
 
         # Create the Lambda Function to do the work
         sbom_ingest_func = lambda_.Function(
-            self, LAMBDA_NAME,
+            self,
+            LAMBDA_NAME,
             runtime=lambda_.Runtime.PYTHON_3_9,
             handler="cyclonedx.api.store_handler",
             code=code,
-            environment={
-                'SBOM_BUCKET_NAME': bucket.bucket_name
-            },
+            environment={"SBOM_BUCKET_NAME": bucket.bucket_name},
             timeout=duration.minutes(2),
-            memory_size=512)
+            memory_size=512,
+        )
 
         # Grant permissions on the Bucket to be accesed by the Lambda
         bucket.grant_put(sbom_ingest_func)
 
-        # Create an API Gateway with CORS applied so we can hit the 
+        # Create an API Gateway with CORS applied so we can hit the
         # endpoint from the command line
         lambda_api = apigw.LambdaRestApi(
-            self, REST_API_NAME,
+            self,
+            REST_API_NAME,
             default_cors_preflight_options=apigw.CorsOptions(
                 allow_origins=apigw.Cors.ALL_ORIGINS,
-                allow_methods=apigw.Cors.ALL_METHODS
+                allow_methods=apigw.Cors.ALL_METHODS,
             ),
-            #default_method_options=apigw.MethodOptions(
+            # default_method_options=apigw.MethodOptions(
             #    authorization_type=apigw.AuthorizationType.NONE
-            #),
-            handler=sbom_ingest_func, 
-            proxy=False)
+            # ),
+            handler=sbom_ingest_func,
+            proxy=False,
+        )
 
         # Create a POST Endpoint called 'store' to hit.
         store_ep = lambda_api.root.add_resource("store")
@@ -77,10 +80,11 @@ def dodep() -> None:
     SBOMApiDeploy(app, "SBOMApiDeploy")
     app.synth()
 
+
 def run() -> None:
 
     """
-    Starts the process of deploying.  
+    Starts the process of deploying.
     To Run: poetry run deploy
     """
 
