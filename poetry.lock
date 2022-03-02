@@ -91,7 +91,7 @@ crt = ["awscrt (==0.12.5)"]
 name = "cattrs"
 version = "1.10.0"
 description = "Composable complex class support for attrs and dataclasses."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7,<4.0"
 
@@ -146,9 +146,9 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "constructs"
-version = "10.0.74"
+version = "10.0.76"
 description = "A programming model for software-defined state"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -207,7 +207,7 @@ python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 name = "jsii"
 version = "1.54.0"
 description = "Python client for jsii runtime"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "~=3.6"
 
@@ -319,7 +319,7 @@ virtualenv = ">=20.0.8"
 name = "publication"
 version = "0.0.3"
 description = "Publication helps you maintain public-api-friendly modules by preventing unintentional access to private implementation details via introspection."
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 
@@ -511,7 +511,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "3f722ef97391b874e4ae79d52c576ed857a072d8caa674ed4865247ab7f4aeae"
+content-hash = "7333ede15e175016f634c9c437f6074e1ac4de696f6f47c4f8da41f57dd2c926"
 
 [metadata.files]
 atomicwrites = [
@@ -584,8 +584,8 @@ colorama = [
     {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
 ]
 constructs = [
-    {file = "constructs-10.0.74-py3-none-any.whl", hash = "sha256:db79e40f4a1157fc4a6512f3577137ded441782101b22ad3513bb28c28e9a00f"},
-    {file = "constructs-10.0.74.tar.gz", hash = "sha256:fcfe336f8fcf3fca52e4bfd48ca3a36a43ae35f17a140ab6a03ca66f9d968d59"},
+    {file = "constructs-10.0.76-py3-none-any.whl", hash = "sha256:7714252353b08cd16f1b23682c5a18e4a31d7cd2ae04121802a16db76b5b68c4"},
+    {file = "constructs-10.0.76.tar.gz", hash = "sha256:13480f5f2c3eb176c75e4ecfcf79ee89d14c194f8c5ed66ad2cfa2918114dea1"},
 ]
 distlib = [
     {file = "distlib-0.3.4-py2.py3-none-any.whl", hash = "sha256:6564fe0a8f51e734df6333d08b8b94d4ea8ee6b99b5ed50613f731fd4089f34b"},
