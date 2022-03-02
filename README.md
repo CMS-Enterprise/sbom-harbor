@@ -6,13 +6,14 @@
 - [Python Version Management](https://github.com/pyenv/pyenv) (pyenv)
 - The [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#getting_started_install)
 - The [Poetry](https://python-poetry.org/docs/) build tool
-- Python [Pre-commit](https://pre-commit.com/).  
+- Python [Pre-commit](https://pre-commit.com/).
 
 #### Initialize
 - Install Pyenv (either option):
   - `brew update && brew install pyenv`
   - `git clone https://github.com/pyenv/pyenv.git ~/.pyenv`
 - Install Python version: `pyenv install 3.9.10`
+- Install Poetry: `curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3`
 - Clone Repository: `git clone git@github.com:aquia-inc/cyclonedx-python.git`
 - Cd into repo: `cd cyclonedx-python`
 - Install Pre-Commit: `pip install pre-commit`
