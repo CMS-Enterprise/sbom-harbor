@@ -16,7 +16,7 @@
 - Install Poetry: `curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3`
 - Clone Repository: `git clone git@github.com:aquia-inc/cyclonedx-python.git`
 - Cd into repo: `cd cyclonedx-python`
-- Install Pre-Commit: `pip install pre-commit`
+- Go into Poetry shell: `poetry shell`.  This creates your virtual environment where your deps can be installed
 - Python Dependencies: `poetry install`
 - pre-commit hooks: `pre-commit install`
 
