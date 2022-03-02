@@ -17,9 +17,11 @@ python = "^3.9"
 boto3 = "^1.21.8"
 jsonschema = "^4.4.0"
 requests = "^2.27.1"
+black = "^22.1.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
+pytest-mock = "^3.7.0"
 aws-cdk-lib = "^2.14.0"
 constructs = "^10.0.74"
 

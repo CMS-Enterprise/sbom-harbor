@@ -7,12 +7,13 @@ from json import loads, dumps
 
 from cyclonedx.core import CycloneDxCore
 
-def has_req_context(event):
+
+def __has_req_context(event):
 
     """
     Looks for the 'requestContext' key in the event.
     If 'requestContext' exists, then that means the request is
-    not coming from a AWS Lambda test.
+    not coming from AWS Lambda test.
     """
 
     try:
@@ -21,7 +22,8 @@ def has_req_context(event):
     except KeyError:
         return False
 
-def get_bom_obj(event) -> dict:
+
+def __get_bom_obj(event) -> dict:
 
     """
     If the request context exists, then there will
@@ -29,12 +31,13 @@ def get_bom_obj(event) -> dict:
     as a **string** that the POST body contained.
     """
 
-    if has_req_context(event):
+    if __has_req_context(event):
         return loads(event["body"])
     else:
         return event
 
-def create_response_obj(bucket_name: str, key: str) -> dict:
+
+def __create_response_obj(bucket_name: str, key: str) -> dict:
 
     """
     Creates a dict that is used as the response from the Lambda
@@ -51,6 +54,7 @@ def create_response_obj(bucket_name: str, key: str) -> dict:
         })
     }
 
+
 def store_handler(event, context) -> dict:
 
     """
@@ -62,7 +66,7 @@ def store_handler(event, context) -> dict:
     print("Event: %s" % str(event))
     print("Context: %s" % str(context))
 
-    bom_obj = get_bom_obj(event)
+    bom_obj = __get_bom_obj(event)
 
     # Get the bucket name from the environment variable
     # This is set during deployment
@@ -77,7 +81,7 @@ def store_handler(event, context) -> dict:
     core = CycloneDxCore()
 
     # Create a response object to add values to.
-    response_obj = create_response_obj(bucket_name, key)
+    response_obj = __create_response_obj(bucket_name, key)
 
     try:
 
@@ -89,12 +93,11 @@ def store_handler(event, context) -> dict:
         bucket = s3.Bucket(bucket_name)
 
         # Actually put the object in S3
-        bytes = bytearray(dumps(bom_obj), "utf-8")
-        bucket.put_object(Key=key, Body=bytes)
+        bom_bytes = bytearray(dumps(bom_obj), "utf-8")
+        bucket.put_object(Key=key, Body=bom_bytes)
 
     except ValidationError as e:
         response_obj['statusCode'] = 400
         response_obj['body'] = str(e)
-
 
     return response_obj

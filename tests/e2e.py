@@ -4,15 +4,23 @@ import tests.sboms as sboms
 from json import loads
 
 INVOKE_URL = 'https://bqetkv0bbh.execute-api.us-east-1.amazonaws.com/prod/store'
-SASS_BOM = loads(pr.read_text(sboms, "SaasBOM.json"))
+SAAS_BOM = loads(pr.read_text(sboms, "SaasBOM.json"))
+BIG_BOM = loads(pr.read_text(sboms, "keycloak.json"))
 
 def post_test():
 
-    print('Sending...')
+    print("Sending To: %s" % INVOKE_URL)
     print("<SaasBOM>")
-    print(SASS_BOM)
+    print(SAAS_BOM)
     print("</SaasBOM>")
-    print("To: %s" % INVOKE_URL)
 
-    rsp = requests.post(INVOKE_URL, json=SASS_BOM)
+    rsp = requests.post(INVOKE_URL, json=SAAS_BOM)
+    print(rsp.text)
+
+    print("Sending To: %s" % INVOKE_URL)
+    print("<BigBOM>")
+    print(BIG_BOM)
+    print("</BigBOM>")
+
+    rsp = requests.post(INVOKE_URL, json=BIG_BOM)
     print(rsp.text)

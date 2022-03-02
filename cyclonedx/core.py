@@ -4,18 +4,19 @@ from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 from json import loads
 
+
 class CycloneDxCore:
     
     """
     This is the main class of the CycloneDx Python Core Library
     """
 
-    def __get_value(self, key: str, bom_obj: dict) -> str:
+    @staticmethod
+    def __get_value(key: str, bom_obj: dict) -> str:
         try:
             return bom_obj[key]
         except KeyError:
             raise ValidationError('Missing "%s" key, is this a BOM you are trying to send?' % key)
-        
 
     def __init__(self):
         self.sbom_schemas = { 
