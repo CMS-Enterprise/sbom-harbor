@@ -1,6 +1,6 @@
-import boto3
 import os
 
+from boto3 import resource
 from jsonschema.exceptions import ValidationError
 from uuid import uuid4
 from json import loads, dumps
@@ -64,8 +64,7 @@ def store_handler(event, context) -> dict:
         core.validate(bom_obj)
 
         # Get S3 Bucket
-        s3 = boto3.resource("s3")
-        bucket = s3.Bucket(bucket_name)
+        bucket = resource("s3").Bucket(bucket_name)
 
         # Actually put the object in S3
         bom_bytes = bytearray(dumps(bom_obj), "utf-8")
