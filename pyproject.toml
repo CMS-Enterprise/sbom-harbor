@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "cyclonedx"
+name = "cyclonedx-python"
 version = "0.1.0"
 description = ""
 authors = ["qtpeters <quinn.t.peters@gmail.com>"]
