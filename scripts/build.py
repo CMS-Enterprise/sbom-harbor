@@ -15,7 +15,7 @@ def package():
 
     """
     This method uses poetry to package the application and
-    all of it's dependencies into a zip file that can be used by
+    all of its dependencies into a zip file that can be used by
     AWS Lambda to urn the application.
     """
 
@@ -30,8 +30,8 @@ def clean():
     .gitignore...?
     """
 
-    for dir in ["dist", "tmp", "cdk.out"]:
+    for unwanted_dir in ["dist", "tmp", "cdk.out"]:
         try:
-            rmtree(dir)
+            rmtree(unwanted_dir)
         except OSError as e:
-            print("Error: %s : %s" % (dir, e.strerror))
+            print("Error: %s : %s" % (unwanted_dir, e.strerror))
