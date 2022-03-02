@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "cyclonedx-python"
+name = "cyclonedx"
 version = "0.1.0"
-description = ""
+description = "Api to ingest and process SBOMS"
 authors = ["qtpeters <quinn.t.peters@gmail.com>"]
 
 [tool.poetry.scripts]
