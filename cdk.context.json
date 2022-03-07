@@ -1,5 +1,14 @@
 {
   "acknowledged-issue-numbers": [
     19179
-  ]
+  ],
+  "availability-zones:account=152424352374:region=us-east-1": [
+    "us-east-1a",
+    "us-east-1b",
+    "us-east-1c",
+    "us-east-1d",
+    "us-east-1e",
+    "us-east-1f"
+  ],
+  "ami:account=152424352374:filters.image-type.0=machine:filters.name.0=ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-20220131:filters.state.0=available:region=us-east-1": "ami-01b996646377b6619"
 }
