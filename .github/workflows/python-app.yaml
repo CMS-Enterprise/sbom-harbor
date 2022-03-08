@@ -5,29 +5,43 @@ name: Python application
 on:
   push:
     branches: [master]
-  pull_request:
-    branches: [master]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+
       - uses: actions/checkout@v2
+
       - name: Set up Python 3.10
         uses: actions/setup-python@v2
         with:
           python-version: "3.10"
-      - name: Install and configure Poetry
+
+      - name: Install Poetry
         uses: snok/install-poetry@v1
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v1
+        id: cache
+        with:
+          path: ~/.virtualenvs
+          key: poetry-$
+          restore-keys: |
+            poetry-$
+
       - name: Install dependencies
         run: |
           poetry install
+
       - name: Build Code
         run: |
           poetry run build
+
       - name: Test with pytest
         run: |
           pytest
+
       - name: Package for Lambda
         run: |
           poetry run package
