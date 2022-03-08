@@ -23,7 +23,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry run install
+          poetry install
+
+      - name: Lint Code
+        run: |
+          poetry run lint
 
       - name: Build Code
         run: |

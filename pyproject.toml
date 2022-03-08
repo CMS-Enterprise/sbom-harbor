@@ -7,6 +7,7 @@ authors = ["qtpeters <quinn.t.peters@gmail.com>"]
 [tool.poetry.scripts]
 clean = "scripts.build:clean"
 build = "scripts.build:run"
+lint = "scripts.build:lint"
 test = "scripts.build:test"
 package = "scripts.build:package"
 deploy = "scripts.deploy:run"
