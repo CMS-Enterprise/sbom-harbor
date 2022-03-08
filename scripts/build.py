@@ -20,7 +20,7 @@ def lint():
     Lint the code with Pylint
     """
 
-    system("pylint --version")
+    system("pylint cyclonedx/")
 
 
 def test():
