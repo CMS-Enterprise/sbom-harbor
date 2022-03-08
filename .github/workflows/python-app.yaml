@@ -33,6 +33,7 @@ jobs:
           poetry run build
       - name: Test with pytest
         run: |
+          poetry shell
           pytest
       - name: Package for Lambda
         run: |
