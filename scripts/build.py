@@ -1,3 +1,5 @@
+""" This Module has functions that can be run using Poetry to perform build tasks"""
+
 from shutil import rmtree
 from os import system
 from sys import path
@@ -13,6 +15,11 @@ def run():
 
 
 def test():
+
+    """
+    Run Pytest and get coverage
+    """
+
     path.insert(0, "cyclonedx/")
     system("poetry run python -m pytest -v --cov=cyclonedx/ tests/")
 
@@ -39,5 +46,5 @@ def clean():
     for unwanted_dir in ["dist", "tmp", "cdk.out"]:
         try:
             rmtree(unwanted_dir)
-        except OSError as e:
-            print("Error: %s : %s" % (unwanted_dir, e.strerror))
+        except OSError as os_error:
+            print("Error: %s : %s" % (unwanted_dir, os_error.strerror))

@@ -21,8 +21,14 @@
 - pre-commit hooks: `pre-commit install`
 
 #### Build and Deploy
+##### `poetry run clean`
+Uses Poetry to remove unnecessary artifacts
+
 ##### `poetry run build`
 Uses Poetry to build the python project into a single artifact
+
+##### `poetry run test`
+Runs Pytest unit tests located in the tests/ folder
 
 ##### `poetry run package`
 Re-Packages the project and all dependencies into a zip file compatible with AWS Lambda
