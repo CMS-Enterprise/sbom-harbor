@@ -10,9 +10,7 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.10
@@ -30,8 +28,12 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install
+      - name: Build Code
+        run: |
           poetry run build
-          poetry run package
       - name: Test with pytest
         run: |
           pytest
+      - name: Package for Lambda
+        run: |
+          poetry run package
