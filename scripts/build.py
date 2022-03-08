@@ -14,6 +14,15 @@ def run():
     system("poetry build")
 
 
+def lint():
+
+    """
+    Lint the code with Pylint
+    """
+
+    system("pylint --version")
+
+
 def test():
 
     """
