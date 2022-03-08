@@ -29,6 +29,7 @@ jobs:
           installer-parallel: true
       - name: Install dependencies
         run: |
+          poetry install
           poetry run build
           poetry run package
       - name: Test with pytest
