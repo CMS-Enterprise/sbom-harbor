@@ -1,4 +1,5 @@
 dist/
+.coverage
 tmp/
 __pycache__/
 cdk.out/

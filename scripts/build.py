@@ -1,5 +1,6 @@
 from shutil import rmtree
 from os import system
+from sys import path
 
 
 def run():
@@ -9,6 +10,11 @@ def run():
     """
 
     system("poetry build")
+
+
+def test():
+    path.insert(0, "cyclonedx/")
+    system("poetry run python -m pytest -v --cov=cyclonedx/ tests/")
 
 
 def package():
