@@ -1,12 +1,17 @@
+from asyncio import protocols
 import aws_cdk as cdk
 import aws_cdk.aws_s3 as s3
-import aws_cdk.aws_ec2 as ec2
-import aws_cdk.aws_lambda as lambda_
 import aws_cdk.aws_apigateway as apigw
+import aws_cdk.aws_ecs as ecs
+import aws_cdk.aws_efs as efs
+import aws_cdk.aws_ec2 as ec2
+import aws_cdk.aws_lambda_python_alpha as lambda_
+from aws_cdk.aws_lambda import Runtime
 from aws_cdk import Duration
 from aws_cdk import Stack
 from os import path, system, getenv
 from constructs import Construct
+
 
 BUCKET_NAME = "SBOMBucket"
 CIDR = '10.0.0.0/16'
@@ -43,35 +48,99 @@ class SBOMApiDeploy(Stack):
         # Establish a VPC for the lambda to make calls to the services
         vpc = create_vpc(self, s3_gateway_endpoint)
 
-        # create a new security group
-        security_group = create_security_group(self, vpc)
+        # create an ecs cluster for running dependencytrack
+        fargate_cluster =  ecs.Cluster(self, "FargateCluster", vpc=vpc)
+        
+        # create an efs mount for maintaining
+        dt_mount =  efs.FileSystem(self, "dtApiStorage", vpc=vpc, encrypted=True)
+
+        dt_volume = ecs.Volume(
+            name = 'dtApiStorage',
+            efs_volume_configuration = ecs.EfsVolumeConfiguration(
+                file_system_id=dt_mount.file_system_id
+        ))
+
+        dt_volume_mount = ecs.MountPoint(
+            container_path="/apiserver",
+            source_volume=dt_volume.name,
+            read_only= False
+            )
+
+        dt_api_task_definition = ecs.TaskDefinition(
+            self, 'dtTaskDefinition', 
+            compatibility=ecs.Compatibility.FARGATE, 
+            cpu='4096', 
+            memory_mib='8192', 
+            volumes=[dt_volume]
+            )
+        
+        container = dt_api_task_definition.add_container(
+            'dtContainer', 
+            image=ecs.ContainerImage.from_registry("dependencytrack/apiserver"),
+            logging=ecs.LogDrivers.aws_logs(stream_prefix="dependencyTrackApi"),
+            environment = {},
+            cpu=2048,
+            memory_reservation_mib=4096
+            )
+        
+        container.add_port_mappings({
+            "containerPort": 8080,
+            "host_port":8080,
+            "protocol" : ecs.Protocol.TCP
+        }
+        )
+        container.add_mount_points(dt_volume_mount)
+
+        dt_service = ecs.FargateService(
+            self, 
+            'dtService',
+            cluster = fargate_cluster,
+            task_definition = dt_api_task_definition,
+            desired_count = 1,
+            assign_public_ip = True,
+            platform_version = ecs.FargatePlatformVersion.VERSION1_4
+            )
+
+        dt_mount.connections.allow_default_port_from(dt_service)
+        dt_service.connections.allow_from(ec2.Peer.ipv4('74.134.30.50/32'), ec2.Port.tcp(8080), 'Ip Whitelist')
 
         # Create the S3 Bucket to put the BOMs in
         bucket = s3.Bucket(self, BUCKET_NAME)
 
         # Create the EC2 Instance that is going to run dependency track
         # and set permissions on the S3 Bucket
-        dependency_track = create_ec2_instance(self, vpc, security_group)
-        dependency_track.connections.allow_from_any_ipv4(
-            ec2.Port.tcp(22),
-            'Allow inbound SSH from anywhere')
-        bucket.grant_put(dependency_track)
-        bucket.grant_read(dependency_track)
-        bucket.grant_delete(dependency_track)
+        #dependency_track = create_ec2_instance(self, vpc, security_group)
+        #dependency_track.connections.allow_from_any_ipv4(
+        #    ec2.Port.tcp(22),
+        #    'Allow inbound SSH from anywhere')
+        #bucket.grant_put(dependency_track)
+        #bucket.grant_read(dependency_track)
+        #bucket.grant_delete(dependency_track)
 
         # Create the Lambda Function to do the work
         # and set permissions on the S3 Bucket
-        sbom_ingest_func = create_ingest_lambda(self, vpc, bucket)
+        sbom_ingest_func = lambda_.PythonFunction(
+            self,            
+            LAMBDA_NAME,
+            runtime=Runtime.PYTHON_3_8,
+            handler="cyclonedx.api.store_handler",
+            entry='./cyclonedx',
+            index = 'api.py',
+            environment={"SBOM_BUCKET_NAME": bucket.bucket_name},
+            timeout=Duration.seconds(10),
+            memory_size=512
+            )
+
         bucket.grant_put(sbom_ingest_func)
 
-        # Create an API Gateway with CORS applied so we can hit the
-        # endpoint from the command line
-        lambda_api = create_api_gateway(self, sbom_ingest_func)
-
-        # Create a POST Endpoint called 'store' to hit.
+        lambda_api = apigw.LambdaRestApi(
+            self, 
+            'sbom_ingest_api',
+            handler= sbom_ingest_func
+            )
+        
         store_ep = lambda_api.root.add_resource("store")
         store_ep.add_method("POST")
-
 
 def create_gateway_endpoint() -> ec2.GatewayVpcEndpointOptions:
 
@@ -110,76 +179,6 @@ def create_vpc(
                 public_subnet
             ]
         )
-
-
-def create_security_group(
-        stack: Stack,
-        vpc: ec2.Vpc) -> ec2.SecurityGroup:
-
-    return ec2.SecurityGroup(
-        stack,
-        "Allow_8080",
-        allow_all_outbound=True,
-        vpc=vpc
-    )
-
-
-def create_ec2_instance(
-        stack: Stack, vpc: ec2.Vpc,
-        sg: ec2.SecurityGroup) -> ec2.Instance:
-
-    return ec2.Instance(
-        stack, "Instance",
-        key_name=EC2_SSH_KEY_NAME,
-        instance_name=EC2_INSTANCE_NAME,
-        instance_type=ec2.InstanceType(EC2_INSTANCE_TYPE),
-        machine_image=ec2.MachineImage().lookup(name=EC2_INSTANCE_AMI),
-        security_group=sg,
-        vpc=vpc
-    )
-
-
-def create_ingest_lambda(
-        stack: Stack,
-        vpc: ec2.Vpc,
-        bucket: s3.Bucket) -> lambda_.Function:
-
-    # Get the Current Working Directory so we can construct a path to the
-    # zip file for the Lambda
-    cwd = path.dirname(__file__)
-    code = lambda_.AssetCode.from_asset("%s/../dist/lambda.zip" % cwd)
-
-    return lambda_.Function(
-            stack,
-            LAMBDA_NAME,
-            runtime=lambda_.Runtime.PYTHON_3_9,
-            vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(
-                subnet_type=PRIVATE
-            ),
-            handler="cyclonedx.api.store_handler",
-            code=code,
-            environment={"SBOM_BUCKET_NAME": bucket.bucket_name},
-            timeout=Duration.seconds(10),
-            memory_size=512,
-        )
-
-
-def create_api_gateway(
-        stack: Stack,
-        sbom_ingest_func: lambda_.Function) -> apigw.LambdaRestApi:
-
-    return apigw.LambdaRestApi(
-            stack,
-            REST_API_NAME,
-            default_cors_preflight_options=apigw.CorsOptions(
-                allow_origins=apigw.Cors.ALL_ORIGINS,
-                allow_methods=apigw.Cors.ALL_METHODS,
-            ),
-            handler=sbom_ingest_func,
-            proxy=False,
-        )
-
 
 def dodep() -> None:
 
