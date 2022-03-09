@@ -1,9 +1,12 @@
-import os
+"""
+This module serves as the external API for CycloneDX Python Module
+"""
 
-from boto3 import resource
-from jsonschema.exceptions import ValidationError
+import os
 from uuid import uuid4
 from json import loads, dumps
+from boto3 import resource
+from jsonschema.exceptions import ValidationError
 
 from cyclonedx.core import CycloneDxCore
 
@@ -46,11 +49,11 @@ def store_handler(event, context) -> dict:
     # Get the bucket name from the environment variable
     # This is set during deployment
     bucket_name = os.environ["SBOM_BUCKET_NAME"]
-    print("Bucket name from env(SBOM_BUCKET_NAME): %s" % bucket_name)
+    print(f"Bucket name from env(SBOM_BUCKET_NAME): {bucket_name}")
 
     # Generate the name of the object in S3
-    key = "aquia-%s" % uuid4()
-    print("Putting object in S3 with key: %s" % key)
+    key = f"aquia-{uuid4()}"
+    print(f"Putting object in S3 with key: {key}")
 
     # Create an instance of the Python CycloneDX Core
     core = CycloneDxCore()
@@ -70,8 +73,8 @@ def store_handler(event, context) -> dict:
         bom_bytes = bytearray(dumps(bom_obj), "utf-8")
         bucket.put_object(Key=key, Body=bom_bytes)
 
-    except ValidationError as e:
+    except ValidationError as validation_error:
         response_obj["statusCode"] = 400
-        response_obj["body"] = str(e)
+        response_obj["body"] = str(validation_error)
 
     return response_obj

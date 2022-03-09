@@ -1,8 +1,12 @@
+"""
+This is the start of the CycloneDX Core Python Module
+"""
+
 import importlib.resources as pr
-import cyclonedx.schemas as schemas
+from json import loads
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
-from json import loads
+from cyclonedx import schemas
 
 
 class CycloneDxCore:
@@ -15,10 +19,10 @@ class CycloneDxCore:
     def __get_value(key: str, bom_obj: dict) -> str:
         try:
             return bom_obj[key]
-        except KeyError:
+        except KeyError as key_error:
             raise ValidationError(
-                'Missing "%s" key, is this a BOM you are trying to send?' % key
-            )
+                f'Missing "{key}" key, is this a BOM you are trying to send?'
+            ) from key_error
 
     def __init__(self):
         self.sbom_schemas = {
@@ -54,7 +58,7 @@ class CycloneDxCore:
         schema_version = self.__get_value("specVersion", bom_obj)
         if schema_version not in self.sbom_schemas:
             raise ValidationError(
-                "CycloneDX Schema Version %s is not supported" % schema_version
+                f"CycloneDX Schema Version {schema_version} is not supported"
             )
 
         schema_json = self.sbom_schemas[schema_version]

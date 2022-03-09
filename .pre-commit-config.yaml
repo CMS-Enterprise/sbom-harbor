@@ -13,3 +13,5 @@ repos:
     rev: pylint-2.6.0
     hooks:
     -   id: pylint
+        name: pylint
+        args: ["--rcfile=.pylintrc"]
