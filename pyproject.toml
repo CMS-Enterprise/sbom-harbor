@@ -20,6 +20,7 @@ boto3 = "^1.21.10"
 jsonschema = "^4.4.0"
 requests = "^2.27.1"
 constructs = "^10.0.76"
+requests-toolbelt = "^0.9.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

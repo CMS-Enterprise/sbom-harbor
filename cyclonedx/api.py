@@ -1,13 +1,14 @@
 """
 This module serves as the external API for CycloneDX Python Module
 """
-
 import os
+from io import StringIO
 from uuid import uuid4
 from json import loads, dumps
+from requests import post
 from boto3 import resource
 from jsonschema.exceptions import ValidationError
-
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 from cyclonedx.core import CycloneDxCore
 
 
@@ -36,7 +37,7 @@ def __create_response_obj(bucket_name: str, key: str) -> dict:
     }
 
 
-def store_handler(event, context) -> dict:
+def store_handler(event=None, context=None) -> dict:
 
     """
     This is the Lambda Handler that validates an incoming SBOM
@@ -78,3 +79,42 @@ def store_handler(event, context) -> dict:
         response_obj["body"] = str(validation_error)
 
     return response_obj
+
+
+def dt_ingress_handler(event=None, context=None):
+
+    """
+    Developing Dependency Track Ingress Handler
+    """
+
+    if not event:
+        raise ValidationError("event should never be none")
+
+    key = os.getenv("DT_API_KEY")
+
+    # Found in DT: Projects -> <project> -> "View Details" (Tiny as hell)
+    # At the bottom it says: "Object Identifier".  That's it.
+    project_uuid = "acd68120-3fec-457d-baaa-a456a39984de"
+
+    bom_str_file = StringIO(dumps(event))
+    mpe = MultipartEncoder(
+        fields={
+            "project": project_uuid,
+            "autoCreate": "false",
+            "bom": ("filename", bom_str_file, "multipart/form-data"),
+        }
+    )
+
+    headers = {
+        "X-Api-Key": key,
+        "Accept": "application/json",
+        "Content-Type": mpe.content_type,
+    }
+
+    response = post(
+        "http://localhost:8081/api/v1/bom",
+        headers=headers,
+        data=mpe,
+    )
+
+    return response
