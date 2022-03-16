@@ -1,15 +1,19 @@
 """
 This module serves as the external API for CycloneDX Python Module
 """
-import os
+from os import getenv, environ
 from io import StringIO
+from time import sleep
+
 from uuid import uuid4
 from json import loads, dumps
-from requests import post
+from requests import post, get, Response
 from boto3 import resource
 from jsonschema.exceptions import ValidationError
 from requests_toolbelt.multipart.encoder import MultipartEncoder
+
 from cyclonedx.core import CycloneDxCore
+from cyclonedx.endpoints import Endpoints, PROJECT_UUID
 
 
 def __get_bom_obj(event) -> dict:
@@ -37,6 +41,39 @@ def __create_response_obj(bucket_name: str, key: str) -> dict:
     }
 
 
+def __findings_ready(key: str, token: str) -> bool:
+
+    headers = {
+        "X-Api-Key": key,
+        "Accept": "application/json",
+    }
+
+    response = get(
+        Endpoints.get_sbom_status(token),
+        headers=headers,
+    )
+
+    json_dict = response.json()
+
+    return not json_dict["processing"]
+
+
+def __get_findings(key: str, json: dict) -> dict:
+
+    headers = {"X-Api-Key": key, "Accept": "application/json"}
+
+    while not __findings_ready(key, json["token"]):
+        sleep(0.5)
+        print("Not ready...")
+
+    print("Results are in!")
+
+    findings_ep = Endpoints.get_findings()
+    findings = get(findings_ep, headers=headers)
+
+    return findings.json()
+
+
 def store_handler(event=None, context=None) -> dict:
 
     """
@@ -49,7 +86,7 @@ def store_handler(event=None, context=None) -> dict:
 
     # Get the bucket name from the environment variable
     # This is set during deployment
-    bucket_name = os.environ["SBOM_BUCKET_NAME"]
+    bucket_name = environ["SBOM_BUCKET_NAME"]
     print(f"Bucket name from env(SBOM_BUCKET_NAME): {bucket_name}")
 
     # Generate the name of the object in S3
@@ -90,31 +127,33 @@ def dt_ingress_handler(event=None, context=None):
     if not event:
         raise ValidationError("event should never be none")
 
-    key = os.getenv("DT_API_KEY")
+    # Make a filehandle out of the JSON String
+    bom_str_file: StringIO = StringIO(dumps(event))
 
-    # Found in DT: Projects -> <project> -> "View Details" (Tiny as hell)
-    # At the bottom it says: "Object Identifier".  That's it.
-    project_uuid = "acd68120-3fec-457d-baaa-a456a39984de"
+    # The API key for the project
+    key: str = getenv("DT_API_KEY")
 
-    bom_str_file = StringIO(dumps(event))
     mpe = MultipartEncoder(
         fields={
-            "project": project_uuid,
+            "project": PROJECT_UUID,
             "autoCreate": "false",
             "bom": ("filename", bom_str_file, "multipart/form-data"),
         }
     )
 
-    headers = {
+    headers: dict = {
         "X-Api-Key": key,
         "Accept": "application/json",
         "Content-Type": mpe.content_type,
     }
 
-    response = post(
-        "http://localhost:8081/api/v1/bom",
+    response: Response = post(
+        Endpoints.post_sbom(),
         headers=headers,
         data=mpe,
     )
 
-    return response
+    json_dict: dict = response.json()
+    findings: dict = __get_findings(key, json_dict)
+
+    return findings

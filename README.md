@@ -8,6 +8,12 @@
 - The [Poetry](https://python-poetry.org/docs/) build tool
 - Python [Pre-commit](https://pre-commit.com/).
 
+#### Environment Variables
+- DT_API_BASE: API endpoint url for Dependency Track.
+  Example: http://localhost:8081/api
+- DT_API_KEY: String associated to the project in DT that authorizes use of teh API.
+  Example: thpYLdR39cUmL4718tjnFMOdnf4c3GAAPc
+
 #### Initialize
 - Install Pyenv (either option):
   - `brew update && brew install pyenv`
