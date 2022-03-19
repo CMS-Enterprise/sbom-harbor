@@ -1,14 +1,21 @@
-import requests
+""" End-to-End Test for the system """
 import importlib.resources as pr
-import tests.sboms as sboms
 from json import loads
 
-INVOKE_URL = "https://bqetkv0bbh.execute-api.us-east-1.amazonaws.com/prod/store"
+import requests
+
+import tests.sboms as sboms
+
+INVOKE_URL = "https://cho73qixjc.execute-api.us-east-1.amazonaws.com/prod/store"
 SAAS_BOM = loads(pr.read_text(sboms, "SaasBOM.json"))
-BIG_BOM = loads(pr.read_text(sboms, "keycloak.json"))
+BIG_BOM = loads(pr.read_text(sboms, "cern.json"))
 
 
 def post_test():
+
+    """
+    Posts some SBOMS to the Endpoint currently running in AWS
+    """
 
     print("Sending To: %s" % INVOKE_URL)
     print("<SaasBOM>")

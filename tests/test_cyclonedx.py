@@ -8,7 +8,7 @@ from requests import get
 import cyclonedx.api as api
 import tests.sboms as sboms
 from cyclonedx import core
-from cyclonedx.endpoints import Endpoints
+from cyclonedx.dtendpoints import DTEndpoints
 
 
 def test_get_schemas() -> None:
@@ -95,7 +95,7 @@ def test_bom_upload_state():
 
     print("Results are in!")
 
-    end_point = Endpoints.get_findings()
+    end_point = DTEndpoints.get_findings()
     print(f"Hitting endpoint: {end_point}")
 
     findings = get(end_point)

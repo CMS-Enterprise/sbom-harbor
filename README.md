@@ -11,7 +11,7 @@
 #### Environment Variables
 - DT_API_BASE: API endpoint url for Dependency Track.
   Example: http://localhost:8081/api
-- DT_API_KEY: String associated to the project in DT that authorizes use of teh API.
+- DT_API_KEY: String associated to the project in DT that authorizes use of the API.
   Example: thpYLdR39cUmL4718tjnFMOdnf4c3GAAPc
 
 #### Initialize

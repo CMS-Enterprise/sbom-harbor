@@ -9,7 +9,7 @@ import os
 PROJECT_UUID = "acd68120-3fec-457d-baaa-a456a39984de"
 
 
-class Endpoints:
+class DTEndpoints:
 
     """
     Class to generate endpoints
@@ -25,7 +25,7 @@ class Endpoints:
         Returns Endpoint to check if an SBOM has been analyzed and the findings are ready
         """
 
-        return f"{Endpoints.dt_api_base}/v1/bom/token/{token}"
+        return f"{DTEndpoints.dt_api_base}/v1/bom/token/{token}"
 
     @staticmethod
     def post_sbom():
@@ -34,7 +34,7 @@ class Endpoints:
         Returns Endpoint used to upload an SBOM
         """
 
-        return f"{Endpoints.dt_api_base}/v1/bom"
+        return f"{DTEndpoints.dt_api_base}/v1/bom"
 
     @staticmethod
     def get_findings():
@@ -43,4 +43,13 @@ class Endpoints:
         Returns Endpoint used to retrieve finds for a project
         """
 
-        return f"{Endpoints.dt_api_base}/v1/finding/project/{PROJECT_UUID}/export"
+        return f"{DTEndpoints.dt_api_base}/v1/finding/project/{PROJECT_UUID}/export"
+
+    @staticmethod
+    def create_project():
+
+        """
+        Returns Endpoint used to create projects in DT
+        """
+
+        return f"{DTEndpoints.dt_api_base}/v1/project"
