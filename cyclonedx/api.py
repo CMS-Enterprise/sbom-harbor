@@ -199,7 +199,7 @@ def dt_ingress_handler(event=None, context=None):
     bom_str_file: StringIO = StringIO(event_str)
 
     # The API key for the project
-    key: str = getenv("DT_API_KEY")
+    key: str = getenv("DT_ENDPOINT")
 
     mpe = MultipartEncoder(
         fields={

@@ -3,6 +3,7 @@ Module to hold constant values for the API
 """
 
 import os
+from cyclonedx.constants import DT_ENDPOINT
 
 # Found in DT: Projects -> <project> -> "View Details" (Tiny as hell)
 # At the bottom it says: "Object Identifier".  That's it.
@@ -16,7 +17,7 @@ class DTEndpoints:
     """
 
     # Must be configurable
-    dt_api_base = os.getenv("TD_API_BASE")
+    dt_api_base = os.getenv(DT_ENDPOINT)
 
     @staticmethod
     def get_sbom_status(token):

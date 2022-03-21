@@ -20,7 +20,12 @@ from aws_cdk import Stack
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from constructs import Construct
 
-from cyclonedx.constants import SBOM_BUCKET_NAME_EV, DT_QUEUE_URL_EV
+from cyclonedx.constants import (
+    SBOM_BUCKET_NAME_EV,
+    DT_QUEUE_URL_EV,
+    DT_ENDPOINT,
+)
+
 from scripts.constants import (
     PUBLIC,
     PRIVATE,
@@ -119,21 +124,11 @@ class SBOMApiDeploy(Stack):
         """Create the Lambda Function responsible for
         extracting results from DT given an SBOM."""
 
-        sbom_enrichment_func = lambda_.Function(
-            self,
-            DT_LAMBDA_NAME,
-            runtime=lambda_.Runtime.PYTHON_3_9,
-            vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
-            handler="cyclonedx.api.dt_ingress_handler",
-            code=code,
-            timeout=Duration.seconds(10),
-            memory_size=512,
-        )
-
         load_balancer = elbv2.NetworkLoadBalancer(self, "NetworkLoadBalancer", vpc=vpc)
         listener = load_balancer.add_listener("listener", port=8080)
         listener.add_targets("target", port=8080)
+
+        fq_dn = load_balancer.load_balancer_dns_name
 
         http_api = apigwv2.HttpApi(self, DT_REST_API_GATEWAY)
         http_api.add_routes(
@@ -145,6 +140,19 @@ class SBOMApiDeploy(Stack):
                 apigwv2.HttpMethod.DELETE,
             ],
             integration=apigatewayv2i.HttpNlbIntegration(DT_API_INTEGRATION, listener),
+        )
+
+        sbom_enrichment_func = lambda_.Function(
+            self,
+            DT_LAMBDA_NAME,
+            runtime=lambda_.Runtime.PYTHON_3_9,
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            handler="cyclonedx.api.dt_ingress_handler",
+            code=code,
+            environment={DT_ENDPOINT: fq_dn},
+            timeout=Duration.seconds(10),
+            memory_size=512,
         )
 
         event_source = SqsEventSource(queue)
@@ -226,7 +234,10 @@ class SBOMApiDeploy(Stack):
         bucket = s3.Bucket(self, BUCKET_NAME)
 
         queue = sqs.Queue(
-            self, DT_SBOM_QUEUE_NAME, fifo=True, content_based_deduplication=True
+            self,
+            DT_SBOM_QUEUE_NAME,
+            fifo=True,
+            content_based_deduplication=True,
         )
 
         self.__configure_ingest_func(vpc, bucket)
