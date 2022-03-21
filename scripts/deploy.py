@@ -120,13 +120,13 @@ class SBOMApiDeploy(Stack):
         destination = s3n.LambdaDestination(sbom_enrichment_func)
         bucket.add_event_notification(s3.EventType.OBJECT_CREATED, destination)
 
-    def __configure_dt_func(self, vpc, queue) -> None:
+    def __configure_dt_func(self, vpc, queue, dt_service) -> None:
         """Create the Lambda Function responsible for
         extracting results from DT given an SBOM."""
 
         load_balancer = elbv2.NetworkLoadBalancer(self, "NetworkLoadBalancer", vpc=vpc)
         listener = load_balancer.add_listener("listener", port=8080)
-        listener.add_targets("target", port=8080)
+        listener.add_targets("target", port=8080, targets=[dt_service])
 
         fq_dn = load_balancer.load_balancer_dns_name
 
@@ -242,7 +242,7 @@ class SBOMApiDeploy(Stack):
 
         self.__configure_ingest_func(vpc, bucket)
         self.__configure_enrichment_func(vpc, bucket, queue)
-        self.__configure_dt_func(vpc, queue)
+        self.__configure_dt_func(vpc, queue, dt_service)
 
 
 def create_gateway_endpoint() -> ec2.GatewayVpcEndpointOptions:
