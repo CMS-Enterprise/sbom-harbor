@@ -4,13 +4,17 @@ from os import system, getenv, path
 
 import aws_cdk as cdk
 import aws_cdk.aws_ec2 as ec2
-import aws_cdk.aws_apigateway as apigw
 import aws_cdk.aws_ecs as ecs
 import aws_cdk.aws_efs as efs
 import aws_cdk.aws_lambda as lambda_
 import aws_cdk.aws_s3 as s3
 import aws_cdk.aws_s3_notifications as s3n
 import aws_cdk.aws_sqs as sqs
+import aws_cdk.aws_elasticloadbalancingv2 as elbv2
+import aws_cdk.aws_apigatewayv2_integrations_alpha as apigatewayv2i
+import aws_cdk.aws_apigatewayv2_alpha as apigwv2
+import aws_cdk.aws_apigateway as apigwv1
+
 from aws_cdk import Duration
 from aws_cdk import Stack
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
@@ -33,7 +37,9 @@ from scripts.constants import (
     DT_TASK_DEF_ID,
     VPC_NAME,
     CIDR,
+    DT_API_INTEGRATION,
     DT_SBOM_QUEUE_NAME,
+    DT_REST_API_GATEWAY,
 )
 
 # Get the Current Working Directory so we can construct a path to the
@@ -68,7 +74,7 @@ class SBOMApiDeploy(Stack):
 
         bucket.grant_put(sbom_ingest_func)
 
-        lambda_api = apigw.LambdaRestApi(
+        lambda_api = apigwv1.LambdaRestApi(
             self, "sbom_ingest_api", handler=sbom_ingest_func
         )
 
@@ -123,6 +129,22 @@ class SBOMApiDeploy(Stack):
             code=code,
             timeout=Duration.seconds(10),
             memory_size=512,
+        )
+
+        load_balancer = elbv2.NetworkLoadBalancer(self, "NetworkLoadBalancer", vpc=vpc)
+        listener = load_balancer.add_listener("listener", port=8080)
+        listener.add_targets("target", port=8080)
+
+        http_api = apigwv2.HttpApi(self, DT_REST_API_GATEWAY)
+        http_api.add_routes(
+            path="/api",
+            methods=[
+                apigwv2.HttpMethod.GET,
+                apigwv2.HttpMethod.POST,
+                apigwv2.HttpMethod.PUT,
+                apigwv2.HttpMethod.DELETE,
+            ],
+            integration=apigatewayv2i.HttpNlbIntegration(DT_API_INTEGRATION, listener),
         )
 
         event_source = SqsEventSource(queue)
@@ -183,7 +205,6 @@ class SBOMApiDeploy(Stack):
         )
 
         container.add_port_mappings(port_mapping)
-
         container.add_mount_points(dt_volume_mount)
 
         dt_service = ecs.FargateService(
