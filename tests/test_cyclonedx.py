@@ -1,12 +1,17 @@
 """ Unit tests """
 
 import os
-from time import sleep
-from json import loads
-import importlib.resources as pr
-from requests import get
+
+from botocore.client import BaseClient
+from pytest_mock import mocker
+from boto3 import client
+
 import cyclonedx.api as api
 import tests.sboms as sboms
+import importlib.resources as pr
+from time import sleep
+from json import loads
+from requests import Response, get, put
 from cyclonedx import core
 from cyclonedx.dtendpoints import DTEndpoints
 
@@ -103,3 +108,34 @@ def test_bom_upload_state():
     print("<findings>")
     print(findings)
     print("</findings>")
+
+
+def test_create_project():
+    create_project_headers: dict = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+
+    create_proj_body = {
+        "author": "EnrichmentLambda",
+        "version": "1.0.0",
+        "classifier": "APPLICATION",
+        "description": "auto generated project",
+    }
+
+    create_proj_rsp: Response = put(
+        DTEndpoints.create_project(),
+        headers=create_project_headers,
+        data=create_proj_body,
+    )
+
+    print(f"Sending request to endpoint: {DTEndpoints.create_project()}")
+    print(create_proj_rsp)
+
+
+def test_extract_api_key():
+
+    # mocker.patch("botocore.client.BaseClient.get_parameter")
+    ssm: BaseClient = client("ssm")
+    rsp = api.__get_api_key(ssm)
+    print(rsp)

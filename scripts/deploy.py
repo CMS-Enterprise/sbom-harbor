@@ -23,7 +23,7 @@ from constructs import Construct
 from cyclonedx.constants import (
     SBOM_BUCKET_NAME_EV,
     DT_QUEUE_URL_EV,
-    DT_ENDPOINT,
+    DT_API_BASE,
 )
 
 from scripts.constants import (
@@ -150,7 +150,7 @@ class SBOMApiDeploy(Stack):
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
             handler="cyclonedx.api.dt_ingress_handler",
             code=code,
-            environment={DT_ENDPOINT: fq_dn},
+            environment={DT_API_BASE: fq_dn},
             timeout=Duration.seconds(10),
             memory_size=512,
         )
