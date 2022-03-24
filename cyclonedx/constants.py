@@ -1,7 +1,10 @@
 """ Constants to be used throughout the system"""
 
+DT_DEFAULT_ADMIN_PWD = "admin"
+DT_TOKEN_KEY = "dt_token"
 DT_QUEUE_URL_EV = "DT_QUEUE_URL"
 SBOM_BUCKET_NAME_EV = "SBOM_BUCKET_NAME"
-DT_TOKEN_KEY = "dt_token"
 DT_API_KEY = "DT_API_KEY"
 DT_API_BASE = "DT_API_BASE"
+DT_PROJECT_NAME = "TEMP_PROJECT"
+DT_ROOT_PWD = "DT_ROOT_PWD"

@@ -136,6 +136,6 @@ def test_create_project():
 def test_extract_api_key():
 
     # mocker.patch("botocore.client.BaseClient.get_parameter")
-    ssm: BaseClient = client("ssm")
-    rsp = api.__get_api_key(ssm)
+    juice_sbom = pr.read_text(sboms, "juice.json")
+    rsp = api.dt_ingress_handler(juice_sbom)
     print(rsp)

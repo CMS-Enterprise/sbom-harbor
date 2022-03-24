@@ -80,7 +80,7 @@ class DTEndpoints:
         Returns Endpoint used to list all the data DT has for teams
         """
 
-        return f"{DTEndpoints.base}/v1/{perm}/addPermissionToTeam/{uuid}"
+        return f"{DTEndpoints.base}/v1/permission/{perm}/team/{uuid}"
 
     @staticmethod
     def get_teams_data():
@@ -90,3 +90,21 @@ class DTEndpoints:
         """
 
         return f"{DTEndpoints.base}/v1/team"
+
+    @staticmethod
+    def rotate_api_key(api_key):
+
+        """
+        Returns Endpoint used to list all the data DT has for teams
+        """
+
+        return f"{DTEndpoints.base}/v1/team/key/{api_key}"
+
+    @staticmethod
+    def user_test():
+
+        """
+        Returns Endpoint used to list all the data DT has for teams
+        """
+
+        return f"{DTEndpoints.base}/v1/user/self"
