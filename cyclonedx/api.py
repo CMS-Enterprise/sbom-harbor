@@ -7,22 +7,26 @@ from os import environ
 from uuid import uuid4
 
 from boto3 import client, resource
-from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 from jsonschema.exceptions import ValidationError
 
-from cyclonedx.constants import DT_QUEUE_URL_EV, DT_TOKEN_KEY, SBOM_BUCKET_NAME_EV
+from cyclonedx.constants import (
+    DT_QUEUE_URL_EV,
+    DT_TOKEN_KEY,
+    SBOM_BUCKET_NAME_EV,
+)
 
 from cyclonedx.core import CycloneDxCore
 from cyclonedx.util import (
-    __get_bom_obj,
-    __create_response_obj,
-    __generate_token,
-    __validate,
-    __get_bom_from_event,
-    __upload_sbom,
-    __get_findings,
     __create_project,
+    __create_response_obj,
+    __delete_project,
+    __generate_sbom_api_token,
+    __get_bom_from_event,
+    __get_bom_obj,
+    __get_findings,
+    __upload_sbom,
+    __validate
 )
 
 
@@ -64,7 +68,7 @@ def store_handler(event, context) -> dict:
             #   To get this token, there needs to be a Registration process
             #   where a user can get the token and place it in their CI/CD
             #   systems.
-            DT_TOKEN_KEY: __generate_token()
+            DT_TOKEN_KEY: __generate_sbom_api_token()
         }
 
         # Extract the actual SBOM.
@@ -138,11 +142,26 @@ def dt_ingress_handler(event=None, context=None):
     # Currently making sure it isn't empty
     __validate(event)
 
+    print("<event>")
+    print(f"type: {type(event)}")
+    print("</event>")
+
     # Get the SBOM in a contrived file handle
-    bom_str_file: StringIO = __get_bom_from_event(event)
+    # bom_str_file: StringIO = __get_bom_from_event(event)
+    bom_str_file: StringIO = StringIO(event)
+
+    print("<bom_str_file>")
+    print(f"type: {type(bom_str_file)}")
+    print("</bom_str_file>")
 
     project_uuid = __create_project()
-    token: str = __upload_sbom(project_uuid, bom_str_file)
-    findings: dict = __get_findings(token)
+
+    print("<ProjectCreated -> UUID>")
+    print(project_uuid)
+    print("</ProjectCreated -> UUID>")
+
+    sbom_token: str = __upload_sbom(project_uuid, bom_str_file)
+    findings: dict = __get_findings(project_uuid, sbom_token)
+    __delete_project(project_uuid)
 
     return findings

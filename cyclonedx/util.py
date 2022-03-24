@@ -11,11 +11,10 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from cyclonedx.constants import (
     DT_API_KEY,
-    DT_PROJECT_NAME,
     DT_ROOT_PWD,
     DT_DEFAULT_ADMIN_PWD,
 )
-from cyclonedx.dtendpoints import DTEndpoints, PROJECT_UUID
+from cyclonedx.dtendpoints import DTEndpoints
 
 
 def __change_dt_root_pwd():
@@ -155,7 +154,7 @@ def __set_team_permissions(team_uuid):
         )
 
 
-def __generate_token() -> str:
+def __generate_sbom_api_token() -> str:
     return f"sbom-api-token-{uuid4()}"
 
 
@@ -190,7 +189,7 @@ def __create_response_obj(bucket_name: str, key: str) -> dict:
     }
 
 
-def __findings_ready(key: str, token: str) -> bool:
+def __findings_ready(key: str, sbom_token: str) -> bool:
 
     headers = {
         "X-Api-Key": key,
@@ -198,7 +197,7 @@ def __findings_ready(key: str, token: str) -> bool:
     }
 
     response = get(
-        DTEndpoints.get_sbom_status(token),
+        DTEndpoints.get_sbom_status(sbom_token),
         headers=headers,
     )
 
@@ -207,7 +206,7 @@ def __findings_ready(key: str, token: str) -> bool:
     return not json_dict["processing"]
 
 
-def __get_findings(token: str) -> dict:
+def __get_findings(project_uuid: str, sbom_token: str) -> dict:
 
     key = __get_api_key()
 
@@ -216,13 +215,13 @@ def __get_findings(token: str) -> dict:
         "Accept": "application/json",
     }
 
-    while not __findings_ready(key, token):
+    while not __findings_ready(key, sbom_token):
         sleep(0.5)
         print("Not ready...")
 
     print("Results are in!")
 
-    findings = get(DTEndpoints.get_findings(), headers=headers)
+    findings = get(DTEndpoints.get_findings(project_uuid), headers=headers)
 
     return findings.json()
 
@@ -280,7 +279,7 @@ def __create_project():
         "author": "EnrichmentLambda",
         "version": "1.0.0",
         "classifier": "APPLICATION",
-        "name": DT_PROJECT_NAME,
+        "name": str(uuid4()),
         "description": "auto generated project",
     }
 
@@ -294,14 +293,35 @@ def __create_project():
         __rotate_api_key()
         return __create_project()
 
+    print("<CreateProjectResponse>")
+    print(f"Project UUID: {create_proj_rsp.text}")
+    print("</CreateProjectResponse>")
+
     proj = create_proj_rsp.json()
     project_uuid = proj["uuid"]
 
-    print("<CreateDTProjectResp>")
-    print(f"Project UUID: {project_uuid}")
-    print("</CreateDTProjectResp>")
-
     return project_uuid
+
+
+def __delete_project(project_uuid: str):
+
+    api_key = __get_api_key()
+
+    create_project_headers: dict = {
+        "X-Api-Key": api_key,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+    create_proj_rsp: Response = put(
+        DTEndpoints.delete_project(project_uuid),
+        headers=create_project_headers,
+    )
+
+    print("<DeleteDTProjectResp>")
+    print(f"Text: {create_proj_rsp.text}")
+    print(f"Status Code: {create_proj_rsp.status_code}")
+    print("</DeleteDTProjectResp>")
 
 
 def __upload_sbom(project_uuid, bom_str_file):

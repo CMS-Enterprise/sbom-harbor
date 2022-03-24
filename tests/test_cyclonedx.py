@@ -7,10 +7,12 @@ from pytest_mock import mocker
 from boto3 import client
 
 import cyclonedx.api as api
+import cyclonedx.util as util
+
 import tests.sboms as sboms
 import importlib.resources as pr
 from time import sleep
-from json import loads
+from json import dumps, loads
 from requests import Response, get, put
 from cyclonedx import core
 from cyclonedx.dtendpoints import DTEndpoints
@@ -133,9 +135,16 @@ def test_create_project():
     print(create_proj_rsp)
 
 
-def test_extract_api_key():
+def test_dt_ingress_handler():
 
-    # mocker.patch("botocore.client.BaseClient.get_parameter")
     juice_sbom = pr.read_text(sboms, "juice.json")
+    juice_sbom = dumps(loads(juice_sbom))
     rsp = api.dt_ingress_handler(juice_sbom)
     print(rsp)
+
+
+def test_upload_bom():
+    juice_sbom = pr.read_text(sboms, "juice.json")
+    juice_sbom = dumps(loads(juice_sbom))
+    token = util.__upload_sbom("2f357abe-954d-4680-b978-60b597a4cd47", juice_sbom)
+    print(f"Token: {token}")

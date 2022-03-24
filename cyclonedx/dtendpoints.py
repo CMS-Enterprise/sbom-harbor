@@ -5,10 +5,6 @@ Module to hold constant values for the API
 import os
 from cyclonedx.constants import DT_API_BASE
 
-# Found in DT: Projects -> <project> -> "View Details" (Tiny as hell)
-# At the bottom it says: "Object Identifier".  That's it.
-PROJECT_UUID = "acd68120-3fec-457d-baaa-a456a39984de"
-
 
 class DTEndpoints:
 
@@ -20,13 +16,13 @@ class DTEndpoints:
     base = f"http://{os.getenv(DT_API_BASE)}"
 
     @staticmethod
-    def get_sbom_status(token):
+    def get_sbom_status(sbom_token):
 
         """
         Returns Endpoint to check if an SBOM has been analyzed and the findings are ready
         """
 
-        return f"{DTEndpoints.base}/v1/bom/token/{token}"
+        return f"{DTEndpoints.base}/v1/bom/token/{sbom_token}"
 
     @staticmethod
     def post_sbom():
@@ -38,13 +34,13 @@ class DTEndpoints:
         return f"{DTEndpoints.base}/v1/bom"
 
     @staticmethod
-    def get_findings():
+    def get_findings(project_uuid: str):
 
         """
         Returns Endpoint used to retrieve finds for a project
         """
 
-        return f"{DTEndpoints.base}/v1/finding/project/{PROJECT_UUID}/export"
+        return f"{DTEndpoints.base}/v1/finding/project/{project_uuid}/export"
 
     @staticmethod
     def create_project():
@@ -66,7 +62,6 @@ class DTEndpoints:
 
     @staticmethod
     def do_login():
-
         """
         Returns Endpoint used to log into DT
         """
@@ -95,16 +90,16 @@ class DTEndpoints:
     def rotate_api_key(api_key):
 
         """
-        Returns Endpoint used to list all the data DT has for teams
+        Returns Endpoint used to rotate the api keys
         """
 
         return f"{DTEndpoints.base}/v1/team/key/{api_key}"
 
     @staticmethod
-    def user_test():
+    def delete_project(project_uuid: str):
 
         """
-        Returns Endpoint used to list all the data DT has for teams
+        Deletes Project
         """
 
-        return f"{DTEndpoints.base}/v1/user/self"
+        return f"{DTEndpoints.base}/v1/project/{project_uuid}"
