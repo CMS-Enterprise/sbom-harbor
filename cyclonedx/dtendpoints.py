@@ -13,7 +13,7 @@ class DTEndpoints:
     """
 
     # Must be configurable
-    base = f"http://{os.getenv(DT_API_BASE)}"
+    base = f"http://{os.getenv(DT_API_BASE)}:8080/api"
 
     @staticmethod
     def get_sbom_status(sbom_token):
@@ -103,3 +103,12 @@ class DTEndpoints:
         """
 
         return f"{DTEndpoints.base}/v1/project/{project_uuid}"
+
+    @staticmethod
+    def get_dt_version():
+
+        """
+        Deletes Project
+        """
+
+        return f"{DTEndpoints.base}/version"

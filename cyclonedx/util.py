@@ -1,4 +1,3 @@
-from io import StringIO
 from json import dumps, loads
 from time import sleep
 from uuid import uuid4
@@ -13,6 +12,7 @@ from cyclonedx.constants import (
     DT_API_KEY,
     DT_ROOT_PWD,
     DT_DEFAULT_ADMIN_PWD,
+    EMPTY_VALUE,
 )
 from cyclonedx.dtendpoints import DTEndpoints
 
@@ -36,11 +36,13 @@ def __change_dt_root_pwd():
         "confirmPassword": new_pwd,
     }
 
-    post(
+    print(f">>>>> POSTING To : {DTEndpoints.force_chg_pwd()} <<<<<")
+    rsp = post(
         DTEndpoints.force_chg_pwd(),
         headers=headers,
         data=params,
     )
+    print(f">>>>> POSTED To : {DTEndpoints.force_chg_pwd()}, Rsp: {rsp.text} <<<<<")
 
     # Put the API Key into SSM
     ssm.put_parameter(
@@ -67,7 +69,13 @@ def __get_root_password():
             WithDecryption=False,
         )
 
-        return ssm_param["Parameter"]["Value"]
+        value = ssm_param["Parameter"]["Value"]
+
+        if EMPTY_VALUE == value:
+            __change_dt_root_pwd()
+            return __get_root_password()
+
+        return value
 
     except ssm.exceptions.ParameterNotFound:
         __change_dt_root_pwd()
@@ -119,9 +127,7 @@ def __get_teams():
 
 def __get_automation_team_data_from_dt():
 
-    teams = __get_teams()
-
-    for team in teams:
+    for team in __get_teams():
         if team["name"] == "Automation":
             return team["uuid"], team["apiKeys"][0]["key"]
 
@@ -158,7 +164,7 @@ def __generate_sbom_api_token() -> str:
     return f"sbom-api-token-{uuid4()}"
 
 
-def __get_bom_obj(event) -> dict:
+def __get_bom_from_event(event) -> dict:
 
     """
     If the request context exists, then there will
@@ -245,11 +251,6 @@ def __rotate_api_key():
 
     resp = post(DTEndpoints.rotate_api_key(old_key), headers=headers)
 
-    print("<__rotate_api_key -> Status Code>")
-    print(resp.status_code)
-    print(f"Headers: {headers}")
-    print("</__rotate_api_key -> Status Code>")
-
     json = resp.json()
     new_api_key = json["key"]
 
@@ -293,10 +294,6 @@ def __create_project():
         __rotate_api_key()
         return __create_project()
 
-    print("<CreateProjectResponse>")
-    print(f"Project UUID: {create_proj_rsp.text}")
-    print("</CreateProjectResponse>")
-
     proj = create_proj_rsp.json()
     project_uuid = proj["uuid"]
 
@@ -313,15 +310,10 @@ def __delete_project(project_uuid: str):
         "Accept": "application/json",
     }
 
-    create_proj_rsp: Response = put(
+    put(
         DTEndpoints.delete_project(project_uuid),
         headers=create_project_headers,
     )
-
-    print("<DeleteDTProjectResp>")
-    print(f"Text: {create_proj_rsp.text}")
-    print(f"Status Code: {create_proj_rsp.status_code}")
-    print("</DeleteDTProjectResp>")
 
 
 def __upload_sbom(project_uuid, bom_str_file):
@@ -357,12 +349,6 @@ def __upload_sbom(project_uuid, bom_str_file):
     return json["token"]
 
 
-def __get_bom_from_event(event):
-    # Make a filehandle out of the JSON String
-    event_str: str = dumps(event)
-    return StringIO(event_str)
-
-
 def __get_api_key():
 
     ssm: BaseClient = client("ssm")
@@ -375,18 +361,26 @@ def __get_api_key():
             WithDecryption=False,
         )
 
-        return ssm_param["Parameter"]["Value"]
+        value = ssm_param["Parameter"]["Value"]
+
+        if EMPTY_VALUE == value:
+            return __set_initial_api_key_in_ssm()
+
+        return value
 
     # If the Parameter isn't found, then we
     # need to set the initial api key from DT
     except ssm.exceptions.ParameterNotFound:
-        return __set_initial_api_key_in_ssm(ssm)
+        print("<__get_api_key -> Loc 05>")
+        return __set_initial_api_key_in_ssm()
 
 
-def __set_initial_api_key_in_ssm(ssm: BaseClient):
+def __set_initial_api_key_in_ssm():
 
     """This function only runs when there is no API Key in SSM.
     Its job is to set up DT to be used without a UI."""
+
+    ssm: BaseClient = client("ssm")
 
     # Dig through the JSON returned by hitting the Teams endpoint
     # to extract the automation_team_uuid of the 'Automation' Team and the REST API Key

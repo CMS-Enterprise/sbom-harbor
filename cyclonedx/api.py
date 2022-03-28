@@ -1,11 +1,13 @@
 """
 This module serves as the external API for CycloneDX Python Module
 """
+
 from io import StringIO
 from json import dumps, loads
 from os import environ
 from uuid import uuid4
 
+import requests
 from boto3 import client, resource
 from botocore.exceptions import ClientError
 from jsonschema.exceptions import ValidationError
@@ -17,17 +19,28 @@ from cyclonedx.constants import (
 )
 
 from cyclonedx.core import CycloneDxCore
+from cyclonedx.dtendpoints import DTEndpoints
 from cyclonedx.util import (
     __create_project,
     __create_response_obj,
     __delete_project,
     __generate_sbom_api_token,
     __get_bom_from_event,
-    __get_bom_obj,
     __get_findings,
     __upload_sbom,
-    __validate
+    __validate,
 )
+
+import http.client as http_client
+import logging
+
+# Debug logging
+http_client.HTTPConnection.debuglevel = 1
+logging.basicConfig()
+logging.getLogger().setLevel(logging.DEBUG)
+req_log = logging.getLogger("requests.packages.urllib3")
+req_log.setLevel(logging.DEBUG)
+req_log.propagate = True
 
 
 def store_handler(event, context) -> dict:
@@ -38,7 +51,7 @@ def store_handler(event, context) -> dict:
     to the application.
     """
 
-    bom_obj = __get_bom_obj(event)
+    bom_obj = __get_bom_from_event(event)
 
     s3 = resource("s3")
 
@@ -139,20 +152,17 @@ def dt_ingress_handler(event=None, context=None):
     Developing Dependency Track Ingress Handler
     """
 
+    print(f"<First Thing REST call: get({DTEndpoints.get_dt_version()})")
+    rsp = requests.get(DTEndpoints.get_dt_version())
+    print(f"</First Thing REST call: get({rsp.text})")
+
     # Currently making sure it isn't empty
     __validate(event)
-
-    print("<event>")
-    print(f"type: {type(event)}")
-    print("</event>")
+    sbom = __get_bom_from_event(event)
 
     # Get the SBOM in a contrived file handle
     # bom_str_file: StringIO = __get_bom_from_event(event)
-    bom_str_file: StringIO = StringIO(event)
-
-    print("<bom_str_file>")
-    print(f"type: {type(bom_str_file)}")
-    print("</bom_str_file>")
+    bom_str_file: StringIO = StringIO(dumps(sbom))
 
     project_uuid = __create_project()
 
