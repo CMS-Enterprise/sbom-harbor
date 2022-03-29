@@ -61,7 +61,7 @@ cwd = path.dirname(__file__)
 code = lambda_.AssetCode.from_asset("%s/../dist/lambda.zip" % cwd)
 
 
-class SBOMApiDeploy(Stack):
+class SBOMApiStack(Stack):
 
     """This class is where the infrastructure to run the application
     is built.  This class inherits from the Stack class, which is part of
@@ -280,6 +280,7 @@ class SBOMApiDeploy(Stack):
             DT_SBOM_QUEUE_NAME,
             fifo=True,
             content_based_deduplication=True,
+            visibility_timeout=Duration.minutes(5)
         )
 
         dt_service = self.__create_dt_fargate_svc(vpc)
@@ -300,7 +301,7 @@ def dodep() -> None:
     )
 
     app = cdk.App()
-    SBOMApiDeploy(app, STACK_ID, env=env)
+    SBOMApiStack(app, STACK_ID, env=env)
     app.synth()
 
 
