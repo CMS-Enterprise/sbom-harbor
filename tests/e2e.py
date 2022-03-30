@@ -6,7 +6,7 @@ import requests
 
 import tests.sboms as sboms
 
-INVOKE_URL = "https://lc6gxpj0w1.execute-api.us-east-1.amazonaws.com/prod/store"
+INVOKE_URL = "https://vmmbr18ila.execute-api.us-east-1.amazonaws.com/prod/store"
 SAAS_BOM = loads(pr.read_text(sboms, "SaasBOM.json"))
 BIG_BOM = loads(pr.read_text(sboms, "cern.json"))
 

@@ -3,7 +3,7 @@ Module to hold constant values for the API
 """
 
 import os
-from cyclonedx.constants import DT_API_BASE
+from cyclonedx.constants import DT_API_BASE, DT_API_PORT
 
 
 class DTEndpoints:
@@ -13,7 +13,7 @@ class DTEndpoints:
     """
 
     # Must be configurable
-    base = f"http://{os.getenv(DT_API_BASE)}:8080/api"
+    base = f"http://{os.getenv(DT_API_BASE)}:{DT_API_PORT}/api"
 
     @staticmethod
     def get_sbom_status(sbom_token):

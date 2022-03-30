@@ -35,12 +35,12 @@ import http.client as http_client
 import logging
 
 # Debug logging
-http_client.HTTPConnection.debuglevel = 1
-logging.basicConfig()
-logging.getLogger().setLevel(logging.DEBUG)
-req_log = logging.getLogger("requests.packages.urllib3")
-req_log.setLevel(logging.DEBUG)
-req_log.propagate = True
+# http_client.HTTPConnection.debuglevel = 1
+# logging.basicConfig()
+# logging.getLogger().setLevel(logging.DEBUG)
+# req_log = logging.getLogger("requests.packages.urllib3")
+# req_log.setLevel(logging.DEBUG)
+# req_log.propagate = True
 
 
 def store_handler(event, context) -> dict:
@@ -153,7 +153,12 @@ def dt_ingress_handler(event=None, context=None):
     """
 
     print(f"<First Thing REST call: get({DTEndpoints.get_dt_version()})")
-    rsp = requests.get(DTEndpoints.get_dt_version())
+    try:
+        rsp = requests.get(DTEndpoints.get_dt_version(), timeout=5)
+        print(f"</First Thing REST call: rsp only get({rsp})")
+    except Exception as exception:
+        print(f"</First Thing REST call EXCEPTION: get({exception})")
+
     print(f"</First Thing REST call: get({rsp.text})")
 
     # Currently making sure it isn't empty

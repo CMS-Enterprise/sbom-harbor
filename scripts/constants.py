@@ -7,7 +7,7 @@ SBOM_ENRICHMENT_LN = "SBOMEnrichmentEntrypointLambda"
 DT_INTERFACE_LN = "DependencyTrackInterfaceLambda"
 
 DT_DOCKER_ID = "dependencytrack/apiserver"
-DT_INSTALL_LOC = "/dependency-track"
+DT_INSTALL_LOC = "/apiserver"
 
 BUCKET_NAME = "SBOMBucket"
 CIDR = "10.0.0.0/16"
@@ -15,7 +15,7 @@ EC2_INSTANCE_NAME = "DependencyTrack"
 EC2_SSH_KEY_NAME = "aquia"
 EC2_INSTANCE_AMI = "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-20220131"
 EC2_INSTANCE_TYPE = "t2.medium"
-STACK_ID = "SBOMApiDeploy"
+STACK_ID = "SBOMApiStack"
 PRIVATE = ec2.SubnetType.PRIVATE_WITH_NAT
 PUBLIC = ec2.SubnetType.PUBLIC
 REST_API_NAME = "SBOMApi"

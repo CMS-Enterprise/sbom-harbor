@@ -11,11 +11,8 @@ import aws_cdk.aws_lambda as lambda_
 import aws_cdk.aws_s3 as s3
 import aws_cdk.aws_s3_notifications as s3n
 import aws_cdk.aws_sqs as sqs
-import aws_cdk.aws_elasticloadbalancingv2 as elbv2
-import aws_cdk.aws_apigatewayv2_integrations_alpha as apigatewayv2i
-import aws_cdk.aws_apigatewayv2_alpha as apigwv2
 import aws_cdk.aws_apigateway as apigwv1
-import aws_cdk.aws_ecs_patterns as ecs_patterns
+import aws_cdk.aws_elasticloadbalancingv2 as elbv2
 
 from aws_cdk import Duration
 from aws_cdk import Stack
@@ -23,8 +20,8 @@ from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from constructs import Construct
 
 from cyclonedx.constants import (
-    EMPTY_VALUE,
-    SBOM_BUCKET_NAME_EV,
+    ALLOW_DT_PORT_SG, DT_API_PORT, EMPTY_VALUE,
+    LOAD_BALANCER_ID, LOAD_BALANCER_LISTENER_ID, LOAD_BALANCER_TARGET_ID, SBOM_BUCKET_NAME_EV,
     DT_QUEUE_URL_EV,
     DT_API_BASE,
     DT_ROOT_PWD,
@@ -90,70 +87,104 @@ class SBOMApiStack(Stack):
             subnet_configuration=[private_subnet, public_subnet],
         )
 
-    def __create_dt_fargate_svc(self, vpc):
+    def __create_nlb(self, vpc):
 
-        """Create an ecs cluster for running dependency track"""
+        lb = elbv2.NetworkLoadBalancer(
+            self, LOAD_BALANCER_ID, vpc=vpc,
+            load_balancer_name=LOAD_BALANCER_ID
+        )
+
+        listener = lb.add_listener(LOAD_BALANCER_LISTENER_ID, port=DT_API_PORT)
+        listener.add_targets(LOAD_BALANCER_TARGET_ID, port=DT_API_PORT)
+
+        return lb, listener
+
+    def __create_dt_fargate_svc(self, vpc, listener):
+
+        # create an ecs cluster for running dependency track
+        fargate_cluster = ecs.Cluster(self, FARGATE_CLUSTER_ID, vpc=vpc)
 
         # create an efs mount for maintaining
-        dt_efs_file_system = efs.FileSystem(self, EFS_MOUNT_ID, vpc=vpc, encrypted=True)
+        dt_mount = efs.FileSystem(self, EFS_MOUNT_ID, vpc=vpc, encrypted=True)
 
         dt_volume = ecs.Volume(
             name=EFS_MOUNT_ID,
             efs_volume_configuration=ecs.EfsVolumeConfiguration(
-                file_system_id=dt_efs_file_system.file_system_id
+                file_system_id=dt_mount.file_system_id
             ),
         )
 
         dt_volume_mount = ecs.MountPoint(
-            container_path=DT_INSTALL_LOC,
+            container_path="/apiserver",
             source_volume=dt_volume.name,
             read_only=False,
         )
 
-        fargate_task_dfn = ecs.FargateTaskDefinition(
+        dt_api_task_definition = ecs.TaskDefinition(
             self,
             DT_TASK_DEF_ID,
-            cpu=4096,
-            memory_limit_mib=8192,
-            volumes=[
-                ecs.Volume(
-                    name=EFS_MOUNT_ID,
-                    efs_volume_configuration=ecs.EfsVolumeConfiguration(
-                        file_system_id=dt_efs_file_system.file_system_id,
-                        root_directory=DT_INSTALL_LOC,
-                    ),
-                ),
-            ],
+            compatibility=ecs.Compatibility.FARGATE,
+            cpu="4096",
+            memory_mib="8192",
+            volumes=[dt_volume],
         )
 
-        container = fargate_task_dfn.add_container(
-            DT_CONTAINER_ID, image=ecs.ContainerImage.from_registry(DT_DOCKER_ID)
+        container = dt_api_task_definition.add_container(
+            DT_CONTAINER_ID,
+            image=ecs.ContainerImage.from_registry(DT_DOCKER_ID),
+            logging=ecs.LogDrivers.aws_logs(stream_prefix="dependencyTrackApi"),
+            environment={},
+            cpu=2048,
+            memory_reservation_mib=4096,
         )
 
+        port_mapping = ecs.PortMapping(
+            container_port=DT_API_PORT,
+            host_port=DT_API_PORT,
+            protocol=ecs.Protocol.TCP,
+        )
+
+        container.add_port_mappings(port_mapping)
         container.add_mount_points(dt_volume_mount)
-        container.add_port_mappings(
-            ecs.PortMapping(container_port=8080, protocol=ecs.Protocol.TCP)
+
+        security_group = ec2.SecurityGroup(
+            self,
+            ALLOW_DT_PORT_SG,
+            vpc=vpc
         )
 
-        dt_service = ecs_patterns.NetworkLoadBalancedFargateService(
+        security_group.add_ingress_rule(
+            peer=ec2.Peer.any_ipv4(),
+            connection=ec2.Port.tcp(DT_API_PORT)
+        )
+
+        dt_service = ecs.FargateService(
             self,
             DT_FARGATE_SVC_NAME,
-            vpc=vpc,
-            service_name=DT_FARGATE_SVC_NAME,
-            cpu=2048,
-            memory_limit_mib=4096,
-            listener_port=8080,
-            public_load_balancer=False,
-            task_definition=fargate_task_dfn,
+            cluster=fargate_cluster,
+            task_definition=dt_api_task_definition,
             desired_count=1,
             assign_public_ip=True,
             platform_version=ecs.FargatePlatformVersion.VERSION1_4,
+            security_groups=[security_group]
         )
 
-        # dt_efs_file_system.connections.allow_default_port_from(dt_service)
-        # dt_service.connections.allow_from(
-        #     ec2.Peer.ipv4("74.134.30.50/32"), ec2.Port.tcp(8080), "Ip Whitelist"
-        # )
+        dt_service.register_load_balancer_targets(ecs.EcsTarget(
+                container_name=DT_CONTAINER_ID,
+                container_port=DT_API_PORT,
+                new_target_group_id="DT_Target_Group",
+                listener=ecs.ListenerConfig.network_listener(
+                    listener,
+                    protocol=elbv2.Protocol.TCP,
+                    port=DT_API_PORT,
+                ),
+            )
+        )
+
+        dt_mount.connections.allow_default_port_from(dt_service)
+        dt_service.connections.allow_from(
+            ec2.Peer.ipv4("74.134.30.50/32"), ec2.Port.tcp(DT_API_PORT), "Ip Whitelist"
+        )
 
         return dt_service
 
@@ -218,18 +249,16 @@ class SBOMApiStack(Stack):
         destination = s3n.LambdaDestination(sbom_enrichment_func)
         bucket.add_event_notification(s3.EventType.OBJECT_CREATED, destination)
 
-    def __configure_dt_func(self, vpc, queue, dt_service) -> None:
+    def __configure_dt_func(self, vpc, queue, nlb) -> None:
 
         """Create the Lambda Function responsible for
         extracting results from DT given an SBOM."""
 
-        load_balancer = dt_service.load_balancer
-
-        fq_dn = load_balancer.load_balancer_dns_name
+        fq_dn = nlb.load_balancer_dns_name
 
         dt_func_sg = ec2.SecurityGroup(self, "LaunchTemplateSG", vpc=vpc)
 
-        load_balancer.load_balancer_security_groups.append(dt_func_sg)
+        # load_balancer.load_balancer_security_groups.append(dt_func_sg)
 
         dt_interface_function = lambda_.Function(
             self,
@@ -262,6 +291,20 @@ class SBOMApiStack(Stack):
         event_source = SqsEventSource(queue)
         dt_interface_function.add_event_source(event_source)
 
+    def __create_security_group(self, vpc):
+
+        security_group = ec2.SecurityGroup(
+            self, "VPC_SEC_GRP", vpc=vpc,
+            allow_all_outbound=True
+        )
+
+        security_group.add_ingress_rule(
+            ec2.Peer.any_ipv4(),
+            ec2.Port.tcp(2049)
+        )
+
+        return security_group
+
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
 
         # Run the constructor of the Stack superclass.
@@ -283,10 +326,11 @@ class SBOMApiStack(Stack):
             visibility_timeout=Duration.minutes(5)
         )
 
-        dt_service = self.__create_dt_fargate_svc(vpc)
+        lb, listener = self.__create_nlb(vpc)
+        dt_service = self.__create_dt_fargate_svc(vpc, listener)
         self.__configure_ingest_func(vpc, bucket)
         self.__configure_enrichment_func(vpc, bucket, queue)
-        self.__configure_dt_func(vpc, queue, dt_service)
+        self.__configure_dt_func(vpc, queue, lb)
 
 
 def dodep() -> None:
