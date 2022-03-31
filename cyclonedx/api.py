@@ -155,11 +155,9 @@ def dt_ingress_handler(event=None, context=None):
     print(f"<First Thing REST call: get({DTEndpoints.get_dt_version()})")
     try:
         rsp = requests.get(DTEndpoints.get_dt_version(), timeout=5)
-        print(f"</First Thing REST call: rsp only get({rsp})")
+        print(f"</First Thing REST call: get({rsp.text})")
     except Exception as exception:
         print(f"</First Thing REST call EXCEPTION: get({exception})")
-
-    print(f"</First Thing REST call: get({rsp.text})")
 
     # Currently making sure it isn't empty
     __validate(event)

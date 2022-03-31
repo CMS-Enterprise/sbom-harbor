@@ -20,8 +20,13 @@ from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from constructs import Construct
 
 from cyclonedx.constants import (
-    ALLOW_DT_PORT_SG, DT_API_PORT, EMPTY_VALUE,
-    LOAD_BALANCER_ID, LOAD_BALANCER_LISTENER_ID, LOAD_BALANCER_TARGET_ID, SBOM_BUCKET_NAME_EV,
+    ALLOW_DT_PORT_SG,
+    DT_API_PORT,
+    EMPTY_VALUE,
+    LOAD_BALANCER_ID,
+    LOAD_BALANCER_LISTENER_ID,
+    LOAD_BALANCER_TARGET_ID,
+    SBOM_BUCKET_NAME_EV,
     DT_QUEUE_URL_EV,
     DT_API_BASE,
     DT_ROOT_PWD,
