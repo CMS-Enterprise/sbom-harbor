@@ -3,8 +3,9 @@
 import aws_cdk.aws_ec2 as ec2
 
 PRISTINE_SBOM_INGEST_LN = "PristineSBOMIngestLambda"
-SBOM_ENRICHMENT_LN = "SBOMEnrichmentEntrypointLambda"
+SBOM_ENRICHMENT_LN = "SBOMEnrichmentIngressLambda"
 DT_INTERFACE_LN = "DependencyTrackInterfaceLambda"
+ENRICHMENT_EGRESS_LN = "EnrichmentEgressLambda"
 
 DT_DOCKER_ID = "dependencytrack/apiserver"
 DT_INSTALL_LOC = "/apiserver"
@@ -30,5 +31,6 @@ DT_FARGATE_SVC_NAME = "DTFargateService"
 DT_TASK_DEF_ID = "dtTaskDefinition"
 
 DT_SBOM_QUEUE_NAME = "DT_SBOMQueue"
+FINDINGS_QUEUE_NAME = "FindingsQueue"
 DT_REST_API_GATEWAY = "DT_REST_API_GW"
 DT_API_INTEGRATION = "DT_API_INT"

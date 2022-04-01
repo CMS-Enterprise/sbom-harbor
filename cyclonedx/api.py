@@ -14,8 +14,8 @@ from jsonschema.exceptions import ValidationError
 
 from cyclonedx.constants import (
     DT_QUEUE_URL_EV,
-    DT_TOKEN_KEY,
-    SBOM_BUCKET_NAME_EV,
+    ENRICHMENT_ID_SQS_KEY,
+    ENRICHMENT_ID, FINDINGS_QUEUE_URL_EV, FINDINGS_SQS_KEY, SBOM_BUCKET_NAME_EV,
 )
 
 from cyclonedx.core import CycloneDxCore
@@ -25,7 +25,7 @@ from cyclonedx.util import (
     __create_response_obj,
     __delete_project,
     __generate_sbom_api_token,
-    __get_bom_from_event,
+    __get_body_from_event,
     __get_findings,
     __upload_sbom,
     __validate,
@@ -43,7 +43,7 @@ import logging
 # req_log.propagate = True
 
 
-def store_handler(event, context) -> dict:
+def pristine_sbom_ingress_handler(event, context) -> dict:
 
     """
     This is the Lambda Handler that validates an incoming SBOM
@@ -51,7 +51,7 @@ def store_handler(event, context) -> dict:
     to the application.
     """
 
-    bom_obj = __get_bom_from_event(event)
+    bom_obj = __get_body_from_event(event)
 
     s3 = resource("s3")
 
@@ -81,12 +81,15 @@ def store_handler(event, context) -> dict:
             #   To get this token, there needs to be a Registration process
             #   where a user can get the token and place it in their CI/CD
             #   systems.
-            DT_TOKEN_KEY: __generate_sbom_api_token()
+            ENRICHMENT_ID: __generate_sbom_api_token()
         }
 
         # Extract the actual SBOM.
         bom_bytes = bytearray(dumps(bom_obj), "utf-8")
-        s3.Object(bucket_name, key).put(Body=bom_bytes, Metadata=metadata)
+        s3.Object(bucket_name, key).put(
+            Body=bom_bytes,
+            Metadata=metadata,
+        )
 
     except ValidationError as validation_error:
         response_obj["statusCode"] = 400
@@ -95,7 +98,7 @@ def store_handler(event, context) -> dict:
     return response_obj
 
 
-def enrichment_entry_handler(event=None, context=None):
+def enrichment_ingress_handler(event=None, context=None):
 
     """
     Handler that listens for S3 put events and routes the SBOM
@@ -109,6 +112,11 @@ def enrichment_entry_handler(event=None, context=None):
         raise ValidationError("event should never be none")
 
     event_obj: dict = loads(event) if event is str else event
+
+    print("<EventObject>")
+    print(event_obj)
+    print("</EventObject>")
+
     queue_url = environ[DT_QUEUE_URL_EV]
     for record in event_obj["Records"]:
 
@@ -116,37 +124,42 @@ def enrichment_entry_handler(event=None, context=None):
         bucket_obj = s3_obj["bucket"]
         bucket_name = bucket_obj["name"]
         sbom_obj = s3_obj["object"]
-        key = sbom_obj["key"]  # TODO The key name needs to be identifiable
-        s3_object = s3.Object(bucket_name, key).get()
+        key: str = sbom_obj["key"]  # TODO The key name needs to be identifiable
 
-        try:
-            dt_project_token = s3_object["Metadata"][DT_TOKEN_KEY]
-        except KeyError as key_err:
-            print("<s3Object>")
-            print(s3_object)
-            print("</s3Object>")
-            raise key_err
+        if key.startswith("sbom"):
 
-        sbom = s3_object["Body"].read()
+            s3_object = s3.Object(bucket_name, key).get()
 
-        try:
-            sqs_client.send_message(
-                QueueUrl=queue_url,
-                MessageAttributes={
-                    DT_TOKEN_KEY: {
-                        "DataType": "String",
-                        "StringValue": dt_project_token,
-                    }
-                },
-                MessageGroupId="dt_enrichment",
-                MessageBody=str(sbom),
-            )
-        except ClientError:
-            print(f"Could not send message to the - {queue_url}.")
-            raise
+            try:
+                enrichment_id = s3_object["Metadata"][ENRICHMENT_ID]
+            except KeyError as key_err:
+                print("<s3Object>")
+                print(s3_object)
+                print("</s3Object>")
+                enrichment_id = "ERROR"
+
+            sbom = s3_object["Body"].read()
+
+            try:
+                sqs_client.send_message(
+                    QueueUrl=queue_url,
+                    MessageAttributes={
+                        ENRICHMENT_ID_SQS_KEY: {
+                            "DataType": "String",
+                            "StringValue": enrichment_id,
+                        }
+                    },
+                    MessageGroupId="dt_enrichment",
+                    MessageBody=str(sbom),
+                )
+            except ClientError:
+                print(f"Could not send message to the - {queue_url}.")
+                raise
+        else:
+            print(f"Non-BOM{key} added to the s3 bucket.  Don't care.")
 
 
-def dt_ingress_handler(event=None, context=None):
+def dt_interface_handler(event=None, context=None):
 
     """
     Developing Dependency Track Ingress Handler
@@ -161,7 +174,7 @@ def dt_ingress_handler(event=None, context=None):
 
     # Currently making sure it isn't empty
     __validate(event)
-    sbom = __get_bom_from_event(event)
+    sbom = __get_body_from_event(event)
 
     # Get the SBOM in a contrived file handle
     # bom_str_file: StringIO = __get_bom_from_event(event)
@@ -177,4 +190,35 @@ def dt_ingress_handler(event=None, context=None):
     findings: dict = __get_findings(project_uuid, sbom_token)
     __delete_project(project_uuid)
 
+    queue_url = environ[FINDINGS_QUEUE_URL_EV]
+
+    sqs_client = client("sqs")
+
+    try:
+        sqs_client.send_message(
+            QueueUrl=queue_url,
+            MessageGroupId="dt_enrichment",
+            MessageBody=str(findings),
+        )
+    except ClientError:
+        print(f"Could not send message to the - {queue_url}.")
+        raise
+
     return findings
+
+
+def enrichment_egress_handler(event=None, context=None):
+
+    s3 = resource("s3")
+
+    findings = __get_body_from_event(event)
+
+    bucket_name = environ[SBOM_BUCKET_NAME_EV]
+
+    key = f"findings-{uuid4()}"
+
+    # Extract the actual SBOM.
+    findings_bytes = bytearray(dumps(findings), "utf-8")
+    s3.Object(bucket_name, key).put(
+        Body=findings_bytes
+    )

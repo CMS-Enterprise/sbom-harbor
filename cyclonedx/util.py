@@ -5,7 +5,7 @@ from uuid import uuid4
 from botocore.client import BaseClient
 from boto3 import client
 from jsonschema.exceptions import ValidationError
-from requests import Response, get, post, put
+from requests import JSONDecodeError, Response, get, post, put
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from cyclonedx.constants import (
@@ -122,7 +122,12 @@ def __get_teams():
         headers=headers,
     )
 
-    return response.json()
+    try:
+        return response.json()
+    except JSONDecodeError as jde:
+        print(f"Text Response: {response.text}")
+        print(jde)
+        return None
 
 
 def __get_automation_team_data_from_dt():
@@ -164,7 +169,7 @@ def __generate_sbom_api_token() -> str:
     return f"sbom-api-token-{uuid4()}"
 
 
-def __get_bom_from_event(event) -> dict:
+def __get_body_from_event(event) -> dict:
 
     """
     If the request context exists, then there will
@@ -225,11 +230,14 @@ def __get_findings(project_uuid: str, sbom_token: str) -> dict:
         sleep(0.5)
         print("Not ready...")
 
-    print("Results are in!")
-
     findings = get(DTEndpoints.get_findings(project_uuid), headers=headers)
+    json = findings.json()
 
-    return findings.json()
+    print("<Results are in!>")
+    print(json)
+    print("</Results are in!>")
+
+    return json
 
 
 def __validate(event):
@@ -310,6 +318,10 @@ def __delete_project(project_uuid: str):
         "Accept": "application/json",
     }
 
+    print("<DeletingProject>")
+    print(project_uuid)
+    print("</DeletingProject>")
+
     put(
         DTEndpoints.delete_project(project_uuid),
         headers=create_project_headers,
@@ -337,6 +349,10 @@ def __upload_sbom(project_uuid, bom_str_file):
         "Accept": "application/json",
         "Content-Type": mpe.content_type,
     }
+
+    print("<BomUploadHeaders>")
+    print(bom_upload_headers)
+    print("</BomUploadHeaders>")
 
     upload_sbom_rsp: Response = post(
         DTEndpoints.post_sbom(),

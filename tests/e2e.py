@@ -6,9 +6,9 @@ import requests
 
 import tests.sboms as sboms
 
-BASE_URL = "https://nf866ahj07.execute-api.us-east-1.amazonaws.com/prod"
+BASE_URL = "https://7js2j6jsjc.execute-api.us-east-1.amazonaws.com/prod/"
 INVOKE_URL = f"{BASE_URL}/store"
-SBOM = loads(pr.read_text(sboms, "cern.json"))
+SBOM = loads(pr.read_text(sboms, "laravel.json"))
 
 
 def post_test():
