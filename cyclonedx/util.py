@@ -390,6 +390,8 @@ def __create_project():
     proj = create_proj_rsp.json()
     project_uuid = proj["uuid"]
 
+    print(f"<ProjectCreated uuid={project_uuid}>")
+
     return project_uuid
 
 

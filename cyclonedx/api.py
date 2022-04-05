@@ -167,41 +167,38 @@ def dt_interface_handler(event=None, context=None):
     """
 
     s3 = resource("s3")
+    sqs_client = client("sqs")
 
     # Currently making sure it isn't empty
     __validate(event)
-    print(f"In handler Event: {event}")
-    print(f"Incoming Event Type: {type(event)}")
     s3_info = __get_body_from_event_dt(event)
-    print(f"S3 Info: {s3_info}")
+    bucket_name = s3_info["bucket_name"]
 
-    s3_object = s3.Object(s3_info["bucket_name"], s3_info["obj_key"]).get()
-
+    s3_object = s3.Object(bucket_name, s3_info["obj_key"]).get()
     sbom = s3_object["Body"].read()
-
     d_sbom = sbom.decode('utf-8')
-    print(f"<sbom -> type={type(sbom)} head={sbom[:50]} />")
-    print(f"<d_sbom -> type={type(d_sbom)} head={d_sbom[:50]} />")
-
     bom_str_file: StringIO = StringIO(d_sbom)
-
     project_uuid = __create_project()
-
-    print(f"<ProjectCreated uuid={project_uuid}>")
 
     sbom_token: str = __upload_sbom(project_uuid, bom_str_file)
     findings: dict = __get_findings(project_uuid, sbom_token)
+    
     __delete_project(project_uuid)
 
     queue_url = environ[FINDINGS_QUEUE_URL_EV]
 
-    sqs_client = client("sqs")
-
     try:
+        # Extract the actual SBOM.
+        findings_bytes = bytearray(dumps(findings), "utf-8")
+        findings_key: str = f"findings-{s3_info['obj_key']}"
+        s3.Object(bucket_name, findings_key).put(
+            Body=findings_bytes,
+        )
+
         sqs_client.send_message(
             QueueUrl=queue_url,
             MessageGroupId="dt_enrichment",
-            MessageBody=str(findings),
+            MessageBody=findings_key,
         )
     except ClientError:
         print(f"Could not send message to the - {queue_url}.")
