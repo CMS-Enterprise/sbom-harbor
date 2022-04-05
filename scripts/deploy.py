@@ -104,14 +104,17 @@ class SBOMApiStack(Stack):
             connection=ec2.Port.tcp(DT_API_PORT)
         )
 
-        lb = elbv2.ApplicationLoadBalancer(
+        load_balancer = elbv2.ApplicationLoadBalancer(
             self, LOAD_BALANCER_ID, vpc=vpc,
             internet_facing=False,
             load_balancer_name=LOAD_BALANCER_ID,
             security_group=security_group
         )
 
-        listener = lb.add_listener(
+        logs_s3_bucket = s3.Bucket(self, "ALB_LOGGING")
+        load_balancer.log_access_logs(logs_s3_bucket)
+
+        listener = load_balancer.add_listener(
             LOAD_BALANCER_LISTENER_ID,
             protocol=elbv2.ApplicationProtocol.HTTP,
             port=DT_API_PORT,
@@ -123,7 +126,7 @@ class SBOMApiStack(Stack):
             port=DT_API_PORT,
         )
 
-        return lb, listener
+        return load_balancer, listener
 
     def __create_dt_fargate_svc(self, vpc, listener):
 
@@ -280,7 +283,9 @@ class SBOMApiStack(Stack):
         destination = s3n.LambdaDestination(sbom_enrichment_ingress_func)
         bucket.add_event_notification(s3.EventType.OBJECT_CREATED, destination)
 
-    def __conf_dt_interface_func(self, vpc, dt_ingress_queue, load_balancer, findings_queue) -> None:
+    def __conf_dt_interface_func(
+            self, vpc, dt_ingress_queue,
+            load_balancer, s3_bucket, findings_queue) -> None:
 
         """Create the Lambda Function responsible for
         extracting results from DT given an SBOM."""
@@ -311,6 +316,9 @@ class SBOMApiStack(Stack):
         # Grant rights to send messages to the Queue
         findings_queue.grant_send_messages(dt_interface_function)
 
+        s3_bucket.grant_put(dt_interface_function)
+        s3_bucket.grant_read_write(dt_interface_function)
+
         root_pwd_param = ssm.StringParameter(
             self, DT_ROOT_PWD, string_value=EMPTY_VALUE, parameter_name=DT_ROOT_PWD
         )
@@ -333,7 +341,7 @@ class SBOMApiStack(Stack):
         """Create the Lambda Function to do the work
                and set permissions on the S3 Bucket"""
 
-        sbom_ingest_func = lambda_.Function(
+        enrichment_egress_func = lambda_.Function(
             self,
             ENRICHMENT_EGRESS_LN,
             runtime=lambda_.Runtime.PYTHON_3_9,
@@ -349,9 +357,7 @@ class SBOMApiStack(Stack):
         )
 
         event_source = SqsEventSource(findings_queue)
-        sbom_ingest_func.add_event_source(event_source)
-
-        s3_bucket.grant_put(sbom_ingest_func)
+        enrichment_egress_func.add_event_source(event_source)
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
 
@@ -364,8 +370,6 @@ class SBOMApiStack(Stack):
                 service=ec2.GatewayVpcEndpointAwsService.S3
             )
         )
-
-        vpc.add_flow_log("DakotasFlowLog")
 
         # Create the S3 Bucket to put the BOMs in
         bucket = s3.Bucket(self, BUCKET_NAME)
@@ -390,7 +394,7 @@ class SBOMApiStack(Stack):
         self.__create_dt_fargate_svc(vpc, listener)
         self.__conf_pristine_sbom_ingest_func(vpc, bucket)
         self.__conf_enrichment_ingress_func(vpc, bucket, dt_ingress_queue)
-        self.__conf_dt_interface_func(vpc, dt_ingress_queue, lb, findings_queue)
+        self.__conf_dt_interface_func(vpc, dt_ingress_queue, lb, bucket, findings_queue)
         self.__conf_enrichment_egress_func(vpc, findings_queue, bucket)
 
 
@@ -402,7 +406,8 @@ def dodep() -> None:
     """
 
     env = cdk.Environment(
-        region=getenv("AWS_REGION"), account=getenv("AWS_ACCOUNT_NUM")
+        region=getenv("AWS_REGION"),
+        account=getenv("AWS_ACCOUNT_NUM"),
     )
 
     app = cdk.App()

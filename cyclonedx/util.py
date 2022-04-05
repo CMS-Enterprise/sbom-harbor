@@ -2,10 +2,11 @@ from json import dumps, loads
 from time import sleep
 from uuid import uuid4
 
+import requests
 from botocore.client import BaseClient
 from boto3 import client
 from jsonschema.exceptions import ValidationError
-from requests import JSONDecodeError, Response, get, post, put
+from requests import Response, get, post, put
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from cyclonedx.constants import (
@@ -19,10 +20,14 @@ from cyclonedx.dtendpoints import DTEndpoints
 
 def __change_dt_root_pwd():
 
+    print(f"@START __change_dt_root_pwd()")
+
     ssm: BaseClient = client("ssm")
 
     pwd: str = DT_DEFAULT_ADMIN_PWD
     new_pwd: str = str(uuid4())
+
+    print(f"@NEW PASSWORD __change_dt_root_pwd({new_pwd})")
 
     headers: dict = {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -36,13 +41,11 @@ def __change_dt_root_pwd():
         "confirmPassword": new_pwd,
     }
 
-    print(f">>>>> POSTING To : {DTEndpoints.force_chg_pwd()} <<<<<")
-    rsp = post(
+    post(
         DTEndpoints.force_chg_pwd(),
         headers=headers,
         data=params,
     )
-    print(f">>>>> POSTED To : {DTEndpoints.force_chg_pwd()}, Rsp: {rsp.text} <<<<<")
 
     # Put the API Key into SSM
     ssm.put_parameter(
@@ -54,6 +57,8 @@ def __change_dt_root_pwd():
         Tier="Standard",
         DataType="text",
     )
+
+    print(f"@END __change_dt_root_pwd() -> new Pwd({new_pwd})")
 
     return new_pwd
 
@@ -84,6 +89,8 @@ def __get_root_password():
 
 def __get_jwt(root_pwd=None):
 
+    print(f"@START __get_jwt()")
+
     if root_pwd is None:
         root_pwd = __get_root_password()
 
@@ -99,16 +106,26 @@ def __get_jwt(root_pwd=None):
         "password": root_pwd,
     }
 
+    print(f"<GetJwtRequest ep={DTEndpoints.do_login()} headers={headers} params={params} />")
+
+    __dt_rest_test()
+
     response = post(
         DTEndpoints.do_login(),
         headers=headers,
         data=params,
     )
 
-    return response.text
+    jwt = response.text
+
+    print(f"@END __get_jwt({jwt})")
+
+    return jwt
 
 
 def __get_teams():
+
+    print(f"@START __get_teams()")
 
     jwt = __get_jwt()
 
@@ -122,22 +139,28 @@ def __get_teams():
         headers=headers,
     )
 
-    try:
-        return response.json()
-    except JSONDecodeError as jde:
-        print(f"Text Response: {response.text}")
-        print(jde)
-        return None
+    teams = response.json()
+
+    print(f"@END __get_teams({teams})")
+
+    return teams
 
 
 def __get_automation_team_data_from_dt():
 
+    print(f"@START __get_automation_team_data_from_dt()")
+
     for team in __get_teams():
         if team["name"] == "Automation":
-            return team["uuid"], team["apiKeys"][0]["key"]
+            uuid = team["uuid"]
+            api_key = team["apiKeys"][0]["key"]
+            print(f"@END __get_automation_team_data_from_dt({uuid}, {api_key})")
+            return uuid, api_key
 
 
 def __set_team_permissions(team_uuid):
+
+    print(f"@START __set_team_permissions()")
 
     jwt = __get_jwt()
 
@@ -164,6 +187,8 @@ def __set_team_permissions(team_uuid):
             headers=headers,
         )
 
+    print(f"@END __set_team_permissions()")
+
 
 def __generate_sbom_api_token() -> str:
     return f"sbom-api-token-{uuid4()}"
@@ -177,7 +202,67 @@ def __get_body_from_event(event) -> dict:
     as a **string** that the POST body contained.
     """
 
-    return loads(event["body"]) if "requestContext" in event else event
+    print(f"Incoming Event: {event}")
+    print(f"Incoming Event Type: {type(event)}")
+
+    event_dict: dict = {}
+
+    if type(event) == dict:
+        event_dict = event
+    elif type(event) == str:
+        event_dict = loads(event)
+
+    if "Records" in event_dict:
+        event_dict = event_dict["Records"][0]
+
+    body = event_dict["body"]
+    body = body.decode("utf-8") if type(body) == bytes else body
+    print(f"Extracted Body: {body}")
+    print(f"Extracted Body Type: {type(body)}")
+
+    return loads(body)
+
+
+def __get_body_from_event_dt(event) -> dict:
+
+    """
+    If the request context exists, then there will
+    be a 'body' key, and it will contain the JSON object
+    as a **string** that the POST body contained.
+    """
+
+    event_dict: dict = event
+
+    if "Records" in event_dict:
+        event_dict = event_dict["Records"][0]
+
+    body = event_dict["body"]
+
+    return loads(body)
+
+
+def __get_records_from_event(event) -> list:
+
+    """
+    If the request context exists, then there will
+    be a 'body' key, and it will contain the JSON object
+    as a **string** that the POST body contained.
+    """
+
+    print(f"Incoming Event: {event}")
+    print(f"Incoming Event Type: {type(event)}")
+
+    event_dict: dict = {}
+
+    if type(event) == dict:
+        event_dict = event
+    elif type(event) == str:
+        event_dict = loads(event)
+
+    if "Records" in event_dict:
+        return event_dict["Records"]
+    else:
+        raise KeyError("No 'Records' Key in event")
 
 
 def __create_response_obj(bucket_name: str, key: str) -> dict:
@@ -418,3 +503,13 @@ def __set_initial_api_key_in_ssm():
     )
 
     return api_key
+
+
+def __dt_rest_test():
+
+    print(f"<Test REST call to DT: get({DTEndpoints.get_dt_version()})")
+    try:
+        rsp = requests.get(DTEndpoints.get_dt_version(), timeout=5)
+        print(f"</Test REST call to DT: get({rsp.text})")
+    except Exception as exception:
+        print(f"</Test REST call to DT EXCEPTION: get({exception})")

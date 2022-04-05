@@ -3,11 +3,10 @@ This module serves as the external API for CycloneDX Python Module
 """
 
 from io import StringIO
-from json import dumps, loads
+from json import dumps
 from os import environ
 from uuid import uuid4
 
-import requests
 from boto3 import client, resource
 from botocore.exceptions import ClientError
 from jsonschema.exceptions import ValidationError
@@ -15,18 +14,21 @@ from jsonschema.exceptions import ValidationError
 from cyclonedx.constants import (
     DT_QUEUE_URL_EV,
     ENRICHMENT_ID_SQS_KEY,
-    ENRICHMENT_ID, FINDINGS_QUEUE_URL_EV, FINDINGS_SQS_KEY, SBOM_BUCKET_NAME_EV,
+    ENRICHMENT_ID,
+    FINDINGS_QUEUE_URL_EV,
+    FINDINGS_SQS_KEY,
+    SBOM_BUCKET_NAME_EV,
 )
 
 from cyclonedx.core import CycloneDxCore
-from cyclonedx.dtendpoints import DTEndpoints
 from cyclonedx.util import (
     __create_project,
     __create_response_obj,
     __delete_project,
     __generate_sbom_api_token,
     __get_body_from_event,
-    __get_findings,
+    __get_body_from_event_dt, __get_findings,
+    __get_records_from_event,
     __upload_sbom,
     __validate,
 )
@@ -111,14 +113,12 @@ def enrichment_ingress_handler(event=None, context=None):
     if not event:
         raise ValidationError("event should never be none")
 
-    event_obj: dict = loads(event) if event is str else event
+    records: list = __get_records_from_event(event)
 
-    print("<EventObject>")
-    print(event_obj)
-    print("</EventObject>")
+    print(f"<Records records={records}>")
 
     queue_url = environ[DT_QUEUE_URL_EV]
-    for record in event_obj["Records"]:
+    for record in records:
 
         s3_obj = record["s3"]
         bucket_obj = s3_obj["bucket"]
@@ -138,8 +138,6 @@ def enrichment_ingress_handler(event=None, context=None):
                 print("</s3Object>")
                 enrichment_id = "ERROR"
 
-            sbom = s3_object["Body"].read()
-
             try:
                 sqs_client.send_message(
                     QueueUrl=queue_url,
@@ -150,7 +148,10 @@ def enrichment_ingress_handler(event=None, context=None):
                         }
                     },
                     MessageGroupId="dt_enrichment",
-                    MessageBody=str(sbom),
+                    MessageBody=dumps({
+                        "bucket_name": bucket_name,
+                        "obj_key": key
+                    }),
                 )
             except ClientError:
                 print(f"Could not send message to the - {queue_url}.")
@@ -165,26 +166,28 @@ def dt_interface_handler(event=None, context=None):
     Developing Dependency Track Ingress Handler
     """
 
-    print(f"<First Thing REST call: get({DTEndpoints.get_dt_version()})")
-    try:
-        rsp = requests.get(DTEndpoints.get_dt_version(), timeout=5)
-        print(f"</First Thing REST call: get({rsp.text})")
-    except Exception as exception:
-        print(f"</First Thing REST call EXCEPTION: get({exception})")
+    s3 = resource("s3")
 
     # Currently making sure it isn't empty
     __validate(event)
-    sbom = __get_body_from_event(event)
+    print(f"In handler Event: {event}")
+    print(f"Incoming Event Type: {type(event)}")
+    s3_info = __get_body_from_event_dt(event)
+    print(f"S3 Info: {s3_info}")
 
-    # Get the SBOM in a contrived file handle
-    # bom_str_file: StringIO = __get_bom_from_event(event)
-    bom_str_file: StringIO = StringIO(dumps(sbom))
+    s3_object = s3.Object(s3_info["bucket_name"], s3_info["obj_key"]).get()
+
+    sbom = s3_object["Body"].read()
+
+    d_sbom = sbom.decode('utf-8')
+    print(f"<sbom -> type={type(sbom)} head={sbom[:50]} />")
+    print(f"<d_sbom -> type={type(d_sbom)} head={d_sbom[:50]} />")
+
+    bom_str_file: StringIO = StringIO(d_sbom)
 
     project_uuid = __create_project()
 
-    print("<ProjectCreated -> UUID>")
-    print(project_uuid)
-    print("</ProjectCreated -> UUID>")
+    print(f"<ProjectCreated uuid={project_uuid}>")
 
     sbom_token: str = __upload_sbom(project_uuid, bom_str_file)
     findings: dict = __get_findings(project_uuid, sbom_token)

@@ -63,7 +63,7 @@ def dt_team():
     key = os.getenv("DT_API_KEY")
     headers = {"X-Api-Key": key, "Accept": "application/json"}
 
-    response = get("http://localhost:8081/api/v1/team", headers=headers)
+    response = get(DTEndpoints.get_teams_data(), headers=headers)
     print(response.text)
 
 
@@ -75,13 +75,10 @@ def get_findings():
 
     uuid = "acd68120-3fec-457d-baaa-a456a39984de"
 
-    end_point = f"http://localhost:8081/api/v1/finding/project/{uuid}"
-
     key = os.getenv("DT_API_KEY")
     headers = {"X-Api-Key": key, "Accept": "application/json"}
-    response = get(end_point, headers=headers)
+    response = get(DTEndpoints.get_findings(uuid), headers=headers)
 
-    print(f"Hitting endpoint: {end_point}")
     print(response.text)
 
 
@@ -96,13 +93,13 @@ def test_bom_upload_state():
     token_container: dict = __upload_bom(bom)
 
     # pylint: disable=W0212
-    while not api.__findings_ready(key, token_container["token"]):
+    while not util.__findings_ready(key, token_container["token"]):
         sleep(0.5)
         print("Not ready...")
 
     print("Results are in!")
 
-    end_point = DTEndpoints.get_findings()
+    end_point = DTEndpoints.get_findings(key)
     print(f"Hitting endpoint: {end_point}")
 
     findings = get(end_point)
@@ -113,6 +110,7 @@ def test_bom_upload_state():
 
 
 def test_create_project():
+
     create_project_headers: dict = {
         "Accept": "application/json",
         "Content-Type": "application/json",
@@ -139,7 +137,7 @@ def test_dt_ingress_handler():
 
     juice_sbom = pr.read_text(sboms, "juice.json")
     juice_sbom = dumps(loads(juice_sbom))
-    rsp = api.dt_ingress_handler(juice_sbom)
+    rsp = api.dt_interface_handler(juice_sbom)
     print(rsp)
 
 
