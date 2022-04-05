@@ -167,7 +167,6 @@ def dt_interface_handler(event=None, context=None):
     """
 
     s3 = resource("s3")
-    sqs_client = client("sqs")
 
     # Currently making sure it isn't empty
     __validate(event)
@@ -185,40 +184,13 @@ def dt_interface_handler(event=None, context=None):
     
     __delete_project(project_uuid)
 
-    queue_url = environ[FINDINGS_QUEUE_URL_EV]
-
-    try:
-        # Extract the actual SBOM.
-        findings_bytes = bytearray(dumps(findings), "utf-8")
-        findings_key: str = f"findings-{s3_info['obj_key']}"
-        s3.Object(bucket_name, findings_key).put(
-            Body=findings_bytes,
-        )
-
-        sqs_client.send_message(
-            QueueUrl=queue_url,
-            MessageGroupId="dt_enrichment",
-            MessageBody=findings_key,
-        )
-    except ClientError:
-        print(f"Could not send message to the - {queue_url}.")
-        raise
-
-    return findings
-
-
-def enrichment_egress_handler(event=None, context=None):
-
-    s3 = resource("s3")
-
-    findings = __get_body_from_event(event)
-
-    bucket_name = environ[SBOM_BUCKET_NAME_EV]
-
-    key = f"findings-{uuid4()}"
-
     # Extract the actual SBOM.
     findings_bytes = bytearray(dumps(findings), "utf-8")
-    s3.Object(bucket_name, key).put(
-        Body=findings_bytes
+    findings_key: str = f"findings-{s3_info['obj_key']}"
+    s3.Object(bucket_name, findings_key).put(
+        Body=findings_bytes,
     )
+
+    print(f"Findings are in the s3 bucket: {bucket_name}/{findings_key}")
+
+    return True

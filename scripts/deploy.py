@@ -336,29 +336,6 @@ class SBOMApiStack(Stack):
         event_source = SqsEventSource(dt_ingress_queue)
         dt_interface_function.add_event_source(event_source)
 
-    def __conf_enrichment_egress_func(self, vpc, findings_queue, s3_bucket):
-
-        """Create the Lambda Function to do the work
-               and set permissions on the S3 Bucket"""
-
-        enrichment_egress_func = lambda_.Function(
-            self,
-            ENRICHMENT_EGRESS_LN,
-            runtime=lambda_.Runtime.PYTHON_3_9,
-            vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
-            handler="cyclonedx.api.enrichment_egress_handler",
-            code=code,
-            environment={
-                SBOM_BUCKET_NAME_EV: s3_bucket.bucket_name,
-            },
-            timeout=Duration.seconds(10),
-            memory_size=512,
-        )
-
-        event_source = SqsEventSource(findings_queue)
-        enrichment_egress_func.add_event_source(event_source)
-
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
 
         # Run the constructor of the Stack superclass.
@@ -395,7 +372,6 @@ class SBOMApiStack(Stack):
         self.__conf_pristine_sbom_ingest_func(vpc, bucket)
         self.__conf_enrichment_ingress_func(vpc, bucket, dt_ingress_queue)
         self.__conf_dt_interface_func(vpc, dt_ingress_queue, lb, bucket, findings_queue)
-        self.__conf_enrichment_egress_func(vpc, findings_queue, bucket)
 
 
 def dodep() -> None:
