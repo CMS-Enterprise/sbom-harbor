@@ -10,6 +10,7 @@ from scripts.constants import (
     PRISTINE_SBOM_INGRESS_API_ID,
     PRISTINE_SBOM_INGRESS_LN,
     PRIVATE,
+    SBOM_API_PYTHON_RUNTIME,
 )
 
 
@@ -23,7 +24,7 @@ class PristineSbomIngressLambda(Construct):
         sbom_ingest_func = lambda_.Function(
             self,
             PRISTINE_SBOM_INGRESS_LN,
-            runtime=lambda_.Runtime.PYTHON_3_9,
+            runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
             handler="cyclonedx.api.pristine_sbom_ingress_handler",

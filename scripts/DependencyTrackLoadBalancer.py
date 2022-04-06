@@ -13,7 +13,8 @@ from cyclonedx.constants import (
 
 from scripts.constants import (
     DT_LB_ID,
-    DT_LB_LOGGING_ID, DT_LB_SG_ID,
+    DT_LB_LOGGING_ID,
+    DT_LB_SG_ID,
 )
 
 
@@ -67,5 +68,5 @@ class DependencyTrackLoadBalancer(Construct):
     def get_lb_target_listener(self):
         return self.listener
 
-    def get_lb_construct(self):
+    def get_load_balancer(self):
         return self.load_balancer

@@ -6,7 +6,7 @@ import requests
 
 import tests.sboms as sboms
 
-API_ID = "j0uwdb0lwb"
+API_ID = "qyxwsmq7wh"
 REGION = "us-east-1"
 STAGE = "prod"
 
