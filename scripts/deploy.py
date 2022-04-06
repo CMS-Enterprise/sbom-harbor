@@ -111,7 +111,12 @@ class SBOMApiStack(Stack):
             security_group=security_group
         )
 
-        logs_s3_bucket = s3.Bucket(self, "ALB_LOGGING")
+        logs_s3_bucket = s3.Bucket(
+            self,
+            "ALB_LOGGING",
+            removal_policy=cdk.RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+        )
         load_balancer.log_access_logs(logs_s3_bucket)
 
         listener = load_balancer.add_listener(
@@ -349,14 +354,19 @@ class SBOMApiStack(Stack):
         )
 
         # Create the S3 Bucket to put the BOMs in
-        bucket = s3.Bucket(self, BUCKET_NAME)
+        bucket = s3.Bucket(
+            self,
+            BUCKET_NAME,
+            removal_policy=cdk.RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+        )
 
         dt_ingress_queue = sqs.Queue(
             self,
             DT_SBOM_QUEUE_NAME,
             fifo=True,
             content_based_deduplication=True,
-            visibility_timeout=Duration.minutes(5)
+            visibility_timeout=Duration.minutes(5),
         )
 
         findings_queue = sqs.Queue(
@@ -364,7 +374,7 @@ class SBOMApiStack(Stack):
             FINDINGS_QUEUE_NAME,
             fifo=True,
             content_based_deduplication=True,
-            visibility_timeout=Duration.minutes(5)
+            visibility_timeout=Duration.minutes(5),
         )
 
         lb, listener = self.__create_load_balancer(vpc)
