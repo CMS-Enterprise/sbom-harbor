@@ -1,6 +1,9 @@
 """ This module has constants throughout the build code """
 
 import aws_cdk.aws_ec2 as ec2
+import aws_cdk.aws_lambda as lambda_
+
+SBOM_API_PYTHON_RUNTIME = lambda_.Runtime.PYTHON_3_9
 
 PRISTINE_SBOM_INGRESS_LN = "PristineSBOMIngressLambda"
 SBOM_ENRICHMENT_LN = "SBOMEnrichmentIngressLambda"

@@ -7,9 +7,7 @@ import aws_cdk.aws_ssm as ssm
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_lambda as lambda_
 import aws_cdk.aws_s3 as s3
-import aws_cdk.aws_s3_notifications as s3n
 import aws_cdk.aws_sqs as sqs
-import aws_cdk.aws_elasticloadbalancingv2 as elbv2
 
 from aws_cdk import Duration
 from aws_cdk import Stack
@@ -17,19 +15,14 @@ from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from constructs import Construct
 
 from cyclonedx.constants import (
-    DT_API_PORT,
     EMPTY_VALUE,
     FINDINGS_QUEUE_URL_EV,
-    LOAD_BALANCER_ID,
-    LOAD_BALANCER_LISTENER_ID,
-    LOAD_BALANCER_TARGET_ID,
-    SBOM_BUCKET_NAME_EV,
-    DT_QUEUE_URL_EV,
     DT_API_BASE,
     DT_ROOT_PWD,
     DT_API_KEY,
 )
 from scripts.DependencyTrackLoadBalancer import DependencyTrackLoadBalancer
+from scripts.EnrichmentIngressLambda import EnrichmentIngressLambda
 
 from scripts.constants import (
     FINDINGS_QUEUE_NAME,
@@ -37,7 +30,6 @@ from scripts.constants import (
     PRIVATE,
     STACK_ID,
     BUCKET_NAME,
-    SBOM_ENRICHMENT_LN,
     PRIVATE_SUBNET_NAME,
     PUBLIC_SUBNET_NAME,
     DT_INTERFACE_LN,
@@ -83,40 +75,6 @@ class SBOMApiStack(Stack):
             gateway_endpoints={"S3": gw_ept},
             subnet_configuration=[private_subnet, public_subnet],
         )
-
-    def __conf_enrichment_ingress_func(self, vpc, bucket, dt_ingress_queue) -> None:
-
-        """Create the Lambda Function responsible for listening on the S3 Bucket
-        for SBOMs being inserted so they can be inserted into the enrichment process."""
-
-        sbom_enrichment_ingress_func = lambda_.Function(
-            self,
-            SBOM_ENRICHMENT_LN,
-            runtime=lambda_.Runtime.PYTHON_3_9,
-            vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
-            handler="cyclonedx.api.enrichment_ingress_handler",
-            code=code,
-            environment={
-                SBOM_BUCKET_NAME_EV: bucket.bucket_name,
-                DT_QUEUE_URL_EV: dt_ingress_queue.queue_url,
-            },
-            timeout=Duration.seconds(10),
-            memory_size=512,
-        )
-
-        # Bucket rights granted
-        bucket.grant_read(sbom_enrichment_ingress_func)
-
-        # Grant rights to send messages to the Queue
-        dt_ingress_queue.grant_send_messages(sbom_enrichment_ingress_func)
-
-        # Set up the S3 Bucket to send a notification to the Lambda
-        # if someone puts something in the bucket. We really need to
-        # think about how we should structure the file names to be
-        # identifiable for our purposes #TODO
-        destination = s3n.LambdaDestination(sbom_enrichment_ingress_func)
-        bucket.add_event_notification(s3.EventType.OBJECT_CREATED, destination)
 
     def __conf_dt_interface_func(
             self, vpc, dt_ingress_queue,
@@ -227,7 +185,15 @@ class SBOMApiStack(Stack):
             code=code,
             s3_bucket=bucket,
         )
-        self.__conf_enrichment_ingress_func(vpc, bucket, dt_ingress_queue)
+
+        EnrichmentIngressLambda(
+            self,
+            vpc=vpc,
+            code=code,
+            s3_bucket=bucket,
+            output_queue=dt_ingress_queue
+        )
+
         self.__conf_dt_interface_func(vpc, dt_ingress_queue, lb_construct, bucket, findings_queue)
 
 

@@ -1,19 +1,22 @@
-from aws_cdk import Duration
-from constructs import Construct
-
-from cyclonedx.constants import SBOM_BUCKET_NAME_EV
-from scripts.constants import PRISTINE_SBOM_INGRESS_API_ID, PRISTINE_SBOM_INGRESS_LN, PRIVATE
-import aws_cdk.aws_lambda as lambda_
-from aws_cdk.aws_lambda import AssetCode
-import aws_cdk.aws_ec2 as ec2
-from aws_cdk.aws_s3 import Bucket
 import aws_cdk.aws_apigateway as apigwv1
+import aws_cdk.aws_ec2 as ec2
+import aws_cdk.aws_lambda as lambda_
+from aws_cdk import Duration
+from aws_cdk.aws_lambda import AssetCode
+from aws_cdk.aws_s3 import Bucket
+from constructs import Construct
+from cyclonedx.constants import SBOM_BUCKET_NAME_EV
+from scripts.constants import (
+    PRISTINE_SBOM_INGRESS_API_ID,
+    PRISTINE_SBOM_INGRESS_LN,
+    PRIVATE,
+)
 
 
 class PristineSbomIngressLambda(Construct):
 
     def __init__(self, scope: Construct, *, vpc: ec2.Vpc,
-                 code: AssetCode, s3_bucket: Bucket):
+                 code: AssetCode, s3_bucket: Bucket,):
 
         super().__init__(scope, PRISTINE_SBOM_INGRESS_LN)
 
