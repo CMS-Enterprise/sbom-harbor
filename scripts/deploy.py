@@ -5,13 +5,10 @@ from os import system, getenv, path
 import aws_cdk as cdk
 import aws_cdk.aws_ssm as ssm
 import aws_cdk.aws_ec2 as ec2
-import aws_cdk.aws_ecs as ecs
-import aws_cdk.aws_efs as efs
 import aws_cdk.aws_lambda as lambda_
 import aws_cdk.aws_s3 as s3
 import aws_cdk.aws_s3_notifications as s3n
 import aws_cdk.aws_sqs as sqs
-import aws_cdk.aws_apigateway as apigwv1
 import aws_cdk.aws_elasticloadbalancingv2 as elbv2
 
 from aws_cdk import Duration
@@ -20,7 +17,6 @@ from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from constructs import Construct
 
 from cyclonedx.constants import (
-    ALLOW_DT_PORT_SG,
     DT_API_PORT,
     EMPTY_VALUE,
     FINDINGS_QUEUE_URL_EV,
@@ -33,32 +29,25 @@ from cyclonedx.constants import (
     DT_ROOT_PWD,
     DT_API_KEY,
 )
+from scripts.DependencyTrackLoadBalancer import DependencyTrackLoadBalancer
 
 from scripts.constants import (
-    DT_DOCKER_ID,
-    DT_FARGATE_SVC_NAME,
-    DT_INSTALL_LOC,
-    ENRICHMENT_EGRESS_LN,
     FINDINGS_QUEUE_NAME,
     PUBLIC,
     PRIVATE,
     STACK_ID,
-    DT_CONTAINER_ID,
-    FARGATE_CLUSTER_ID,
     BUCKET_NAME,
     SBOM_ENRICHMENT_LN,
-    EFS_MOUNT_ID,
-    PRISTINE_SBOM_INGEST_LN,
     PRIVATE_SUBNET_NAME,
     PUBLIC_SUBNET_NAME,
     DT_INTERFACE_LN,
-    DT_TASK_DEF_ID,
     VPC_NAME,
     CIDR,
-    DT_API_INTEGRATION,
     DT_SBOM_QUEUE_NAME,
-    DT_REST_API_GATEWAY,
 )
+
+from scripts.PristineSbomIngressLambda import PristineSbomIngressLambda
+from scripts.DependencyTrackFargateInstance import DependencyTrackFargateInstance
 
 # Get the Current Working Directory so we can construct a path to the
 # zip file for the Lambdas
@@ -94,165 +83,6 @@ class SBOMApiStack(Stack):
             gateway_endpoints={"S3": gw_ept},
             subnet_configuration=[private_subnet, public_subnet],
         )
-
-    def __create_load_balancer(self, vpc):
-
-        security_group = ec2.SecurityGroup(self, "ALB_SG", vpc=vpc)
-
-        security_group.add_ingress_rule(
-            peer=ec2.Peer.any_ipv4(),
-            connection=ec2.Port.tcp(DT_API_PORT)
-        )
-
-        load_balancer = elbv2.ApplicationLoadBalancer(
-            self, LOAD_BALANCER_ID, vpc=vpc,
-            internet_facing=False,
-            load_balancer_name=LOAD_BALANCER_ID,
-            security_group=security_group
-        )
-
-        logs_s3_bucket = s3.Bucket(
-            self,
-            "ALB_LOGGING",
-            removal_policy=cdk.RemovalPolicy.DESTROY,
-            auto_delete_objects=True,
-        )
-        load_balancer.log_access_logs(logs_s3_bucket)
-
-        listener = load_balancer.add_listener(
-            LOAD_BALANCER_LISTENER_ID,
-            protocol=elbv2.ApplicationProtocol.HTTP,
-            port=DT_API_PORT,
-        )
-
-        listener.add_targets(
-            LOAD_BALANCER_TARGET_ID,
-            protocol=elbv2.ApplicationProtocol.HTTP,
-            port=DT_API_PORT,
-        )
-
-        return load_balancer, listener
-
-    def __create_dt_fargate_svc(self, vpc, listener):
-
-        # create an ecs cluster for running dependency track
-        fargate_cluster = ecs.Cluster(self, FARGATE_CLUSTER_ID, vpc=vpc)
-
-        # create an efs mount for maintaining
-        dt_mount = efs.FileSystem(
-            self,
-            EFS_MOUNT_ID,
-            vpc=vpc,
-            encrypted=True,
-        )
-
-        dt_volume = ecs.Volume(
-            name=EFS_MOUNT_ID,
-            efs_volume_configuration=ecs.EfsVolumeConfiguration(
-                file_system_id=dt_mount.file_system_id
-            ),
-        )
-
-        dt_volume_mount = ecs.MountPoint(
-            container_path="/apiserver",
-            source_volume=dt_volume.name,
-            read_only=False,
-        )
-
-        dt_api_task_definition = ecs.TaskDefinition(
-            self,
-            DT_TASK_DEF_ID,
-            compatibility=ecs.Compatibility.FARGATE,
-            cpu="4096",
-            memory_mib="8192",
-            volumes=[dt_volume],
-        )
-
-        container = dt_api_task_definition.add_container(
-            DT_CONTAINER_ID,
-            image=ecs.ContainerImage.from_registry(DT_DOCKER_ID),
-            logging=ecs.LogDrivers.aws_logs(stream_prefix="dependencyTrackApi"),
-            environment={},
-            cpu=4096,
-            memory_reservation_mib=8192,
-        )
-
-        port_mapping = ecs.PortMapping(
-            container_port=DT_API_PORT,
-            host_port=DT_API_PORT,
-            protocol=ecs.Protocol.TCP,
-        )
-
-        container.add_port_mappings(port_mapping)
-        container.add_mount_points(dt_volume_mount)
-
-        security_group = ec2.SecurityGroup(
-            self,
-            ALLOW_DT_PORT_SG,
-            vpc=vpc
-        )
-
-        security_group.add_ingress_rule(
-            peer=ec2.Peer.any_ipv4(),
-            connection=ec2.Port.tcp(DT_API_PORT)
-        )
-
-        dt_service = ecs.FargateService(
-            self,
-            DT_FARGATE_SVC_NAME,
-            cluster=fargate_cluster,
-            task_definition=dt_api_task_definition,
-            desired_count=1,
-            assign_public_ip=True,
-            platform_version=ecs.FargatePlatformVersion.VERSION1_4,
-            security_groups=[security_group]
-        )
-
-        dt_service.register_load_balancer_targets(ecs.EcsTarget(
-                container_name=DT_CONTAINER_ID,
-                container_port=DT_API_PORT,
-                new_target_group_id="DTTargetGroup",
-                listener=ecs.ListenerConfig.application_listener(
-                    listener,
-                    protocol=elbv2.ApplicationProtocol.HTTP,
-                    port=DT_API_PORT,
-                ),
-            )
-        )
-
-        dt_mount.connections.allow_default_port_from(dt_service)
-        dt_service.connections.allow_from(
-            ec2.Peer.ipv4("74.134.30.50/32"),
-            ec2.Port.tcp(DT_API_PORT),
-            "Ip Whitelist",
-        )
-
-    def __conf_pristine_sbom_ingest_func(self, vpc, bucket) -> None:
-
-        """Create the Lambda Function to do the work
-        and set permissions on the S3 Bucket"""
-
-        sbom_ingest_func = lambda_.Function(
-            self,
-            PRISTINE_SBOM_INGEST_LN,
-            runtime=lambda_.Runtime.PYTHON_3_9,
-            vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
-            handler="cyclonedx.api.pristine_sbom_ingress_handler",
-            code=code,
-            environment={SBOM_BUCKET_NAME_EV: bucket.bucket_name},
-            timeout=Duration.seconds(10),
-            memory_size=512,
-        )
-
-        bucket.grant_put(sbom_ingest_func)
-
-        lambda_api = apigwv1.LambdaRestApi(
-            self, "sbom_ingest_api", handler=sbom_ingest_func
-        )
-
-        store_ep = lambda_api.root.add_resource("store")
-        store_ep.add_method("POST")
 
     def __conf_enrichment_ingress_func(self, vpc, bucket, dt_ingress_queue) -> None:
 
@@ -377,11 +207,28 @@ class SBOMApiStack(Stack):
             visibility_timeout=Duration.minutes(5),
         )
 
-        lb, listener = self.__create_load_balancer(vpc)
-        self.__create_dt_fargate_svc(vpc, listener)
-        self.__conf_pristine_sbom_ingest_func(vpc, bucket)
+        dt_lb = DependencyTrackLoadBalancer(
+            self,
+            vpc=vpc,
+        )
+
+        lb_tl = dt_lb.get_lb_target_listener()
+        lb_construct = dt_lb.get_lb_construct()
+
+        DependencyTrackFargateInstance(
+            self,
+            vpc=vpc,
+            ecs_target_listener=lb_tl,
+        )
+
+        PristineSbomIngressLambda(
+            self,
+            vpc=vpc,
+            code=code,
+            s3_bucket=bucket,
+        )
         self.__conf_enrichment_ingress_func(vpc, bucket, dt_ingress_queue)
-        self.__conf_dt_interface_func(vpc, dt_ingress_queue, lb, bucket, findings_queue)
+        self.__conf_dt_interface_func(vpc, dt_ingress_queue, lb_construct, bucket, findings_queue)
 
 
 def dodep() -> None:

@@ -6,7 +6,11 @@ import requests
 
 import tests.sboms as sboms
 
-BASE_URL = "https://ajhwhoyzv8.execute-api.us-east-1.amazonaws.com/prod/"
+API_ID = "llbej2ld3c"
+REGION = "us-east-1"
+STAGE = "prod"
+
+BASE_URL = f"https://{API_ID}.execute-api.{REGION}.amazonaws.com/{STAGE}"
 INVOKE_URL = f"{BASE_URL}/store"
 SBOM = loads(pr.read_text(sboms, "cms_npm_package.json"))
 

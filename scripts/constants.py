@@ -2,10 +2,16 @@
 
 import aws_cdk.aws_ec2 as ec2
 
-PRISTINE_SBOM_INGEST_LN = "PristineSBOMIngestLambda"
+PRISTINE_SBOM_INGRESS_LN = "PristineSBOMIngressLambda"
 SBOM_ENRICHMENT_LN = "SBOMEnrichmentIngressLambda"
 DT_INTERFACE_LN = "DependencyTrackInterfaceLambda"
 ENRICHMENT_EGRESS_LN = "EnrichmentEgressLambda"
+
+DT_LB_ID = "DEPENDENCY-TRACK-LOAD-BALANCER"
+DT_LB_SG_ID = "DEPENDENCY-TRACK-LOAD-BALANCER-SECURITY-GROUP"
+DT_LB_LOGGING_ID = "DEPENDENCY-TRACK-LOAD-BALANCER-LOGGING"
+
+PRISTINE_SBOM_INGRESS_API_ID = "pristine-ingress-api"
 
 DT_DOCKER_ID = "dependencytrack/apiserver"
 DT_INSTALL_LOC = "/apiserver"
