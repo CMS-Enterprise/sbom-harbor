@@ -19,7 +19,7 @@ from scripts.constructs import EnrichmentIngressLambda
 from scripts.constructs import DependencyTrackInterfaceLambda
 
 from scripts.constants import (
-    BUCKET_NAME,
+    S3_BUCKET_NAME,
     DT_SBOM_QUEUE_NAME,
 )
 
@@ -43,7 +43,7 @@ class SBOMApiStack(Stack):
         # Create the S3 Bucket to put the BOMs in
         bucket = s3.Bucket(
             self,
-            BUCKET_NAME,
+            S3_BUCKET_NAME,
             removal_policy=cdk.RemovalPolicy.DESTROY,
             auto_delete_objects=True,
         )

@@ -12,7 +12,7 @@ import aws_cdk.aws_ssm as ssm
 from aws_cdk import Duration
 from aws_cdk.aws_lambda import AssetCode
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
-from aws_cdk.aws_s3 import Bucket
+from aws_cdk.aws_s3 import Bucket, IBucket
 from constructs import Construct
 
 from cyclonedx.constants import (
@@ -76,6 +76,7 @@ class SBOMApiVpc(Construct):
         self.vpc = ec2.Vpc(
             self,
             VPC_NAME,
+            vpc_name=VPC_NAME,
             cidr=CIDR,
             max_azs=2,
             enable_dns_support=True,
@@ -155,7 +156,7 @@ class EnrichmentIngressLambda(Construct):
         for SBOMs being inserted so they can be inserted into the enrichment process."""
 
     def __init__(self, scope: Construct, *, vpc: ec2.Vpc,
-                 code: AssetCode, s3_bucket: Bucket,
+                 code: AssetCode, s3_bucket: IBucket,
                  output_queue: sqs.Queue,):
 
         super().__init__(scope, SBOM_ENRICHMENT_LN)
@@ -193,7 +194,7 @@ class EnrichmentIngressLambda(Construct):
 class PristineSbomIngressLambda(Construct):
 
     def __init__(self, scope: Construct, *, vpc: ec2.Vpc,
-                 code: AssetCode, s3_bucket: Bucket,):
+                 code: AssetCode, s3_bucket: IBucket,):
 
         super().__init__(scope, PRISTINE_SBOM_INGRESS_LN)
 
@@ -327,7 +328,7 @@ class DependencyTrackInterfaceLambda(Construct):
     def __init__(self, scope: Construct,
                  *, vpc: ec2.Vpc,
                  code: AssetCode,
-                 s3_bucket: Bucket,
+                 s3_bucket: IBucket,
                  input_queue: sqs.Queue,
                  load_balancer: DependencyTrackLoadBalancer):
 

@@ -19,19 +19,31 @@ PRISTINE_SBOM_INGRESS_API_ID = "pristine-ingress-api"
 DT_DOCKER_ID = "dependencytrack/apiserver"
 DT_INSTALL_LOC = "/apiserver"
 
-BUCKET_NAME = "SBOMBucket"
+S3_BUCKET_ID = "sbom.bucket.id"
+S3_BUCKET_NAME = "sbom.bucket.name"
+INGRESS_BUCKET_NAME = f"ingress.{S3_BUCKET_NAME}"
+ENRICHMENT_BUCKET_NAME = f"enrichment.{S3_BUCKET_NAME}"
+
+VPC_ID = "sbom.vpc.id"
+VPC_NAME = "sbom.vpc.name"
+
+STACK_ID = "SBOMApiStack"
+SHARED_RESOURCE_STACK_ID = f"Shared-Resource-{STACK_ID}"
+ENRICHMENT_STACK_ID = f"Enrichment-{STACK_ID}"
+INGRESS_STACK_ID = f"Ingress-{STACK_ID}"
+
+VPC_TAG_NAME = f"{SHARED_RESOURCE_STACK_ID}/{VPC_NAME}/{VPC_NAME}"
+
 CIDR = "10.0.0.0/16"
 EC2_INSTANCE_NAME = "DependencyTrack"
 EC2_SSH_KEY_NAME = "aquia"
 EC2_INSTANCE_AMI = "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-20220131"
 EC2_INSTANCE_TYPE = "t2.medium"
-STACK_ID = "SBOMApiStack"
 PRIVATE = ec2.SubnetType.PRIVATE_WITH_NAT
 PUBLIC = ec2.SubnetType.PUBLIC
 REST_API_NAME = "SBOMApi"
 PRIVATE_SUBNET_NAME = "SBOMPrivateSubnet"
 PUBLIC_SUBNET_NAME = "SBOMPublicSubnet"
-VPC_NAME = "SBOMVpc"
 
 EFS_MOUNT_ID = "dtApiStorage"
 DT_CONTAINER_ID = "dtContainer"

@@ -4,8 +4,17 @@ from os import system, getenv
 
 import aws_cdk as cdk
 
-from scripts.SBOMApiStack import SBOMApiStack
-from scripts.constants import STACK_ID
+from scripts.stacks import (
+    SBOMEnrichmentPiplineStack,
+    SBOMIngressPiplineStack,
+    SBOMSharedResourceStack,
+)
+
+from scripts.constants import (
+    ENRICHMENT_STACK_ID,
+    INGRESS_STACK_ID,
+    SHARED_RESOURCE_STACK_ID,
+)
 
 
 def dodep() -> None:
@@ -21,9 +30,19 @@ def dodep() -> None:
     )
 
     app = cdk.App()
-    SBOMApiStack(
+    SBOMSharedResourceStack(
         app,
-        STACK_ID,
+        SHARED_RESOURCE_STACK_ID,
+        env=env,
+    )
+    SBOMIngressPiplineStack(
+        app,
+        INGRESS_STACK_ID,
+        env=env,
+    )
+    SBOMEnrichmentPiplineStack(
+        app,
+        ENRICHMENT_STACK_ID,
         env=env,
     )
     app.synth()
@@ -36,4 +55,6 @@ def run() -> None:
     To Run: poetry run deploy
     """
 
-    system("cdk deploy")
+    system("cdk deploy Shared-Resource-SBOMApiStack")
+    system("cdk deploy Ingress-SBOMApiStack")
+    system("cdk deploy Enrichment-SBOMApiStack")

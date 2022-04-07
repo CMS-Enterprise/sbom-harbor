@@ -31,17 +31,6 @@ from cyclonedx.util import (
     __validate,
 )
 
-import http.client as http_client
-import logging
-
-# Debug logging
-# http_client.HTTPConnection.debuglevel = 1
-# logging.basicConfig()
-# logging.getLogger().setLevel(logging.DEBUG)
-# req_log = logging.getLogger("requests.packages.urllib3")
-# req_log.setLevel(logging.DEBUG)
-# req_log.propagate = True
-
 
 def pristine_sbom_ingress_handler(event, context) -> dict:
 
