@@ -5,9 +5,7 @@ from os import system, getenv
 import aws_cdk as cdk
 
 from scripts.SBOMApiStack import SBOMApiStack
-from scripts.constants import (
-    STACK_ID,
-)
+from scripts.constants import STACK_ID
 
 
 def dodep() -> None:

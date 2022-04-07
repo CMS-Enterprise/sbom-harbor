@@ -11,19 +11,18 @@ from aws_cdk import Duration
 from aws_cdk import Stack
 from constructs import Construct
 
-from scripts.DependencyTrackLoadBalancer import DependencyTrackLoadBalancer
-from scripts.EnrichmentIngressLambda import EnrichmentIngressLambda
-from scripts.DependencyTrackInterfaceLambda import DependencyTrackInterfaceLambda
-from scripts.SBOMApiVpc import SBOMApiVpc
+from scripts.constructs import SBOMApiVpc
+from scripts.constructs import PristineSbomIngressLambda
+from scripts.constructs import DependencyTrackFargateInstance
+from scripts.constructs import DependencyTrackLoadBalancer
+from scripts.constructs import EnrichmentIngressLambda
+from scripts.constructs import DependencyTrackInterfaceLambda
 
 from scripts.constants import (
     FINDINGS_QUEUE_NAME,
     BUCKET_NAME,
     DT_SBOM_QUEUE_NAME,
 )
-
-from scripts.PristineSbomIngressLambda import PristineSbomIngressLambda
-from scripts.DependencyTrackFargateInstance import DependencyTrackFargateInstance
 
 # Get the Current Working Directory so we can construct a path to the
 # zip file for the Lambdas
@@ -73,13 +72,10 @@ class SBOMApiStack(Stack):
             vpc=vpc,
         )
 
-        lb_tl = dt_lb.get_lb_target_listener()
-        load_balancer: elbv2.ApplicationLoadBalancer = dt_lb.get_load_balancer()
-
         DependencyTrackFargateInstance(
             self,
             vpc=vpc,
-            ecs_target_listener=lb_tl,
+            load_balancer=dt_lb,
         )
 
         PristineSbomIngressLambda(
@@ -102,7 +98,7 @@ class SBOMApiStack(Stack):
             vpc=vpc,
             code=code,
             s3_bucket=bucket,
-            dt_ingress_queue=dt_ingress_queue,
-            load_balancer=load_balancer,
-            findings_queue=findings_queue
+            input_queue=dt_ingress_queue,
+            load_balancer=dt_lb,
+            output_queue=findings_queue
         )
