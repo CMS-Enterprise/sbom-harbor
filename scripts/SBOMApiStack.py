@@ -19,7 +19,6 @@ from scripts.constructs import EnrichmentIngressLambda
 from scripts.constructs import DependencyTrackInterfaceLambda
 
 from scripts.constants import (
-    FINDINGS_QUEUE_NAME,
     BUCKET_NAME,
     DT_SBOM_QUEUE_NAME,
 )
@@ -52,14 +51,6 @@ class SBOMApiStack(Stack):
         dt_ingress_queue = sqs.Queue(
             self,
             DT_SBOM_QUEUE_NAME,
-            fifo=True,
-            content_based_deduplication=True,
-            visibility_timeout=Duration.minutes(5),
-        )
-
-        findings_queue = sqs.Queue(
-            self,
-            FINDINGS_QUEUE_NAME,
             fifo=True,
             content_based_deduplication=True,
             visibility_timeout=Duration.minutes(5),
@@ -100,5 +91,4 @@ class SBOMApiStack(Stack):
             s3_bucket=bucket,
             input_queue=dt_ingress_queue,
             load_balancer=dt_lb,
-            output_queue=findings_queue
         )

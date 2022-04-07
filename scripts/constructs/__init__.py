@@ -24,7 +24,6 @@ from cyclonedx.constants import (
     DT_ROOT_PWD,
     EMPTY_VALUE,
     SBOM_BUCKET_NAME_EV,
-    FINDINGS_QUEUE_URL_EV,
     LOAD_BALANCER_ID,
     LOAD_BALANCER_LISTENER_ID,
     LOAD_BALANCER_TARGET_ID
@@ -325,10 +324,11 @@ class DependencyTrackFargateInstance(Construct):
 
 class DependencyTrackInterfaceLambda(Construct):
 
-    def __init__(self, scope: Construct, *, vpc: ec2.Vpc,
-                 code: AssetCode, s3_bucket: Bucket,
+    def __init__(self, scope: Construct,
+                 *, vpc: ec2.Vpc,
+                 code: AssetCode,
+                 s3_bucket: Bucket,
                  input_queue: sqs.Queue,
-                 output_queue: sqs.Queue,
                  load_balancer: DependencyTrackLoadBalancer):
 
         super().__init__(scope, DT_INTERFACE_LN)
@@ -351,16 +351,12 @@ class DependencyTrackInterfaceLambda(Construct):
             handler="cyclonedx.api.dt_interface_handler",
             code=code,
             environment={
-                FINDINGS_QUEUE_URL_EV: output_queue.queue_url,
                 DT_API_BASE: fq_dn,
             },
             timeout=Duration.minutes(1),
             security_groups=[dt_func_sg],
             memory_size=512,
         )
-
-        # Grant rights to send messages to the Queue
-        output_queue.grant_send_messages(dt_interface_function)
 
         s3_bucket.grant_put(dt_interface_function)
         s3_bucket.grant_read_write(dt_interface_function)

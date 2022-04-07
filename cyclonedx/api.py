@@ -15,8 +15,6 @@ from cyclonedx.constants import (
     DT_QUEUE_URL_EV,
     ENRICHMENT_ID_SQS_KEY,
     ENRICHMENT_ID,
-    FINDINGS_QUEUE_URL_EV,
-    FINDINGS_SQS_KEY,
     SBOM_BUCKET_NAME_EV,
 )
 
