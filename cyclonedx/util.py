@@ -1,8 +1,10 @@
+""" This Module has all the utility functions
+necessary to interoperate with Dependency Track."""
+
 from json import dumps, loads
 from time import sleep
 from uuid import uuid4
 
-import requests
 from botocore.client import BaseClient
 from boto3 import client
 from jsonschema.exceptions import ValidationError
@@ -20,7 +22,7 @@ from cyclonedx.dtendpoints import DTEndpoints
 
 def __change_dt_root_pwd():
 
-    print(f"@START __change_dt_root_pwd()")
+    print("@START __change_dt_root_pwd()")
 
     ssm: BaseClient = client("ssm")
 
@@ -89,7 +91,7 @@ def __get_root_password():
 
 def __get_jwt(root_pwd=None):
 
-    print(f"@START __get_jwt()")
+    print("@START __get_jwt()")
 
     if root_pwd is None:
         root_pwd = __get_root_password()
@@ -106,9 +108,9 @@ def __get_jwt(root_pwd=None):
         "password": root_pwd,
     }
 
-    print(f"<GetJwtRequest ep={DTEndpoints.do_login()} headers={headers} params={params} />")
-
-    __dt_rest_test()
+    print(
+        f"<GetJwtRequest ep={DTEndpoints.do_login()} headers={headers} params={params} />"
+    )
 
     response = post(
         DTEndpoints.do_login(),
@@ -125,7 +127,7 @@ def __get_jwt(root_pwd=None):
 
 def __get_teams():
 
-    print(f"@START __get_teams()")
+    print("@START __get_teams()")
 
     jwt = __get_jwt()
 
@@ -148,7 +150,7 @@ def __get_teams():
 
 def __get_automation_team_data_from_dt():
 
-    print(f"@START __get_automation_team_data_from_dt()")
+    print("@START __get_automation_team_data_from_dt()")
 
     for team in __get_teams():
         if team["name"] == "Automation":
@@ -157,10 +159,12 @@ def __get_automation_team_data_from_dt():
             print(f"@END __get_automation_team_data_from_dt({uuid}, {api_key})")
             return uuid, api_key
 
+    raise Exception("Unable to find Automation team in DT")
+
 
 def __set_team_permissions(team_uuid):
 
-    print(f"@START __set_team_permissions()")
+    print("@START __set_team_permissions()")
 
     jwt = __get_jwt()
 
@@ -187,7 +191,7 @@ def __set_team_permissions(team_uuid):
             headers=headers,
         )
 
-    print(f"@END __set_team_permissions()")
+    print("@END __set_team_permissions()")
 
 
 def __generate_sbom_api_token() -> str:
@@ -207,23 +211,23 @@ def __get_body_from_event(event) -> dict:
 
     event_dict: dict = {}
 
-    if type(event) == dict:
+    if isinstance(event) == dict:
         event_dict = event
-    elif type(event) == str:
+    elif isinstance(event) == str:
         event_dict = loads(event)
 
     if "Records" in event_dict:
         event_dict = event_dict["Records"][0]
 
     body = event_dict["body"]
-    body = body.decode("utf-8") if type(body) == bytes else body
+    body = body.decode("utf-8") if isinstance(body) == bytes else body
     print(f"Extracted Body: {body}")
-    print(f"Extracted Body Type: {type(body)}")
+    print(f"Extracted Body Type: {isinstance(body)}")
 
     return loads(body)
 
 
-def __get_body_from_event_dt(event) -> dict:
+def __get_body_from_first_record(event) -> dict:
 
     """
     If the request context exists, then there will
@@ -254,15 +258,15 @@ def __get_records_from_event(event) -> list:
 
     event_dict: dict = {}
 
-    if type(event) == dict:
+    if isinstance(event) == dict:
         event_dict = event
-    elif type(event) == str:
+    elif isinstance(event) == str:
         event_dict = loads(event)
 
     if "Records" in event_dict:
         return event_dict["Records"]
-    else:
-        raise KeyError("No 'Records' Key in event")
+
+    raise KeyError("No 'Records' Key in event")
 
 
 def __create_response_obj(bucket_name: str, key: str) -> dict:
@@ -505,13 +509,3 @@ def __set_initial_api_key_in_ssm():
     )
 
     return api_key
-
-
-def __dt_rest_test():
-
-    print(f"<Test REST call to DT: get({DTEndpoints.get_dt_version()})")
-    try:
-        rsp = requests.get(DTEndpoints.get_dt_version(), timeout=5)
-        print(f"</Test REST call to DT: get({rsp.text})")
-    except Exception as exception:
-        print(f"</Test REST call to DT EXCEPTION: get({exception})")

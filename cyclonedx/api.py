@@ -15,7 +15,8 @@ from cyclonedx.constants import (
     DT_QUEUE_URL_EV,
     ENRICHMENT_ID_SQS_KEY,
     ENRICHMENT_ID,
-    SBOM_BUCKET_NAME_EV,
+    SBOM_BUCKET_NAME_KEY,
+    SBOM_S3_KEY,
 )
 
 from cyclonedx.core import CycloneDxCore
@@ -25,7 +26,8 @@ from cyclonedx.util import (
     __delete_project,
     __generate_sbom_api_token,
     __get_body_from_event,
-    __get_body_from_event_dt, __get_findings,
+    __get_body_from_first_record,
+    __get_findings,
     __get_records_from_event,
     __upload_sbom,
     __validate,
@@ -46,7 +48,7 @@ def pristine_sbom_ingress_handler(event, context) -> dict:
 
     # Get the bucket name from the environment variable
     # This is set during deployment
-    bucket_name = environ[SBOM_BUCKET_NAME_EV]
+    bucket_name = environ[SBOM_BUCKET_NAME_KEY]
     print(f"Bucket name from env(SBOM_BUCKET_NAME_EV): {bucket_name}")
 
     # Generate the name of the object in S3
@@ -111,7 +113,7 @@ def enrichment_ingress_handler(event=None, context=None):
         bucket_obj = s3_obj["bucket"]
         bucket_name = bucket_obj["name"]
         sbom_obj = s3_obj["object"]
-        key: str = sbom_obj["key"]  # TODO The key name needs to be identifiable
+        key: str = sbom_obj["key"]
 
         if key.startswith("sbom"):
 
@@ -120,10 +122,8 @@ def enrichment_ingress_handler(event=None, context=None):
             try:
                 enrichment_id = s3_object["Metadata"][ENRICHMENT_ID]
             except KeyError as key_err:
-                print("<s3Object>")
-                print(s3_object)
-                print("</s3Object>")
-                enrichment_id = "ERROR"
+                print(f"<s3Object object={s3_object} />")
+                enrichment_id = f"ERROR: {key_err}"
 
             try:
                 sqs_client.send_message(
@@ -135,10 +135,12 @@ def enrichment_ingress_handler(event=None, context=None):
                         }
                     },
                     MessageGroupId="dt_enrichment",
-                    MessageBody=dumps({
-                        "bucket_name": bucket_name,
-                        "obj_key": key
-                    }),
+                    MessageBody=dumps(
+                        {
+                            SBOM_BUCKET_NAME_KEY: bucket_name,
+                            SBOM_S3_KEY: key,
+                        }
+                    ),
                 )
             except ClientError:
                 print(f"Could not send message to the - {queue_url}.")
@@ -150,28 +152,47 @@ def enrichment_ingress_handler(event=None, context=None):
 def dt_interface_handler(event=None, context=None):
 
     """
-    Developing Dependency Track Ingress Handler
+    Dependency Track Ingress Handler
+    This code takes an SBOM in the S3 Bucket and submits it to Dependency Track
+    to get findings.  To accomplish this, a project must be created in DT, the
+    SBOM submitted under that project, then the project is deleted.
     """
 
     s3 = resource("s3")
 
     # Currently making sure it isn't empty
     __validate(event)
-    s3_info = __get_body_from_event_dt(event)
-    bucket_name = s3_info["bucket_name"]
 
-    s3_object = s3.Object(bucket_name, s3_info["obj_key"]).get()
+    # Extract the body from the first Record in the event.
+    # it will contain the S3 Bucket name and the key to
+    # the SBOM in the bucket.
+    s3_info = __get_body_from_first_record(event)
+    bucket_name = s3_info[SBOM_BUCKET_NAME_KEY]
+    key: str = s3_info[SBOM_S3_KEY]
+
+    # Get the SBOM from the bucket and stick it
+    # into a string based file handle.
+    s3_object = s3.Object(bucket_name, key).get()
     sbom = s3_object["Body"].read()
-    d_sbom = sbom.decode('utf-8')
+    d_sbom = sbom.decode("utf-8")
     bom_str_file: StringIO = StringIO(d_sbom)
+
+    # Create a new Dependency Track Project to analyze the SBOM
     project_uuid = __create_project()
 
+    # Upload the SBOM to DT into the temp project
     sbom_token: str = __upload_sbom(project_uuid, bom_str_file)
+
+    # Poll DT to see when the SBOM is finished being analyzed.
+    # When it's finished, get the findings returned from DT.
     findings: dict = __get_findings(project_uuid, sbom_token)
-    
+
+    # Clean up the project we made to do the processing
     __delete_project(project_uuid)
 
-    # Extract the actual SBOM.
+    # Dump the findings into a byte array and store them
+    # in the S3 bucket along with the SBOM the findings
+    # came from.
     findings_bytes = bytearray(dumps(findings), "utf-8")
     findings_key: str = f"findings-{s3_info['obj_key']}"
     s3.Object(bucket_name, findings_key).put(

@@ -1,3 +1,5 @@
+""" This module is where all the higher level CDK constructs are stored """
+
 import aws_cdk as cdk
 import aws_cdk.aws_apigateway as apigwv1
 import aws_cdk.aws_ec2 as ec2
@@ -12,7 +14,7 @@ import aws_cdk.aws_ssm as ssm
 from aws_cdk import Duration
 from aws_cdk.aws_lambda import AssetCode
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
-from aws_cdk.aws_s3 import Bucket, IBucket
+from aws_cdk.aws_s3 import IBucket
 from constructs import Construct
 
 from cyclonedx.constants import (
@@ -23,10 +25,10 @@ from cyclonedx.constants import (
     DT_API_PORT,
     DT_ROOT_PWD,
     EMPTY_VALUE,
-    SBOM_BUCKET_NAME_EV,
+    SBOM_BUCKET_NAME_KEY,
     LOAD_BALANCER_ID,
     LOAD_BALANCER_LISTENER_ID,
-    LOAD_BALANCER_TARGET_ID
+    LOAD_BALANCER_TARGET_ID,
 )
 
 from scripts.constants import (
@@ -49,17 +51,20 @@ from scripts.constants import (
     DT_TASK_DEF_ID,
     EFS_MOUNT_ID,
     FARGATE_CLUSTER_ID,
-    SBOM_ENRICHMENT_LN
+    SBOM_ENRICHMENT_LN,
 )
 
 
 class SBOMApiVpc(Construct):
 
-    def __init__(self,  scope: Construct):
+    """This is the VPC used throughout the application.
+    One single VPC for the app."""
+
+    def __init__(self, scope: Construct):
+
+        """Creates a VPC for SBOM ingest and enrichment"""
 
         super().__init__(scope, VPC_NAME)
-
-        """Creates a VPC"""
 
         private_subnet = ec2.SubnetConfiguration(
             name=PRIVATE_SUBNET_NAME,
@@ -81,10 +86,7 @@ class SBOMApiVpc(Construct):
             max_azs=2,
             enable_dns_support=True,
             enable_dns_hostnames=True,
-            subnet_configuration=[
-                private_subnet,
-                public_subnet
-            ],
+            subnet_configuration=[private_subnet, public_subnet],
             gateway_endpoints={
                 "S3": ec2.GatewayVpcEndpointOptions(
                     service=ec2.GatewayVpcEndpointAwsService.S3
@@ -93,10 +95,16 @@ class SBOMApiVpc(Construct):
         )
 
     def get_vpc(self):
+
+        """Returns the underlying VPC to plug into other constructs."""
+
         return self.vpc
 
 
 class DependencyTrackLoadBalancer(Construct):
+
+    """Creates a load balancer used to make requests
+    to the Dependency Track instance running in ECS (Fargate)"""
 
     def __init__(self, scope: Construct, *, vpc: ec2.Vpc):
 
@@ -109,15 +117,16 @@ class DependencyTrackLoadBalancer(Construct):
         )
 
         security_group.add_ingress_rule(
-            peer=ec2.Peer.any_ipv4(),
-            connection=ec2.Port.tcp(DT_API_PORT)
+            peer=ec2.Peer.any_ipv4(), connection=ec2.Port.tcp(DT_API_PORT)
         )
 
         load_balancer = elbv2.ApplicationLoadBalancer(
-            self, LOAD_BALANCER_ID, vpc=vpc,
+            self,
+            LOAD_BALANCER_ID,
+            vpc=vpc,
             internet_facing=False,
             load_balancer_name=LOAD_BALANCER_ID,
-            security_group=security_group
+            security_group=security_group,
         )
 
         logs_s3_bucket = s3.Bucket(
@@ -144,20 +153,34 @@ class DependencyTrackLoadBalancer(Construct):
         self.listener = listener
 
     def get_lb_target_listener(self):
+
+        """Returns the Target Listener
+        which points to Dependency Track"""
+
         return self.listener
 
     def get_load_balancer(self):
+
+        """returns the load balancer
+        construct to plug into other constructs"""
+
         return self.load_balancer
 
 
 class EnrichmentIngressLambda(Construct):
 
     """Create the Lambda Function responsible for listening on the S3 Bucket
-        for SBOMs being inserted so they can be inserted into the enrichment process."""
+    for SBOMs being inserted so they can be inserted into the enrichment process."""
 
-    def __init__(self, scope: Construct, *, vpc: ec2.Vpc,
-                 code: AssetCode, s3_bucket: IBucket,
-                 output_queue: sqs.Queue,):
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+        code: AssetCode,
+        s3_bucket: IBucket,
+        output_queue: sqs.Queue
+    ):
 
         super().__init__(scope, SBOM_ENRICHMENT_LN)
 
@@ -170,7 +193,7 @@ class EnrichmentIngressLambda(Construct):
             handler="cyclonedx.api.enrichment_ingress_handler",
             code=code,
             environment={
-                SBOM_BUCKET_NAME_EV: s3_bucket.bucket_name,
+                SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name,
                 DT_QUEUE_URL_EV: output_queue.queue_url,
             },
             timeout=Duration.seconds(10),
@@ -193,8 +216,12 @@ class EnrichmentIngressLambda(Construct):
 
 class PristineSbomIngressLambda(Construct):
 
-    def __init__(self, scope: Construct, *, vpc: ec2.Vpc,
-                 code: AssetCode, s3_bucket: IBucket,):
+    """Constructs a Lambda that can take
+    Pristine SBOMS and puts them in the S3 Bucket"""
+
+    def __init__(
+        self, scope: Construct, *, vpc: ec2.Vpc, code: AssetCode, s3_bucket: IBucket
+    ):
 
         super().__init__(scope, PRISTINE_SBOM_INGRESS_LN)
 
@@ -206,9 +233,7 @@ class PristineSbomIngressLambda(Construct):
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
             handler="cyclonedx.api.pristine_sbom_ingress_handler",
             code=code,
-            environment={
-                SBOM_BUCKET_NAME_EV: s3_bucket.bucket_name
-            },
+            environment={SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name},
             timeout=Duration.seconds(10),
             memory_size=512,
         )
@@ -227,12 +252,16 @@ class PristineSbomIngressLambda(Construct):
 
 class DependencyTrackFargateInstance(Construct):
 
+    """This Construct creates a Fargate
+    instance running Dependency Track"""
+
     def __init__(
-            self,
-            scope: Construct,
-            *,
-            vpc: ec2.Vpc,
-            load_balancer: DependencyTrackLoadBalancer):
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+        load_balancer: DependencyTrackLoadBalancer
+    ):
 
         super().__init__(scope, FARGATE_CLUSTER_ID)
 
@@ -287,15 +316,10 @@ class DependencyTrackFargateInstance(Construct):
         container.add_port_mappings(port_mapping)
         container.add_mount_points(dt_volume_mount)
 
-        security_group = ec2.SecurityGroup(
-            self,
-            ALLOW_DT_PORT_SG,
-            vpc=vpc
-        )
+        security_group = ec2.SecurityGroup(self, ALLOW_DT_PORT_SG, vpc=vpc)
 
         security_group.add_ingress_rule(
-            peer=ec2.Peer.any_ipv4(),
-            connection=ec2.Port.tcp(DT_API_PORT)
+            peer=ec2.Peer.any_ipv4(), connection=ec2.Port.tcp(DT_API_PORT)
         )
 
         dt_service = ecs.FargateService(
@@ -306,36 +330,42 @@ class DependencyTrackFargateInstance(Construct):
             desired_count=1,
             assign_public_ip=True,
             platform_version=ecs.FargatePlatformVersion.VERSION1_4,
-            security_groups=[security_group]
+            security_groups=[security_group],
         )
 
-        dt_service.register_load_balancer_targets(ecs.EcsTarget(
-            container_name=DT_CONTAINER_ID,
-            container_port=DT_API_PORT,
-            new_target_group_id="DTTargetGroup",
-            listener=ecs.ListenerConfig.application_listener(
-                load_balancer.get_lb_target_listener(),
-                protocol=elbv2.ApplicationProtocol.HTTP,
-                port=DT_API_PORT,
-            ),
-        ))
+        dt_service.register_load_balancer_targets(
+            ecs.EcsTarget(
+                container_name=DT_CONTAINER_ID,
+                container_port=DT_API_PORT,
+                new_target_group_id="DTTargetGroup",
+                listener=ecs.ListenerConfig.application_listener(
+                    load_balancer.get_lb_target_listener(),
+                    protocol=elbv2.ApplicationProtocol.HTTP,
+                    port=DT_API_PORT,
+                ),
+            )
+        )
 
         dt_mount.connections.allow_default_port_from(dt_service)
 
 
 class DependencyTrackInterfaceLambda(Construct):
 
-    def __init__(self, scope: Construct,
-                 *, vpc: ec2.Vpc,
-                 code: AssetCode,
-                 s3_bucket: IBucket,
-                 input_queue: sqs.Queue,
-                 load_balancer: DependencyTrackLoadBalancer):
+    """This Construct creates a Lambda
+    use to manage Dependency Track operations"""
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+        code: AssetCode,
+        s3_bucket: IBucket,
+        input_queue: sqs.Queue,
+        load_balancer: DependencyTrackLoadBalancer
+    ):
 
         super().__init__(scope, DT_INTERFACE_LN)
-
-        """Create the Lambda Function responsible for
-        extracting results from DT given an SBOM."""
 
         dt_func_sg = ec2.SecurityGroup(self, "LaunchTemplateSG", vpc=vpc)
 
@@ -373,10 +403,7 @@ class DependencyTrackInterfaceLambda(Construct):
         root_pwd_param.grant_write(dt_interface_function)
 
         api_key_param = ssm.StringParameter(
-            self,
-            DT_API_KEY,
-            string_value=EMPTY_VALUE,
-            parameter_name=DT_API_KEY
+            self, DT_API_KEY, string_value=EMPTY_VALUE, parameter_name=DT_API_KEY
         )
 
         api_key_param.grant_read(dt_interface_function)
