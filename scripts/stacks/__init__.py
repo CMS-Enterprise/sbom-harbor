@@ -1,4 +1,5 @@
-
+""" This module contains all of th CDK
+Stacks necessary to deploy the application """
 
 from os import path
 
@@ -37,7 +38,15 @@ enrichment_code = lambda_.AssetCode.from_asset("%s/../../dist/lambda.zip" % cwd)
 
 class SBOMSharedResourceStack(Stack):
 
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    """This Stack is used to set up shared resources
+    that the other stacks use when deploying the application"""
+
+    def __init__(
+        self,
+        scope: Construct,
+        construct_id: str,
+        **kwargs,
+    ) -> None:
 
         # Run the constructor of the Stack superclass.
         super().__init__(scope, construct_id, **kwargs)
@@ -56,16 +65,19 @@ class SBOMSharedResourceStack(Stack):
 
 class SBOMIngressPiplineStack(Stack):
 
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    """This stack deploys the Ingress Pipeline"""
+
+    def __init__(
+        self,
+        scope: Construct,
+        construct_id: str,
+        **kwargs,
+    ) -> None:
 
         # Run the constructor of the Stack superclass.
         super().__init__(scope, construct_id, **kwargs)
 
-        vpc = ec2.Vpc.from_lookup(
-            self,
-            id=VPC_ID,
-            vpc_name=VPC_NAME
-        )
+        vpc = ec2.Vpc.from_lookup(self, id=VPC_ID, vpc_name=VPC_NAME)
 
         # Create the S3 Bucket to put the BOMs in
         bucket = s3.Bucket.from_bucket_name(
@@ -84,9 +96,7 @@ class SBOMIngressPiplineStack(Stack):
 
 class SBOMEnrichmentPiplineStack(Stack):
 
-    """This class is where the infrastructure to run the application
-    is built.  This class inherits from the Stack class, which is part of
-    the AWS CDK."""
+    """This Stack deploys the Enrichment Pipeline"""
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
 
@@ -108,11 +118,7 @@ class SBOMEnrichmentPiplineStack(Stack):
             bucket_name=S3_BUCKET_NAME,
         )
 
-        vpc = ec2.Vpc.from_lookup(
-            self,
-            id=VPC_ID,
-            vpc_name=VPC_NAME
-        )
+        vpc = ec2.Vpc.from_lookup(self, id=VPC_ID, vpc_name=VPC_NAME)
 
         dt_lb = DependencyTrackLoadBalancer(
             self,
@@ -124,7 +130,7 @@ class SBOMEnrichmentPiplineStack(Stack):
             vpc=vpc,
             code=enrichment_code,
             s3_bucket=bucket,
-            output_queue=dt_ingress_queue
+            output_queue=dt_ingress_queue,
         )
 
         DependencyTrackInterfaceLambda(
