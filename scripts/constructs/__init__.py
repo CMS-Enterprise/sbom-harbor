@@ -60,7 +60,10 @@ class SBOMApiVpc(Construct):
     """This is the VPC used throughout the application.
     One single VPC for the app."""
 
-    def __init__(self, scope: Construct):
+    def __init__(
+        self,
+        scope: Construct,
+    ):
 
         """Creates a VPC for SBOM ingest and enrichment"""
 
@@ -106,7 +109,12 @@ class DependencyTrackLoadBalancer(Construct):
     """Creates a load balancer used to make requests
     to the Dependency Track instance running in ECS (Fargate)"""
 
-    def __init__(self, scope: Construct, *, vpc: ec2.Vpc):
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+    ):
 
         super().__init__(scope, DT_LB_ID)
 
@@ -179,7 +187,7 @@ class EnrichmentIngressLambda(Construct):
         vpc: ec2.Vpc,
         code: AssetCode,
         s3_bucket: IBucket,
-        output_queue: sqs.Queue
+        output_queue: sqs.Queue,
     ):
 
         super().__init__(scope, SBOM_ENRICHMENT_LN)
@@ -220,7 +228,12 @@ class PristineSbomIngressLambda(Construct):
     Pristine SBOMS and puts them in the S3 Bucket"""
 
     def __init__(
-        self, scope: Construct, *, vpc: ec2.Vpc, code: AssetCode, s3_bucket: IBucket
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+        code: AssetCode,
+        s3_bucket: IBucket,
     ):
 
         super().__init__(scope, PRISTINE_SBOM_INGRESS_LN)
@@ -260,7 +273,7 @@ class DependencyTrackFargateInstance(Construct):
         scope: Construct,
         *,
         vpc: ec2.Vpc,
-        load_balancer: DependencyTrackLoadBalancer
+        load_balancer: DependencyTrackLoadBalancer,
     ):
 
         super().__init__(scope, FARGATE_CLUSTER_ID)
@@ -362,7 +375,7 @@ class DependencyTrackInterfaceLambda(Construct):
         code: AssetCode,
         s3_bucket: IBucket,
         input_queue: sqs.Queue,
-        load_balancer: DependencyTrackLoadBalancer
+        load_balancer: DependencyTrackLoadBalancer,
     ):
 
         super().__init__(scope, DT_INTERFACE_LN)
