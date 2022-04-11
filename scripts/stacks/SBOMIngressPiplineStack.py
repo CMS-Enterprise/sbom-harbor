@@ -35,7 +35,7 @@ class SBOMIngressPiplineStack(Stack):
         # Run the constructor of the Stack superclass.
         super().__init__(scope, construct_id, **kwargs)
 
-        vpc = ec2.Vpc.from_lookup(self, id=VPC_ID, vpc_name=VPC_NAME)
+        vpc = ec2.Vpc.from_lookup(self, "ingress.vpc", vpc_name=VPC_NAME)
 
         # Create the S3 Bucket to put the BOMs in
         bucket = s3.Bucket.from_bucket_name(

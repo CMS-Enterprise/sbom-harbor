@@ -2,6 +2,7 @@
 
 import os
 
+import requests
 from botocore.client import BaseClient
 from pytest_mock import mocker
 from boto3 import client
@@ -146,3 +147,41 @@ def test_upload_bom():
     juice_sbom = dumps(loads(juice_sbom))
     token = util.__upload_sbom("2f357abe-954d-4680-b978-60b597a4cd47", juice_sbom)
     print(f"Token: {token}")
+
+
+def cpe_test():
+
+    """API Explained here: https://nvd.nist.gov/developers/products"""
+
+    cpe_ep = "https://services.nvd.nist.gov/rest/json/cpes/1.0/"
+
+    rsp = requests.get(
+        cpe_ep,
+        params={
+            "apiKey": os.getenv("NVD_API_KEY"),
+            "includeDeprecated": False,
+            "resultsPerPage": 5,
+            "keyword": "adobe",
+            # "addOns": "cves",
+        },
+    )
+
+    print(f"Calling to: {cpe_ep},  Response: {rsp.text}")
+
+
+def cve_test():
+
+    # Adobe Illustrator versions 25.4.3 (and earlier) and 26.0.2
+    # (and earlier) are affected by an out-of-bounds read vulnerability
+    # that could lead to disclosure of sensitive memory. An attacker
+    # could leverage this vulnerability to bypass mitigations such as ASLR.
+    # Exploitation of this issue requires user interaction in that a victim
+    # must open a malicious file.
+    cve_id = "CVE-2022-23196"
+
+    single_cve_ep = "https://services.nvd.nist.gov/rest/json/cve/1.0/"
+    url = f"{single_cve_ep}/{cve_id}"
+
+    rsp = requests.get(url, params={"apiKey": os.getenv("NVD_API_KEY")})
+
+    print(f"Calling to: {url},  Response: {rsp.text}")

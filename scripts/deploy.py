@@ -55,6 +55,13 @@ def run() -> None:
     To Run: poetry run deploy
     """
 
-    system("cdk deploy Shared-Resource-SBOMApiStack")
-    system("cdk deploy Ingress-SBOMApiStack")
-    system("cdk deploy Enrichment-SBOMApiStack")
+    no_req_approval = "--require-approval never"
+
+    stacks = [
+        "Shared-Resource-SBOMApiStack",
+        "Ingress-SBOMApiStack",
+        "Enrichment-SBOMApiStack",
+    ]
+
+    for stack in stacks:
+        system(f"cdk deploy {stack} {no_req_approval}")

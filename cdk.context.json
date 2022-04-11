@@ -1,7 +1,4 @@
 {
-  "acknowledged-issue-numbers": [
-    19179
-  ],
   "availability-zones:account=152424352374:region=us-east-1": [
     "us-east-1a",
     "us-east-1b",
@@ -10,52 +7,8 @@
     "us-east-1e",
     "us-east-1f"
   ],
-  "ami:account=152424352374:filters.image-type.0=machine:filters.name.0=ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-20220131:filters.state.0=available:region=us-east-1": "ami-01b996646377b6619",
-  "vpc-provider:account=152424352374:filter.tag:Name=Shared-Resource-SBOMApiStack/sbom.vpc/sbom.vpc:region=us-east-1:returnAsymmetricSubnets=true": {
-    "vpcId": "vpc-063a772bd9d23eac3",
-    "vpcCidrBlock": "10.0.0.0/16",
-    "availabilityZones": [],
-    "subnetGroups": [
-      {
-        "name": "SBOMPrivateSubnet",
-        "type": "Private",
-        "subnets": [
-          {
-            "subnetId": "subnet-09578c8428e9ae2ec",
-            "cidr": "10.0.0.0/26",
-            "availabilityZone": "us-east-1a",
-            "routeTableId": "rtb-05e45262c726d87c4"
-          },
-          {
-            "subnetId": "subnet-045e527ba207af480",
-            "cidr": "10.0.0.64/26",
-            "availabilityZone": "us-east-1b",
-            "routeTableId": "rtb-0379e99e8682b38e0"
-          }
-        ]
-      },
-      {
-        "name": "SBOMPublicSubnet",
-        "type": "Public",
-        "subnets": [
-          {
-            "subnetId": "subnet-097ab5a983136cbbf",
-            "cidr": "10.0.0.128/26",
-            "availabilityZone": "us-east-1a",
-            "routeTableId": "rtb-02004bce4da493ab7"
-          },
-          {
-            "subnetId": "subnet-00ef0fceb2b52f546",
-            "cidr": "10.0.0.192/26",
-            "availabilityZone": "us-east-1b",
-            "routeTableId": "rtb-08459fe50f82e33e5"
-          }
-        ]
-      }
-    ]
-  },
   "vpc-provider:account=152424352374:filter.tag:Name=sbom.vpc:region=us-east-1:returnAsymmetricSubnets=true": {
-    "vpcId": "vpc-0637c454a6555489b",
+    "vpcId": "vpc-0cc7e56152d40aee8",
     "vpcCidrBlock": "10.0.0.0/16",
     "availabilityZones": [],
     "subnetGroups": [
@@ -64,16 +17,16 @@
         "type": "Public",
         "subnets": [
           {
-            "subnetId": "subnet-05b62e5b4ee31b0a5",
+            "subnetId": "subnet-01ee34e8d5404dcec",
             "cidr": "10.0.0.128/26",
             "availabilityZone": "us-east-1a",
-            "routeTableId": "rtb-011b5b3f523c361e9"
+            "routeTableId": "rtb-081829c5ea7476d3f"
           },
           {
-            "subnetId": "subnet-07ffb80f466b26bed",
+            "subnetId": "subnet-053ef0a519ab9415c",
             "cidr": "10.0.0.192/26",
             "availabilityZone": "us-east-1b",
-            "routeTableId": "rtb-0d91cfea8cfc3e504"
+            "routeTableId": "rtb-0ef5fe4c881502d5a"
           }
         ]
       },
@@ -82,59 +35,16 @@
         "type": "Private",
         "subnets": [
           {
-            "subnetId": "subnet-0a5ab078a89967394",
+            "subnetId": "subnet-0e71752d7f64a6e39",
             "cidr": "10.0.0.0/26",
             "availabilityZone": "us-east-1a",
-            "routeTableId": "rtb-010996036ecc86e5a"
+            "routeTableId": "rtb-01d43e441baad100c"
           },
           {
-            "subnetId": "subnet-0830830520cb2be1d",
+            "subnetId": "subnet-0296c130e174745a1",
             "cidr": "10.0.0.64/26",
             "availabilityZone": "us-east-1b",
-            "routeTableId": "rtb-0aeab2323966e2e6b"
-          }
-        ]
-      }
-    ]
-  },
-  "vpc-provider:account=152424352374:filter.tag:Name=sbom.vpc.name:region=us-east-1:returnAsymmetricSubnets=true": {
-    "vpcId": "vpc-0a53c8bdaaebd6281",
-    "vpcCidrBlock": "10.0.0.0/16",
-    "availabilityZones": [],
-    "subnetGroups": [
-      {
-        "name": "SBOMPublicSubnet",
-        "type": "Public",
-        "subnets": [
-          {
-            "subnetId": "subnet-02fa1f719f7334bd0",
-            "cidr": "10.0.0.128/26",
-            "availabilityZone": "us-east-1a",
-            "routeTableId": "rtb-0569ab2a56312bf48"
-          },
-          {
-            "subnetId": "subnet-046f77b5f70612334",
-            "cidr": "10.0.0.192/26",
-            "availabilityZone": "us-east-1b",
-            "routeTableId": "rtb-0ddeb30b85d820941"
-          }
-        ]
-      },
-      {
-        "name": "SBOMPrivateSubnet",
-        "type": "Private",
-        "subnets": [
-          {
-            "subnetId": "subnet-05267e18b17940af0",
-            "cidr": "10.0.0.0/26",
-            "availabilityZone": "us-east-1a",
-            "routeTableId": "rtb-00450b20abe873e2d"
-          },
-          {
-            "subnetId": "subnet-07fa36c8731c5f2a1",
-            "cidr": "10.0.0.64/26",
-            "availabilityZone": "us-east-1b",
-            "routeTableId": "rtb-0271a40c697d1f4cc"
+            "routeTableId": "rtb-0348971da880f89e8"
           }
         ]
       }

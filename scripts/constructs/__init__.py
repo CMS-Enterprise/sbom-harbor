@@ -39,6 +39,7 @@ from scripts.constants import (
     PRIVATE_SUBNET_NAME,
     PUBLIC,
     PUBLIC_SUBNET_NAME,
+    VPC_ID,
     VPC_NAME,
     SBOM_API_PYTHON_RUNTIME,
     DT_CONTAINER_ID,
@@ -83,7 +84,7 @@ class SBOMApiVpc(Construct):
 
         self.vpc = ec2.Vpc(
             self,
-            VPC_NAME,
+            id=VPC_ID,
             vpc_name=VPC_NAME,
             cidr=CIDR,
             max_azs=2,

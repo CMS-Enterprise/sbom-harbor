@@ -51,7 +51,7 @@ class SBOMEnrichmentPiplineStack(Stack):
             bucket_name=S3_BUCKET_NAME,
         )
 
-        vpc = ec2.Vpc.from_lookup(self, id=VPC_ID, vpc_name=VPC_NAME)
+        vpc = ec2.Vpc.from_lookup(self, "enrichment.vpc", vpc_name=VPC_NAME)
 
         dt_lb = DependencyTrackLoadBalancer(
             self,

@@ -25,7 +25,7 @@ INGRESS_BUCKET_NAME = f"ingress.{S3_BUCKET_NAME}"
 ENRICHMENT_BUCKET_NAME = f"enrichment.{S3_BUCKET_NAME}"
 
 VPC_ID = "sbom.vpc.id"
-VPC_NAME = "sbom.vpc.name"
+VPC_NAME = "sbom.vpc"
 
 STACK_ID = "SBOMApiStack"
 SHARED_RESOURCE_STACK_ID = f"Shared-Resource-{STACK_ID}"
