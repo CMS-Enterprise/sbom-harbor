@@ -8,12 +8,7 @@ import aws_cdk.aws_s3 as s3
 from aws_cdk import Stack
 from constructs import Construct
 
-from scripts.constants import (
-    ENRICHMENT_BUCKET_NAME,
-    S3_BUCKET_NAME,
-    VPC_ID,
-    VPC_NAME,
-)
+from scripts.constants import INGRESS_STACK_ID
 
 from scripts.constructs import PristineSbomIngressLambda
 
@@ -28,25 +23,17 @@ class SBOMIngressPiplineStack(Stack):
     def __init__(
         self,
         scope: Construct,
-        construct_id: str,
+        vpc: ec2.Vpc,
+        s3_bucket: s3.Bucket,
         **kwargs,
     ) -> None:
 
         # Run the constructor of the Stack superclass.
-        super().__init__(scope, construct_id, **kwargs)
-
-        vpc = ec2.Vpc.from_lookup(self, "ingress.vpc", vpc_name=VPC_NAME)
-
-        # Create the S3 Bucket to put the BOMs in
-        bucket = s3.Bucket.from_bucket_name(
-            self,
-            ENRICHMENT_BUCKET_NAME,
-            bucket_name=S3_BUCKET_NAME,
-        )
+        super().__init__(scope, INGRESS_STACK_ID, **kwargs)
 
         PristineSbomIngressLambda(
             self,
             vpc=vpc,
             code=ingress_code,
-            s3_bucket=bucket,
+            s3_bucket=s3_bucket,
         )

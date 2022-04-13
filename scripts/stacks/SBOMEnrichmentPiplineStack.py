@@ -12,10 +12,8 @@ from constructs import Construct
 
 from scripts.constants import (
     DT_SBOM_QUEUE_NAME,
-    ENRICHMENT_BUCKET_NAME,
+    ENRICHMENT_STACK_ID,
     S3_BUCKET_NAME,
-    VPC_ID,
-    VPC_NAME,
 )
 
 from scripts.constructs import DependencyTrackFargateInstance
@@ -31,10 +29,14 @@ class SBOMEnrichmentPiplineStack(Stack):
 
     """This Stack deploys the Enrichment Pipeline"""
 
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self, scope: Construct, vpc: ec2.Vpc, **kwargs) -> None:
 
         # Run the constructor of the Stack superclass.
-        super().__init__(scope, construct_id, **kwargs)
+        super().__init__(scope, ENRICHMENT_STACK_ID, **kwargs)
+
+        s3_bucket = s3.Bucket.from_bucket_name(
+            self, "THIS_CONSTRUCT_ID", S3_BUCKET_NAME
+        )
 
         dt_ingress_queue = sqs.Queue(
             self,
@@ -43,15 +45,6 @@ class SBOMEnrichmentPiplineStack(Stack):
             content_based_deduplication=True,
             visibility_timeout=Duration.minutes(5),
         )
-
-        # Create the S3 Bucket to put the BOMs in
-        bucket = s3.Bucket.from_bucket_name(
-            self,
-            ENRICHMENT_BUCKET_NAME,
-            bucket_name=S3_BUCKET_NAME,
-        )
-
-        vpc = ec2.Vpc.from_lookup(self, "enrichment.vpc", vpc_name=VPC_NAME)
 
         dt_lb = DependencyTrackLoadBalancer(
             self,
@@ -62,7 +55,7 @@ class SBOMEnrichmentPiplineStack(Stack):
             self,
             vpc=vpc,
             code=enrichment_code,
-            s3_bucket=bucket,
+            s3_bucket=s3_bucket,
             output_queue=dt_ingress_queue,
         )
 
@@ -70,7 +63,7 @@ class SBOMEnrichmentPiplineStack(Stack):
             self,
             vpc=vpc,
             code=enrichment_code,
-            s3_bucket=bucket,
+            s3_bucket=s3_bucket,
             input_queue=dt_ingress_queue,
             load_balancer=dt_lb,
         )

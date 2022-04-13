@@ -211,18 +211,18 @@ def __get_body_from_event(event) -> dict:
 
     event_dict: dict = {}
 
-    if isinstance(event) == dict:
+    if isinstance(event, dict):
         event_dict = event
-    elif isinstance(event) == str:
+    elif isinstance(event, str):
         event_dict = loads(event)
 
     if "Records" in event_dict:
         event_dict = event_dict["Records"][0]
 
     body = event_dict["body"]
-    body = body.decode("utf-8") if isinstance(body) == bytes else body
+    body = body.decode("utf-8") if isinstance(body, bytes) else body
     print(f"Extracted Body: {body}")
-    print(f"Extracted Body Type: {isinstance(body)}")
+    print(f"Extracted Body Type: {type(body)}")
 
     return loads(body)
 
@@ -258,9 +258,9 @@ def __get_records_from_event(event) -> list:
 
     event_dict: dict = {}
 
-    if isinstance(event) == dict:
+    if isinstance(event, dict):
         event_dict = event
-    elif isinstance(event) == str:
+    elif isinstance(event, str):
         event_dict = loads(event)
 
     if "Records" in event_dict:

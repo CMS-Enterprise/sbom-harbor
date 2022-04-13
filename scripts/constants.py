@@ -20,7 +20,7 @@ DT_DOCKER_ID = "dependencytrack/apiserver"
 DT_INSTALL_LOC = "/apiserver"
 
 S3_BUCKET_ID = "sbom.bucket.id"
-S3_BUCKET_NAME = "sbom.bucket.name"
+S3_BUCKET_NAME = "sbom.bucket"
 INGRESS_BUCKET_NAME = f"ingress.{S3_BUCKET_NAME}"
 ENRICHMENT_BUCKET_NAME = f"enrichment.{S3_BUCKET_NAME}"
 

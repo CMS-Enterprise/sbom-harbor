@@ -194,7 +194,7 @@ def dt_interface_handler(event=None, context=None):
     # in the S3 bucket along with the SBOM the findings
     # came from.
     findings_bytes = bytearray(dumps(findings), "utf-8")
-    findings_key: str = f"findings-{s3_info['obj_key']}"
+    findings_key: str = f"findings-{s3_info[SBOM_S3_KEY]}"
     s3.Object(bucket_name, findings_key).put(
         Body=findings_bytes,
     )

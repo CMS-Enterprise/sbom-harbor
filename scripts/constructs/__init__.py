@@ -184,10 +184,10 @@ class EnrichmentIngressLambda(Construct):
     def __init__(
         self,
         scope: Construct,
+        s3_bucket: s3.IBucket,
         *,
         vpc: ec2.Vpc,
         code: AssetCode,
-        s3_bucket: IBucket,
         output_queue: sqs.Queue,
     ):
 
@@ -219,8 +219,10 @@ class EnrichmentIngressLambda(Construct):
         # if someone puts something in the bucket. We really need to
         # think about how we should structure the file names to be
         # identifiable for our purposes #TODO
-        destination = s3n.LambdaDestination(sbom_enrichment_ingress_func)
-        s3_bucket.add_event_notification(s3.EventType.OBJECT_CREATED, destination)
+        s3_bucket.add_event_notification(
+            s3.EventType.OBJECT_CREATED,
+            s3n.LambdaDestination(sbom_enrichment_ingress_func),
+        )
 
 
 class PristineSbomIngressLambda(Construct):

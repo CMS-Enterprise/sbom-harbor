@@ -12,6 +12,7 @@ from scripts.constructs import SBOMApiVpc
 from scripts.constants import (
     S3_BUCKET_ID,
     S3_BUCKET_NAME,
+    SHARED_RESOURCE_STACK_ID,
 )
 
 
@@ -23,20 +24,31 @@ class SBOMSharedResourceStack(Stack):
     def __init__(
         self,
         scope: Construct,
-        construct_id: str,
         **kwargs,
     ) -> None:
 
         # Run the constructor of the Stack superclass.
-        super().__init__(scope, construct_id, **kwargs)
+        super().__init__(scope, SHARED_RESOURCE_STACK_ID, **kwargs)
 
-        SBOMApiVpc(self).get_vpc()
+        self.vpc = SBOMApiVpc(self).get_vpc()
 
         # Create the S3 Bucket to put the BOMs in
-        s3.Bucket(
+        self.s3_bucket = s3.Bucket(
             self,
             S3_BUCKET_ID,
             bucket_name=S3_BUCKET_NAME,
             removal_policy=cdk.RemovalPolicy.DESTROY,
             auto_delete_objects=True,
         )
+
+    def get_vpc(self):
+
+        """Gets the VPC"""
+
+        return self.vpc
+
+    def get_s3_bucket(self):
+
+        """Gets the S3 Bucket"""
+
+        return self.s3_bucket
