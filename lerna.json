@@ -1,0 +1,16 @@
+{
+  "version": "0.1.0",
+  "command": {
+    "version": {
+      "allowBranch": "master",
+      "conventionalCommits": true,
+      "createRelease": "github",
+      "exact": true,
+      "message": "chore(release): %s"
+    }
+  },
+  "ignoreChanges": ["**/__fixtures__/**", "**/__tests__/**", "**/*.md"],
+  "packages": ["ui/*"],
+  "npmClient": "yarn",
+  "useWorkspaces": true
+}

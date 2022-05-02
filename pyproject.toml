@@ -30,7 +30,6 @@ pre-commit = "^2.17.0"
 pylint = "^2.12.2"
 pytest-cov = "^3.0.0"
 aws-cdk-lib = "^2.17.0"
-"aws-cdk.aws-apigatewayv2-integrations-alpha" = "^2.17.0-alpha.0"
 ipython = "^8.2.0"
 
 [build-system]

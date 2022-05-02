@@ -1,0 +1,8 @@
+cyclonedx/
+scripts/
+tests/
+README.md
+amplify.yml
+ui/amplify/README.md
+.github/workflows/python-app.yaml
+.pre-commit-config.yaml

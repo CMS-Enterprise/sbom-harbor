@@ -1,5 +1,24 @@
-dist/
-.coverage
-tmp/
-__pycache__/
+
+# outputs
+**/build/
+**/dist/
+**/.coverage/
 cdk.out/
+
+# python
+__pycache__/
+
+# node
+**/node_modules/
+
+# log files
+**/*.log
+
+# temporary folders
+tmp/
+**/temp/
+**/.cache/
+**/.temp/
+
+# macos
+**/.DS_Store

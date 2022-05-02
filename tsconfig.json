@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    "rootDir": "."
+  },
+  "include": ["global.d.ts"],
+  "extends": "./ui/sbom/tsconfig.json"
+}

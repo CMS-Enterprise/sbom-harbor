@@ -1,0 +1,10 @@
+{
+  "prettier.arrowParens": "always",
+  "prettier.prettierPath": "\"${npm bin}/prettier\"",
+  "prettier.singleQuote": true,
+  "prettier.semi": false,
+  "prettier.tabWidth": 2,
+  "prettier.trailingComma": "es5",
+  "prettier.useEditorConfig": true,
+  "prettier.useTabs": false
+}

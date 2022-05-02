@@ -8,6 +8,7 @@ from scripts.stacks import (
     SBOMIngressPiplineStack,
     SBOMSharedResourceStack,
 )
+from scripts.stacks.SBOMWebStack import SBOMWebStack
 
 
 def dodep() -> None:
@@ -25,10 +26,12 @@ def dodep() -> None:
     app = cdk.App()
     shared_resources = SBOMSharedResourceStack(app, env=env)
     vpc = shared_resources.get_vpc()
+    user_pool = shared_resources.get_user_pool()
     s3_bucket = shared_resources.get_s3_bucket()
 
-    SBOMIngressPiplineStack(app, vpc, s3_bucket, env=env)
+    SBOMIngressPiplineStack(app, vpc, user_pool, s3_bucket, env=env)
     SBOMEnrichmentPiplineStack(app, vpc, env=env)
+    SBOMWebStack(app, user_pool)
     app.synth()
 
 

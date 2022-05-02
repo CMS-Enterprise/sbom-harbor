@@ -1,0 +1,20 @@
+# dotenv files
+.env.*
+
+# dependencies
+node_modules/
+
+# log files
+*.log*
+
+# output directories
+build/
+coverage/
+
+# temporary directories
+.cache/
+.temp/
+temp/
+
+# macos files
+**/.DS_Store

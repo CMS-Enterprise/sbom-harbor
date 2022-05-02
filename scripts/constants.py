@@ -3,6 +3,10 @@
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_lambda as lambda_
 
+USER_POOL_ID = "sbom_user_pool_id"
+USER_POOL_NAME = "sbom_user_pool_name"
+ADMIN_USER_ID = "sbom_admin"
+
 SBOM_API_PYTHON_RUNTIME = lambda_.Runtime.PYTHON_3_9
 
 PRISTINE_SBOM_INGRESS_LN = "PristineSBOMIngressLambda"
@@ -19,18 +23,28 @@ PRISTINE_SBOM_INGRESS_API_ID = "pristine-ingress-api"
 DT_DOCKER_ID = "dependencytrack/apiserver"
 DT_INSTALL_LOC = "/apiserver"
 
+UI_CONFIG_FILE_NAME = "config.json"
+S3_WS_BUCKET_NAME = "sbom.webapp.bucket"
+S3_WS_BUCKET_ID = f"{S3_WS_BUCKET_NAME}.id"
+API_GW_URL_KEY = "apigw_url"
+
 S3_BUCKET_ID = "sbom.bucket.id"
 S3_BUCKET_NAME = "sbom.bucket"
 INGRESS_BUCKET_NAME = f"ingress.{S3_BUCKET_NAME}"
 ENRICHMENT_BUCKET_NAME = f"enrichment.{S3_BUCKET_NAME}"
 
+COGNITO_POOLS_AUTH_ID = "cognito_pools_auth_id"
+
+UI_DEPLOYMENT_ID = "ui_deployment_id"
+
 VPC_ID = "sbom.vpc.id"
 VPC_NAME = "sbom.vpc"
 
-STACK_ID = "SBOMApiStack"
-SHARED_RESOURCE_STACK_ID = f"Shared-Resource-{STACK_ID}"
-ENRICHMENT_STACK_ID = f"Enrichment-{STACK_ID}"
-INGRESS_STACK_ID = f"Ingress-{STACK_ID}"
+STACK_ID = "SBOMApi"
+SHARED_RESOURCE_STACK_ID = f"{STACK_ID}-Shared-Resource"
+ENRICHMENT_STACK_ID = f"{STACK_ID}-Enrichment"
+INGRESS_STACK_ID = f"{STACK_ID}-Ingress"
+WEB_STACK_ID = f"{STACK_ID}-Web"
 
 VPC_TAG_NAME = f"{SHARED_RESOURCE_STACK_ID}/{VPC_NAME}/{VPC_NAME}"
 
@@ -54,3 +68,8 @@ DT_TASK_DEF_ID = "dtTaskDefinition"
 DT_SBOM_QUEUE_NAME = "DT_SBOMQueue"
 DT_REST_API_GATEWAY = "DT_REST_API_GW"
 DT_API_INTEGRATION = "DT_API_INT"
+
+API_GW_ID_EXPORT_NAME = "apigwurl"
+API_GW_URL_EXPORT_ID = f"{API_GW_ID_EXPORT_NAME}id"
+
+CLOUDFRONT_DIST_NAME = "sbomapidistribution"

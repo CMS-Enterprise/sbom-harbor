@@ -12,10 +12,19 @@ import aws_cdk.aws_s3_notifications as s3n
 import aws_cdk.aws_sqs as sqs
 import aws_cdk.aws_ssm as ssm
 from aws_cdk import Duration
+from aws_cdk.aws_cognito import (
+    AutoVerifiedAttrs,
+    PasswordPolicy,
+    SignInAliases,
+    StandardAttributes,
+    StandardAttribute,
+)
+
 from aws_cdk.aws_lambda import AssetCode
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from aws_cdk.aws_s3 import IBucket
 from constructs import Construct
+import aws_cdk.aws_cognito as cognito
 
 from cyclonedx.constants import (
     DT_QUEUE_URL_EV,
@@ -32,14 +41,14 @@ from cyclonedx.constants import (
 )
 
 from scripts.constants import (
-    PRISTINE_SBOM_INGRESS_API_ID,
+    ADMIN_USER_ID, API_GW_ID_EXPORT_NAME, API_GW_URL_EXPORT_ID, PRISTINE_SBOM_INGRESS_API_ID,
     PRISTINE_SBOM_INGRESS_LN,
     CIDR,
     PRIVATE,
     PRIVATE_SUBNET_NAME,
     PUBLIC,
     PUBLIC_SUBNET_NAME,
-    VPC_ID,
+    USER_POOL_ID, USER_POOL_NAME, VPC_ID,
     VPC_NAME,
     SBOM_API_PYTHON_RUNTIME,
     DT_CONTAINER_ID,
@@ -53,6 +62,7 @@ from scripts.constants import (
     EFS_MOUNT_ID,
     FARGATE_CLUSTER_ID,
     SBOM_ENRICHMENT_LN,
+    COGNITO_POOLS_AUTH_ID,
 )
 
 
@@ -103,6 +113,67 @@ class SBOMApiVpc(Construct):
         """Returns the underlying VPC to plug into other constructs."""
 
         return self.vpc
+
+
+class SBOMUserPool(Construct):
+
+    def __init__(
+        self,
+        scope: Construct,
+    ):
+
+        super().__init__(scope, USER_POOL_ID)
+
+        self.cognito_up = cognito.UserPool(
+            self, USER_POOL_ID,
+            user_pool_name=USER_POOL_NAME,
+            self_sign_up_enabled=True,
+            sign_in_aliases=SignInAliases(
+                email=True,
+                phone=True,
+                username=True,
+            ),
+            auto_verify=AutoVerifiedAttrs(
+                email=True,
+            ),
+            standard_attributes=StandardAttributes(
+                given_name=StandardAttribute(
+                    required=True,
+                    mutable=True,
+                ),
+                family_name=StandardAttribute(
+                    required=True,
+                    mutable=True,
+                ),
+                email=StandardAttribute(
+                    required=True,
+                    mutable=False,
+                ),
+                preferred_username=StandardAttribute(
+                    required=False,
+                    mutable=True,
+                ),
+            ),
+            password_policy=PasswordPolicy(
+                min_length=8,
+                require_symbols=True,
+                require_digits=True,
+                require_lowercase=True,
+                require_uppercase=True,
+            ),
+            account_recovery=cognito.AccountRecovery.EMAIL_ONLY,
+            removal_policy=cdk.RemovalPolicy.DESTROY,
+        )
+
+        cognito.CfnUserPoolUser(
+            self, ADMIN_USER_ID,
+            user_pool_id=self.cognito_up.user_pool_id,
+            force_alias_creation=False,
+            username="sbomadmin",
+        )
+
+    def get_cognito_user_pool(self):
+        return self.cognito_up
 
 
 class DependencyTrackLoadBalancer(Construct):
@@ -225,6 +296,41 @@ class EnrichmentIngressLambda(Construct):
         )
 
 
+class SbomApiLoginLambda(Construct):
+
+    """ Lambda to manage logging in """
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+        code: AssetCode,
+        s3_bucket: IBucket,
+        user_pool: cognito.UserPool
+    ):
+
+        super().__init__(scope, PRISTINE_SBOM_INGRESS_LN)
+
+        # TODO Complete
+        login_func = lambda_.Function(
+            self,
+            PRISTINE_SBOM_INGRESS_LN,
+            runtime=SBOM_API_PYTHON_RUNTIME,
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=PUBLIC),
+            handler="cyclonedx.api.login_handler",
+            code=code,
+            environment={
+                SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name,
+            },
+            timeout=Duration.seconds(10),
+            memory_size=512,
+        )
+
+        pass
+
+
 class PristineSbomIngressLambda(Construct):
 
     """Constructs a Lambda that can take
@@ -237,9 +343,15 @@ class PristineSbomIngressLambda(Construct):
         vpc: ec2.Vpc,
         code: AssetCode,
         s3_bucket: IBucket,
+        user_pool: cognito.UserPool
     ):
 
         super().__init__(scope, PRISTINE_SBOM_INGRESS_LN)
+
+        auth = apigwv1.CognitoUserPoolsAuthorizer(
+            self, COGNITO_POOLS_AUTH_ID,
+            cognito_user_pools=[user_pool]
+        )
 
         sbom_ingest_func = lambda_.Function(
             self,
@@ -249,7 +361,9 @@ class PristineSbomIngressLambda(Construct):
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
             handler="cyclonedx.api.pristine_sbom_ingress_handler",
             code=code,
-            environment={SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name},
+            environment={
+                SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name,
+            },
             timeout=Duration.seconds(10),
             memory_size=512,
         )
@@ -262,8 +376,18 @@ class PristineSbomIngressLambda(Construct):
             handler=sbom_ingest_func,
         )
 
+        cdk.CfnOutput(
+            self, API_GW_URL_EXPORT_ID,
+            value=lambda_api.rest_api_id,
+            export_name=API_GW_ID_EXPORT_NAME,
+            description="",
+        )
+
         store_ep = lambda_api.root.add_resource("store")
-        store_ep.add_method("POST")
+        store_ep.add_method(
+            "POST", authorizer=auth,
+            authorization_type=apigwv1.AuthorizationType.COGNITO,
+        )
 
 
 class DependencyTrackFargateInstance(Construct):
