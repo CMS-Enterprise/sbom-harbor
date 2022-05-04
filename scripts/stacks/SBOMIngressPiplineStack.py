@@ -1,19 +1,15 @@
 """This stack deploys the Ingress Pipeline"""
-import os
-import aws_cdk as cdk
-import aws_cdk.aws_ec2 as ec2
-import aws_cdk.aws_lambda as lambda_
-import aws_cdk.aws_s3 as s3
-import aws_cdk.aws_cloudfront as cf
-from aws_cdk import Stack
-from constructs import Construct
-import aws_cdk.aws_cognito as cognito
-from scripts.constants import (
-    API_GW_URL_EXPORT_ID,
-    INGRESS_STACK_ID,
-    API_GW_ID_EXPORT_NAME,
-)
 
+from os import path
+from aws_cdk import (
+    aws_cognito as cognito,
+    aws_ec2 as ec2,
+    aws_lambda as lambda_,
+    aws_s3 as s3,
+    Stack,
+)
+from constructs import Construct
+from scripts.constants import INGRESS_STACK_ID
 from scripts.constructs import PristineSbomIngressLambda
 
 
@@ -21,7 +17,7 @@ class SBOMIngressPiplineStack(Stack):
 
     """This stack deploys the Ingress Pipeline"""
 
-    __cwd = os.path.dirname(__file__)
+    __cwd = path.dirname(__file__)
 
     def __init__(
         self,
@@ -42,4 +38,3 @@ class SBOMIngressPiplineStack(Stack):
             s3_bucket=s3_bucket,
             user_pool=user_pool,
         )
-

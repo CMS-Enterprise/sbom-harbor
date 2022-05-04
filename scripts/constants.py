@@ -3,9 +3,24 @@
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_lambda as lambda_
 
-USER_POOL_ID = "sbom_user_pool_id"
-USER_POOL_NAME = "sbom_user_pool_name"
-ADMIN_USER_ID = "sbom_admin"
+COGNITO_POOLS_AUTH_ID = "cognito_pools_auth_id"
+COGNITO_DOMAIN_PREFIX = "sbom-web-app"
+USER_POOL_DOMAIN_ID = "SBOMUserPoolDomain"
+USER_POOL_ID = "SBOMUserPool_ID"
+USER_POOL_NAME = "SBOMUserPool"
+USER_POOL_GROUP_ID = "SBOMUserPoolGroup_Admin_ID"
+USER_POOL_GROUP_NAME = "SBOMUserPoolGroup_Admin"
+USER_POOL_GROUP_DESCRIPTION = "Default group for authenticated administrator users"
+USER_POOL_APP_CLIENT_ID = "SBOMUserPool_AppClient"
+USER_POOL_APP_CLIENT_NAME = "SBOMUserPool_App"
+USER_ROLE_ID = "SBOMUserRole_ID"
+USER_ROLE_NAME = "SBOMUserRole"
+ADMIN_USER_ID = "sbomadmin"
+ADMIN_USER_USERNAME = "sbomadmin@aquia.us"
+
+APP_LB_ID = "AppLoadBalancer"
+APP_LB_SECURITY_GROUP_ID = "AppLoadBalancer-SecurityGroup"
+APP_LB_LOGGING_ID = "AppLoadBalancer-Logging"
 
 SBOM_API_PYTHON_RUNTIME = lambda_.Runtime.PYTHON_3_9
 
@@ -32,8 +47,6 @@ S3_BUCKET_ID = "sbom.bucket.id"
 S3_BUCKET_NAME = "sbom.bucket"
 INGRESS_BUCKET_NAME = f"ingress.{S3_BUCKET_NAME}"
 ENRICHMENT_BUCKET_NAME = f"enrichment.{S3_BUCKET_NAME}"
-
-COGNITO_POOLS_AUTH_ID = "cognito_pools_auth_id"
 
 UI_DEPLOYMENT_ID = "ui_deployment_id"
 

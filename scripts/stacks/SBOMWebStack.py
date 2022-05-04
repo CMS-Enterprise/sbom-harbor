@@ -1,12 +1,17 @@
 import os
 import json
-import aws_cdk as cdk
-import aws_cdk.aws_cloudfront as cf
-import aws_cdk.aws_iam as iam
-import aws_cdk.aws_s3_deployment as s3d
-import aws_cdk.aws_cognito as cognito
+from aws_cdk import (
+    aws_cloudfront as cf,
+    aws_cognito as cognito,
+    aws_iam as iam,
+    aws_s3 as s3,
+    aws_s3_deployment as s3d,
+    Duration,
+    Fn,
+    RemovalPolicy,
+    Stack,
+)
 from constructs import Construct
-import aws_cdk.aws_s3 as s3
 from scripts.constants import (
     API_GW_ID_EXPORT_NAME,
     API_GW_URL_KEY,
@@ -19,7 +24,7 @@ from scripts.constants import (
 )
 
 
-class SBOMWebStack(cdk.Stack):
+class SBOMWebStack(Stack):
 
     __cwd = os.path.dirname(__file__)
     __ui_loc = f"{__cwd}/../../ui/sbom/build"
@@ -51,9 +56,9 @@ class SBOMWebStack(cdk.Stack):
             self, S3_WS_BUCKET_ID,
             bucket_name=S3_WS_BUCKET_NAME,
             public_read_access=True,
-            removal_policy=cdk.RemovalPolicy.DESTROY,
+            removal_policy=RemovalPolicy.DESTROY,
             website_index_document="index.html",
-            auto_delete_objects=True,
+            auto_delete_objects=False,
         )
 
         oai = cf.OriginAccessIdentity(
@@ -67,7 +72,8 @@ class SBOMWebStack(cdk.Stack):
             principals=[oai.grant_principal],
         ))
 
-        apigw_url = cdk.Fn.import_value(API_GW_ID_EXPORT_NAME)
+        apigw_url = Fn.import_value(API_GW_ID_EXPORT_NAME)
+
         # self.__create_ui_config_file(apigw_url)
 
         # This line specifies where the UI is as an asset.
@@ -86,25 +92,43 @@ class SBOMWebStack(cdk.Stack):
             origin_configs=[
                 cf.SourceConfiguration(
                     custom_origin_source=cf.CustomOriginConfig(
+                        # TODO: get rest api url dynamically for "value" below
+                        # see: scripts/constructs/__init__.py/PristineSbomIngressLambda
                         domain_name=apigw_url,
                     ),
                     behaviors=[
                         cf.Behavior(
                             path_pattern="/api/*",
                             allowed_methods=cf.CloudFrontAllowedMethods.ALL,
-                            default_ttl=cdk.Duration.seconds(5),
+                            default_ttl=Duration.seconds(5),
                             forwarded_values=cf.CfnDistribution.ForwardedValuesProperty(
-                                query_string=True,
                                 headers=["Authorization"],
+                                query_string=True,
                             ),
                         ),
                     ],
                 ),
                 cf.SourceConfiguration(
                     s3_origin_source=cf.S3OriginConfig(
+                        origin_access_identity=oai,
                         s3_bucket_source=website_bucket,
-                        origin_access_identity=oai
-                    )
-                )
+                    ),
+                    behaviors=[
+                        cf.Behavior(
+                            path_pattern="/*",
+                            is_default_behavior=True,
+                            allowed_methods=cf.CloudFrontAllowedMethods.ALL,
+                            compress=False,
+                            default_ttl=Duration.minutes(30),
+                            forwarded_values=cf.CfnDistribution.ForwardedValuesProperty(
+                                cookies=cf.CfnDistribution.CookiesProperty(
+                                    forward="all",
+                                ),
+                                headers=["Authorization"],
+                                query_string=True,
+                            ),
+                        ),
+                    ],
+                ),
             ]
         )

@@ -1,56 +1,55 @@
 """ This module is where all the higher level CDK constructs are stored """
 
-import aws_cdk as cdk
-import aws_cdk.aws_apigateway as apigwv1
-import aws_cdk.aws_ec2 as ec2
-import aws_cdk.aws_ecs as ecs
-import aws_cdk.aws_efs as efs
-import aws_cdk.aws_elasticloadbalancingv2 as elbv2
-import aws_cdk.aws_lambda as lambda_
-import aws_cdk.aws_s3 as s3
-import aws_cdk.aws_s3_notifications as s3n
-import aws_cdk.aws_sqs as sqs
-import aws_cdk.aws_ssm as ssm
-from aws_cdk import Duration
-from aws_cdk.aws_cognito import (
-    AutoVerifiedAttrs,
-    PasswordPolicy,
-    SignInAliases,
-    StandardAttributes,
-    StandardAttribute,
+from http import client
+from json import load
+from aws_cdk import (
+    aws_apigateway as apigwv1,
+    aws_cognito as cognito,
+    aws_ec2 as ec2,
+    aws_ecs as ecs,
+    aws_efs as efs,
+    aws_elasticloadbalancingv2 as elbv2,
+    aws_elasticloadbalancingv2_actions as actions,
+    aws_iam as iam,
+    aws_lambda as lambda_,
+    aws_s3 as s3,
+    aws_s3_notifications as s3n,
+    aws_sqs as sqs,
+    aws_ssm as ssm,
+    CfnOutput,
+    Duration,
+    RemovalPolicy,
 )
-
 from aws_cdk.aws_lambda import AssetCode
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from aws_cdk.aws_s3 import IBucket
 from constructs import Construct
-import aws_cdk.aws_cognito as cognito
-
 from cyclonedx.constants import (
-    DT_QUEUE_URL_EV,
     ALLOW_DT_PORT_SG,
+    APP_LOAD_BALANCER_ID,
+    APP_LOAD_BALANCER_LISTENER_ID,
+    APP_LOAD_BALANCER_TARGET_ID,
+    APP_PORT,
     DT_API_BASE,
     DT_API_KEY,
     DT_API_PORT,
+    DT_LOAD_BALANCER_ID,
+    DT_LOAD_BALANCER_LISTENER_ID,
+    DT_LOAD_BALANCER_TARGET_ID,
+    DT_QUEUE_URL_EV,
     DT_ROOT_PWD,
     EMPTY_VALUE,
     SBOM_BUCKET_NAME_KEY,
-    LOAD_BALANCER_ID,
-    LOAD_BALANCER_LISTENER_ID,
-    LOAD_BALANCER_TARGET_ID,
 )
-
 from scripts.constants import (
-    ADMIN_USER_ID, API_GW_ID_EXPORT_NAME, API_GW_URL_EXPORT_ID, PRISTINE_SBOM_INGRESS_API_ID,
-    PRISTINE_SBOM_INGRESS_LN,
+    API_GW_ID_EXPORT_NAME,
+    API_GW_URL_EXPORT_ID,
+    APP_LB_ID,
+    APP_LB_LOGGING_ID,
+    APP_LB_SECURITY_GROUP_ID,
     CIDR,
-    PRIVATE,
-    PRIVATE_SUBNET_NAME,
-    PUBLIC,
-    PUBLIC_SUBNET_NAME,
-    USER_POOL_ID, USER_POOL_NAME, VPC_ID,
-    VPC_NAME,
-    SBOM_API_PYTHON_RUNTIME,
+    COGNITO_DOMAIN_PREFIX,
+    COGNITO_POOLS_AUTH_ID,
     DT_CONTAINER_ID,
     DT_DOCKER_ID,
     DT_FARGATE_SVC_NAME,
@@ -61,10 +60,26 @@ from scripts.constants import (
     DT_TASK_DEF_ID,
     EFS_MOUNT_ID,
     FARGATE_CLUSTER_ID,
+    PRISTINE_SBOM_INGRESS_API_ID,
+    PRISTINE_SBOM_INGRESS_LN,
+    PRIVATE_SUBNET_NAME,
+    PRIVATE,
+    PUBLIC_SUBNET_NAME,
+    PUBLIC,
+    SBOM_API_PYTHON_RUNTIME,
     SBOM_ENRICHMENT_LN,
-    COGNITO_POOLS_AUTH_ID,
+    USER_POOL_APP_CLIENT_ID,
+    USER_POOL_DOMAIN_ID,
+    USER_POOL_GROUP_DESCRIPTION,
+    USER_POOL_GROUP_ID,
+    USER_POOL_GROUP_NAME,
+    USER_POOL_ID,
+    USER_POOL_NAME,
+    USER_ROLE_ID,
+    USER_ROLE_NAME,
+    VPC_ID,
+    VPC_NAME,
 )
-
 
 class SBOMApiVpc(Construct):
 
@@ -86,6 +101,8 @@ class SBOMApiVpc(Construct):
             cidr_mask=26,
         )
 
+        # TODO: release elastic IP addresses on teardown
+        # see: https://us-east-1.console.aws.amazon.com/ec2/v2/home?region=us-east-1#Addresses:
         public_subnet = ec2.SubnetConfiguration(
             name=PUBLIC_SUBNET_NAME,
             subnet_type=PUBLIC,
@@ -108,7 +125,9 @@ class SBOMApiVpc(Construct):
             },
         )
 
-    def get_vpc(self):
+        self.vpc.apply_removal_policy(RemovalPolicy.DESTROY)
+
+    def get_vpc(self) -> ec2.Vpc:
 
         """Returns the underlying VPC to plug into other constructs."""
 
@@ -117,6 +136,11 @@ class SBOMApiVpc(Construct):
 
 class SBOMUserPool(Construct):
 
+    """
+    This class is used to create the user pool
+    used throughout the application.
+    """
+
     def __init__(
         self,
         scope: Construct,
@@ -124,56 +148,344 @@ class SBOMUserPool(Construct):
 
         super().__init__(scope, USER_POOL_ID)
 
-        self.cognito_up = cognito.UserPool(
-            self, USER_POOL_ID,
+        self.id = USER_POOL_ID
+
+        self.user_pool = cognito.UserPool(
+            self,
+            USER_POOL_ID,
             user_pool_name=USER_POOL_NAME,
+            account_recovery=cognito.AccountRecovery.EMAIL_ONLY,
+            auto_verify=cognito.AutoVerifiedAttrs(
+                email=True,
+            ),
+            custom_attributes={
+                "role_name": cognito.StringAttribute(min_len=5, max_len=15, mutable=False),
+                "team_id": cognito.StringAttribute(min_len=5, max_len=15, mutable=False),
+            },
             self_sign_up_enabled=True,
-            sign_in_aliases=SignInAliases(
+            sign_in_aliases=cognito.SignInAliases(
                 email=True,
-                phone=True,
-                username=True,
+                phone=False,
+                username=False,
+                preferred_username=False,
             ),
-            auto_verify=AutoVerifiedAttrs(
-                email=True,
-            ),
-            standard_attributes=StandardAttributes(
-                given_name=StandardAttribute(
-                    required=True,
-                    mutable=True,
-                ),
-                family_name=StandardAttribute(
-                    required=True,
-                    mutable=True,
-                ),
-                email=StandardAttribute(
+            sign_in_case_sensitive=False,
+            standard_attributes=cognito.StandardAttributes(
+                email=cognito.StandardAttribute(
                     required=True,
                     mutable=False,
                 ),
-                preferred_username=StandardAttribute(
+                fullname=cognito.StandardAttribute(
+                    required=False,
+                    mutable=True,
+                ),
+                given_name=cognito.StandardAttribute(
+                    required=False,
+                    mutable=True,
+                ),
+                family_name=cognito.StandardAttribute(
+                    required=False,
+                    mutable=True,
+                ),
+                locale=cognito.StandardAttribute(
+                    required=False,
+                    mutable=True,
+                ),
+                timezone=cognito.StandardAttribute(
                     required=False,
                     mutable=True,
                 ),
             ),
-            password_policy=PasswordPolicy(
+            password_policy=cognito.PasswordPolicy(
                 min_length=8,
                 require_symbols=True,
                 require_digits=True,
                 require_lowercase=True,
                 require_uppercase=True,
             ),
-            account_recovery=cognito.AccountRecovery.EMAIL_ONLY,
-            removal_policy=cdk.RemovalPolicy.DESTROY,
+            removal_policy=RemovalPolicy.DESTROY,
         )
 
-        cognito.CfnUserPoolUser(
-            self, ADMIN_USER_ID,
-            user_pool_id=self.cognito_up.user_pool_id,
-            force_alias_creation=False,
-            username="sbomadmin",
+    def get_cognito_user_pool(self) -> cognito.UserPool:
+        return self.user_pool
+
+
+class SBOMUserRole(Construct):
+    """
+    This class is used to create the IAM role for the user pool .
+    params:
+        scope: Construct
+        user_pool: SBOMUserPool
+    """
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        user_pool: SBOMUserPool,
+    ):
+
+        super().__init__(scope, USER_ROLE_ID)
+
+        self.node.add_dependency(user_pool)
+
+        self.user_role = iam.Role(
+            self,
+            USER_ROLE_ID,
+            role_name=USER_ROLE_NAME,
+            description='Default role for authenticated users',
+            assumed_by=iam.FederatedPrincipal(
+                "cognito-identity.amazonaws.com",
+                {
+                    "StringEquals": {
+                        "cognito-identity.amazonaws.com:aud": user_pool.get_cognito_user_pool().user_pool_id,
+                    },
+                    "ForAnyValue:StringLike": {
+                        "cognito-identity.amazonaws.com:amr": "authenticated",
+                    },
+                },
+            ),
+            managed_policies=[
+                iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "service-role/AWSLambdaBasicExecutionRole",
+                ),
+                iam.ManagedPolicy.from_aws_managed_policy_name(
+                    # TODO: remove this when we have a better solution
+                    "AmazonS3FullAccess",
+                ),
+            ],
         )
 
-    def get_cognito_user_pool(self):
-        return self.cognito_up
+        self.user_role.apply_removal_policy(RemovalPolicy.DESTROY)
+
+    def get_cognito_user_role(self) -> iam.Role:
+        return self.user_role
+
+
+class SBOMUserPoolGroup(Construct):
+
+    """
+    This class is used to create the user pool group.
+    params:
+        scope: Construct
+        user_pool: SBOMUserPool
+        user_role: SBOMUserRole
+    """
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        user_pool: SBOMUserPool,
+        user_role: SBOMUserRole,
+    ):
+
+        super().__init__(scope, USER_POOL_GROUP_ID)
+
+        for dep in [user_pool, user_role]:
+            self.node.add_dependency(dep)
+
+        self.user_pool_group = cognito.CfnUserPoolGroup(
+            self,
+            USER_POOL_GROUP_ID,
+            description=USER_POOL_GROUP_DESCRIPTION,
+            group_name=USER_POOL_GROUP_NAME,
+            precedence=1,
+            role_arn=user_role.get_cognito_user_role().role_arn,
+            user_pool_id=user_pool.get_cognito_user_pool().user_pool_id,
+        )
+
+        self.user_pool_group.apply_removal_policy(RemovalPolicy.DESTROY)
+
+    def get_cognito_user_pool_group(self) -> cognito.CfnUserPoolGroup:
+        return self.user_pool_group
+
+
+class SBOMUserPoolClient(Construct):
+
+    """
+    This class is used to create the user pool app client.
+    params:
+        scope: Construct
+        user_pool: SBOMUserPool
+
+    """
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        user_pool: SBOMUserPool,
+    ):
+
+        super().__init__(scope, USER_POOL_APP_CLIENT_ID)
+
+        self.node.add_dependency(user_pool)
+
+        client_write_attributes = (
+            cognito.ClientAttributes()
+        ).with_standard_attributes(
+            email=True,
+            phone_number=True,
+            family_name=True,
+            fullname=True,
+            given_name=True,
+            locale=True,
+            preferred_username=True,
+            timezone=True,
+        )
+
+        client_read_attributes = (
+            client_write_attributes
+        ).with_standard_attributes(
+            email_verified=True,
+            phone_number_verified=True,
+        ).with_custom_attributes(
+            "custom:role_name",
+            "custom:team_id",
+        )
+
+        self.client = cognito.UserPoolClient(
+            self,
+            USER_POOL_APP_CLIENT_ID,
+            user_pool=user_pool.get_cognito_user_pool(),
+            auth_flows=cognito.AuthFlow(
+                custom=True,
+                user_password=True,
+                user_srp=True,
+            ),
+            enable_token_revocation=True,
+            prevent_user_existence_errors=True,
+            read_attributes=client_read_attributes,
+            write_attributes=client_write_attributes,
+        )
+
+        cfn_client = self.client.node.default_child
+        cfn_client.add_property_override("RefreshTokenValidity", 1)
+        cfn_client.add_property_override("SupportedIdentityProviders", ["COGNITO"])
+
+        self.client.apply_removal_policy(RemovalPolicy.DESTROY)
+
+    def get_cognito_user_pool_client(self) -> cognito.UserPoolClient:
+        return self.client
+
+
+class SBOMUserPoolDomain(Construct):
+
+    """This class is used to create the user pool app client domain."""
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        user_pool: SBOMUserPool,
+    ):
+
+        super().__init__(scope, USER_POOL_DOMAIN_ID)
+
+        self.node.add_dependency(user_pool)
+
+        self.user_pool_domain = cognito.UserPoolDomain(
+            self,
+            USER_POOL_DOMAIN_ID,
+            user_pool=user_pool.get_cognito_user_pool(),
+            cognito_domain=cognito.CognitoDomainOptions(
+                domain_prefix=COGNITO_DOMAIN_PREFIX,
+            ),
+        )
+
+        self.user_pool_domain.apply_removal_policy(RemovalPolicy.DESTROY)
+
+    def get_cognito_user_pool_domain(self) -> cognito.UserPoolDomain:
+        return self.user_pool_domain
+
+
+class ApplicationLoadBalancer(Construct):
+
+    """Creates a load balancer used to make requests
+    to the Dependency Track instance running in ECS (Fargate)"""
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+        user_pool: SBOMUserPool,
+        user_pool_client: SBOMUserPoolClient,
+        user_pool_domain: SBOMUserPoolDomain,
+    ):
+
+        super().__init__(scope, APP_LB_ID)
+
+        for dep in [vpc, user_pool, user_pool_client, user_pool_domain]:
+            self.node.add_dependency(dep)
+
+        security_group = ec2.SecurityGroup(
+            self,
+            APP_LB_SECURITY_GROUP_ID,
+            vpc=vpc,
+        )
+
+        security_group.add_ingress_rule(
+            connection=ec2.Port.tcp(APP_PORT),
+            peer=ec2.Peer.any_ipv4(),
+        )
+
+        self.load_balancer = elbv2.ApplicationLoadBalancer(
+            self,
+            APP_LOAD_BALANCER_ID,
+            vpc=vpc,
+            internet_facing=True,
+            load_balancer_name=APP_LOAD_BALANCER_ID,
+            security_group=security_group,
+        )
+
+        self.load_balancer.log_access_logs(
+            s3.Bucket(
+                self,
+                APP_LB_LOGGING_ID,
+                auto_delete_objects=True,
+                removal_policy=RemovalPolicy.DESTROY,
+            )
+        )
+
+        self.listener = self.load_balancer.add_listener(
+            APP_LOAD_BALANCER_LISTENER_ID,
+            protocol=elbv2.ApplicationProtocol.HTTP,
+            port=APP_PORT,
+            default_action=actions.AuthenticateCognitoAction(
+                user_pool=user_pool.get_cognito_user_pool(),
+                user_pool_client=user_pool_client.get_cognito_user_pool_client(),
+                user_pool_domain=user_pool_domain.get_cognito_user_pool_domain(),
+                next=elbv2.ListenerAction.fixed_response(200,
+                    content_type="text/plain",
+                    message_body="Authenticated",
+                ),
+            ),
+        )
+
+        self.listener.add_targets(
+            APP_LOAD_BALANCER_TARGET_ID,
+            protocol=elbv2.ApplicationProtocol.HTTP,
+            port=APP_PORT,
+        )
+
+        for construct in self.load_balancer, self.listener:
+            construct.apply_removal_policy(RemovalPolicy.DESTROY)
+
+    def get_target_listener(self) -> elbv2.ApplicationListener:
+
+        """Returns the Target Listener
+        which points to Dependency Track"""
+
+        return self.listener
+
+    def get_load_balancer(self) -> elbv2.ApplicationLoadBalancer:
+
+        """returns the load balancer
+        construct to plug into other constructs"""
+
+        return self.load_balancer
 
 
 class DependencyTrackLoadBalancer(Construct):
@@ -202,29 +514,29 @@ class DependencyTrackLoadBalancer(Construct):
 
         load_balancer = elbv2.ApplicationLoadBalancer(
             self,
-            LOAD_BALANCER_ID,
+            DT_LOAD_BALANCER_ID,
             vpc=vpc,
             internet_facing=False,
-            load_balancer_name=LOAD_BALANCER_ID,
+            load_balancer_name=DT_LOAD_BALANCER_ID,
             security_group=security_group,
         )
 
         logs_s3_bucket = s3.Bucket(
             self,
             DT_LB_LOGGING_ID,
-            removal_policy=cdk.RemovalPolicy.DESTROY,
+            removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
         )
         load_balancer.log_access_logs(logs_s3_bucket)
 
         listener = load_balancer.add_listener(
-            LOAD_BALANCER_LISTENER_ID,
+            DT_LOAD_BALANCER_LISTENER_ID,
             protocol=elbv2.ApplicationProtocol.HTTP,
             port=DT_API_PORT,
         )
 
         listener.add_targets(
-            LOAD_BALANCER_TARGET_ID,
+            DT_LOAD_BALANCER_TARGET_ID,
             protocol=elbv2.ApplicationProtocol.HTTP,
             port=DT_API_PORT,
         )
@@ -232,14 +544,14 @@ class DependencyTrackLoadBalancer(Construct):
         self.load_balancer = load_balancer
         self.listener = listener
 
-    def get_lb_target_listener(self):
+    def get_lb_target_listener(self) -> elbv2.ApplicationListener:
 
         """Returns the Target Listener
         which points to Dependency Track"""
 
         return self.listener
 
-    def get_load_balancer(self):
+    def get_load_balancer(self) -> elbv2.ApplicationLoadBalancer:
 
         """returns the load balancer
         construct to plug into other constructs"""
@@ -376,9 +688,11 @@ class PristineSbomIngressLambda(Construct):
             handler=sbom_ingest_func,
         )
 
-        cdk.CfnOutput(
-            self, API_GW_URL_EXPORT_ID,
-            value=lambda_api.rest_api_id,
+        CfnOutput(
+            self,
+            API_GW_URL_EXPORT_ID,
+            # TODO: get rest api url dynamically for "value" below
+            value=lambda_api.rest_api_id + ".execute-api.us-east-1.amazonaws.com",
             export_name=API_GW_ID_EXPORT_NAME,
             description="",
         )

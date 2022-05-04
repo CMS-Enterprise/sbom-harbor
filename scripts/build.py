@@ -1,6 +1,5 @@
 """ This Module has functions that can be run using Poetry to perform build tasks"""
 
-from asyncio.log import logger
 from shutil import rmtree
 from inspect import stack
 from optparse import OptionParser
@@ -45,6 +44,7 @@ def run_ui():
     Uses Webpack to build the UI code.
     """
 
+    system("yarn prepare")
     system("yarn build")
 
 
@@ -102,8 +102,8 @@ def package():
 def clean():
 
     """
-    Removes unwanted junk from the project.  Maybe we should read
-    .gitignore...?
+    Removes unwanted junk from the project.
+    Maybe we should read .gitignore...?
     """
 
     for unwanted_dir in ["dist", "tmp", "cdk.out"]:
@@ -117,8 +117,7 @@ def clean():
 def clean_ui():
 
     """
-    Removes build artifacts and temporary files from the UI
-
+    Removes build artifacts and temporary files from the UI.
     """
 
     system("yarn clean")

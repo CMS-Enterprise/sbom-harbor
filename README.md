@@ -96,3 +96,17 @@ All commit messages must be structured to match the [Conventional Commits](https
 ```
 
 Commits with messages that do not follow this structure will fail precommit checks. See the [@commitlint/config-conventional](https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/config-conventional) package for more information.
+
+#### Administrator
+
+##### Updating Admin User Password
+
+Navigate to the [Cognito Console > User Pools](https://us-east-1.console.aws.amazon.com/cognito/v2/idp/user-pools?region=us-east-1) and obtain the user-pool-id for the user pool created with the CDK.
+
+```sh
+aws cognito-idp admin-set-user-password \
+    --user-pool-id "us-east-1_A3Twv7l08" \
+    --username "sbomadmin@aquia.us" \
+    --password 'TestTh1s!' \
+    --permanent
+```

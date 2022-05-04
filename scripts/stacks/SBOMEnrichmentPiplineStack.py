@@ -1,25 +1,26 @@
 """This Stack deploys the Enrichment Pipeline"""
 
 from os import path
-
-import aws_cdk.aws_ec2 as ec2
-import aws_cdk.aws_lambda as lambda_
-import aws_cdk.aws_s3 as s3
-import aws_cdk.aws_sqs as sqs
-from aws_cdk import Duration
-from aws_cdk import Stack
+from aws_cdk import (
+    aws_ec2 as ec2,
+    aws_lambda as lambda_,
+    aws_s3 as s3,
+    aws_sqs as sqs,
+    Duration,
+    Stack,
+)
 from constructs import Construct
-
 from scripts.constants import (
     DT_SBOM_QUEUE_NAME,
     ENRICHMENT_STACK_ID,
     S3_BUCKET_NAME,
 )
-
-from scripts.constructs import DependencyTrackFargateInstance
-from scripts.constructs import DependencyTrackInterfaceLambda
-from scripts.constructs import DependencyTrackLoadBalancer
-from scripts.constructs import EnrichmentIngressLambda
+from scripts.constructs import (
+    DependencyTrackFargateInstance,
+    DependencyTrackInterfaceLambda,
+    DependencyTrackLoadBalancer,
+    EnrichmentIngressLambda,
+)
 
 cwd = path.dirname(__file__)
 enrichment_code = lambda_.AssetCode.from_asset("%s/../../dist/lambda.zip" % cwd)

@@ -19,7 +19,7 @@
     "semantic-release": "semantic-release"
   },
   "engines": {
-    "node": "^18",
+    "node": "^17",
     "npm": ">=8.7.0",
     "yarn": ">=1.20.0"
   },

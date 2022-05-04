@@ -1,15 +1,13 @@
 """ This module is the start of the deployment for SBOM-API """
 
-from os import system, getenv
 import aws_cdk as cdk
-
+from os import system, getenv
 from scripts.stacks import (
     SBOMEnrichmentPiplineStack,
     SBOMIngressPiplineStack,
     SBOMSharedResourceStack,
+    SBOMWebStack,
 )
-from scripts.stacks.SBOMWebStack import SBOMWebStack
-
 
 def dodep() -> None:
 
@@ -18,9 +16,11 @@ def dodep() -> None:
     construct the resources necessary to run the app.
     """
 
+    default_region = getenv("AWS_DEFAULT_REGION", "us-east-1")
+
     env = cdk.Environment(
-        region=getenv("AWS_REGION"),
         account=getenv("AWS_ACCOUNT_NUM"),
+        region=getenv("AWS_REGION", default_region),
     )
 
     app = cdk.App()
@@ -29,9 +29,13 @@ def dodep() -> None:
     user_pool = shared_resources.get_user_pool()
     s3_bucket = shared_resources.get_s3_bucket()
 
-    SBOMIngressPiplineStack(app, vpc, user_pool, s3_bucket, env=env)
+    ingress_stack = SBOMIngressPiplineStack(app, vpc, user_pool, s3_bucket, env=env)
+
     SBOMEnrichmentPiplineStack(app, vpc, env=env)
-    SBOMWebStack(app, user_pool)
+
+    web_stack = SBOMWebStack(app, user_pool)
+    web_stack.add_dependency(ingress_stack)
+
     app.synth()
 
 
