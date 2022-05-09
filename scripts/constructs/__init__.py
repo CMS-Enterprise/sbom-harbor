@@ -1,7 +1,5 @@
 """ This module is where all the higher level CDK constructs are stored """
-
-from http import client
-from json import load
+from os import path
 from aws_cdk import (
     aws_apigateway as apigwv1,
     aws_cognito as cognito,
@@ -20,6 +18,8 @@ from aws_cdk import (
     Duration,
     RemovalPolicy,
 )
+from aws_cdk.aws_apigateway import AccessLogFormat, LogGroupLogDestination, StageOptions
+from aws_cdk.aws_iam import ServicePrincipal
 from aws_cdk.aws_lambda import AssetCode
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from aws_cdk.aws_s3 import IBucket
@@ -39,17 +39,20 @@ from cyclonedx.constants import (
     DT_QUEUE_URL_EV,
     DT_ROOT_PWD,
     EMPTY_VALUE,
-    SBOM_BUCKET_NAME_KEY,
+    SBOM_BUCKET_NAME_KEY, USER_POOL_CLIENT_ID_KEY, USER_POOL_NAME_KEY,
 )
 from scripts.constants import (
     API_GW_ID_EXPORT_NAME,
     API_GW_URL_EXPORT_ID,
     APP_LB_ID,
-    APP_LB_LOGGING_ID,
     APP_LB_SECURITY_GROUP_ID,
+    AUTHORIZATION_HEADER,
+    AUTHORIZER_ACTUAL_LN,
+    AUTHORIZER_LN,
     CIDR,
     COGNITO_DOMAIN_PREFIX,
-    COGNITO_POOLS_AUTH_ID,
+    CREATE_TOKEN_LN,
+    DELETE_TOKEN_LN,
     DT_CONTAINER_ID,
     DT_DOCKER_ID,
     DT_FARGATE_SVC_NAME,
@@ -60,6 +63,7 @@ from scripts.constants import (
     DT_TASK_DEF_ID,
     EFS_MOUNT_ID,
     FARGATE_CLUSTER_ID,
+    LOGIN_LN,
     PRISTINE_SBOM_INGRESS_API_ID,
     PRISTINE_SBOM_INGRESS_LN,
     PRIVATE_SUBNET_NAME,
@@ -80,6 +84,15 @@ from scripts.constants import (
     VPC_ID,
     VPC_NAME,
 )
+
+
+def create_asset():
+
+    __cwd = path.dirname(__file__)
+
+    from_asset = lambda_.AssetCode.from_asset
+    return from_asset(f"{__cwd}/../../dist/lambda.zip")
+
 
 class SBOMApiVpc(Construct):
 
@@ -352,7 +365,7 @@ class SBOMUserPoolClient(Construct):
             auth_flows=cognito.AuthFlow(
                 custom=True,
                 user_password=True,
-                user_srp=True,
+                admin_user_password=True,
             ),
             enable_token_revocation=True,
             prevent_user_existence_errors=True,
@@ -417,7 +430,7 @@ class ApplicationLoadBalancer(Construct):
 
         super().__init__(scope, APP_LB_ID)
 
-        for dep in [vpc, user_pool, user_pool_client, user_pool_domain]:
+        for dep in vpc, user_pool, user_pool_client, user_pool_domain:
             self.node.add_dependency(dep)
 
         security_group = ec2.SecurityGroup(
@@ -440,15 +453,6 @@ class ApplicationLoadBalancer(Construct):
             security_group=security_group,
         )
 
-        self.load_balancer.log_access_logs(
-            s3.Bucket(
-                self,
-                APP_LB_LOGGING_ID,
-                auto_delete_objects=True,
-                removal_policy=RemovalPolicy.DESTROY,
-            )
-        )
-
         self.listener = self.load_balancer.add_listener(
             APP_LOAD_BALANCER_LISTENER_ID,
             protocol=elbv2.ApplicationProtocol.HTTP,
@@ -457,7 +461,8 @@ class ApplicationLoadBalancer(Construct):
                 user_pool=user_pool.get_cognito_user_pool(),
                 user_pool_client=user_pool_client.get_cognito_user_pool_client(),
                 user_pool_domain=user_pool_domain.get_cognito_user_pool_domain(),
-                next=elbv2.ListenerAction.fixed_response(200,
+                next=elbv2.ListenerAction.fixed_response(
+                    200,
                     content_type="text/plain",
                     message_body="Authenticated",
                 ),
@@ -570,7 +575,6 @@ class EnrichmentIngressLambda(Construct):
         s3_bucket: s3.IBucket,
         *,
         vpc: ec2.Vpc,
-        code: AssetCode,
         output_queue: sqs.Queue,
     ):
 
@@ -583,7 +587,7 @@ class EnrichmentIngressLambda(Construct):
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
             handler="cyclonedx.api.enrichment_ingress_handler",
-            code=code,
+            code=create_asset(),
             environment={
                 SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name,
                 DT_QUEUE_URL_EV: output_queue.queue_url,
@@ -607,8 +611,11 @@ class EnrichmentIngressLambda(Construct):
             s3n.LambdaDestination(sbom_enrichment_ingress_func),
         )
 
+############################################################################### Current Work
 
-class SbomApiLoginLambda(Construct):
+
+# TODO Finish
+class SBOMLoginLambda(Construct):
 
     """ Lambda to manage logging in """
 
@@ -617,30 +624,133 @@ class SbomApiLoginLambda(Construct):
         scope: Construct,
         *,
         vpc: ec2.Vpc,
-        code: AssetCode,
-        s3_bucket: IBucket,
-        user_pool: cognito.UserPool
+        user_pool_id: str,
+        user_pool_client_id: str,
     ):
 
-        super().__init__(scope, PRISTINE_SBOM_INGRESS_LN)
+        super().__init__(scope, LOGIN_LN)
 
         # TODO Complete
-        login_func = lambda_.Function(
+        self.login_func = lambda_.Function(
             self,
-            PRISTINE_SBOM_INGRESS_LN,
+            LOGIN_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PUBLIC),
+            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
             handler="cyclonedx.api.login_handler",
-            code=code,
+            code=create_asset(),
+            timeout=Duration.seconds(10),
+            memory_size=512,
             environment={
-                SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name,
-            },
+                USER_POOL_NAME_KEY: user_pool_id,
+                USER_POOL_CLIENT_ID_KEY: user_pool_client_id
+            }
+        )
+
+        self.login_func.add_to_role_policy(iam.PolicyStatement(
+            effect=iam.Effect.ALLOW,
+            actions=[
+                'cognito-idp:AdminGetUser',
+                'cognito-idp:AdminEnableUser',
+                'cognito-idp:AdminDisableUser',
+                'cognito-idp:AdminInitiateAuth',
+            ],
+            resources=[
+                f"*"
+            ]
+        ))
+
+    def get_lambda_function(self):
+        return self.login_func
+
+
+# TODO Finish
+class SBOMCreateTokenLambda(Construct):
+
+    """ Lambda to manage logging in """
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+    ):
+
+        super().__init__(scope, CREATE_TOKEN_LN)
+
+        # TODO Complete
+        self.func = lambda_.Function(
+            self, CREATE_TOKEN_LN,
+            runtime=SBOM_API_PYTHON_RUNTIME,
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            handler="cyclonedx.api.create_token_handler",
+            code=create_asset(),
             timeout=Duration.seconds(10),
             memory_size=512,
         )
 
-        pass
+    def get_lambda_function(self):
+        return self.func
+
+
+# TODO Finish
+class SBOMDeleteTokenLambda(Construct):
+
+    """ Lambda to manage logging in """
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+    ):
+
+        super().__init__(scope, DELETE_TOKEN_LN)
+
+        # TODO: Complete
+        self.func = lambda_.Function(
+            self, DELETE_TOKEN_LN,
+            runtime=SBOM_API_PYTHON_RUNTIME,
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            handler="cyclonedx.api.delete_token_handler",
+            code=create_asset(),
+            timeout=Duration.seconds(10),
+            memory_size=512,
+        )
+
+    def get_lambda_function(self):
+        return self.func
+
+
+class SBOMAuthorizerLambda(Construct):
+
+    """ Lambda to check DynamoDB for a token belonging to the team sending an SBOM """
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+    ):
+
+        super().__init__(scope, AUTHORIZER_LN)
+
+        self.lambda_func = lambda_.Function(
+            self,
+            AUTHORIZER_ACTUAL_LN,
+            runtime=SBOM_API_PYTHON_RUNTIME,
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            handler="cyclonedx.api.custom_authorizer_handler",
+            code=create_asset(),
+            timeout=Duration.seconds(10),
+            memory_size=512,
+        )
+
+    def get_lambda_function(self):
+        return self.lambda_func
 
 
 class PristineSbomIngressLambda(Construct):
@@ -653,26 +763,19 @@ class PristineSbomIngressLambda(Construct):
         scope: Construct,
         *,
         vpc: ec2.Vpc,
-        code: AssetCode,
         s3_bucket: IBucket,
-        user_pool: cognito.UserPool
     ):
 
         super().__init__(scope, PRISTINE_SBOM_INGRESS_LN)
 
-        auth = apigwv1.CognitoUserPoolsAuthorizer(
-            self, COGNITO_POOLS_AUTH_ID,
-            cognito_user_pools=[user_pool]
-        )
-
-        sbom_ingest_func = lambda_.Function(
+        self.sbom_ingest_func = lambda_.Function(
             self,
             PRISTINE_SBOM_INGRESS_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
             handler="cyclonedx.api.pristine_sbom_ingress_handler",
-            code=code,
+            code=create_asset(),
             environment={
                 SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name,
             },
@@ -680,28 +783,14 @@ class PristineSbomIngressLambda(Construct):
             memory_size=512,
         )
 
-        s3_bucket.grant_put(sbom_ingest_func)
+        s3_bucket.grant_put(self.sbom_ingest_func)
 
-        lambda_api = apigwv1.LambdaRestApi(
-            self,
-            id=PRISTINE_SBOM_INGRESS_API_ID,
-            handler=sbom_ingest_func,
+        self.sbom_ingest_func.grant_invoke(
+            ServicePrincipal('apigateway.amazonaws.com'),
         )
 
-        CfnOutput(
-            self,
-            API_GW_URL_EXPORT_ID,
-            # TODO: get rest api url dynamically for "value" below
-            value=lambda_api.rest_api_id + ".execute-api.us-east-1.amazonaws.com",
-            export_name=API_GW_ID_EXPORT_NAME,
-            description="",
-        )
-
-        store_ep = lambda_api.root.add_resource("store")
-        store_ep.add_method(
-            "POST", authorizer=auth,
-            authorization_type=apigwv1.AuthorizationType.COGNITO,
-        )
+    def get_lambda_function(self):
+        return self.sbom_ingest_func
 
 
 class DependencyTrackFargateInstance(Construct):
@@ -813,7 +902,6 @@ class DependencyTrackInterfaceLambda(Construct):
         scope: Construct,
         *,
         vpc: ec2.Vpc,
-        code: AssetCode,
         s3_bucket: IBucket,
         input_queue: sqs.Queue,
         load_balancer: DependencyTrackLoadBalancer,
@@ -834,7 +922,7 @@ class DependencyTrackInterfaceLambda(Construct):
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
             handler="cyclonedx.api.dt_interface_handler",
-            code=code,
+            code=create_asset(),
             environment={
                 DT_API_BASE: fq_dn,
             },

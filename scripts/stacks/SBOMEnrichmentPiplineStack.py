@@ -22,9 +22,6 @@ from scripts.constructs import (
     EnrichmentIngressLambda,
 )
 
-cwd = path.dirname(__file__)
-enrichment_code = lambda_.AssetCode.from_asset("%s/../../dist/lambda.zip" % cwd)
-
 
 class SBOMEnrichmentPiplineStack(Stack):
 
@@ -55,7 +52,6 @@ class SBOMEnrichmentPiplineStack(Stack):
         EnrichmentIngressLambda(
             self,
             vpc=vpc,
-            code=enrichment_code,
             s3_bucket=s3_bucket,
             output_queue=dt_ingress_queue,
         )
@@ -63,7 +59,6 @@ class SBOMEnrichmentPiplineStack(Stack):
         DependencyTrackInterfaceLambda(
             self,
             vpc=vpc,
-            code=enrichment_code,
             s3_bucket=s3_bucket,
             input_queue=dt_ingress_queue,
             load_balancer=dt_lb,

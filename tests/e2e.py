@@ -10,9 +10,14 @@ API_ID = "b8vvubhi9e"
 REGION = "us-east-1"
 STAGE = "prod"
 
-BASE_URL = f"https://{API_ID}.execute-api.{REGION}.amazonaws.com/{STAGE}"
-INVOKE_URL = f"{BASE_URL}/store"
-SBOM = loads(pr.read_text(sboms, "cms_npm_package.json"))
+CF_BASE_URL = "https://d10fb2gc5r4vcd.cloudfront.net"
+PATH = "api/login"
+USER = "sbomadmin@aquia.us"
+PASS = "L0g1nTe5tP@55!"
+
+INVOKE_URL = f"{CF_BASE_URL}/{PATH}"
+
+# SBOM = loads(pr.read_text(sboms, "cms_npm_package.json"))
 
 
 def post_test():
@@ -22,9 +27,10 @@ def post_test():
     """
 
     print("Sending To: %s" % INVOKE_URL)
-    print("<SBOM>")
-    print(SBOM)
-    print("</SBOM>")
 
-    rsp = requests.post(INVOKE_URL, json=SBOM)
+    rsp = requests.post(INVOKE_URL, json={
+        "username": USER,
+        "password": PASS
+    })
+
     print(rsp.text)

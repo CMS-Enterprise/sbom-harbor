@@ -21,6 +21,8 @@ jsonschema = "^4.4.0"
 requests = "^2.27.1"
 requests-toolbelt = "^0.9.1"
 urllib3 = "^1.26.9"
+"aws-cdk.aws-apigatewayv2-authorizers-alpha" = "^2.22.0-alpha.0"
+"aws-cdk.aws-apigatewayv2-integrations-alpha" = "^2.22.0-alpha.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

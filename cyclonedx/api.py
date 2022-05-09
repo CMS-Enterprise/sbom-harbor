@@ -7,6 +7,7 @@ from json import dumps
 from os import environ
 from uuid import uuid4
 
+import boto3
 from boto3 import client, resource
 from botocore.exceptions import ClientError
 from jsonschema.exceptions import ValidationError
@@ -16,7 +17,9 @@ from cyclonedx.constants import (
     ENRICHMENT_ID_SQS_KEY,
     ENRICHMENT_ID,
     SBOM_BUCKET_NAME_KEY,
-    SBOM_S3_KEY,
+    SBOM_S3_KEY, 
+    USER_POOL_CLIENT_ID_KEY, 
+    USER_POOL_NAME_KEY,
 )
 
 from cyclonedx.core import CycloneDxCore
@@ -32,6 +35,8 @@ from cyclonedx.util import (
     __upload_sbom,
     __validate,
 )
+
+cognito_client = boto3.client('cognito-idp')
 
 
 def pristine_sbom_ingress_handler(event, context) -> dict:
@@ -202,3 +207,108 @@ def dt_interface_handler(event=None, context=None):
     print(f"Findings are in the s3 bucket: {bucket_name}/{findings_key}")
 
     return True
+
+
+def login_handler(event, context):
+
+    print("<EVENT>")
+    print(event)
+    print("</EVENT>")
+
+    body = __get_body_from_first_record(event)
+
+    username = body["username"]
+    password = body["password"]
+
+    resp = cognito_client.admin_initiate_auth(
+        UserPoolId=environ.get(USER_POOL_NAME_KEY),
+        ClientId=environ.get(USER_POOL_CLIENT_ID_KEY),
+        AuthFlow='ADMIN_NO_SRP_AUTH',
+        AuthParameters={
+            "USERNAME": username,
+            "PASSWORD": password
+        }
+    )
+
+    jwt = resp['AuthenticationResult']['AccessToken']
+
+    print("Log in success")
+    print(f"Access token: {jwt}", )
+    print(f"ID token: {resp['AuthenticationResult']['IdToken']}")
+
+    return {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "body": dumps(
+            {
+                "token": jwt,
+            }
+        ),
+    }
+
+
+def custom_authorizer_handler(event, context):
+
+    print("<EVENT>")
+    print(event)
+    print("</EVENT>")
+
+    print("<CONTEXT>")
+    print(context)
+    print("</CONTEXT>")
+
+    return {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "body": dumps(
+            {
+                "event": event,
+                "context": str(context),
+            }
+        ),
+    }
+
+
+def create_token_handler(event=None, context=None):
+
+    print("<EVENT>")
+    print(event)
+    print("</EVENT>")
+
+    print("<CONTEXT>")
+    print(context)
+    print("</CONTEXT>")
+
+    return {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "body": dumps(
+            {
+                "event": event,
+                "context": str(context),
+            }
+        ),
+    }
+
+
+def delete_token_handler(event=None, context=None):
+
+    print("<EVENT>")
+    print(event)
+    print("</EVENT>")
+
+    print("<CONTEXT>")
+    print(context)
+    print("</CONTEXT>")
+
+    return {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "body": dumps(
+            {
+                "event": event,
+                "context": str(context),
+            }
+        ),
+    }
+

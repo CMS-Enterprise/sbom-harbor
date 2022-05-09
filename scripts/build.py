@@ -9,6 +9,7 @@ from sys import path
 parser = OptionParser("usage: %prog [options]")
 parser.add_option('--ui', dest="ui", help='ui flag', action="store_true")
 
+
 def install():
 
     """
@@ -106,7 +107,7 @@ def clean():
     Maybe we should read .gitignore...?
     """
 
-    for unwanted_dir in ["dist", "tmp", "cdk.out"]:
+    for unwanted_dir in "dist", "tmp", "cdk.out":
         try:
             rmtree(unwanted_dir)
         except OSError as os_error:

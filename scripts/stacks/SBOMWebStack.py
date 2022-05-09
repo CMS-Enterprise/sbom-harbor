@@ -15,6 +15,7 @@ from constructs import Construct
 from scripts.constants import (
     API_GW_ID_EXPORT_NAME,
     API_GW_URL_KEY,
+    AUTHORIZATION_HEADER,
     CLOUDFRONT_DIST_NAME,
     S3_WS_BUCKET_ID,
     S3_WS_BUCKET_NAME,
@@ -56,14 +57,14 @@ class SBOMWebStack(Stack):
             self, S3_WS_BUCKET_ID,
             bucket_name=S3_WS_BUCKET_NAME,
             public_read_access=True,
+            auto_delete_objects=True,
             removal_policy=RemovalPolicy.DESTROY,
             website_index_document="index.html",
-            auto_delete_objects=False,
         )
 
         oai = cf.OriginAccessIdentity(
             self, "SBOMCFOAI",
-            comment=""
+            comment="SBOM Origin Access Identity"
         )
 
         website_bucket.add_to_resource_policy(iam.PolicyStatement(
@@ -73,8 +74,6 @@ class SBOMWebStack(Stack):
         ))
 
         apigw_url = Fn.import_value(API_GW_ID_EXPORT_NAME)
-
-        # self.__create_ui_config_file(apigw_url)
 
         # This line specifies where the UI is as an asset.
         # We need to have written whatever we needed already to the
@@ -89,12 +88,24 @@ class SBOMWebStack(Stack):
 
         cf.CloudFrontWebDistribution(
             self, CLOUDFRONT_DIST_NAME,
+            logging_config=cf.LoggingConfiguration(
+                bucket=s3.Bucket(
+                    self, "TmpLoggingBucket",
+                    bucket_name="cloudfront.logging.bucket",
+                    public_read_access=False,
+                    auto_delete_objects=True,
+                    removal_policy=RemovalPolicy.DESTROY,
+                ),
+                include_cookies=False,
+                prefix="prefix"
+            ),
             origin_configs=[
                 cf.SourceConfiguration(
                     custom_origin_source=cf.CustomOriginConfig(
                         # TODO: get rest api url dynamically for "value" below
                         # see: scripts/constructs/__init__.py/PristineSbomIngressLambda
                         domain_name=apigw_url,
+                        origin_path="/prod"
                     ),
                     behaviors=[
                         cf.Behavior(
@@ -102,7 +113,7 @@ class SBOMWebStack(Stack):
                             allowed_methods=cf.CloudFrontAllowedMethods.ALL,
                             default_ttl=Duration.seconds(5),
                             forwarded_values=cf.CfnDistribution.ForwardedValuesProperty(
-                                headers=["Authorization"],
+                                headers=[AUTHORIZATION_HEADER],
                                 query_string=True,
                             ),
                         ),
@@ -124,7 +135,7 @@ class SBOMWebStack(Stack):
                                 cookies=cf.CfnDistribution.CookiesProperty(
                                     forward="all",
                                 ),
-                                headers=["Authorization"],
+                                headers=[AUTHORIZATION_HEADER],
                                 query_string=True,
                             ),
                         ),
