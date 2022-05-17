@@ -105,7 +105,7 @@ class SBOMWebStack(Stack):
                         # TODO: get rest api url dynamically for "value" below
                         # see: scripts/constructs/__init__.py/PristineSbomIngressLambda
                         domain_name=apigw_url,
-                        origin_path="/prod"
+                        origin_path=""
                     ),
                     behaviors=[
                         cf.Behavior(

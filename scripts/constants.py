@@ -35,8 +35,9 @@ LOGIN_LN = "LoginLambda"
 SBOM_ENRICHMENT_LN = "SBOMEnrichmentIngressLambda"
 DT_INTERFACE_LN = "DependencyTrackInterfaceLambda"
 ENRICHMENT_EGRESS_LN = "EnrichmentEgressLambda"
-AUTHORIZER_LN = "TokenAuthorizer"
-AUTHORIZER_ACTUAL_LN = "ActualTokenAuthorizer"
+AUTHORIZER_LN = "JwtTokenAuthorizer"
+TOKEN_AUTHORIZER_LN = "APITokenAuthorizer"
+API_KEY_AUTHORIZER_LN = "APIKeyAuthorizer"
 
 DT_LB_ID = "DEPENDENCY-TRACK-LOAD-BALANCER"
 DT_LB_SG_ID = "DEPENDENCY-TRACK-LOAD-BALANCER-SECURITY-GROUP"
@@ -97,6 +98,3 @@ API_GW_URL_EXPORT_ID = f"{API_GW_ID_EXPORT_NAME}id"
 
 CLOUDFRONT_DIST_NAME = "sbomapidistribution"
 
-# DynamoDB
-TEAM_TABLE_NAME = "sbomteamtable"
-TEAM_TABLE_ID = f"{TEAM_TABLE_NAME}id"

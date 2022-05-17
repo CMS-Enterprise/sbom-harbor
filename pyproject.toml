@@ -11,7 +11,7 @@ lint = "scripts.build:lint"
 test = "scripts.build:test"
 package = "scripts.build:package"
 deploy = "scripts.deploy:run"
-e2e = "tests.e2e:post_test"
+tokentest = "tests.e2e:token_test"
 dodep = "scripts.deploy:dodep"
 
 [tool.poetry.dependencies]
@@ -23,6 +23,7 @@ requests-toolbelt = "^0.9.1"
 urllib3 = "^1.26.9"
 "aws-cdk.aws-apigatewayv2-authorizers-alpha" = "^2.22.0-alpha.0"
 "aws-cdk.aws-apigatewayv2-integrations-alpha" = "^2.22.0-alpha.0"
+genson = "^1.2.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

@@ -68,22 +68,6 @@ class SBOMUserManagement(Stack):
         user_pool_group = SBOMUserPoolGroup(self, user_pool=user_pool, user_role=user_role)
         self.cognito_user_pool_group = user_pool_group.get_cognito_user_pool_group()
 
-        for dependency in user_pool, user_pool_group, user_role:
-            admin_user.node.add_dependency(dependency)
-
-        # Add the admin user to the "admin" user pool group
-        group_attachment = cognito.CfnUserPoolUserToGroupAttachment(
-            self,
-            f"{USER_POOL_GROUP_NAME}_{USER_POOL_NAME}_{ADMIN_USER_ID}",
-            group_name=USER_POOL_GROUP_NAME,
-            user_pool_id=self.cognito_user_pool.user_pool_id,
-            username=ADMIN_USER_USERNAME,
-        )
-        group_attachment.apply_removal_policy(RemovalPolicy.DESTROY)
-        group_attachment.add_depends_on(admin_user)
-        for dependency in user_pool, user_pool_group, user_role:
-            group_attachment.node.add_dependency(dependency)
-
     def get_user_role(self) -> iam.Role:
 
         """Gets the user pool"""

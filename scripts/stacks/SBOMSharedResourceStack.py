@@ -1,11 +1,11 @@
+
 """This Stack is used to set up shared resources
 that the other stacks use when deploying the application"""
-import aws_cdk
+
 from constructs import Construct
 from aws_cdk import (
     aws_s3 as s3,
     aws_dynamodb as dynamodb,
-    aws_applicationautoscaling as autoscale,
     RemovalPolicy,
     Stack,
 )
@@ -13,11 +13,10 @@ from scripts.constants import (
     S3_BUCKET_ID,
     S3_BUCKET_NAME,
     SHARED_RESOURCE_STACK_ID,
-    TEAM_TABLE_ID,
-    TEAM_TABLE_NAME,
 )
 from scripts.constructs import (
-    SBOMApiVpc
+    SBOMApiVpc,
+    SBOMTeamTable
 )
 
 
@@ -48,44 +47,7 @@ class SBOMSharedResourceStack(Stack):
             auto_delete_objects=True,
         )
 
-        table = dynamodb.Table(
-            self, TEAM_TABLE_ID,
-            table_name=TEAM_TABLE_NAME,
-            billing_mode=dynamodb.BillingMode.PROVISIONED,
-            removal_policy=aws_cdk.RemovalPolicy.DESTROY,
-            partition_key=dynamodb.Attribute(
-                name="id",
-                type=dynamodb.AttributeType.STRING,
-            ),
-        )
-
-        # Set up scaling
-        read_scaling = table.auto_scale_read_capacity(
-            min_capacity=1,
-            max_capacity=50,
-        )
-
-        read_scaling.scale_on_utilization(
-            target_utilization_percent=50
-        )
-
-        read_scaling.scale_on_schedule(
-            "ScaleUpInTheMorning",
-            schedule=autoscale.Schedule.cron(
-                hour="8",
-                minute="0",
-            ),
-            min_capacity=20
-        )
-
-        read_scaling.scale_on_schedule(
-            "ScaleDownAtNight",
-            schedule=autoscale.Schedule.cron(
-                hour="20",
-                minute="0",
-            ),
-            max_capacity=20
-        )
+        self.team_table: dynamodb.Table = SBOMTeamTable(self).get_construct()
 
     def get_vpc(self):
 
@@ -105,3 +67,8 @@ class SBOMSharedResourceStack(Stack):
 
         return self.s3_bucket
 
+    def get_team_table(self) -> dynamodb.Table:
+
+        """ Returns the DynamoDB Team Table construct """
+
+        return self.team_table

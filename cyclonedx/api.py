@@ -9,8 +9,12 @@ from uuid import uuid4
 
 import boto3
 from boto3 import client, resource
+import datetime
+from dateutil.relativedelta import relativedelta
 from botocore.exceptions import ClientError
 from jsonschema.exceptions import ValidationError
+from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
+from decimal import Decimal
 
 from cyclonedx.constants import (
     DT_QUEUE_URL_EV,
@@ -20,23 +24,31 @@ from cyclonedx.constants import (
     SBOM_S3_KEY, 
     USER_POOL_CLIENT_ID_KEY, 
     USER_POOL_NAME_KEY,
+    TEAM_TABLE_NAME,
 )
 
 from cyclonedx.core import CycloneDxCore
 from cyclonedx.util import (
     __create_project,
-    __create_response_obj,
+    __create_pristine_response_obj,
     __delete_project,
     __generate_sbom_api_token,
     __get_body_from_event,
     __get_body_from_first_record,
     __get_findings,
+    __get_login_failed_response,
+    __get_login_success_response,
     __get_records_from_event,
+    __get_token_index,
+    __token_response_obj,
     __upload_sbom,
     __validate,
 )
 
 cognito_client = boto3.client('cognito-idp')
+dynamodb_resource = boto3.resource('dynamodb')
+dynamodb_serializer = TypeSerializer()
+dynamodb_deserializer = TypeDeserializer()
 
 
 def pristine_sbom_ingress_handler(event, context) -> dict:
@@ -64,7 +76,7 @@ def pristine_sbom_ingress_handler(event, context) -> dict:
     core = CycloneDxCore()
 
     # Create a response object to add values to.
-    response_obj = __create_response_obj(bucket_name, key)
+    response_obj = __create_pristine_response_obj(bucket_name, key)
 
     try:
 
@@ -211,24 +223,23 @@ def dt_interface_handler(event=None, context=None):
 
 def login_handler(event, context):
 
-    print("<EVENT>")
-    print(event)
-    print("</EVENT>")
-
     body = __get_body_from_first_record(event)
 
     username = body["username"]
     password = body["password"]
 
-    resp = cognito_client.admin_initiate_auth(
-        UserPoolId=environ.get(USER_POOL_NAME_KEY),
-        ClientId=environ.get(USER_POOL_CLIENT_ID_KEY),
-        AuthFlow='ADMIN_NO_SRP_AUTH',
-        AuthParameters={
-            "USERNAME": username,
-            "PASSWORD": password
-        }
-    )
+    try:
+        resp = cognito_client.admin_initiate_auth(
+            UserPoolId=environ.get(USER_POOL_NAME_KEY),
+            ClientId=environ.get(USER_POOL_CLIENT_ID_KEY),
+            AuthFlow='ADMIN_NO_SRP_AUTH',
+            AuthParameters={
+                "USERNAME": username,
+                "PASSWORD": password
+            }
+        )
+    except Exception as err:
+        return __get_login_failed_response(401, err)
 
     jwt = resp['AuthenticationResult']['AccessToken']
 
@@ -236,18 +247,62 @@ def login_handler(event, context):
     print(f"Access token: {jwt}", )
     print(f"ID token: {resp['AuthenticationResult']['IdToken']}")
 
+    return __get_login_success_response(jwt)
+
+
+def allow_policy(method_arn: str):
     return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps(
-            {
-                "token": jwt,
-            }
-        ),
+        "principalId": "apigateway.amazonaws.com",
+        "policyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Action": "execute-api:Invoke",
+                "Effect": "Allow",
+                "Resource": method_arn
+            }]
+        }
     }
 
 
-def custom_authorizer_handler(event, context):
+def deny_policy():
+    return {
+        "principalId": "*",
+        "policyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Action": "*",
+                "Effect": "Deny",
+                "Resource": "*"
+            }]
+        }
+    }
+
+
+def verify_token(token: str):
+    return True
+
+
+def jwt_authorizer_handler(event, context):
+
+    print("<EVENT>")
+    print(event)
+    print("</EVENT>")
+
+    print("<CONTEXT>")
+    print(context)
+    print("</CONTEXT>")
+
+    method_arn = event["methodArn"]
+    token = event["authorizationToken"]
+
+    print("<TOKEN>")
+    print(token)
+    print("</TOKEN>")
+
+    return allow_policy(method_arn) if verify_token(token) else deny_policy()
+
+
+def api_key_authorizer_handler(event, context):
 
     print("<EVENT>")
     print(event)
@@ -271,44 +326,123 @@ def custom_authorizer_handler(event, context):
 
 def create_token_handler(event=None, context=None):
 
-    print("<EVENT>")
-    print(event)
-    print("</EVENT>")
+    """ Handler that creates a token, puts it in
+    DynamoDB and returns it to the requester """
 
-    print("<CONTEXT>")
-    print(context)
-    print("</CONTEXT>")
+    # Get the team from the path parameters
+    # and extract the body from the event
+    team = event["pathParameters"]["team"]
+    body = __get_body_from_event(event)
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps(
-            {
-                "event": event,
-                "context": str(context),
-            }
-        ),
+    # Create a new token starting with "sbom-api",
+    # create a creation and expiration time
+    token = f"sbom-api-{uuid4()}"
+    now = datetime.datetime.now()
+    later = now + relativedelta(years=1)
+
+    # Get the timestamps to put in the database
+    created = now.timestamp()
+    expires = later.timestamp()
+
+    # If a token name is given, set that as the name
+    # otherwise put in a default
+    name = body["name"] if body["name"] else "NoName"
+
+    # Create a data structure representing the token
+    # and it's metadata
+    token_item = {
+        "name": name,
+        "created": Decimal(created),
+        "expires": Decimal(expires),
+        "enabled": True,
+        "token": token,
     }
+
+    # Get the dynamodb resource and add the token
+    # to the existing team
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table(TEAM_TABLE_NAME)
+
+    try:
+        table.update_item(
+            Key={
+                "Id": team,
+            },
+            UpdateExpression="SET #t = list_append(#t, :ti)",
+            ExpressionAttributeNames={
+                "#t": "tokens",
+            },
+            ExpressionAttributeValues={
+                ":ti": [token_item]
+            },
+        )
+    except Exception as err:
+
+        # If something happened in AWS that made it where the
+        # call could not be completed, send an internal service error.
+        return __token_response_obj(
+            500, token, f"Request Error from boto3: {err}"
+        )
+
+    return __token_response_obj(200, token)
 
 
 def delete_token_handler(event=None, context=None):
 
-    print("<EVENT>")
-    print(event)
-    print("</EVENT>")
+    """ Handler for deleting a token belonging to a given team """
 
-    print("<CONTEXT>")
-    print(context)
-    print("</CONTEXT>")
+    # Grab the team and the token from the path parameters
+    team_name = event["pathParameters"]["team"]
+    token = event["pathParameters"]["token"]
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps(
-            {
-                "event": event,
-                "context": str(context),
-            }
-        ),
-    }
+    # Set the Key for update_item(). The Id is the team name
+    key = {"Id": team_name}
+
+    # Get our Team table from DynamoDB
+    table = dynamodb_resource.Table(TEAM_TABLE_NAME)
+
+    # Get the team from the table
+    get_item_rsp = table.get_item(Key=key)
+
+    # Extract the existing tokens and find the index of the token
+    # the user is looking to delete.
+    team = get_item_rsp["Item"]
+    tokens = team["tokens"]
+    index = __get_token_index(tokens, token)
+
+    # If the key is found belonging to the team
+    if index:
+
+        # Craft an update expression to remove the object
+        # located at the index we found the token at.
+        update_expression = f"REMOVE #t[{index}]"
+        exp_attr_names = {"#t": "tokens"}
+
+        try:
+
+            # Get rid of the token
+            table.update_item(
+                Key=key,
+                UpdateExpression=update_expression,
+                ExpressionAttributeNames=exp_attr_names,
+            )
+
+            # Craft a response saying the operation went well
+            delete_token_response = __token_response_obj(200, token)
+        except Exception as err:
+
+            # If something happened in AWS that made it where the
+            # call could not be completed, send an internal service error.
+            delete_token_response = __token_response_obj(
+                500, token, f"Request Error: {err}"
+            )
+
+    else:
+
+        # If no token exists, tell them we couldn't find it.
+        delete_token_response = __token_response_obj(
+            401, token, f"No such token({token}) belongs to team({team_name}) "
+        )
+
+    return delete_token_response
 

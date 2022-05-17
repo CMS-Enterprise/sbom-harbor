@@ -3,9 +3,8 @@
 import os
 
 import requests
-from botocore.client import BaseClient
-from pytest_mock import mocker
-from boto3 import client
+from json import loads, dumps
+from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 
 import cyclonedx.api as api
 import cyclonedx.util as util
@@ -185,3 +184,26 @@ def cve_test():
     rsp = requests.get(url, params={"apiKey": os.getenv("NVD_API_KEY")})
 
     print(f"Calling to: {url},  Response: {rsp.text}")
+
+
+def dynamodb_parser_test():
+    from os import path
+    __cwd = path.dirname(__file__)
+    team_fh = open(f"{__cwd}/scripts/team.json", "r")
+    json = team_fh.read()
+
+    print("<JSON>")
+    print(json)
+    print("</JSON>")
+
+    serializer = TypeSerializer()
+
+    ser_json = serializer.serialize(loads(json))
+
+    print("<SerJSON>")
+    print(dumps(ser_json))
+    print("</SerJSON>")
+
+
+
+

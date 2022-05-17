@@ -2,8 +2,8 @@
 
 import aws_cdk as cdk
 from aws_cdk import (
-    aws_iam as iam,
     aws_cognito as cognito,
+    aws_dynamodb as dynamodb,
 )
 
 from os import system, getenv
@@ -37,6 +37,7 @@ def dodep() -> None:
     # by all the other stacks.
     shared_resources = SBOMSharedResourceStack(app, env=env)
     vpc = shared_resources.get_vpc()
+    team_table: dynamodb.Table = shared_resources.get_team_table()
 
     user_management = SBOMUserManagement(app, vpc=vpc, env=env)
     user_pool: cognito.UserPool = user_management.get_user_pool()
@@ -46,7 +47,8 @@ def dodep() -> None:
     ingress_stack = SBOMIngressPiplineStack(
         app, vpc, env=env,
         user_pool=user_pool,
-        user_pool_client=user_pool_client
+        user_pool_client=user_pool_client,
+        team_table=team_table,
     )
 
     # The Enrichment Stack sets up the infrastructure to enrich SBOMs

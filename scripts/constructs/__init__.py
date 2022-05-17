@@ -1,7 +1,6 @@
 """ This module is where all the higher level CDK constructs are stored """
 from os import path
 from aws_cdk import (
-    aws_apigateway as apigwv1,
     aws_cognito as cognito,
     aws_ec2 as ec2,
     aws_ecs as ecs,
@@ -14,13 +13,11 @@ from aws_cdk import (
     aws_s3_notifications as s3n,
     aws_sqs as sqs,
     aws_ssm as ssm,
-    CfnOutput,
+    aws_dynamodb as dynamodb,
     Duration,
     RemovalPolicy,
 )
-from aws_cdk.aws_apigateway import AccessLogFormat, LogGroupLogDestination, StageOptions
 from aws_cdk.aws_iam import ServicePrincipal
-from aws_cdk.aws_lambda import AssetCode
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from aws_cdk.aws_s3 import IBucket
 from constructs import Construct
@@ -39,15 +36,14 @@ from cyclonedx.constants import (
     DT_QUEUE_URL_EV,
     DT_ROOT_PWD,
     EMPTY_VALUE,
-    SBOM_BUCKET_NAME_KEY, USER_POOL_CLIENT_ID_KEY, USER_POOL_NAME_KEY,
+    SBOM_BUCKET_NAME_KEY,
+    USER_POOL_CLIENT_ID_KEY,
+    USER_POOL_NAME_KEY,
 )
 from scripts.constants import (
-    API_GW_ID_EXPORT_NAME,
-    API_GW_URL_EXPORT_ID,
-    APP_LB_ID,
+    API_KEY_AUTHORIZER_LN, APP_LB_ID,
     APP_LB_SECURITY_GROUP_ID,
-    AUTHORIZATION_HEADER,
-    AUTHORIZER_ACTUAL_LN,
+    TOKEN_AUTHORIZER_LN,
     AUTHORIZER_LN,
     CIDR,
     COGNITO_DOMAIN_PREFIX,
@@ -64,7 +60,6 @@ from scripts.constants import (
     EFS_MOUNT_ID,
     FARGATE_CLUSTER_ID,
     LOGIN_LN,
-    PRISTINE_SBOM_INGRESS_API_ID,
     PRISTINE_SBOM_INGRESS_LN,
     PRIVATE_SUBNET_NAME,
     PRIVATE,
@@ -85,6 +80,7 @@ from scripts.constants import (
     VPC_NAME,
 )
 
+from .SBOMTeamTable import SBOMTeamTable
 
 def create_asset():
 
@@ -583,6 +579,7 @@ class EnrichmentIngressLambda(Construct):
         sbom_enrichment_ingress_func = lambda_.Function(
             self,
             SBOM_ENRICHMENT_LN,
+            function_name="EnrichmentIngressLambda",
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
@@ -611,10 +608,7 @@ class EnrichmentIngressLambda(Construct):
             s3n.LambdaDestination(sbom_enrichment_ingress_func),
         )
 
-############################################################################### Current Work
 
-
-# TODO Finish
 class SBOMLoginLambda(Construct):
 
     """ Lambda to manage logging in """
@@ -634,6 +628,7 @@ class SBOMLoginLambda(Construct):
         self.login_func = lambda_.Function(
             self,
             LOGIN_LN,
+            function_name="SBOMLoginLambda",
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
@@ -664,23 +659,23 @@ class SBOMLoginLambda(Construct):
         return self.login_func
 
 
-# TODO Finish
 class SBOMCreateTokenLambda(Construct):
 
-    """ Lambda to manage logging in """
+    """ Lambda to create an API token """
 
     def __init__(
         self,
         scope: Construct,
         *,
         vpc: ec2.Vpc,
+        team_table: dynamodb.Table,
     ):
 
         super().__init__(scope, CREATE_TOKEN_LN)
 
-        # TODO Complete
         self.func = lambda_.Function(
             self, CREATE_TOKEN_LN,
+            function_name="SBOMCreateTokenLambda",
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
@@ -690,6 +685,8 @@ class SBOMCreateTokenLambda(Construct):
             memory_size=512,
         )
 
+        team_table.grant_read_write_data(self.func)
+
     def get_lambda_function(self):
         return self.func
 
@@ -697,20 +694,21 @@ class SBOMCreateTokenLambda(Construct):
 # TODO Finish
 class SBOMDeleteTokenLambda(Construct):
 
-    """ Lambda to manage logging in """
+    """ Lambda delete an API token """
 
     def __init__(
         self,
         scope: Construct,
         *,
         vpc: ec2.Vpc,
+        team_table: dynamodb.Table,
     ):
 
         super().__init__(scope, DELETE_TOKEN_LN)
 
-        # TODO: Complete
         self.func = lambda_.Function(
             self, DELETE_TOKEN_LN,
+            function_name="SBOMDeleteTokenLambda",
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
@@ -720,11 +718,54 @@ class SBOMDeleteTokenLambda(Construct):
             memory_size=512,
         )
 
+        team_table.grant_read_write_data(self.func)
+
     def get_lambda_function(self):
         return self.func
 
 
-class SBOMAuthorizerLambda(Construct):
+class AuthorizerLambdaFactory(object):
+
+    class SBOMJwtAuthorizerLambda(Construct):
+
+        """ Lambda to check DynamoDB for a token belonging to the team sending an SBOM """
+
+        def __init__(
+            self,
+            scope: Construct,
+            *,
+            vpc: ec2.Vpc,
+            name: str,
+        ):
+
+            super().__init__(scope, name)
+
+            self.lambda_func = lambda_.Function(
+                self,
+                name,
+                function_name=name,
+                runtime=SBOM_API_PYTHON_RUNTIME,
+                vpc=vpc,
+                vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+                handler="cyclonedx.api.jwt_authorizer_handler",
+                code=create_asset(),
+                timeout=Duration.seconds(10),
+                memory_size=512,
+            )
+
+        def get_lambda_function(self):
+            return self.lambda_func
+
+    def __init__(self, scope: Construct, vpc: ec2.Vpc):
+        self.scope = scope
+        self.vpc = vpc
+
+    def create(self, lambda_name: str):
+        return AuthorizerLambdaFactory.SBOMJwtAuthorizerLambda(
+            self.scope, vpc=self.vpc, name=f"{lambda_name}_Authorizer")
+
+
+class SBOMUploadAPIKeyAuthorizerLambda(Construct):
 
     """ Lambda to check DynamoDB for a token belonging to the team sending an SBOM """
 
@@ -735,15 +776,15 @@ class SBOMAuthorizerLambda(Construct):
         vpc: ec2.Vpc,
     ):
 
-        super().__init__(scope, AUTHORIZER_LN)
+        super().__init__(scope, API_KEY_AUTHORIZER_LN)
 
         self.lambda_func = lambda_.Function(
             self,
-            AUTHORIZER_ACTUAL_LN,
+            API_KEY_AUTHORIZER_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
-            handler="cyclonedx.api.custom_authorizer_handler",
+            handler="cyclonedx.api.api_key_authorizer_handler",
             code=create_asset(),
             timeout=Duration.seconds(10),
             memory_size=512,
@@ -771,6 +812,7 @@ class PristineSbomIngressLambda(Construct):
         self.sbom_ingest_func = lambda_.Function(
             self,
             PRISTINE_SBOM_INGRESS_LN,
+            function_name="PristineSbomIngressLambda",
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
@@ -918,6 +960,7 @@ class DependencyTrackInterfaceLambda(Construct):
         dt_interface_function = lambda_.Function(
             self,
             DT_INTERFACE_LN,
+            function_name="DependencyTrackInterfaceLambda",
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),

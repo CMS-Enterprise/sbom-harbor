@@ -2,6 +2,7 @@
   <dictionary name="oem">
     <words>
       <w>amazonaws</w>
+      <w>apigateway</w>
       <w>apigatewayv</w>
       <w>apigwv</w>
       <w>apiserver</w>
@@ -13,6 +14,7 @@
       <w>lhwjegyqs</w>
       <w>sbomadmin</w>
       <w>skdea</w>
+      <w>tokentorm</w>
     </words>
   </dictionary>
 </component>

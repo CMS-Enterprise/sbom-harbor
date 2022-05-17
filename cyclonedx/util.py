@@ -269,7 +269,7 @@ def __get_records_from_event(event) -> list:
     raise KeyError("No 'Records' Key in event")
 
 
-def __create_response_obj(bucket_name: str, key: str) -> dict:
+def __create_pristine_response_obj(bucket_name: str, key: str) -> dict:
 
     """
     Creates a dict that is used as the response from the Lambda
@@ -286,6 +286,28 @@ def __create_response_obj(bucket_name: str, key: str) -> dict:
                 "s3ObjectKey": key,
             }
         ),
+    }
+
+
+def __token_response_obj(
+        status_code: int, token: str, msg=None) -> dict:
+
+    """
+    Creates a dict that is used as the response from the Lambda
+    call.  It has all the necessary elements to satisfy AWS's criteria.
+    """
+
+    body = {
+        "token": token,
+    }
+
+    if msg:
+        body["error"] = msg
+
+    return {
+        "statusCode": status_code,
+        "isBase64Encoded": False,
+        "body": dumps(body),
     }
 
 
@@ -509,3 +531,45 @@ def __set_initial_api_key_in_ssm():
     )
 
     return api_key
+
+
+def __get_token_index(tokens: list, token: str) -> int:
+
+    index = None
+
+    i = 0
+    for token_data in tokens:
+        existing_team_token = token_data["token"]
+        if existing_team_token == token:
+            index = i
+            break
+        else:
+            i = i + 1
+
+    return index
+
+
+def __get_login_failed_response(status_code: int, err: Exception):
+
+    return {
+        "statusCode": status_code,
+        "isBase64Encoded": False,
+        "body": dumps(
+            {
+                "error": str(err),
+            }
+        ),
+    }
+
+
+def __get_login_success_response(jwt: str):
+
+    return {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "body": dumps(
+            {
+                "token": jwt,
+            }
+        ),
+    }
