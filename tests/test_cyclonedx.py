@@ -2,20 +2,29 @@
 
 import os
 
+import pytest
 import requests
 from json import loads, dumps
-from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
+from jsonschema import validate
+from jsonschema.exceptions import ValidationError
 
 import cyclonedx.api as api
 import cyclonedx.util as util
-
+import cyclonedx.schemas as schemas
 import tests.sboms as sboms
+import tests.data as data
 import importlib.resources as pr
 from time import sleep
 from json import dumps, loads
 from requests import Response, get, put
 from cyclonedx import core
 from cyclonedx.dtendpoints import DTEndpoints
+
+team_schema = loads(
+    pr.read_text(
+        schemas, "team.schema.json"
+    )
+)
 
 
 def test_get_schemas() -> None:
@@ -142,6 +151,7 @@ def test_dt_ingress_handler():
 
 
 def test_upload_bom():
+
     juice_sbom = pr.read_text(sboms, "juice.json")
     juice_sbom = dumps(loads(juice_sbom))
     token = util.__upload_sbom("2f357abe-954d-4680-b978-60b597a4cd47", juice_sbom)
@@ -186,24 +196,83 @@ def cve_test():
     print(f"Calling to: {url},  Response: {rsp.text}")
 
 
-def dynamodb_parser_test():
-    from os import path
-    __cwd = path.dirname(__file__)
-    team_fh = open(f"{__cwd}/scripts/team.json", "r")
-    json = team_fh.read()
+def correct_team_schema_test():
 
-    print("<JSON>")
-    print(json)
-    print("</JSON>")
+    team_json = loads(
+        pr.read_text(
+            data, "team.correct.json"
+        )
+    )
 
-    serializer = TypeSerializer()
+    print("<TEAM>")
+    print(dumps(team_json, indent=2))
+    print("</TEAM>")
 
-    ser_json = serializer.serialize(loads(json))
+    print("<TEAM SCHEMA>")
+    print(dumps(team_schema, indent=2))
+    print("</TEAM SCHEMA>")
 
-    print("<SerJSON>")
-    print(dumps(ser_json))
-    print("</SerJSON>")
+    try:
+        validate(
+            instance=team_json,
+            schema=team_schema
+        )
+    except ValidationError as err:
+        print(f"Test failed, error: {err}")
 
 
+def test_invalid_email_team_schema():
+
+    team_json = loads(
+        pr.read_text(
+            data, "team.invalid.email.json"
+        )
+    )
+
+    try:
+        validate(
+            instance=team_json,
+            schema=team_schema
+        )
+        pytest.fail()
+    except ValidationError as err:
+        print(f"Test Passed.  Validation error: {err}")
 
 
+def test_invalid_codebase_team_schema_test():
+
+    team_json = loads(
+        pr.read_text(
+            data, "team.invalid.codebase.json"
+        )
+    )
+
+    try:
+        validate(
+            instance=team_json,
+            schema=team_schema
+        )
+        pytest.fail()
+    except ValidationError as err:
+        print(f"Test Passed.  Validation error: {err}")
+
+
+def test_json_schema_enum():
+
+    language = {
+        "enum": [
+            "PYTHON", "JAVA", "NODE",
+            "JAVASCRIPT", "RUST", ".NET",
+            "PHP", "GO", "RUBY", "C++",
+            "C", "OTHER"
+        ]
+    }
+
+    try:
+        validate(
+            instance="JAVAr",
+            schema=language
+        )
+        pytest.fail()
+    except ValidationError as err:
+        print(f"Test Passed.  Validation error: {err}")

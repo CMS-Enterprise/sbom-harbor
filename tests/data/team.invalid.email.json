@@ -5,16 +5,13 @@
       "email": "quinn.peters@aquia.io"
   },{
       "isTeamLead": true,
-      "email": "sinan.bolel@aquia.io"
-  },{
-      "isTeamLead": false,
-      "email": "willy.mac@aquia.io"
+      "email": 42
   }],
   "projects": [{
     "projectName": "sbom-api",
     "codebases": [{
         "codebaseName": "Website", 
-        "language": "JAVASCRIPT",
+        "language": "ARNOLD C",
         "buildTool": "YARN"
     },{
         "codebaseName": "Backend", 

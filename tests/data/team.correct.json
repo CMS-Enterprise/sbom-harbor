@@ -6,15 +6,12 @@
   },{
       "isTeamLead": true,
       "email": "sinan.bolel@aquia.io"
-  },{
-      "isTeamLead": false,
-      "email": "willy.mac@aquia.io"
   }],
   "projects": [{
     "projectName": "sbom-api",
     "codebases": [{
         "codebaseName": "Website", 
-        "language": "JAVASCRIPT",
+        "language": "ARNOLD C",
         "buildTool": "YARN"
     },{
         "codebaseName": "Backend", 
