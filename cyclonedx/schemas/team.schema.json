@@ -6,7 +6,7 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "teamName": {
+    "Id": {
       "description": "The name of the team.  This is the primary key the team is referenced by",
       "type": "string"
     },

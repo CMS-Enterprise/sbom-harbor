@@ -12,6 +12,7 @@ test = "scripts.build:test"
 package = "scripts.build:package"
 deploy = "scripts.deploy:run"
 tokentest = "tests.e2e:token_test"
+teamtest = "tests.e2e:team_test"
 dodep = "scripts.deploy:dodep"
 
 [tool.poetry.dependencies]

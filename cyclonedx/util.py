@@ -194,10 +194,6 @@ def __set_team_permissions(team_uuid):
     print("@END __set_team_permissions()")
 
 
-def __generate_sbom_api_token() -> str:
-    return f"sbom-api-token-{uuid4()}"
-
-
 def __get_body_from_event(event) -> dict:
 
     """
@@ -308,6 +304,20 @@ def __token_response_obj(
         "statusCode": status_code,
         "isBase64Encoded": False,
         "body": dumps(body),
+    }
+
+
+def __create_team_reg_response_obj(status_code: int, msg: str) -> dict:
+
+    """
+    Creates a dict that is used as the response from the Lambda
+    call.  It has all the necessary elements to satisfy AWS's criteria.
+    """
+
+    return {
+        "statusCode": status_code,
+        "isBase64Encoded": False,
+        "body": msg
     }
 
 

@@ -4,7 +4,6 @@ import os
 
 import pytest
 import requests
-from json import loads, dumps
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 

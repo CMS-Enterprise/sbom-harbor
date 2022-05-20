@@ -31,6 +31,7 @@ SBOM_API_PYTHON_RUNTIME = lambda_.Runtime.PYTHON_3_9
 PRISTINE_SBOM_INGRESS_LN = "PristineSBOMIngressLambda"
 CREATE_TOKEN_LN = "CreateTokenLambda"
 DELETE_TOKEN_LN = "DeleteTokenLambda"
+REGISTER_TEAM_LN = "RegisterTeamLambda"
 LOGIN_LN = "LoginLambda"
 SBOM_ENRICHMENT_LN = "SBOMEnrichmentIngressLambda"
 DT_INTERFACE_LN = "DependencyTrackInterfaceLambda"

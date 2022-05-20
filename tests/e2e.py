@@ -1,7 +1,9 @@
 """ End-to-End Test for the system """
 import importlib.resources as pr
 from json import loads
+from uuid import uuid4
 
+import tests.data as data
 import requests
 from optparse import OptionParser
 
@@ -12,13 +14,14 @@ STAGE = "prod"
 USER = "sbomadmin@aquia.us"
 PASS = "L0g1nTe5tP@55!"
 
-CF_HOST = "d1cql9t0re94ga"
+CF_HOST = "d2fcqqu80re455"
 CF_URL = f"https://{CF_HOST}.cloudfront.net"
 
-APIGW_HOST = "9wknt2khb9"
+APIGW_HOST = "4piz8f6t06"
 APIGW_URL = f"https://{APIGW_HOST}.execute-api.us-east-1.amazonaws.com"
 
 LOGIN_URL = f"{CF_URL}/api/login"
+TEAM_URL = f"{CF_URL}/api/team"
 
 # SBOM = loads(pr.read_text(sboms, "cms_npm_package.json"))
 parser = OptionParser("usage: %prog [options]")
@@ -32,6 +35,39 @@ def __get_token_url(team: str, token=None):
         url = f"{url}/{token}"
 
     return url
+
+
+def team_test():
+
+    team_json = loads(
+        pr.read_text(
+            data, "team.correct.json"
+        )
+    )
+
+    team_json["Id"] = str(uuid4())
+
+    print(f"Sending To: POST:{LOGIN_URL}")
+    login_rsp = requests.post(LOGIN_URL, json={
+        "username": USER,
+        "password": PASS
+    })
+
+    login_rsp_json = login_rsp.json()
+    print(f"Response: {login_rsp_json}")
+    jwt = login_rsp_json["token"]
+
+    print(f"Sending To: POST:{TEAM_URL}")
+    team_rsp = requests.post(
+        TEAM_URL,
+        json=team_json,
+        headers={
+            'Authorization': jwt
+        }
+    )
+
+    team_rsp = team_rsp.text
+    print(f"Response: {team_rsp}")
 
 
 def token_test():

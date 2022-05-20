@@ -3,18 +3,20 @@ This module serves as the external API for CycloneDX Python Module
 """
 
 from io import StringIO
-from json import dumps
 from os import environ
+from json import loads, dumps
 from uuid import uuid4
-
+import importlib.resources as pr
 import boto3
 from boto3 import client, resource
 import datetime
 from dateutil.relativedelta import relativedelta
 from botocore.exceptions import ClientError
-from jsonschema.exceptions import ValidationError
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from decimal import Decimal
+import cyclonedx.schemas as schemas
+from jsonschema import validate
+from jsonschema.exceptions import ValidationError
 
 from cyclonedx.constants import (
     DT_QUEUE_URL_EV,
@@ -31,8 +33,8 @@ from cyclonedx.core import CycloneDxCore
 from cyclonedx.util import (
     __create_project,
     __create_pristine_response_obj,
+    __create_team_reg_response_obj,
     __delete_project,
-    __generate_sbom_api_token,
     __get_body_from_event,
     __get_body_from_first_record,
     __get_findings,
@@ -83,20 +85,10 @@ def pristine_sbom_ingress_handler(event, context) -> dict:
         # Validate the BOM here
         core.validate(bom_obj)
 
-        # Actually put the object in S3
-        metadata = {
-            # TODO This needs to come from the client
-            #   To get this token, there needs to be a Registration process
-            #   where a user can get the token and place it in their CI/CD
-            #   systems.
-            ENRICHMENT_ID: __generate_sbom_api_token()
-        }
-
         # Extract the actual SBOM.
         bom_bytes = bytearray(dumps(bom_obj), "utf-8")
         s3.Object(bucket_name, key).put(
             Body=bom_bytes,
-            Metadata=metadata,
         )
 
     except ValidationError as validation_error:
@@ -445,4 +437,33 @@ def delete_token_handler(event=None, context=None):
         )
 
     return delete_token_response
+
+
+def register_team_handler(event=None, context=None):
+
+    team_schema = loads(
+        pr.read_text(
+            schemas, "team.schema.json"
+        )
+    )
+
+    team_json = __get_body_from_event(event)
+
+    try:
+        validate(
+            instance=team_json,
+            schema=team_schema
+        )
+
+        # Get our Team table from DynamoDB
+        table = dynamodb_resource.Table(TEAM_TABLE_NAME)
+
+        table.put_item(Item=team_json)
+
+        return __create_team_reg_response_obj(200, "OK")
+
+    except ValidationError as err:
+        return __create_team_reg_response_obj(
+            500, f"Validation Error: {err}")
+
 

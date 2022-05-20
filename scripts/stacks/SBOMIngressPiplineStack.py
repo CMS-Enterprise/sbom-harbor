@@ -22,6 +22,7 @@ from scripts.constants import (
     API_GW_URL_EXPORT_ID,
     AUTHORIZATION_HEADER,
     CREATE_TOKEN_LN, DELETE_TOKEN_LN, INGRESS_STACK_ID,
+    REGISTER_TEAM_LN,
     S3_BUCKET_ID,
     S3_BUCKET_NAME,
 )
@@ -30,6 +31,7 @@ from scripts.constructs import (
     SBOMCreateTokenLambda,
     SBOMDeleteTokenLambda,
     SBOMLoginLambda,
+    SBOMRegisterTeamLambda,
 )
 
 
@@ -80,6 +82,7 @@ class SBOMIngressPiplineStack(Stack):
         self.__enable_logging(self.api, True)
         self.__generate_apigw_url_output()
         self.__add_login_route(user_pool_client, user_pool, vpc)
+        self.__add_team_registration_routes(vpc, team_table, authorizer_factory)
         self.__add_token_routes(vpc, team_table, authorizer_factory)
         self.__add_sbom_upload_route(vpc)
 
@@ -104,6 +107,30 @@ class SBOMIngressPiplineStack(Stack):
                     user_pool_client_id=client_id,
                     user_pool_id=user_pool_id,
                 ).get_lambda_function(),
+            )
+        )
+
+    def __add_team_registration_routes(
+            self, vpc: ec2.Vpc,
+            team_table: dynamodb.Table,
+            authorizer_factory: AuthorizerLambdaFactory
+    ):
+
+        self.api.add_routes(
+            path="/api/team",
+            methods=[apigwv2a.HttpMethod.POST],
+            integration=HttpLambdaIntegration(
+                "REGISTER_TEAM_HttpLambdaIntegration_ID",
+                handler=SBOMRegisterTeamLambda(
+                    self, vpc=vpc, team_table=team_table
+                ).get_lambda_function(),
+            ),
+            authorizer=HttpLambdaAuthorizer(
+                "RegisterTeam_HttpJwtAuthorizer_ID",
+                authorizer_name="RegisterTeamHttpJwtAuthorizer",
+                handler=authorizer_factory.create(
+                    REGISTER_TEAM_LN
+                ).get_lambda_function()
             )
         )
 

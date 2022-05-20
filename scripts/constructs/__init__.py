@@ -43,6 +43,7 @@ from cyclonedx.constants import (
 from scripts.constants import (
     API_KEY_AUTHORIZER_LN, APP_LB_ID,
     APP_LB_SECURITY_GROUP_ID,
+    REGISTER_TEAM_LN,
     TOKEN_AUTHORIZER_LN,
     AUTHORIZER_LN,
     CIDR,
@@ -691,10 +692,9 @@ class SBOMCreateTokenLambda(Construct):
         return self.func
 
 
-# TODO Finish
 class SBOMDeleteTokenLambda(Construct):
 
-    """ Lambda delete an API token """
+    """ Lambda to delete an API token """
 
     def __init__(
         self,
@@ -713,6 +713,38 @@ class SBOMDeleteTokenLambda(Construct):
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
             handler="cyclonedx.api.delete_token_handler",
+            code=create_asset(),
+            timeout=Duration.seconds(10),
+            memory_size=512,
+        )
+
+        team_table.grant_read_write_data(self.func)
+
+    def get_lambda_function(self):
+        return self.func
+
+
+class SBOMRegisterTeamLambda(Construct):
+
+    """ Lambda to register a team """
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+        team_table: dynamodb.Table,
+    ):
+
+        super().__init__(scope, REGISTER_TEAM_LN)
+
+        self.func = lambda_.Function(
+            self, REGISTER_TEAM_LN,
+            function_name="SBOMRegisterTeamLambda",
+            runtime=SBOM_API_PYTHON_RUNTIME,
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            handler="cyclonedx.api.register_team_handler",
             code=create_asset(),
             timeout=Duration.seconds(10),
             memory_size=512,

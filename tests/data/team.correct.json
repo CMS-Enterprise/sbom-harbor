@@ -1,5 +1,5 @@
 {
-  "teamName": "Dawn Patrol",
+  "Id": "Dawn Patrol",
   "pocs": [{
       "isTeamLead": true,
       "email": "quinn.peters@aquia.io"
@@ -11,12 +11,12 @@
     "projectName": "sbom-api",
     "codebases": [{
         "codebaseName": "Website", 
-        "language": "ARNOLD C",
-        "buildTool": "YARN"
+        "language": "JAVASCRIPT",
+        "buildTool": "NPM"
     },{
         "codebaseName": "Backend", 
         "language": "PYTHON",
-        "buildTool": "POETRY"
+        "buildTool": "PIP"
     }]
   }],
   "tokens": [{
