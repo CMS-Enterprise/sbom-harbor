@@ -1,5 +1,5 @@
 {
-  "Id": "Dawn Patrol",
+  "Id": "dawn-patrol",
   "pocs": [{
       "isTeamLead": true,
       "email": "quinn.peters@aquia.io"
@@ -21,9 +21,21 @@
   }],
   "tokens": [{
     "name": "First Token",
-    "created": "10-18-1975@1054",
-    "expires": "10-18-2034@1054",
+    "created": "1653316396.287616",
+    "expires": "1684852396.287616",
     "enabled": true,
     "token": "8d191d16-467e-4150-8416-f51fc7ca1b93"
+  },{
+    "name": "Disabled Token",
+    "created": "1653316396.287616",
+    "expires": "1684852396.287616",
+    "enabled": false,
+    "token": "8d191d16-467e-4150-8416-f51fc7ca1b94"
+  },{
+    "name": "Expired Token",
+    "created": "1653317299.637896",
+    "expires": "1653317300.637896",
+    "enabled": true,
+    "token": "8d191d16-467e-4150-8416-f51fc7ca1b95"
   }]
 }

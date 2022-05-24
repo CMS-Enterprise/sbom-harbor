@@ -1,5 +1,6 @@
 """ End-to-End Test for the system """
 import importlib.resources as pr
+import tests.sboms as sboms
 from json import loads
 from uuid import uuid4
 
@@ -14,16 +15,22 @@ STAGE = "prod"
 USER = "sbomadmin@aquia.us"
 PASS = "L0g1nTe5tP@55!"
 
-CF_HOST = "d2fcqqu80re455"
+CF_HOST = "dpr2csfynca34"
 CF_URL = f"https://{CF_HOST}.cloudfront.net"
 
-APIGW_HOST = "4piz8f6t06"
+APIGW_HOST = "v085bnkx4m"
 APIGW_URL = f"https://{APIGW_HOST}.execute-api.us-east-1.amazonaws.com"
 
 LOGIN_URL = f"{CF_URL}/api/login"
 TEAM_URL = f"{CF_URL}/api/team"
 
-# SBOM = loads(pr.read_text(sboms, "cms_npm_package.json"))
+team = "abc123"
+project = "AwesomeProj"
+codebase = "Website"
+
+SBOM_UPLOAD_URL = f"{CF_URL}/api/{team}/{project}/{codebase}/sbom"
+
+SBOM = loads(pr.read_text(sboms, "cms_npm_package.json"))
 parser = OptionParser("usage: %prog [options]")
 parser.add_option('--fail', dest="fail", help='fail flag', action="store")
 
@@ -78,7 +85,6 @@ def token_test():
 
     (options, args) = parser.parse_args()
 
-    team = "abc123"
     login_fail = False
     create_fail = False
     delete_fail = False
@@ -133,3 +139,71 @@ def token_test():
             )
 
             print(delete_token_rsp.text)
+
+
+def sbom_upload_test():
+    """
+    Posts some SBOMS to the Endpoint currently running in AWS
+    """
+
+    working_token = "8d191d16-467e-4150-8416-f51fc7ca1b93"
+    made_up_token = "8d191d16-467e-4150-8416-f51fc7ca1b69"
+    disabled_token = "8d191d16-467e-4150-8416-f51fc7ca1b94"
+    expired_token = "8d191d16-467e-4150-8416-f51fc7ca1b95"
+
+    print("Sending To: %s" % SBOM_UPLOAD_URL)
+    print("<SBOM>")
+    print(SBOM)
+    print("</SBOM>")
+
+    rsp = requests.post(
+        SBOM_UPLOAD_URL,
+        json=SBOM,
+        headers={
+            'Authorization': working_token
+        },
+    )
+
+    if rsp.status_code == 200:
+        print("Correct token test passed")
+    else:
+        print(f"Correct token test failed, received: {rsp.status_code}")
+
+    made_up_token_rsp = requests.post(
+        SBOM_UPLOAD_URL,
+        json=SBOM,
+        headers={
+            'Authorization': made_up_token
+        },
+    )
+
+    if made_up_token_rsp.status_code == 403:
+        print("Bad Token test passed")
+    else:
+        print(f"Bad Token test failed, received: {made_up_token_rsp.status_code}")
+
+    disabled_token_rsp = requests.post(
+        SBOM_UPLOAD_URL,
+        json=SBOM,
+        headers={
+            'Authorization': disabled_token
+        },
+    )
+
+    if disabled_token_rsp.status_code == 403:
+        print("Disabled Token test passed")
+    else:
+        print(f"Disabled Token test failed, received: {disabled_token_rsp.status_code}")
+
+    expired_token_rsp = requests.post(
+        SBOM_UPLOAD_URL,
+        json=SBOM,
+        headers={
+            'Authorization': expired_token
+        },
+    )
+
+    if expired_token_rsp.status_code == 403:
+        print("Expired token test passed")
+    else:
+        print(f"Expired Token test failed, received: {expired_token_rsp.status_code}")

@@ -31,7 +31,7 @@ from scripts.constructs import (
     SBOMCreateTokenLambda,
     SBOMDeleteTokenLambda,
     SBOMLoginLambda,
-    SBOMRegisterTeamLambda,
+    SBOMRegisterTeamLambda, SBOMUploadAPIKeyAuthorizerLambda,
 )
 
 
@@ -84,7 +84,7 @@ class SBOMIngressPiplineStack(Stack):
         self.__add_login_route(user_pool_client, user_pool, vpc)
         self.__add_team_registration_routes(vpc, team_table, authorizer_factory)
         self.__add_token_routes(vpc, team_table, authorizer_factory)
-        self.__add_sbom_upload_route(vpc)
+        self.__add_sbom_upload_route(vpc, team_table)
 
     def __add_login_route(
             self, user_pool_client: cognito.UserPoolClient,
@@ -178,14 +178,23 @@ class SBOMIngressPiplineStack(Stack):
             )
         )
 
-    def __add_sbom_upload_route(self, vpc: ec2.Vpc):
+    def __add_sbom_upload_route(
+            self, vpc: ec2.Vpc,
+            team_table: dynamodb.Table,
+    ):
 
         """ Adds the /api/sbom route """
 
         self.api.add_routes(
-            path="/api/sbom",
+            path="/api/{team}/{project}/{codebase}/sbom",
             methods=[apigwv2a.HttpMethod.POST],
-            authorizer=HttpNoneAuthorizer(),
+            authorizer=HttpLambdaAuthorizer(
+                "UPLOAD_SBOM_HttpLambdaAuthorizer_ID",
+                authorizer_name="UPLOAD_SBOM_HttpLambdaAuthorizer",
+                handler=SBOMUploadAPIKeyAuthorizerLambda(
+                    self, vpc=vpc, team_table=team_table
+                ).get_lambda_function()
+            ),
             integration=HttpLambdaIntegration(
                 "UPLOAD_SBOM_HttpLambdaIntegration_ID",
                 handler=PristineSbomIngressLambda(

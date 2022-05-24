@@ -806,13 +806,15 @@ class SBOMUploadAPIKeyAuthorizerLambda(Construct):
         scope: Construct,
         *,
         vpc: ec2.Vpc,
+        team_table: dynamodb.Table
     ):
 
         super().__init__(scope, API_KEY_AUTHORIZER_LN)
 
-        self.lambda_func = lambda_.Function(
+        self.func = lambda_.Function(
             self,
             API_KEY_AUTHORIZER_LN,
+            function_name=API_KEY_AUTHORIZER_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
@@ -822,8 +824,10 @@ class SBOMUploadAPIKeyAuthorizerLambda(Construct):
             memory_size=512,
         )
 
+        team_table.grant_read_data(self.func)
+
     def get_lambda_function(self):
-        return self.lambda_func
+        return self.func
 
 
 class PristineSbomIngressLambda(Construct):

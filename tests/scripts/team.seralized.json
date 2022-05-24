@@ -12,7 +12,7 @@
               "isTeamLead": { "BOOL": true }, 
               "phone": { "S": "443-555-1211" }, 
               "email": { "S": "quinn.peters@aquia.io" }
-            },
+            }},{
             "M": { 
               "firstName": { "S": "Sinan" }, 
               "lastName":  { "S": "Bolel" }, 
@@ -48,10 +48,25 @@
           "L": [{
             "M": {
               "name": { "S": "First Token" },
-              "created": { "S": "10-18-1975@1054" },
-              "expires": { "S": "10-18-2034@1054" },
+              "created": { "S": "1653316396.287616" },
+              "expires": { "S": "1684852396.287616" },
               "enabled": { "BOOL": true },
               "token": { "S": "8d191d16-467e-4150-8416-f51fc7ca1b93" }
+            }}, {
+            "M": {
+              "name": { "S": "Disabled Token" },
+              "created": { "S": "1653316396.287616" },
+              "expires": { "S": "1684852396.287616" },
+              "enabled": { "BOOL": false },
+              "token": { "S": "8d191d16-467e-4150-8416-f51fc7ca1b94" }
+            }
+          }, {
+            "M": {
+              "name": { "S": "Expired Token" },
+              "created": { "S": "1653317299.637896" },
+              "expires": { "S": "1653317300.637896" },
+              "enabled": { "BOOL": true },
+              "token": { "S": "8d191d16-467e-4150-8416-f51fc7ca1b95" }
             }
           }]
         }

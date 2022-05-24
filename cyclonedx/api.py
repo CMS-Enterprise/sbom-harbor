@@ -287,33 +287,50 @@ def jwt_authorizer_handler(event, context):
     method_arn = event["methodArn"]
     token = event["authorizationToken"]
 
-    print("<TOKEN>")
-    print(token)
-    print("</TOKEN>")
-
     return allow_policy(method_arn) if verify_token(token) else deny_policy()
 
 
 def api_key_authorizer_handler(event, context):
 
-    print("<EVENT>")
-    print(event)
-    print("</EVENT>")
+    # Extract the Method ARN and the token from the event
+    method_arn = event["methodArn"]
+    token = event["authorizationToken"]
 
-    print("<CONTEXT>")
-    print(context)
-    print("</CONTEXT>")
+    # Extract the path parameters and get the team
+    path_params = event["pathParameters"]
+    team = path_params["team"]
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps(
-            {
-                "event": event,
-                "context": str(context),
-            }
-        ),
-    }
+    # Get our Team table from DynamoDB
+    table = dynamodb_resource.Table(TEAM_TABLE_NAME)
+
+    # Set the Key for update_item(). The Id is the team name
+    key = {"Id": team}
+
+    # Get the team from the table
+    get_item_rsp = table.get_item(Key=key)
+
+    # Extract the existing tokens and find the index of the token
+    # the user is looking to delete.
+    team = get_item_rsp["Item"]
+    tokens = team["tokens"]
+
+    # Set the policy to default Deny
+    policy = deny_policy()
+
+    # Go through the tokens the team has
+    for team_token in tokens:
+
+        # Make sure the token is enabled
+        if team_token["token"] == token and team_token["enabled"]:
+            now = datetime.datetime.now().timestamp()
+            expires = team_token["expires"]
+
+            # Make sure the token is not expired
+            if now < float(expires):
+                policy = allow_policy(method_arn)
+
+    # If the token exists, is enabled and not expired, then allow
+    return policy
 
 
 def create_token_handler(event=None, context=None):
