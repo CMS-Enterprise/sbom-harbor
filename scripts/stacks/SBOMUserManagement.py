@@ -6,15 +6,10 @@ from aws_cdk import (
     aws_ec2 as ec2,
     aws_iam as iam,
     aws_cognito as cognito,
-    RemovalPolicy,
     Stack,
 )
 from scripts.constants import (
-    ADMIN_USER_ID,
-    ADMIN_USER_USERNAME,
     USER_MANAGEMENT_STACK_ID,
-    USER_POOL_GROUP_NAME,
-    USER_POOL_NAME
 )
 from scripts.constructs import (
     ApplicationLoadBalancer,

@@ -16,6 +16,7 @@ from scripts.constants import (
     API_GW_ID_EXPORT_NAME,
     API_GW_URL_KEY,
     AUTHORIZATION_HEADER,
+    CLOUDFRONT_BUCKET_NAME,
     CLOUDFRONT_DIST_NAME,
     S3_WS_BUCKET_ID,
     S3_WS_BUCKET_NAME,
@@ -86,24 +87,24 @@ class SBOMWebStack(Stack):
             destination_bucket=website_bucket,
         )
 
+        logging_bucket = s3.Bucket(
+            self, "TmpLoggingBucket",
+            bucket_name=CLOUDFRONT_BUCKET_NAME,
+            public_read_access=False,
+            auto_delete_objects=True,
+            removal_policy=RemovalPolicy.DESTROY,
+        )
+
         cf.CloudFrontWebDistribution(
             self, CLOUDFRONT_DIST_NAME,
             logging_config=cf.LoggingConfiguration(
-                bucket=s3.Bucket(
-                    self, "TmpLoggingBucket",
-                    bucket_name="cloudfront.logging.bucket",
-                    public_read_access=False,
-                    auto_delete_objects=True,
-                    removal_policy=RemovalPolicy.DESTROY,
-                ),
+                bucket=logging_bucket,
                 include_cookies=False,
                 prefix="prefix"
             ),
             origin_configs=[
                 cf.SourceConfiguration(
                     custom_origin_source=cf.CustomOriginConfig(
-                        # TODO: get rest api url dynamically for "value" below
-                        # see: scripts/constructs/__init__.py/PristineSbomIngressLambda
                         domain_name=apigw_url,
                         origin_path=""
                     ),

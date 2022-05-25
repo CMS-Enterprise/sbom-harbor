@@ -15,6 +15,7 @@ tokentest = "tests.e2e:token_test"
 teamtest = "tests.e2e:team_test"
 sbomuploadtest = "tests.e2e:sbom_upload_test"
 dodep = "scripts.deploy:dodep"
+setupadmin = "scripts.deploy:setup_admin_user"
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -26,6 +27,7 @@ urllib3 = "^1.26.9"
 "aws-cdk.aws-apigatewayv2-authorizers-alpha" = "^2.22.0-alpha.0"
 "aws-cdk.aws-apigatewayv2-integrations-alpha" = "^2.22.0-alpha.0"
 genson = "^1.2.2"
+python-dotenv = "^0.20.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

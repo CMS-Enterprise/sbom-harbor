@@ -41,11 +41,12 @@ from cyclonedx.constants import (
     USER_POOL_NAME_KEY,
 )
 from scripts.constants import (
-    API_KEY_AUTHORIZER_LN, APP_LB_ID,
+    API_KEY_AUTHORIZER_LN,
+    AUTHORIZER_LN,
+    TOKEN_AUTHORIZER_LN,
+    APP_LB_ID,
     APP_LB_SECURITY_GROUP_ID,
     REGISTER_TEAM_LN,
-    TOKEN_AUTHORIZER_LN,
-    AUTHORIZER_LN,
     CIDR,
     COGNITO_DOMAIN_PREFIX,
     CREATE_TOKEN_LN,
@@ -361,13 +362,27 @@ class SBOMUserPoolClient(Construct):
             user_pool=user_pool.get_cognito_user_pool(),
             auth_flows=cognito.AuthFlow(
                 custom=True,
-                user_password=True,
                 admin_user_password=True,
+                user_password=True,
+                # NOTE: USER_SRP is required for authenticating the
+                #   client application using the Amplify JS library.
+                user_srp=True,
+            ),
+            o_auth=cognito.OAuthSettings(
+                flows=cognito.OAuthFlows(
+                    authorization_code_grant=True,
+                    client_credentials=True,
+                    # NOTE: The implicit grant flow exposes OAuth tokens in
+                    #   the url. AWS recommends that only the authorization
+                    #   code flow is used with PKCE for public clients.
+                    implicit_code_grant=False,
+                ),
             ),
             enable_token_revocation=True,
             prevent_user_existence_errors=True,
             read_attributes=client_read_attributes,
             write_attributes=client_write_attributes,
+
         )
 
         cfn_client = self.client.node.default_child

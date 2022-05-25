@@ -1,12 +1,13 @@
 """ This module is the start of the deployment for SBOM-API """
 
+from os import system
+from sys import path
 import aws_cdk as cdk
 from aws_cdk import (
     aws_cognito as cognito,
     aws_dynamodb as dynamodb,
 )
-
-from os import system, getenv
+from scripts.constants import CONFIG
 from scripts.stacks import (
     SBOMEnrichmentPiplineStack,
     SBOMIngressPiplineStack,
@@ -23,11 +24,12 @@ def dodep() -> None:
     construct the resources necessary to run the app.
     """
 
-    default_region = getenv("AWS_DEFAULT_REGION", "us-east-1")
+    default_region = CONFIG["AWS_DEFAULT_REGION"]
+    region = CONFIG["AWS_REGION"]
 
     env = cdk.Environment(
-        account=getenv("AWS_ACCOUNT_NUM"),
-        region=getenv("AWS_REGION", default_region),
+        account = CONFIG["AWS_ACCOUNT_NUM"],
+        region = region if region is not None else default_region,
     )
 
     # Create the CDK app to pass into all the Stacks
@@ -72,3 +74,13 @@ def run() -> None:
     no_req_approval = "--require-approval never"
 
     system(f"cdk deploy --all {no_req_approval}")
+
+
+def setup_admin_user() -> None:
+
+    """
+    This method creates the users table in the database.
+    """
+
+    system("./tests/scripts/create.cognito.user.sh")
+    system("./tests/scripts/change.cognito.user.password.sh")

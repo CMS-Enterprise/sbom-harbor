@@ -2,17 +2,17 @@
 
 #### Requiremements
 
-- Python version: 3.9.10
-- Node.js version: 18.x
+- Python version: `3.9.10`
+- Node.js version: `17.3.x`
 
 #### Build Dependencies
 
 - [Python Version Management](https://github.com/pyenv/pyenv) (pyenv)
-- The [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#getting_started_install)
-- The [Poetry](https://python-poetry.org/docs/) build tool
+- [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#getting_started_install)
+- [Poetry](https://python-poetry.org/docs/) build tool
 - Python [Pre-commit](https://pre-commit.com/).
 - [Node Version Manager](https://github.com/nvm-sh/nvm) (nvm), for installing:
-    - [Node.js](https://nodejs.org/en/) v18
+    - [Node.js](https://nodejs.org/en/) v17.3.0
     - [npm](https://github.com/npm/cli) v8
 - [Yarn](https://classic.yarnpkg.com/lang/en/docs/install) dependency manager for `node`
 - [Lerna](https://lerna.js.org/) monorepo/multi-package management tool for `npm/yarn`
@@ -27,29 +27,23 @@
 
 #### Initialize
 
-1. Set up Python
+1. Install `jq` command-line JSON processor by following the [`jq` Download Guide](https://stedolan.github.io/jq/download/)
+
+2. Set up Python
     - Install Pyenv (either option):
-        - `brew update && brew install pyenv`
-        - `git clone https://github.com/pyenv/pyenv.git ~/.pyenv`
+        - Using Homebrew: `brew update && brew install pyenv`
+        - From GitHub: `git clone https://github.com/pyenv/pyenv.git ~/.pyenv`
     - Install Python version: `pyenv install 3.9.10`
     - Install Poetry: `curl -sSL https://install.python-poetry.org | python3 -`
 
-2. Set up Node.js
+3. Set up Node.js
     - Install `nvm` (either option):
-        - using homebrew: `brew update && brew install nvm`
-        - using the nvm install script: [see documentation](https://github.com/nvm-sh/nvm#install--update-script)
-    - Install Node version and update `npm`:
-        ```sh
-        nvm install 18
-        nvm alias default 18
-        nvm use 18
-        npm i -g npm
-        ```
-    - Install Yarn and Lerna (either option):
-        - `brew install yarn lerna`
-        - `npm i -g yarn lerna`
+        - Using Homebrew: `brew update && brew install nvm`
+        - Using the nvm install script: [see documentation](https://github.com/nvm-sh/nvm#install--update-script)
+    - Install Node version (from in `.nvmrc`) with latest `npm`: `nvm install --default --latest-npm`
+    - Install Yarn and Lerna: `npm i -g yarn lerna`
 
-3. Configure virtual envrionment and install local dependencies:
+4. Configure virtual envrionment and install local dependencies:
     - Clone Repository: `git clone git@github.com:aquia-inc/cyclonedx-python.git`
     - Cd into repo: `cd cyclonedx-python`
     - Start Poetry shell: `poetry shell`. This creates your virtual environment where your deps can be installed.

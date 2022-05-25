@@ -22,3 +22,7 @@ tmp/
 
 # macos
 **/.DS_Store
+
+# dotenv
+.env
+.env.*
