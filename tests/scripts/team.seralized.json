@@ -7,17 +7,11 @@
         "pocs": { 
           "L": [{ 
             "M": {
-              "firstName": { "S": "Quinn" }, 
-              "lastName":  { "S": "Peters" }, 
-              "isTeamLead": { "BOOL": true }, 
-              "phone": { "S": "443-555-1211" }, 
+              "isTeamLead": { "BOOL": true },
               "email": { "S": "quinn.peters@aquia.io" }
             }},{
             "M": { 
-              "firstName": { "S": "Sinan" }, 
-              "lastName":  { "S": "Bolel" }, 
-              "isTeamLead": { "BOOL": true }, 
-              "phone": { "S": "443-555-1212" }, 
+              "isTeamLead": { "BOOL": true },
               "email": { "S": "sinan.bolel@aquia.io" }
             }
         }]},

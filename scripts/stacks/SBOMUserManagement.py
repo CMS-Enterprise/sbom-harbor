@@ -8,9 +8,11 @@ from aws_cdk import (
     aws_cognito as cognito,
     Stack,
 )
+
 from scripts.constants import (
     USER_MANAGEMENT_STACK_ID,
 )
+
 from scripts.constructs import (
     ApplicationLoadBalancer,
     SBOMUserPool,

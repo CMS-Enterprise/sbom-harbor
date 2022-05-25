@@ -17,7 +17,7 @@ from aws_cdk import (
     Duration,
     RemovalPolicy,
 )
-from aws_cdk.aws_iam import ServicePrincipal
+from aws_cdk.aws_iam import Effect, PolicyStatement, ServicePrincipal
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from aws_cdk.aws_s3 import IBucket
 from constructs import Construct
@@ -78,11 +78,13 @@ from scripts.constants import (
     USER_POOL_NAME,
     USER_ROLE_ID,
     USER_ROLE_NAME,
-    VPC_ID,
+    USER_SEARCH_LN, VPC_ID,
     VPC_NAME,
 )
 
 from .SBOMTeamTable import SBOMTeamTable
+from .SBOMTeamMemberTable import SBOMTeamMemberTable
+
 
 def create_asset():
 
@@ -640,7 +642,6 @@ class SBOMLoginLambda(Construct):
 
         super().__init__(scope, LOGIN_LN)
 
-        # TODO Complete
         self.login_func = lambda_.Function(
             self,
             LOGIN_LN,
@@ -766,6 +767,51 @@ class SBOMRegisterTeamLambda(Construct):
         )
 
         team_table.grant_read_write_data(self.func)
+
+    def get_lambda_function(self):
+        return self.func
+
+
+class SBOMUserSearchLambda(Construct):
+
+    """ Lambda to search for users in Cognito """
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+        user_pool_client: cognito.UserPoolClient,
+        user_pool: cognito.UserPool,
+    ):
+
+        super().__init__(scope, USER_SEARCH_LN)
+
+        self.func = lambda_.Function(
+            self, USER_SEARCH_LN,
+            function_name="SBOMUserSearchLambda",
+            runtime=SBOM_API_PYTHON_RUNTIME,
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            handler="cyclonedx.api.user_search_handler",
+            code=create_asset(),
+            timeout=Duration.seconds(10),
+            memory_size=512,
+            environment={
+                USER_POOL_NAME_KEY: user_pool.user_pool_id,
+                USER_POOL_CLIENT_ID_KEY: user_pool_client.user_pool_client_id
+            }
+        )
+
+        self.func.add_to_role_policy(
+            PolicyStatement(
+                effect=Effect.ALLOW,
+                actions=[
+                     'cognito-idp:ListUsers',
+                ],
+                resources=['*']
+            )
+        )
 
     def get_lambda_function(self):
         return self.func

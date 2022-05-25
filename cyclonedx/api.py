@@ -34,7 +34,7 @@ from cyclonedx.util import (
     __create_project,
     __create_pristine_response_obj,
     __create_team_reg_response_obj,
-    __delete_project,
+    __create_user_search_response_obj, __delete_project,
     __get_body_from_event,
     __get_body_from_first_record,
     __get_findings,
@@ -249,6 +249,10 @@ def allow_policy(method_arn: str):
             "Version": "2012-10-17",
             "Statement": [{
                 "Action": "execute-api:Invoke",
+                "Effect": "Allow",
+                "Resource": method_arn
+            },{
+                "Action": "cognito-idp:ListUsers",
                 "Effect": "Allow",
                 "Resource": method_arn
             }]
@@ -484,3 +488,27 @@ def register_team_handler(event=None, context=None):
             500, f"Validation Error: {err}")
 
 
+def user_search_handler(event=None, context=None):
+
+    body = __get_body_from_event(event)
+
+    filter_str = body["filter"]
+    user_filter = f"email ^= \"{filter_str}\""
+
+
+    response = cognito_client.list_users(
+        UserPoolId=environ.get(USER_POOL_NAME_KEY),
+        AttributesToGet=[
+            'email',
+        ],
+        Limit=60, # Max is 60
+        Filter=user_filter,
+    )
+
+    users = response["Users"]
+    emails = []
+    for user in users:
+        attr = user["Attributes"]
+        emails.append(attr[0]["Value"])
+
+    return __create_user_search_response_obj(200, dumps(emails))

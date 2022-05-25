@@ -15,10 +15,10 @@ STAGE = "prod"
 USER = "sbomadmin@aquia.us"
 PASS = "L0g1nTe5tP@55!"
 
-CF_HOST = "dpr2csfynca34"
+CF_HOST = "d36r0zafciw5r"
 CF_URL = f"https://{CF_HOST}.cloudfront.net"
 
-APIGW_HOST = "v085bnkx4m"
+APIGW_HOST = "qlzlnxa0fj"
 APIGW_URL = f"https://{APIGW_HOST}.execute-api.us-east-1.amazonaws.com"
 
 LOGIN_URL = f"{CF_URL}/api/login"
@@ -29,19 +29,33 @@ project = "AwesomeProj"
 codebase = "Website"
 
 SBOM_UPLOAD_URL = f"{CF_URL}/api/{team}/{project}/{codebase}/sbom"
+USER_SEARCH_URL = f"{APIGW_URL}/api/user/search"
 
 SBOM = loads(pr.read_text(sboms, "cms_npm_package.json"))
 parser = OptionParser("usage: %prog [options]")
 parser.add_option('--fail', dest="fail", help='fail flag', action="store")
 
 
-def __get_token_url(team: str, token=None):
-    url = f"{CF_URL}/api/{team}/token"
+def __get_token_url(team_name: str, token=None):
+    url = f"{CF_URL}/api/{team_name}/token"
 
     if token:
         url = f"{url}/{token}"
 
     return url
+
+
+def __login():
+
+    print(f"Sending To: POST:{LOGIN_URL}")
+    login_rsp = requests.post(LOGIN_URL, json={
+        "username": USER,
+        "password": PASS
+    })
+
+    login_rsp_json = login_rsp.json()
+    print(f"Response: {login_rsp_json}")
+    return login_rsp_json["token"]
 
 
 def team_test():
@@ -54,22 +68,12 @@ def team_test():
 
     team_json["Id"] = str(uuid4())
 
-    print(f"Sending To: POST:{LOGIN_URL}")
-    login_rsp = requests.post(LOGIN_URL, json={
-        "username": USER,
-        "password": PASS
-    })
-
-    login_rsp_json = login_rsp.json()
-    print(f"Response: {login_rsp_json}")
-    jwt = login_rsp_json["token"]
-
     print(f"Sending To: POST:{TEAM_URL}")
     team_rsp = requests.post(
         TEAM_URL,
         json=team_json,
         headers={
-            'Authorization': jwt
+            'Authorization': __login()
         }
     )
 
@@ -207,3 +211,40 @@ def sbom_upload_test():
         print("Expired token test passed")
     else:
         print(f"Expired Token test failed, received: {expired_token_rsp.status_code}")
+
+
+def user_search_test():
+
+    jwt = __login()
+
+    print(f"Sending To: GET:{USER_SEARCH_URL}")
+    user_search_rsp = requests.get(
+        USER_SEARCH_URL,
+        json={
+            "filter": "mar"
+        },
+        headers={
+            'Authorization': jwt
+        },
+    )
+
+    mar_result = user_search_rsp.json()
+    if 'maria@aquia.us' in mar_result and 'martha@aquia.us'in mar_result:
+        print("Passed using 'mar' filter")
+
+    print(f"Sending To: GET:{USER_SEARCH_URL}")
+    user_search_rsp = requests.get(
+        USER_SEARCH_URL,
+        json={
+            "filter": "qui"
+        },
+        headers={
+            'Authorization': jwt
+        },
+    )
+
+    qui_result = user_search_rsp.json()
+    if 'quinn@aquia.us' in qui_result \
+        and 'quinton@aquia.us'in qui_result \
+            and'quison@aquia.us'in qui_result:
+        print("Passed using 'qui' filter")

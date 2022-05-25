@@ -24,14 +24,16 @@ from scripts.constants import (
     CREATE_TOKEN_LN, DELETE_TOKEN_LN, INGRESS_STACK_ID,
     REGISTER_TEAM_LN,
     S3_BUCKET_ID,
-    S3_BUCKET_NAME,
+    S3_BUCKET_NAME, USER_SEARCH_LN,
 )
 from scripts.constructs import (
     AuthorizerLambdaFactory, PristineSbomIngressLambda,
     SBOMCreateTokenLambda,
     SBOMDeleteTokenLambda,
     SBOMLoginLambda,
-    SBOMRegisterTeamLambda, SBOMUploadAPIKeyAuthorizerLambda,
+    SBOMRegisterTeamLambda,
+    SBOMUploadAPIKeyAuthorizerLambda,
+    SBOMUserSearchLambda,
 )
 
 
@@ -82,13 +84,42 @@ class SBOMIngressPiplineStack(Stack):
         self.__enable_logging(self.api, True)
         self.__generate_apigw_url_output()
         self.__add_login_route(user_pool_client, user_pool, vpc)
+        self.__add_user_search_route(user_pool_client, user_pool, vpc, authorizer_factory)
         self.__add_team_registration_routes(vpc, team_table, authorizer_factory)
         self.__add_token_routes(vpc, team_table, authorizer_factory)
         self.__add_sbom_upload_route(vpc, team_table)
 
-    def __add_login_route(
+    def __add_user_search_route(
             self, user_pool_client: cognito.UserPoolClient,
-            user_pool: cognito.UserPool, vpc: ec2.Vpc
+            user_pool: cognito.UserPool, vpc: ec2.Vpc,
+            authorizer_factory: AuthorizerLambdaFactory,
+    ):
+
+        self.api.add_routes(
+            path="/api/user/search",
+            methods=[apigwv2a.HttpMethod.GET],
+            integration=HttpLambdaIntegration(
+                "USER_SEARCH_HttpLambdaIntegration_ID",
+                handler=SBOMUserSearchLambda(
+                    self, vpc=vpc,
+                    user_pool_client=user_pool_client,
+                    user_pool=user_pool
+                ).get_lambda_function(),
+            ),
+            authorizer=HttpLambdaAuthorizer(
+                "UserSearch_HttpJwtAuthorizer_ID",
+                authorizer_name="UserSearchHttpJwtAuthorizer",
+                handler=authorizer_factory.create(
+                    USER_SEARCH_LN
+                ).get_lambda_function()
+            )
+        )
+
+    def __add_login_route(
+            self,
+            user_pool_client: cognito.UserPoolClient,
+            user_pool: cognito.UserPool,
+            vpc: ec2.Vpc
     ):
 
         """ Adds the /api/login endpoint for getting a JWT and logging in """

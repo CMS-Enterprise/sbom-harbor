@@ -14,6 +14,7 @@ deploy = "scripts.deploy:run"
 tokentest = "tests.e2e:token_test"
 teamtest = "tests.e2e:team_test"
 sbomuploadtest = "tests.e2e:sbom_upload_test"
+usersearchtest = "tests.e2e:user_search_test"
 dodep = "scripts.deploy:dodep"
 setupadmin = "scripts.deploy:setup_admin_user"
 

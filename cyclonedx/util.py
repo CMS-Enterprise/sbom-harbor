@@ -321,6 +321,19 @@ def __create_team_reg_response_obj(status_code: int, msg: str) -> dict:
     }
 
 
+def __create_user_search_response_obj(status_code: int, msg: str) -> dict:
+
+    """
+    Creates a dict that is used as the response from the Lambda
+    call.  It has all the necessary elements to satisfy AWS's criteria.
+    """
+
+    return {
+        "statusCode": status_code,
+        "isBase64Encoded": False,
+        "body": msg
+    }
+
 def __findings_ready(key: str, sbom_token: str) -> bool:
 
     headers = {

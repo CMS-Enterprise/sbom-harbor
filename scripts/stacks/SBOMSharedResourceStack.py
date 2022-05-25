@@ -16,7 +16,8 @@ from scripts.constants import (
 )
 from scripts.constructs import (
     SBOMApiVpc,
-    SBOMTeamTable
+    SBOMTeamTable,
+    SBOMTeamMemberTable
 )
 
 
@@ -49,6 +50,7 @@ class SBOMSharedResourceStack(Stack):
         )
 
         self.team_table: dynamodb.Table = SBOMTeamTable(self).get_construct()
+        self.team_user_table: dynamodb.Table = SBOMTeamMemberTable(self).get_construct()
 
     def get_vpc(self):
 
@@ -73,3 +75,9 @@ class SBOMSharedResourceStack(Stack):
         """ Returns the DynamoDB Team Table construct """
 
         return self.team_table
+
+    def get_team_user_table(self):
+
+        """ Returns the DynamoDB Team User Table construct """
+
+        return self.team_user_table
