@@ -372,12 +372,13 @@ class SBOMUserPoolClient(Construct):
             ),
             o_auth=cognito.OAuthSettings(
                 flows=cognito.OAuthFlows(
-                    authorization_code_grant=True,
-                    client_credentials=True,
-                    # NOTE: The implicit grant flow exposes OAuth tokens in
-                    #   the url. AWS recommends that only the authorization
-                    #   code flow is used with PKCE for public clients.
-                    implicit_code_grant=False,
+                    authorization_code_grant=False,
+                    client_credentials=False,
+                    # TODO: refactor to not use implicit code grant
+                    #   "The implicit grant flow exposes OAuth tokens in
+                    #   the url. AWS recommends only the authorization
+                    #   code flow is used with PKCE for public clients."
+                    implicit_code_grant=True,
                 ),
             ),
             enable_token_revocation=True,
