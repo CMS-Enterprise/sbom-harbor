@@ -14,8 +14,6 @@ jobs:
           node-version: '17.3'
           registry-url: 'https://registry.npmjs.org'
           cache: 'yarn'
-      - run: |
-          yarn global add lerna
-          yarn prepare
+      - run: yarn install --frozen-lockfile
       - run: yarn lint
       - run: yarn test
