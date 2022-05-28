@@ -40,7 +40,7 @@
         }
       }
     },
-    "pocs": {
+    "members": {
       "description": "The members of the team.",
       "type": "array",
       "items": {

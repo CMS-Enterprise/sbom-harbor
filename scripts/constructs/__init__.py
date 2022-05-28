@@ -42,10 +42,9 @@ from cyclonedx.constants import (
 )
 from scripts.constants import (
     API_KEY_AUTHORIZER_LN,
-    AUTHORIZER_LN,
-    TOKEN_AUTHORIZER_LN,
     APP_LB_ID,
     APP_LB_SECURITY_GROUP_ID,
+    GET_TEAM_LN,
     REGISTER_TEAM_LN,
     CIDR,
     COGNITO_DOMAIN_PREFIX,
@@ -69,6 +68,7 @@ from scripts.constants import (
     PUBLIC,
     SBOM_API_PYTHON_RUNTIME,
     SBOM_ENRICHMENT_LN,
+    UPDATE_TEAM_LN,
     USER_POOL_APP_CLIENT_ID,
     USER_POOL_DOMAIN_ID,
     USER_POOL_GROUP_DESCRIPTION,
@@ -84,7 +84,9 @@ from scripts.constants import (
 
 from .SBOMTeamTable import SBOMTeamTable
 from .SBOMTeamMemberTable import SBOMTeamMemberTable
+from .SBOMTeamTokenTable import SBOMTeamTokenTable
 
+from scripts.util import DynamoTableManager
 
 def create_asset():
 
@@ -374,10 +376,9 @@ class SBOMUserPoolClient(Construct):
                 flows=cognito.OAuthFlows(
                     authorization_code_grant=False,
                     client_credentials=False,
-                    # TODO: refactor to not use implicit code grant
-                    #   "The implicit grant flow exposes OAuth tokens in
-                    #   the url. AWS recommends only the authorization
-                    #   code flow is used with PKCE for public clients."
+                    # TODO: The implicit grant flow exposes OAuth tokens in
+                    #   the url. AWS recommends that only the authorization
+                    #   code flow is used with PKCE for public clients.
                     implicit_code_grant=True,
                 ),
             ),
@@ -686,7 +687,7 @@ class SBOMCreateTokenLambda(Construct):
         scope: Construct,
         *,
         vpc: ec2.Vpc,
-        team_table: dynamodb.Table,
+        table_mgr: DynamoTableManager,
     ):
 
         super().__init__(scope, CREATE_TOKEN_LN)
@@ -703,7 +704,7 @@ class SBOMCreateTokenLambda(Construct):
             memory_size=512,
         )
 
-        team_table.grant_read_write_data(self.func)
+        table_mgr.grant(self.func)
 
     def get_lambda_function(self):
         return self.func
@@ -718,7 +719,7 @@ class SBOMDeleteTokenLambda(Construct):
         scope: Construct,
         *,
         vpc: ec2.Vpc,
-        team_table: dynamodb.Table,
+        table_mgr: DynamoTableManager,
     ):
 
         super().__init__(scope, DELETE_TOKEN_LN)
@@ -735,7 +736,7 @@ class SBOMDeleteTokenLambda(Construct):
             memory_size=512,
         )
 
-        team_table.grant_read_write_data(self.func)
+        table_mgr.grant(self.func)
 
     def get_lambda_function(self):
         return self.func
@@ -750,7 +751,7 @@ class SBOMRegisterTeamLambda(Construct):
         scope: Construct,
         *,
         vpc: ec2.Vpc,
-        team_table: dynamodb.Table,
+        table_mgr: DynamoTableManager,
     ):
 
         super().__init__(scope, REGISTER_TEAM_LN)
@@ -767,7 +768,70 @@ class SBOMRegisterTeamLambda(Construct):
             memory_size=512,
         )
 
-        team_table.grant_read_write_data(self.func)
+        table_mgr.grant(self.func)
+
+    def get_lambda_function(self):
+        return self.func
+
+class SBOMUpdateTeamLambda(Construct):
+
+    """ Lambda to update a team """
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+        table_mgr: DynamoTableManager,
+    ):
+
+        super().__init__(scope, UPDATE_TEAM_LN)
+
+        self.func = lambda_.Function(
+            self, UPDATE_TEAM_LN,
+            function_name="SBOMUpdateTeamLambda",
+            runtime=SBOM_API_PYTHON_RUNTIME,
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            handler="cyclonedx.api.update_team_handler",
+            code=create_asset(),
+            timeout=Duration.seconds(10),
+            memory_size=512,
+        )
+
+        table_mgr.grant(self.func)
+
+    def get_lambda_function(self):
+        return self.func
+
+
+class SBOMGetTeamLambda(Construct):
+
+    """ Lambda to get a team """
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+        table_mgr: DynamoTableManager,
+    ):
+
+        super().__init__(scope, GET_TEAM_LN)
+
+        self.func = lambda_.Function(
+            self, GET_TEAM_LN,
+            function_name="SBOMGetTeamLambda",
+            runtime=SBOM_API_PYTHON_RUNTIME,
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            handler="cyclonedx.api.get_team_handler",
+            code=create_asset(),
+            timeout=Duration.seconds(10),
+            memory_size=512,
+        )
+
+        table_mgr.grant(self.func)
 
     def get_lambda_function(self):
         return self.func
@@ -868,7 +932,7 @@ class SBOMUploadAPIKeyAuthorizerLambda(Construct):
         scope: Construct,
         *,
         vpc: ec2.Vpc,
-        team_table: dynamodb.Table
+        table_mgr: DynamoTableManager,
     ):
 
         super().__init__(scope, API_KEY_AUTHORIZER_LN)
@@ -886,7 +950,7 @@ class SBOMUploadAPIKeyAuthorizerLambda(Construct):
             memory_size=512,
         )
 
-        team_table.grant_read_data(self.func)
+        table_mgr.grant(self.func)
 
     def get_lambda_function(self):
         return self.func

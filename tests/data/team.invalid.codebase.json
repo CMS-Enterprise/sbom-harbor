@@ -1,5 +1,5 @@
 {
-  "teamName": "Dawn Patrol",
+  "Id": "Dawn-Patrol",
   "pocs": [{
       "isTeamLead": true,
       "email": "quinn.peters@aquia.io"

@@ -1,0 +1,19 @@
+{
+  "SbomTeamMemberTable": [{
+    "PutRequest": {
+      "Item": {
+        "TeamId": { "S": "abc123" },
+        "isTeamLead": { "BOOL": true },
+        "email": { "S": "quinn.peters@aquia.io" }
+      }
+    }
+  },{
+    "PutRequest": {
+      "Item": {
+        "TeamId": { "S": "abc123" },
+        "isTeamLead": { "BOOL": true },
+        "email": { "S": "sinan.bolel@aquia.io" }
+      }
+    }
+  }]
+}

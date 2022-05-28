@@ -34,6 +34,10 @@ class SBOMTeamMemberTable(Construct):
                 name="TeamId",
                 type=dynamodb.AttributeType.STRING,
             ),
+            sort_key=dynamodb.Attribute(
+                name="email",
+                type=dynamodb.AttributeType.STRING,
+            )
         )
 
         # Set up scaling

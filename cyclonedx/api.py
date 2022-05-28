@@ -23,8 +23,10 @@ from cyclonedx.constants import (
     ENRICHMENT_ID_SQS_KEY,
     ENRICHMENT_ID,
     SBOM_BUCKET_NAME_KEY,
-    SBOM_S3_KEY, 
-    USER_POOL_CLIENT_ID_KEY, 
+    SBOM_S3_KEY,
+    TEAM_MEMBER_TABLE_NAME,
+    TEAM_TOKEN_TABLE_NAME,
+    USER_POOL_CLIENT_ID_KEY,
     USER_POOL_NAME_KEY,
     TEAM_TABLE_NAME,
 )
@@ -33,15 +35,16 @@ from cyclonedx.core import CycloneDxCore
 from cyclonedx.util import (
     __create_project,
     __create_pristine_response_obj,
-    __create_team_reg_response_obj,
-    __create_user_search_response_obj, __delete_project,
+    __create_team_response,
+    __create_user_search_response_obj,
+    __delete_project,
     __get_body_from_event,
     __get_body_from_first_record,
     __get_findings,
     __get_login_failed_response,
     __get_login_success_response,
     __get_records_from_event,
-    __get_token_index,
+    __handle_delete_token_error,
     __token_response_obj,
     __upload_sbom,
     __validate,
@@ -52,6 +55,11 @@ dynamodb_resource = boto3.resource('dynamodb')
 dynamodb_serializer = TypeSerializer()
 dynamodb_deserializer = TypeDeserializer()
 
+team_schema = loads(
+    pr.read_text(
+        schemas, "team.schema.json"
+    )
+)
 
 def pristine_sbom_ingress_handler(event, context) -> dict:
 
@@ -344,7 +352,7 @@ def create_token_handler(event=None, context=None):
 
     # Get the team from the path parameters
     # and extract the body from the event
-    team = event["pathParameters"]["team"]
+    team_id = event["pathParameters"]["team"]
     body = __get_body_from_event(event)
 
     # Create a new token starting with "sbom-api",
@@ -364,6 +372,7 @@ def create_token_handler(event=None, context=None):
     # Create a data structure representing the token
     # and it's metadata
     token_item = {
+        "TeamId": team_id,
         "name": name,
         "created": Decimal(created),
         "expires": Decimal(expires),
@@ -374,20 +383,11 @@ def create_token_handler(event=None, context=None):
     # Get the dynamodb resource and add the token
     # to the existing team
     dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table(TEAM_TABLE_NAME)
+    table = dynamodb.Table(TEAM_TOKEN_TABLE_NAME)
 
     try:
-        table.update_item(
-            Key={
-                "Id": team,
-            },
-            UpdateExpression="SET #t = list_append(#t, :ti)",
-            ExpressionAttributeNames={
-                "#t": "tokens",
-            },
-            ExpressionAttributeValues={
-                ":ti": [token_item]
-            },
+        table.put_item(
+            Item=token_item
         )
     except Exception as err:
 
@@ -405,70 +405,52 @@ def delete_token_handler(event=None, context=None):
     """ Handler for deleting a token belonging to a given team """
 
     # Grab the team and the token from the path parameters
-    team_name = event["pathParameters"]["team"]
+    team_id = event["pathParameters"]["team"]
     token = event["pathParameters"]["token"]
 
-    # Set the Key for update_item(). The Id is the team name
-    key = {"Id": team_name}
-
     # Get our Team table from DynamoDB
-    table = dynamodb_resource.Table(TEAM_TABLE_NAME)
+    team_token_table = dynamodb_resource.Table(TEAM_TOKEN_TABLE_NAME)
 
-    # Get the team from the table
-    get_item_rsp = table.get_item(Key=key)
+    try:
 
-    # Extract the existing tokens and find the index of the token
-    # the user is looking to delete.
-    team = get_item_rsp["Item"]
-    tokens = team["tokens"]
-    index = __get_token_index(tokens, token)
-
-    # If the key is found belonging to the team
-    if index:
-
-        # Craft an update expression to remove the object
-        # located at the index we found the token at.
-        update_expression = f"REMOVE #t[{index}]"
-        exp_attr_names = {"#t": "tokens"}
-
-        try:
-
-            # Get rid of the token
-            table.update_item(
-                Key=key,
-                UpdateExpression=update_expression,
-                ExpressionAttributeNames=exp_attr_names,
-            )
-
-            # Craft a response saying the operation went well
-            delete_token_response = __token_response_obj(200, token)
-        except Exception as err:
-
-            # If something happened in AWS that made it where the
-            # call could not be completed, send an internal service error.
-            delete_token_response = __token_response_obj(
-                500, token, f"Request Error: {err}"
-            )
-
-    else:
-
-        # If no token exists, tell them we couldn't find it.
-        delete_token_response = __token_response_obj(
-            401, token, f"No such token({token}) belongs to team({team_name}) "
+        # Delete the token
+        team_token_table.delete_item(
+            Key={
+                "TeamId": team_id,
+                "token": token
+            },
+            ConditionExpression="attribute_exists(TeamId)",
         )
 
-    return delete_token_response
+    except ClientError as e:
+        return __handle_delete_token_error(
+            token, team_id, e
+        )
 
+    return __token_response_obj(
+        status_code=200,
+        token=token,
+    )
+
+
+def update_table(
+        key: str,
+        team_json: dict,
+        team_id: str,
+        table: dynamodb_resource.Table,
+):
+    items = team_json[key]
+    for item in items:
+        item.update({
+            "TeamId": team_id,
+        })
+        table.put_item(
+            Item=item
+        )
 
 def register_team_handler(event=None, context=None):
 
-    team_schema = loads(
-        pr.read_text(
-            schemas, "team.schema.json"
-        )
-    )
-
-    team_json = __get_body_from_event(event)
+    team_json: dict = __get_body_from_event(event)
 
     try:
         validate(
@@ -476,17 +458,170 @@ def register_team_handler(event=None, context=None):
             schema=team_schema
         )
 
-        # Get our Team table from DynamoDB
-        table = dynamodb_resource.Table(TEAM_TABLE_NAME)
+        team_id = team_json["Id"]
 
-        table.put_item(Item=team_json)
+        # Add the tokens to the token table if there are tokens.
+        token_table = dynamodb_resource.Table(TEAM_TOKEN_TABLE_NAME)
+        update_table("tokens", team_json, team_id, token_table)
+        del team_json["tokens"]
 
-        return __create_team_reg_response_obj(200, "OK")
+        # Update the members
+        member_table = dynamodb_resource.Table(TEAM_MEMBER_TABLE_NAME)
+        update_table("members", team_json, team_id, member_table)
+        del team_json["members"]
+
+        team_table = dynamodb_resource.Table(TEAM_TABLE_NAME)
+        team_table.put_item(Item=team_json)
+
+        return __create_team_response(200, "Team Created")
 
     except ValidationError as err:
-        return __create_team_reg_response_obj(
+        return __create_team_response(
             500, f"Validation Error: {err}")
 
+
+def replace_members(team_id: str, new_members: list):
+
+    team_table = dynamodb_resource.Table(TEAM_MEMBER_TABLE_NAME)
+    team_query_rsp = team_table.query(
+        Select="ALL_ATTRIBUTES",
+        KeyConditionExpression="TeamId = :TeamId",
+        ExpressionAttributeValues={
+            ":TeamId": team_id,
+        },
+    )
+
+    delete_requests = []
+    for item in team_query_rsp["Items"]:
+        delete_requests.append({
+            'DeleteRequest':{
+                'Key': {
+                    'TeamId': team_id,
+                    'email': item["email"]
+                }
+            }
+        })
+
+    put_requests = []
+    for member in new_members:
+        put_requests.append({
+            'PutRequest': {
+                'Item': {
+                    'TeamId': team_id,
+                    'isTeamLead': member["isTeamLead"],
+                    'email': member["email"]
+                }
+            },
+        })
+
+    errors = []
+
+    print(f"Delete Requests: {delete_requests}")
+    if len(delete_requests) > 0:
+        try:
+            dynamodb_resource.batch_write_item(
+                RequestItems={
+                    'SbomTeamMemberTable': delete_requests
+                },
+            )
+        except ClientError as err:
+            errors.append(err)
+
+    print(f"Put Requests: {put_requests}")
+    if len(put_requests) > 0:
+        try:
+            dynamodb_resource.batch_write_item(
+                RequestItems={
+                    'SbomTeamMemberTable': put_requests
+                },
+            )
+        except ClientError as err:
+            errors.append(err)
+
+    return errors if len(errors) < 1 else []
+
+
+def update_team_handler(event=None, context=None):
+
+    team_json: dict = __get_body_from_event(event)
+
+    print(f"Incoming Team JSON: {team_json}")
+
+    try:
+        validate(
+            instance=team_json,
+            schema=team_schema
+        )
+
+        team_id = team_json["Id"]
+
+        if "members" in team_json:
+            incoming_members = team_json["members"]
+            errors = replace_members(team_id, incoming_members)
+            del team_json["members"]
+            if len(errors) > 0:
+                return __create_team_response(
+                    status_code=500,
+                    err=dumps(errors)
+                )
+
+        team_table = dynamodb_resource.Table(TEAM_TABLE_NAME)
+        team_table.delete_item(
+            Key={
+                "Id": team_id
+            }
+        )
+
+        team_table.put_item(Item=team_json)
+
+        return __create_team_response(
+            status_code=200,
+            msg="Team Updated"
+        )
+
+    except ValidationError as err:
+        return __create_team_response(
+            status_code=500,
+            err=f"Validation Error: {err}",
+        )
+
+
+def get_team_handler(event=None, context=None):
+
+    team_id = event["pathParameters"]["team"]
+
+    team_table = dynamodb_resource.Table(TEAM_TABLE_NAME)
+    team_query_rsp = team_table.query(
+        Select="ALL_ATTRIBUTES",
+        KeyConditionExpression="Id = :Id",
+        ExpressionAttributeValues={
+            ":Id": team_id,
+        },
+    )
+
+    # There will be only one team that matches dur to the uniqueness
+    # constraint on the partition value.
+    team = team_query_rsp["Items"][0]
+
+    team_members_table = dynamodb_resource.Table(TEAM_MEMBER_TABLE_NAME)
+    team_members_query_rsp = team_members_table.query(
+        Select="SPECIFIC_ATTRIBUTES",
+        ProjectionExpression='email,isTeamLead',
+        KeyConditionExpression="TeamId = :Id",
+        ExpressionAttributeValues={
+            ":Id": team_id,
+        },
+    )
+
+    team_members = team_members_query_rsp["Items"]
+    team["members"] = team_members
+
+    return __create_team_response(
+        status_code=200,
+        msg=team
+    )
+
+## </WORKING>
 
 def user_search_handler(event=None, context=None):
 

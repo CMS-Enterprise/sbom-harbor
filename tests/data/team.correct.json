@@ -1,6 +1,6 @@
 {
   "Id": "dawn-patrol",
-  "pocs": [{
+  "members": [{
       "isTeamLead": true,
       "email": "quinn.peters@aquia.io"
   },{

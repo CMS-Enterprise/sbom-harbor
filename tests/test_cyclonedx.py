@@ -7,7 +7,6 @@ import requests
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 
-import cyclonedx.api as api
 import cyclonedx.util as util
 import cyclonedx.schemas as schemas
 import tests.sboms as sboms
@@ -17,6 +16,7 @@ from time import sleep
 from json import dumps, loads
 from requests import Response, get, put
 from cyclonedx import core
+from cyclonedx import api
 from cyclonedx.dtendpoints import DTEndpoints
 
 team_schema = loads(
@@ -25,6 +25,23 @@ team_schema = loads(
     )
 )
 
+def test_replace_members():
+    new_members: list = [
+        {
+            "email": "tester@hobgoblin.net",
+            "isTeamLead": False
+        }, {
+            "email": "another.user@hobgoblin.net",
+            "isTeamLead": True
+        }
+    ]
+
+    team_id = '873f79ff-9328-4cf0-a183-e7e1814c88ea'
+
+    api.replace_members(
+        team_id=team_id,
+        new_members=new_members
+    )
 
 def test_get_schemas() -> None:
 

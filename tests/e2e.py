@@ -1,4 +1,5 @@
 """ End-to-End Test for the system """
+import boto3
 import importlib.resources as pr
 import tests.sboms as sboms
 from json import loads
@@ -8,28 +9,42 @@ import tests.data as data
 import requests
 from optparse import OptionParser
 
-API_ID = "b8vvubhi9e"
+client = boto3.client('cloudfront')
+distributions = client.list_distributions()
+distribution_list = distributions["DistributionList"]
+
+# only one right now
+sbom_api_distribution = distribution_list["Items"][0]
+cf_domain_name = sbom_api_distribution["DomainName"]
+
+origins = sbom_api_distribution["Origins"]["Items"]
+
+apigw_domain_name = ""
+for origin in origins:
+    domain_name: str = origin["DomainName"]
+    if "execute-api" in domain_name:
+        apigw_domain_name = domain_name
+
+CF_URL = f"https://{cf_domain_name}"
+APIGW_URL = f"https://{apigw_domain_name}"
+
+URL = APIGW_URL
+
 REGION = "us-east-1"
 STAGE = "prod"
 
-USER = "sbomadmin@aquia.us"
+USER = "sbomadmin@aquia.io"
 PASS = "L0g1nTe5tP@55!"
 
-CF_HOST = "d36r0zafciw5r"
-CF_URL = f"https://{CF_HOST}.cloudfront.net"
-
-APIGW_HOST = "qlzlnxa0fj"
-APIGW_URL = f"https://{APIGW_HOST}.execute-api.us-east-1.amazonaws.com"
-
-LOGIN_URL = f"{CF_URL}/api/login"
-TEAM_URL = f"{CF_URL}/api/team"
+LOGIN_URL = f"{URL}/api/login"
+TEAM_URL = f"{URL}/api/team"
 
 team = "abc123"
 project = "AwesomeProj"
 codebase = "Website"
 
-SBOM_UPLOAD_URL = f"{CF_URL}/api/{team}/{project}/{codebase}/sbom"
-USER_SEARCH_URL = f"{APIGW_URL}/api/user/search"
+SBOM_UPLOAD_URL = f"{URL}/api/{team}/{project}/{codebase}/sbom"
+USER_SEARCH_URL = f"{URL}/api/user/search"
 
 SBOM = loads(pr.read_text(sboms, "cms_npm_package.json"))
 parser = OptionParser("usage: %prog [options]")
@@ -37,7 +52,7 @@ parser.add_option('--fail', dest="fail", help='fail flag', action="store")
 
 
 def __get_token_url(team_name: str, token=None):
-    url = f"{CF_URL}/api/{team_name}/token"
+    url = f"{URL}/api/{team_name}/token"
 
     if token:
         url = f"{url}/{token}"
@@ -47,11 +62,14 @@ def __get_token_url(team_name: str, token=None):
 
 def __login():
 
-    print(f"Sending To: POST:{LOGIN_URL}")
-    login_rsp = requests.post(LOGIN_URL, json={
-        "username": USER,
-        "password": PASS
-    })
+    print(f"Sending To: POST:{LOGIN_URL}, With: {USER}, {PASS}")
+    login_rsp = requests.post(
+        LOGIN_URL,
+        json={
+            "username": USER,
+            "password": PASS
+        }
+    )
 
     login_rsp_json = login_rsp.json()
     print(f"Response: {login_rsp_json}")
@@ -66,20 +84,63 @@ def team_test():
         )
     )
 
-    team_json["Id"] = str(uuid4())
+    team_id = str(uuid4())
+    team_json["Id"] = team_id
+
+    jwt = __login()
 
     print(f"Sending To: POST:{TEAM_URL}")
     team_rsp = requests.post(
         TEAM_URL,
         json=team_json,
         headers={
-            'Authorization': __login()
+            'Authorization': jwt
         }
     )
 
-    team_rsp = team_rsp.text
+    team_rsp_txt = team_rsp.text
+    print(f"Response: {team_rsp_txt}")
+
+    print(f"Sending To: GET:{TEAM_URL}")
+    get_team_rsp = requests.get(
+        f"{TEAM_URL}/{team_id}",
+        headers={
+            'Authorization': jwt
+        }
+    )
+
+    team_rsp = get_team_rsp.json()
     print(f"Response: {team_rsp}")
 
+    if "response" in team_rsp:
+        new_team = team_rsp["response"]
+        new_team["projects"] = []
+    else:
+        print(f"Failure: {team_rsp}")
+        new_team = { "projects": [] }
+        exit()
+
+    new_proj_name = str(uuid4())
+    new_project = {
+        "projectName": new_proj_name,
+        "codebases": []
+    }
+
+    new_team["projects"].append(new_project)
+
+    print(f"New Team: {new_team}")
+
+    print(f"Sending To: PUT:{TEAM_URL}")
+    get_team_update_rsp = requests.put(
+        TEAM_URL,
+        headers={
+            'Authorization': jwt
+        },
+        json=new_team
+    )
+
+    team_rsp = get_team_update_rsp.json()
+    print(f"Response: {team_rsp}")
 
 def token_test():
 
@@ -150,10 +211,10 @@ def sbom_upload_test():
     Posts some SBOMS to the Endpoint currently running in AWS
     """
 
-    working_token = "8d191d16-467e-4150-8416-f51fc7ca1b93"
-    made_up_token = "8d191d16-467e-4150-8416-f51fc7ca1b69"
-    disabled_token = "8d191d16-467e-4150-8416-f51fc7ca1b94"
-    expired_token = "8d191d16-467e-4150-8416-f51fc7ca1b95"
+    working_token = "sbom-api-8d191d16-467e-4150-8416-f51fc7ca1b93"
+    made_up_token = "sbom-api-8d191d16-467e-4150-8416-f51fc7ca1b69"
+    disabled_token = "sbom-api-8d191d16-467e-4150-8416-f51fc7ca1b94"
+    expired_token = "sbom-api-8d191d16-467e-4150-8416-f51fc7ca1b95"
 
     print("Sending To: %s" % SBOM_UPLOAD_URL)
     print("<SBOM>")
@@ -229,8 +290,10 @@ def user_search_test():
     )
 
     mar_result = user_search_rsp.json()
-    if 'maria@aquia.us' in mar_result and 'martha@aquia.us'in mar_result:
+    if 'maria@aquia.io' in mar_result and 'martha@aquia.io'in mar_result:
         print("Passed using 'mar' filter")
+    else:
+        print("Failed using 'mar' filter")
 
     print(f"Sending To: GET:{USER_SEARCH_URL}")
     user_search_rsp = requests.get(
@@ -244,7 +307,14 @@ def user_search_test():
     )
 
     qui_result = user_search_rsp.json()
-    if 'quinn@aquia.us' in qui_result \
-        and 'quinton@aquia.us'in qui_result \
-            and'quison@aquia.us'in qui_result:
+    if 'quinn@aquia.io' in qui_result \
+        and 'quinton@aquia.io'in qui_result \
+            and'quison@aquia.io'in qui_result:
         print("Passed using 'qui' filter")
+    else:
+        print("Failed using 'qui' filter")
+
+
+def update_team_test():
+    jwt = __login()
+

@@ -17,8 +17,10 @@ from scripts.constants import (
 from scripts.constructs import (
     SBOMApiVpc,
     SBOMTeamTable,
-    SBOMTeamMemberTable
+    SBOMTeamMemberTable,
+    SBOMTeamTokenTable,
 )
+from scripts.util import DynamoTableManager
 
 
 class SBOMSharedResourceStack(Stack):
@@ -49,8 +51,15 @@ class SBOMSharedResourceStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,
         )
 
-        self.team_table: dynamodb.Table = SBOMTeamTable(self).get_construct()
-        self.team_user_table: dynamodb.Table = SBOMTeamMemberTable(self).get_construct()
+        team_table: dynamodb.Table = SBOMTeamTable(self).get_construct()
+        team_member_table: dynamodb.Table = SBOMTeamMemberTable(self).get_construct()
+        team_token_table: dynamodb.Table = SBOMTeamTokenTable(self).get_construct()
+
+        self.table_manager = DynamoTableManager(
+            team_table,
+            team_member_table,
+            team_token_table
+        )
 
     def get_vpc(self):
 
@@ -70,14 +79,6 @@ class SBOMSharedResourceStack(Stack):
 
         return self.s3_bucket
 
-    def get_team_table(self) -> dynamodb.Table:
+    def get_dynamo_table_manager(self):
 
-        """ Returns the DynamoDB Team Table construct """
-
-        return self.team_table
-
-    def get_team_user_table(self):
-
-        """ Returns the DynamoDB Team User Table construct """
-
-        return self.team_user_table
+        return self.table_manager

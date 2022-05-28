@@ -15,6 +15,7 @@ from scripts.stacks import (
     SBOMUserManagement,
     SBOMWebStack,
 )
+from scripts.stacks.SBOMSharedResourceStack import DynamoTableManager
 
 
 def dodep() -> None:
@@ -39,7 +40,7 @@ def dodep() -> None:
     # by all the other stacks.
     shared_resources = SBOMSharedResourceStack(app, env=env)
     vpc = shared_resources.get_vpc()
-    team_table: dynamodb.Table = shared_resources.get_team_table()
+    table_manager: DynamoTableManager = shared_resources.get_dynamo_table_manager()
 
     user_management = SBOMUserManagement(app, vpc=vpc, env=env)
     user_pool: cognito.UserPool = user_management.get_user_pool()
@@ -50,7 +51,7 @@ def dodep() -> None:
         app, vpc, env=env,
         user_pool=user_pool,
         user_pool_client=user_pool_client,
-        team_table=team_table,
+        table_mgr=table_manager,
     )
 
     # The Enrichment Stack sets up the infrastructure to enrich SBOMs

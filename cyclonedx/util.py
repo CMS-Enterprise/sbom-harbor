@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from botocore.client import BaseClient
 from boto3 import client
+from botocore.exceptions import ClientError
 from jsonschema.exceptions import ValidationError
 from requests import Response, get, post, put
 from requests_toolbelt.multipart.encoder import MultipartEncoder
@@ -307,17 +308,38 @@ def __token_response_obj(
     }
 
 
-def __create_team_reg_response_obj(status_code: int, msg: str) -> dict:
+def __handle_delete_token_error(token: str, team_id: str, e: ClientError):
+
+    ec = e.response['Error']['Code']
+    if ec == 'ConditionalCheckFailedException':
+        error = f"Specified token({token}) does not belong team({team_id})"
+    else:
+        error = f"Unknown error deleting: token({token}) from team({team_id})"
+
+    return __token_response_obj(
+        status_code=500,
+        token=token,
+        msg=error,
+    )
+
+def __create_team_response(status_code: int, msg: str=None, err: str=None) -> dict:
 
     """
     Creates a dict that is used as the response from the Lambda
     call.  It has all the necessary elements to satisfy AWS's criteria.
     """
 
+    body = {}
+
+    if msg:
+        body["response"] = msg
+    elif err:
+        body["error"] = err
+
     return {
         "statusCode": status_code,
         "isBase64Encoded": False,
-        "body": msg
+        "body": dumps(body)
     }
 
 
@@ -554,22 +576,6 @@ def __set_initial_api_key_in_ssm():
     )
 
     return api_key
-
-
-def __get_token_index(tokens: list, token: str) -> int:
-
-    index = None
-
-    i = 0
-    for token_data in tokens:
-        existing_team_token = token_data["token"]
-        if existing_team_token == token:
-            index = i
-            break
-        else:
-            i = i + 1
-
-    return index
 
 
 def __get_login_failed_response(status_code: int, err: Exception):

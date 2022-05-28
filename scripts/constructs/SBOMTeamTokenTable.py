@@ -6,34 +6,36 @@ from aws_cdk import (
 )
 
 from cyclonedx.constants import (
-    TEAM_TABLE_ID,
-    TEAM_TABLE_NAME,
+    TEAM_TOKEN_TABLE_ID,
+    TEAM_TOKEN_TABLE_NAME,
 )
 
 
-class SBOMTeamTable(Construct):
+class SBOMTeamTokenTable(Construct):
+
     """
-    This class is used to create the IAM role for the user pool.
-    params:
-        scope: Construct
-        user_pool: SBOMUserPool
+    This class is used to create a DynamoDB Table for storing tokens
     """
 
     def __init__(
         self,
         scope: Construct,
     ):
-        super().__init__(scope, TEAM_TABLE_ID)
+        super().__init__(scope, TEAM_TOKEN_TABLE_ID)
 
         self.construct = dynamodb.Table(
-            self, TEAM_TABLE_ID,
-            table_name=TEAM_TABLE_NAME,
+            self, TEAM_TOKEN_TABLE_ID,
+            table_name=TEAM_TOKEN_TABLE_NAME,
             billing_mode=dynamodb.BillingMode.PROVISIONED,
             removal_policy=RemovalPolicy.DESTROY,
             partition_key=dynamodb.Attribute(
-                name="Id",
+                name="TeamId",
                 type=dynamodb.AttributeType.STRING,
             ),
+            sort_key=dynamodb.Attribute(
+                name="token",
+                type=dynamodb.AttributeType.STRING,
+            )
         )
 
         # Set up scaling
