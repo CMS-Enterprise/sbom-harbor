@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "$(dirname $(realpath "$BASH_SOURCE"))/utils.sh"
+source "$(dirname $(realpath $BASH_SOURCE))/utils.sh"
 
 for user_name in ${COGNITO_USERNAMES};
 do
