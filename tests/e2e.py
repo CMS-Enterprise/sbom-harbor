@@ -211,17 +211,14 @@ def sbom_upload_test():
     Posts some SBOMS to the Endpoint currently running in AWS
     """
 
-    working_token = "sbom-api-8d191d16-467e-4150-8416-f51fc7ca1b93"
-    made_up_token = "sbom-api-8d191d16-467e-4150-8416-f51fc7ca1b69"
-    disabled_token = "sbom-api-8d191d16-467e-4150-8416-f51fc7ca1b94"
-    expired_token = "sbom-api-8d191d16-467e-4150-8416-f51fc7ca1b95"
+    working_token = "8d191d16-467e-4150-8416-f51fc7ca1b93"
+    made_up_token = "8d191d16-467e-4150-8416-f51fc7ca1b69"
+    disabled_token = "8d191d16-467e-4150-8416-f51fc7ca1b94"
+    expired_token = "8d191d16-467e-4150-8416-f51fc7ca1b95"
 
     print("Sending To: %s" % SBOM_UPLOAD_URL)
-    print("<SBOM>")
-    print(SBOM)
-    print("</SBOM>")
 
-    rsp = requests.post(
+    good_token_rsp = requests.post(
         SBOM_UPLOAD_URL,
         json=SBOM,
         headers={
@@ -229,10 +226,11 @@ def sbom_upload_test():
         },
     )
 
-    if rsp.status_code == 200:
+    if good_token_rsp.status_code == 200:
         print("Correct token test passed")
     else:
-        print(f"Correct token test failed, received: {rsp.status_code}")
+        print(f"Correct token test failed, received: {good_token_rsp.status_code}")
+        print(good_token_rsp.text)
 
     made_up_token_rsp = requests.post(
         SBOM_UPLOAD_URL,
@@ -246,6 +244,7 @@ def sbom_upload_test():
         print("Bad Token test passed")
     else:
         print(f"Bad Token test failed, received: {made_up_token_rsp.status_code}")
+        print(made_up_token_rsp.text)
 
     disabled_token_rsp = requests.post(
         SBOM_UPLOAD_URL,
@@ -259,6 +258,7 @@ def sbom_upload_test():
         print("Disabled Token test passed")
     else:
         print(f"Disabled Token test failed, received: {disabled_token_rsp.status_code}")
+        print(disabled_token_rsp.text)
 
     expired_token_rsp = requests.post(
         SBOM_UPLOAD_URL,
@@ -272,7 +272,7 @@ def sbom_upload_test():
         print("Expired token test passed")
     else:
         print(f"Expired Token test failed, received: {expired_token_rsp.status_code}")
-
+        print(expired_token_rsp.text)
 
 def user_search_test():
 

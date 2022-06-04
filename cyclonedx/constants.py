@@ -15,6 +15,11 @@ DT_API_KEY = "DT_API_KEY"
 DT_API_BASE = "DT_API_BASE"
 DT_ROOT_PWD = "DT_ROOT_PWD"
 
+S3_META_TEAM_KEY = "x-amz-meta-sbom-api-team"
+S3_META_PROJECT_KEY = "x-amz-meta-sbom-api-project"
+S3_META_CODEBASE_KEY = "x-amz-meta-sbom-api-codebase"
+S3_META_TIMESTAMP_KEY = "x-amz-meta-sbom-api-timestamp"
+
 EMPTY_VALUE = "EMPTY"
 
 APP_LOAD_BALANCER_ID = "AppLoadBalancer-ID"

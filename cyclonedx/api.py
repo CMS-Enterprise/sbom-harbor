@@ -22,6 +22,10 @@ from cyclonedx.constants import (
     DT_QUEUE_URL_EV,
     ENRICHMENT_ID_SQS_KEY,
     ENRICHMENT_ID,
+    S3_META_CODEBASE_KEY,
+    S3_META_PROJECT_KEY,
+    S3_META_TEAM_KEY,
+    S3_META_TIMESTAMP_KEY,
     SBOM_BUCKET_NAME_KEY,
     SBOM_S3_KEY,
     TEAM_MEMBER_TABLE_NAME,
@@ -69,7 +73,18 @@ def pristine_sbom_ingress_handler(event, context) -> dict:
     to the application.
     """
 
+    # Extract the path parameters and get the team
+    path_params = event["pathParameters"]
+    team = path_params["team"]
+    project = path_params["project"]
+    codebase = path_params["codebase"]
+
     bom_obj = __get_body_from_event(event)
+
+    print(f"<BOM OBJECT>")
+    print(bom_obj)
+    print(f"Type: {type(bom_obj)}")
+    print(f"</BOM OBJECT>")
 
     s3 = resource("s3")
 
@@ -95,8 +110,15 @@ def pristine_sbom_ingress_handler(event, context) -> dict:
 
         # Extract the actual SBOM.
         bom_bytes = bytearray(dumps(bom_obj), "utf-8")
+        timestamp = datetime.datetime.now().timestamp()
         s3.Object(bucket_name, key).put(
             Body=bom_bytes,
+            Metadata={
+                S3_META_TEAM_KEY: team,
+                S3_META_PROJECT_KEY: project,
+                S3_META_CODEBASE_KEY: codebase,
+                S3_META_TIMESTAMP_KEY: str(timestamp),
+            },
         )
 
     except ValidationError as validation_error:
@@ -310,21 +332,25 @@ def api_key_authorizer_handler(event, context):
 
     # Extract the path parameters and get the team
     path_params = event["pathParameters"]
-    team = path_params["team"]
+    team_id = path_params["team"]
 
     # Get our Team table from DynamoDB
-    table = dynamodb_resource.Table(TEAM_TABLE_NAME)
-
-    # Set the Key for update_item(). The Id is the team name
-    key = {"Id": team}
+    team_token_table = dynamodb_resource.Table(TEAM_TOKEN_TABLE_NAME)
 
     # Get the team from the table
-    get_item_rsp = table.get_item(Key=key)
+    get_team_tokens_rsp = team_token_table.query(
+        Select="ALL_ATTRIBUTES",
+        KeyConditionExpression="TeamId = :TeamId",
+        ExpressionAttributeValues={
+            ":TeamId": team_id,
+        },
+    )
 
-    # Extract the existing tokens and find the index of the token
-    # the user is looking to delete.
-    team = get_item_rsp["Item"]
-    tokens = team["tokens"]
+    try:
+        tokens = get_team_tokens_rsp["Items"]
+    except KeyError as err:
+        print(f"Key error: {err}")
+        print(f"Query Response(Team): {get_team_tokens_rsp}")
 
     # Set the policy to default Deny
     policy = deny_policy()
