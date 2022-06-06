@@ -4,70 +4,92 @@
  */
 import * as React from 'react'
 import * as ReactDOMClient from 'react-dom/client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
-import { useNavigate, useMatch, useLocation } from 'react-router-dom'
-import { CognitoUserSession } from 'amazon-cognito-identity-js'
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useNavigate,
+  useMatch,
+  useLocation,
+} from 'react-router-dom'
+import { CognitoUser } from 'amazon-cognito-identity-js'
 import { Auth } from '@aws-amplify/auth'
-import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider } from '@mui/material/styles'
+import CssBaseline from '@mui/material/CssBaseline'
 import Layout from '@/views/Layout/Layout'
+import { SessionContext } from '@/services/auth'
+import { AWS_REGION } from '@/utils/constants'
+import reportWebVitals from '@/utils/reportWebVitals'
 import App from '@/views/App/App'
 import Home from '@/views/Home/Home'
 import SignIn from '@/views/SignIn/SignIn'
 import SignUp from '@/views/SignUp/SignUp'
-import { SessionContext, getSession } from '@/services/auth'
-import reportWebVitals from '@/utils/reportWebVitals'
+import SignOut from '@/views/SignOut/SignOut'
 import theme from '@/theme'
-import {
-  AWS_REGION,
-  AWS_USER_POOL_ID,
-  AWS_USER_POOL_WEB_CLIENT_ID,
-} from '@/utils/constants'
+
+type IConfig = {
+  USER_POOL_ID: string
+  USER_POOL_CLIENT_ID: string
+  CF_DOMAIN: string
+}
+
+const CONFIG = JSON.parse(JSON.stringify(process.env.CONFIG)) as IConfig
 
 // configure Amazon Cognito authentication
 Auth.configure({
   region: AWS_REGION,
-  userPoolId: AWS_USER_POOL_ID,
-  userPoolWebClientId: AWS_USER_POOL_WEB_CLIENT_ID,
+  userPoolId: CONFIG.USER_POOL_ID || new Error('USER_POOL_ID is not defined'),
+  userPoolWebClientId:
+    CONFIG.USER_POOL_CLIENT_ID ||
+    new Error('USER_POOL_CLIENT_ID is not defined'),
 })
+
+console.log(CONFIG)
 
 const Main = (): JSX.Element => {
   const navigate = useNavigate()
-  const match = useMatch({ path: '/app' })
   const location = useLocation()
+  const matchProtectedRoute = useMatch('/app/*')
+  const [user, setUser] = React.useState<CognitoUser | null | undefined>()
 
-  const [session, setSession] = React.useState<
-    CognitoUserSession | null | undefined
-  >(undefined)
-
-  React.useEffect(() => {
-    const fetchSession = async (): Promise<void> => {
-      try {
-        const res = await getSession()
-        if (!res) throw new Error('No session')
-        setSession(res)
-        console.log('Session:', res)
-      } catch (error) {
-        console.log('Session error:', error)
-        if (match) {
-          setSession(null)
-          navigate('/login')
-        }
+  /* eslint-disable react-hooks/exhaustive-deps */
+  const fetchSession = React.useCallback(async () => {
+    try {
+      const user = await Auth.currentAuthenticatedUser()
+      setUser(user)
+      console.log(`User@${location.pathname}`, user)
+      if (!matchProtectedRoute) {
+        navigate('/app')
+      }
+    } catch (error) {
+      setUser(null)
+      console.log(error)
+      if (matchProtectedRoute) {
+        navigate('/login')
       }
     }
+  }, [matchProtectedRoute, user, location.pathname])
 
+  React.useEffect(() => {
     fetchSession()
   }, [location.pathname])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   return (
-    <SessionContext.Provider value={session}>
+    <SessionContext.Provider
+      value={{
+        user,
+        setUser,
+      }}
+    >
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="join" element={<SignUp />} />
           <Route path="login" element={<SignIn />} />
+          <Route path="logout" element={<SignOut />} />
         </Route>
-        <Route path="/app" element={<App />} />
+        <Route path="/app/*" element={<App />} />
       </Routes>
     </SessionContext.Provider>
   )

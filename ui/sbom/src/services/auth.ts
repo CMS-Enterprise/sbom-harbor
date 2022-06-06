@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { Auth, CognitoUser } from '@aws-amplify/auth'
-import { CognitoUserSession } from 'amazon-cognito-identity-js'
+import { CognitoUser } from '@aws-amplify/auth'
+import { ICognitoUserSessionData } from 'amazon-cognito-identity-js'
 
 export type User = {
   email: string
@@ -14,16 +14,14 @@ export type User = {
   isAdmin?: boolean
 }
 
-export const login = (
-  username: string,
-  password: string
-): Promise<CognitoUser> => Auth.signIn(username, password)
+export type SessionType = ICognitoUserSessionData | null | undefined
 
-export const logout = (): Promise<any> => Auth.signOut()
+export type SessionContextType = {
+  user: CognitoUser | null | undefined
+  setUser: React.Dispatch<React.SetStateAction<CognitoUser | null | undefined>>
+}
 
-export const getSession = (): Promise<CognitoUserSession | null> =>
-  Auth.currentSession()
-
-export const SessionContext = React.createContext<
-  CognitoUserSession | null | undefined
->(undefined)
+export const SessionContext = React.createContext<SessionContextType>({
+  user: undefined,
+  setUser: () => undefined,
+})

@@ -1,6 +1,7 @@
 cyclonedx/
 scripts/
 tests/
+tmp/
 README.md
 amplify.yml
 ui/amplify/README.md

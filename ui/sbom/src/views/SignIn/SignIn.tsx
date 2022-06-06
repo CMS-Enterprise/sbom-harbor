@@ -15,7 +15,8 @@ import Link from '@mui/material/Link'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import { login } from '@/services/auth'
+import { SessionContext } from '@/services/auth'
+import { Auth } from '@aws-amplify/auth'
 
 type State = {
   email?: string
@@ -28,12 +29,14 @@ const defaultState = {
 } as State
 
 const SignIn = (): JSX.Element => {
+  const navigate = useNavigate()
+
+  const { setUser } = React.useContext(SessionContext)
+
   const [formInput, setFormInput] = React.useReducer(
     (state: State, newState: State) => ({ ...state, ...newState }),
     defaultState
   )
-
-  const navigate = useNavigate()
 
   const handleInput = (
     evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -45,13 +48,12 @@ const SignIn = (): JSX.Element => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-
     try {
       if (!formInput.email || !formInput.password) {
         throw new Error('Email and password are required')
       }
-
-      await login(formInput.email, formInput.password)
+      const user = await Auth.signIn(formInput.email, formInput.password)
+      setUser(user)
       navigate('/app')
     } catch (error) {
       console.log(error)
