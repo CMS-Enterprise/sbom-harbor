@@ -12,11 +12,11 @@ import Container from '@mui/material/Container'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Grid from '@mui/material/Grid'
 import Link from '@mui/material/Link'
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import { SessionContext } from '@/services/auth'
 import { Auth } from '@aws-amplify/auth'
+import { SessionContext } from '@/services/auth'
+import { ReactComponent as LockOutlinedIcon } from '@/assets/icons/LockOutlined.svg'
 
 type State = {
   email?: string

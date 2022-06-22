@@ -1,9 +1,12 @@
+.vscode/
+cdk.out/
 cyclonedx/
 scripts/
 tests/
 tmp/
-README.md
-amplify.yml
-ui/amplify/README.md
-.github/workflows/python-app.yaml
-.pre-commit-config.yaml
+
+# ignore files in the root directory
+*.yml
+*.yaml
+*.md
+*.json

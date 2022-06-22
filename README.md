@@ -1,14 +1,18 @@
-# SBOM API & UI
+# SBOM Harbor
 
-This project depends on Python version: `3.9.10` and Node.js version: `17.3.x`. The following tools are required for development:
+See the [Development Standards](https://aquia.atlassian.net/wiki/spaces/SBOM/pages/698908677/Development+Standards) Confluence page for standard practices.
+
+## Requirements
+
+This project depends on Python version: `3.9.10` and Node.js version: `^18.0.0`. The following tools are required for development:
 
 - [Python Version Management](https://github.com/pyenv/pyenv) (pyenv)
 - [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#getting_started_install)
 - [Poetry](https://python-poetry.org/docs/) build tool
 - Python [Pre-commit](https://pre-commit.com/).
 - [Node Version Manager](https://github.com/nvm-sh/nvm) (nvm), for installing:
-    - [Node.js](https://nodejs.org/en/) v17.3.x
-    - [npm](https://github.com/npm/cli) v8
+    - [Node.js](https://nodejs.org/en/) `^v18.0.0`
+    - [npm](https://github.com/npm/cli) `v8.x`
 - [Yarn](https://classic.yarnpkg.com/lang/en/docs/install) dependency manager for `node`
 
 ## Getting Started
@@ -25,10 +29,15 @@ This project depends on Python version: `3.9.10` and Node.js version: `17.3.x`. 
 3. Set up Node.js
     - Install `nvm` (either option):
         - Using Homebrew: `brew update && brew install nvm`
-        - Using the nvm install script: [see documentation](https://github.com/nvm-sh/nvm#install--update-script)
-    - Install Node version (from in `.nvmrc`) with latest `npm`:
-        `nvm install --default --latest-npm`
-    - Enable `corepack` to use `yarn`: `corepack enable` ([docs](https://yarnpkg.com/getting-started/install#install-corepack)
+        - Using the [`nvm` install script](https://github.com/nvm-sh/nvm#install--update-script)
+    - Install Node version defined in the [`.nvmrc`](https://github.com/aquia-inc/cyclonedx-python/blob/master/.nvmrc) file with the latest `npm`, and enable [`corepack`](https://yarnpkg.com/getting-started/install#install-corepack) in order to use `yarn`:
+        ```sh
+        $ nvm install --default --latest-npm
+        $ corepack enable
+        $ yarn
+        ```
+    - Enable `corepack` to use `yarn`:
+        `corepack enable` ([docs)
 
 4. Configure virtual envrionment and install local dependencies:
     - Clone Repository: `git clone git@github.com:aquia-inc/cyclonedx-python.git`
@@ -82,20 +91,3 @@ Auto-formats code according to the `eslint` configuration.
 ##### `yarn analyze`
 
 Generates a dependency graph of the built production bundle.
-
-
-## Development Practices
-
-#### Commit Messages
-
-All commit messages follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/#summary)standard as follows:
-
-```
-<type>[optional scope]: <description>
-
-[optional body]
-
-[optional footer(s)]
-```
-
-Commits with messages that do not follow this structure will fail precommit checks. See the [@commitlint/config-conventional](https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/config-conventional) package for more information.

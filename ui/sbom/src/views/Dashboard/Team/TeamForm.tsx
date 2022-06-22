@@ -1,5 +1,5 @@
 import * as React from 'react'
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
+import { ReactComponent as AddCircleOutlineIcon } from '@/assets/icons/AddCircleOutline.svg'
 import Grid from '@mui/material/Grid'
 import IconButton from '@mui/material/IconButton'
 import TextField from '@mui/material/TextField'

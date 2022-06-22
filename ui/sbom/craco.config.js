@@ -7,6 +7,7 @@ module.exports = {
   webpack: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      '@/assets/icons': path.resolve(__dirname, 'src/assets/icons'),
     },
     plugins: [
       new DefinePlugin({
