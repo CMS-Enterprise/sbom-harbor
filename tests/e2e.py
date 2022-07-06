@@ -278,12 +278,11 @@ def user_search_test():
 
     jwt = __login()
 
-    print(f"Sending To: GET:{USER_SEARCH_URL}")
+    USER = "mar"
+    URL = f"{USER_SEARCH_URL}?filter={USER}"
+    print(f"Sending To: GET:{URL}")
     user_search_rsp = requests.get(
-        USER_SEARCH_URL,
-        json={
-            "filter": "mar"
-        },
+        URL,
         headers={
             'Authorization': jwt
         },
@@ -295,12 +294,11 @@ def user_search_test():
     else:
         print("Failed using 'mar' filter")
 
-    print(f"Sending To: GET:{USER_SEARCH_URL}")
+    USER = "qui"
+    URL = f"{USER_SEARCH_URL}?filter={USER}"
+    print(f"Sending To: GET:{URL}")
     user_search_rsp = requests.get(
-        USER_SEARCH_URL,
-        json={
-            "filter": "qui"
-        },
+        URL,
         headers={
             'Authorization': jwt
         },
@@ -317,4 +315,3 @@ def user_search_test():
 
 def update_team_test():
     jwt = __login()
-

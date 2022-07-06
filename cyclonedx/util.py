@@ -242,6 +242,36 @@ def __get_body_from_first_record(event) -> dict:
     return loads(body)
 
 
+def __get_query_string_params_from_event(event) -> dict:
+
+    """
+    If the request context exists, then there will
+    be a 'body' key, and it will contain the JSON object
+    as a **string** that the POST body contained.
+    """
+
+
+    print(f"Incoming Event: {event}")
+    print(f"Incoming Event Type: {type(event)}")
+
+    event_dict: dict = {}
+
+    if isinstance(event, dict):
+        event_dict = event
+    elif isinstance(event, str):
+        event_dict = loads(event)
+
+    if "Records" in event_dict:
+        event_dict = event_dict["Records"][0]
+
+    body = event_dict["queryStringParameters"]
+    body = body.decode("utf-8") if isinstance(body, bytes) else body
+    print(f"Extracted queryStringParameters: {body}")
+    print(f"Extracted queryStringParameters Type: {type(body)}")
+
+    return body
+
+
 def __get_records_from_event(event) -> list:
 
     """

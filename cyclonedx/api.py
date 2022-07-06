@@ -43,6 +43,7 @@ from cyclonedx.util import (
     __create_user_search_response_obj,
     __delete_project,
     __get_body_from_event,
+    __get_query_string_params_from_event,
     __get_body_from_first_record,
     __get_findings,
     __get_login_failed_response,
@@ -647,13 +648,12 @@ def get_team_handler(event=None, context=None):
         msg=team
     )
 
-## </WORKING>
 
 def user_search_handler(event=None, context=None):
 
-    body = __get_body_from_event(event)
+    query_params = __get_query_string_params_from_event(event)
 
-    filter_str = body["filter"]
+    filter_str = query_params["filter"]
     user_filter = f"email ^= \"{filter_str}\""
 
 
