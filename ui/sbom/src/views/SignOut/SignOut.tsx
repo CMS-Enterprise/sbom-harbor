@@ -1,15 +1,16 @@
 /**
- * Sign in page component that renders a login form.
+ * This component is used to sign out the user and redirect
+ *  her to the login page. It does not render anything.
  * @module @cyclonedx/ui/sbom/views/SignOut/SignOut
  */
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Auth } from '@aws-amplify/auth'
-import { SessionContext } from '@/services/auth'
+import { AuthContext } from '@/providers/AuthContext'
 
-const SignOut = (): JSX.Element => {
+const SignOutContainer = (): JSX.Element => {
   const navigate = useNavigate()
-  const { setUser } = React.useContext(SessionContext)
+  const { setUser } = React.useContext(AuthContext)
 
   React.useEffect(() => {
     const handleLogout = async () => {
@@ -27,4 +28,4 @@ const SignOut = (): JSX.Element => {
   return <></>
 }
 
-export default SignOut
+export default SignOutContainer

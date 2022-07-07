@@ -4,6 +4,7 @@
  */
 import * as React from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { Auth } from '@aws-amplify/auth'
 import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -14,8 +15,7 @@ import Grid from '@mui/material/Grid'
 import Link from '@mui/material/Link'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import { Auth } from '@aws-amplify/auth'
-import { SessionContext } from '@/services/auth'
+import { AuthContext } from '@/providers/AuthContext'
 import { ReactComponent as LockOutlinedIcon } from '@/assets/icons/LockOutlined.svg'
 
 type State = {
@@ -28,10 +28,10 @@ const defaultState = {
   email: '',
 } as State
 
-const SignIn = (): JSX.Element => {
+const SignInContainer = (): JSX.Element => {
   const navigate = useNavigate()
 
-  const { setUser } = React.useContext(SessionContext)
+  const { setUser } = React.useContext(AuthContext)
 
   const [formInput, setFormInput] = React.useReducer(
     (state: State, newState: State) => ({ ...state, ...newState }),
@@ -150,4 +150,4 @@ const SignIn = (): JSX.Element => {
   )
 }
 
-export default SignIn
+export default SignInContainer

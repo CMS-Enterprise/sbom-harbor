@@ -5,10 +5,10 @@
 import * as React from 'react'
 import Box from '@mui/material/Box'
 import Container from '@mui/material/Container'
+import classes from '@/views/Home/Home.module.css'
 import logo from '@/assets/images/logo.svg'
-import classes from './Home.module.css'
 
-const Template = (): JSX.Element => (
+const LandingPageContainer = (): JSX.Element => (
   <Container maxWidth="xs" sx={{ mt: 2 }}>
     <Box
       sx={{
@@ -25,4 +25,4 @@ const Template = (): JSX.Element => (
   </Container>
 )
 
-export default Template
+export default LandingPageContainer

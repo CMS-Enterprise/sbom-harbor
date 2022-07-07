@@ -4,101 +4,57 @@
  */
 import * as React from 'react'
 import * as ReactDOMClient from 'react-dom/client'
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  useNavigate,
-  useMatch,
-  useLocation,
-} from 'react-router-dom'
-import { CognitoUser } from 'amazon-cognito-identity-js'
+import { BrowserRouter as Router } from 'react-router-dom'
 import { Auth } from '@aws-amplify/auth'
-import { ThemeProvider } from '@mui/material/styles'
-import CssBaseline from '@mui/material/CssBaseline'
-import Layout from '@/views/Layout/Layout'
-import { SessionContext } from '@/services/auth'
-import { AWS_REGION } from '@/utils/constants'
+import { ConfigProvider } from '@/providers/ConfigContext'
+import { AppConfig } from '@/utils/types'
 import reportWebVitals from '@/utils/reportWebVitals'
-import App from '@/views/App/App'
-import Home from '@/views/Home/Home'
-import SignIn from '@/views/SignIn/SignIn'
-import SignUp from '@/views/SignUp/SignUp'
-import SignOut from '@/views/SignOut/SignOut'
-import theme from '@/theme'
+import RootLayout from '@/layouts/RootLayout'
 
-type IConfig = {
-  USER_POOL_ID: string
-  USER_POOL_CLIENT_ID: string
-  CF_DOMAIN: string
+// get the app config from the environment variable defined by the webpack
+// (craco) config. See {ui/sbom/src/utils/prebuild.js} for the implementation.
+const ENV_CONFIG = JSON.parse(JSON.stringify(process.env.CONFIG))
+
+// initialize the global app config object
+export const CONFIG = {
+  ...ENV_CONFIG,
+  TEAMS_API_URL: `${ENV_CONFIG.API_URL}/team`,
+} as AppConfig
+
+/**
+ * Initializes and configures Amazon Cognito authentication.
+ */
+function initCognitoAuth() {
+  Auth.configure({
+    region: CONFIG.AWS_REGION,
+    userPoolId: CONFIG.USER_POOL_ID || new Error('USER_POOL_ID is not defined'),
+    userPoolWebClientId:
+      CONFIG.USER_POOL_CLIENT_ID ||
+      new Error('USER_POOL_CLIENT_ID is not defined'),
+  })
 }
 
-const CONFIG = JSON.parse(JSON.stringify(process.env.CONFIG)) as IConfig
-
-// configure Amazon Cognito authentication
-Auth.configure({
-  region: AWS_REGION,
-  userPoolId: CONFIG.USER_POOL_ID || new Error('USER_POOL_ID is not defined'),
-  userPoolWebClientId:
-    CONFIG.USER_POOL_CLIENT_ID ||
-    new Error('USER_POOL_CLIENT_ID is not defined'),
-})
-
-console.log(CONFIG)
-
-const Main = (): JSX.Element => {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const matchProtectedRoute = useMatch('/app/*')
-  const [user, setUser] = React.useState<CognitoUser | null | undefined>()
-
-  /* eslint-disable react-hooks/exhaustive-deps */
-  const fetchSession = React.useCallback(async () => {
-    try {
-      const user = await Auth.currentAuthenticatedUser()
-      setUser(user)
-      console.log(`User@${location.pathname}`, user)
-      if (!matchProtectedRoute) {
-        navigate('/app')
-      }
-    } catch (error) {
-      setUser(null)
-      console.log(error)
-      if (matchProtectedRoute) {
-        navigate('/login')
-      }
-    }
-  }, [matchProtectedRoute, user, location.pathname])
-
-  React.useEffect(() => {
-    fetchSession()
-  }, [location.pathname])
-  /* eslint-enable react-hooks/exhaustive-deps */
-
-  return (
-    <SessionContext.Provider
-      value={{
-        user,
-        setUser,
-      }}
-    >
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="join" element={<SignUp />} />
-          <Route path="login" element={<SignIn />} />
-          <Route path="logout" element={<SignOut />} />
-        </Route>
-        <Route path="/app/*" element={<App />} />
-      </Routes>
-    </SessionContext.Provider>
-  )
+/**
+ * Helper function that runs development-only code.
+ *  - prints the config object to the console.
+ *  - enables react performance measurements.
+ */
+function runDevTools() {
+  // only run the dev tools if NODE_ENV is not production
+  if (process.env.NODE_ENV === 'production') return
+  // print the global app CONFIG to the console
+  console.log('Welcome to the Harbor!', CONFIG)
+  // enable React performance measurement tools.
+  // see https://create-react-app.dev/docs/measuring-performance/
+  reportWebVitals(console.debug)
 }
 
 /**
  * IIFE that initializes the root node and renders the application.
  */
 ;(async function () {
+  initCognitoAuth()
+
   // create the element in the DOM
   const rootElement = document.createElement('div')
   rootElement.id = 'root'
@@ -106,19 +62,17 @@ const Main = (): JSX.Element => {
 
   // create the React root node and render the application
   const root = ReactDOMClient.createRoot(rootElement)
+
+  // render the application
   root.render(
     <React.StrictMode>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
+      <ConfigProvider initialState={CONFIG}>
         <Router>
-          <Main />
+          <RootLayout />
         </Router>
-      </ThemeProvider>
+      </ConfigProvider>
     </React.StrictMode>
   )
-})()
 
-if (process.env.NODE_ENV !== 'production') {
-  /** @see https://create-react-app.dev/docs/measuring-performance/ */
-  reportWebVitals(console.log)
-}
+  runDevTools()
+})()

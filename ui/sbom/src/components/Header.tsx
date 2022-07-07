@@ -6,9 +6,9 @@ import Box from '@mui/material/Box'
 import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
 import Image from '@/components/Image'
-import data from '@/data.json'
 import AppBar from '@/components/AppBar'
 import AuthButton from '@/components/HeaderAuthButton'
+import data from '@/data.json'
 
 const { company, logo } = data
 

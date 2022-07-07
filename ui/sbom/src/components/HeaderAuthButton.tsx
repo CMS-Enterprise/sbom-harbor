@@ -3,10 +3,10 @@
  */
 import * as React from 'react'
 import { Link as RouterLink } from 'react-router-dom'
+import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import { styled } from '@mui/material/styles'
-import { SessionContext } from '@/services/auth'
+import { AuthContext } from '@/providers/AuthContext'
 
 const ButtonBox = styled(Box)({
   ml: 1,
@@ -36,7 +36,7 @@ const LogoutButton = (): JSX.Element => {
 const sx = { ml: 2, mr: 2, pl: 2, pr: 2 }
 
 const AuthButton = (): JSX.Element => {
-  const { user } = React.useContext(SessionContext)
+  const { user } = React.useContext(AuthContext)
 
   // session doesn't exist, so render login button
   if (user === null) {

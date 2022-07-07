@@ -626,7 +626,7 @@ def get_team_handler(event=None, context=None):
         },
     )
 
-    # There will be only one team that matches dur to the uniqueness
+    # There will be only one team that matches due to the uniqueness
     # constraint on the partition value.
     team = team_query_rsp["Items"][0]
 
