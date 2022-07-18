@@ -9,10 +9,13 @@ from aws_cdk import (
     aws_ec2 as ec2,
     aws_cognito as cognito,
     aws_s3 as s3,
-    aws_dynamodb as dynamodb,
     Stack,
 )
-from aws_cdk.aws_apigatewayv2_alpha import CorsHttpMethod, CorsPreflightOptions, HttpNoneAuthorizer
+from aws_cdk.aws_apigatewayv2_alpha import (
+    CorsHttpMethod,
+    CorsPreflightOptions,
+    HttpNoneAuthorizer,
+)
 from aws_cdk.aws_apigatewayv2_integrations_alpha import HttpLambdaIntegration
 from aws_cdk.aws_apigatewayv2_authorizers_alpha import HttpLambdaAuthorizer
 from aws_cdk.aws_logs import RetentionDays
@@ -23,6 +26,7 @@ from scripts.constants import (
     AUTHORIZATION_HEADER,
     CREATE_TOKEN_LN,
     DELETE_TOKEN_LN,
+    GET_TEAMS_FOR_ID_LN,
     GET_TEAM_LN,
     INGRESS_STACK_ID,
     REGISTER_TEAM_LN,
@@ -37,6 +41,7 @@ from scripts.constructs import (
     SBOMCreateTokenLambda,
     SBOMDeleteTokenLambda,
     SBOMGetTeamLambda,
+    SBOMGetTeamsForUserIdLambda,
     SBOMLoginLambda,
     SBOMRegisterTeamLambda,
     SBOMUpdateTeamLambda,
@@ -209,6 +214,25 @@ class SBOMIngressPiplineStack(Stack):
                 authorizer_name="UpdateTeamHttpJwtAuthorizer",
                 handler=authorizer_factory.create(
                     UPDATE_TEAM_LN
+                ).get_lambda_function()
+            )
+        )
+
+        self.api.add_routes(
+            path="/api/user/teams",
+            methods=[apigwv2a.HttpMethod.GET],
+            integration=HttpLambdaIntegration(
+                "GET_TEAMS_FOR_ID_HttpLambdaIntegration_ID",
+                handler=SBOMGetTeamsForUserIdLambda(
+                    self, vpc=vpc,
+                    table_mgr=dynamo_table_mgr,
+                ).get_lambda_function(),
+            ),
+            authorizer=HttpLambdaAuthorizer(
+                "GetTeamsForId_HttpJwtAuthorizer_ID",
+                authorizer_name="GetTeamsForIdHttpJwtAuthorizer",
+                handler=authorizer_factory.create(
+                    GET_TEAMS_FOR_ID_LN
                 ).get_lambda_function()
             )
         )

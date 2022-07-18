@@ -1,6 +1,8 @@
 """ This Module has all the utility functions
 necessary to interoperate with Dependency Track."""
 
+import boto3
+
 from json import dumps, loads
 from time import sleep
 from uuid import uuid4
@@ -16,7 +18,7 @@ from cyclonedx.constants import (
     DT_API_KEY,
     DT_ROOT_PWD,
     DT_DEFAULT_ADMIN_PWD,
-    EMPTY_VALUE,
+    EMPTY_VALUE, TEAM_MEMBER_TABLE_NAME, TEAM_TABLE_NAME,
 )
 from cyclonedx.dtendpoints import DTEndpoints
 
@@ -632,3 +634,39 @@ def __get_login_success_response(jwt: str):
             }
         ),
     }
+
+
+
+def __get_team_by_team_id(team_id: str):
+
+    print(f"<team function='__get_team_by_team_id(team_id: str)' id={team_id} />")
+
+    dynamodb_resource = boto3.resource('dynamodb')
+
+    team_table = dynamodb_resource.Table(TEAM_TABLE_NAME)
+    team_query_rsp = team_table.query(
+        Select="ALL_ATTRIBUTES",
+        KeyConditionExpression="Id = :Id",
+        ExpressionAttributeValues={
+            ":Id": team_id,
+        },
+    )
+
+    # There will be only one team that matches due to the uniqueness
+    # constraint on the partition value.
+    team = team_query_rsp["Items"][0]
+
+    team_members_table = dynamodb_resource.Table(TEAM_MEMBER_TABLE_NAME)
+    team_members_query_rsp = team_members_table.query(
+        Select="SPECIFIC_ATTRIBUTES",
+        ProjectionExpression='email,isTeamLead',
+        KeyConditionExpression="TeamId = :Id",
+        ExpressionAttributeValues={
+            ":Id": team_id,
+        },
+    )
+
+    team_members = team_members_query_rsp["Items"]
+    team["members"] = team_members
+
+    return team

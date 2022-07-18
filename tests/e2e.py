@@ -72,11 +72,10 @@ def __login():
     )
 
     login_rsp_json = login_rsp.json()
-    print(f"Response: {login_rsp_json}")
     return login_rsp_json["token"]
 
 
-def team_test():
+def test_team():
 
     team_json = loads(
         pr.read_text(
@@ -279,10 +278,10 @@ def user_search_test():
     jwt = __login()
 
     USER = "mar"
-    URL = f"{USER_SEARCH_URL}?filter={USER}"
-    print(f"Sending To: GET:{URL}")
+    url = f"{USER_SEARCH_URL}?filter={USER}"
+    print(f"Sending To: GET:{url}")
     user_search_rsp = requests.get(
-        URL,
+        url,
         headers={
             'Authorization': jwt
         },
@@ -295,10 +294,10 @@ def user_search_test():
         print("Failed using 'mar' filter")
 
     USER = "qui"
-    URL = f"{USER_SEARCH_URL}?filter={USER}"
-    print(f"Sending To: GET:{URL}")
+    url = f"{USER_SEARCH_URL}?filter={USER}"
+    print(f"Sending To: GET:{url}")
     user_search_rsp = requests.get(
-        URL,
+        url,
         headers={
             'Authorization': jwt
         },
@@ -313,5 +312,41 @@ def user_search_test():
         print("Failed using 'qui' filter")
 
 
-def update_team_test():
+def test_get_teams_for_id():
+
     jwt = __login()
+
+    url = f"{CF_URL}/api/user/teams?user_id=bill@aquia.io"
+    print(f"Sending To: GET:{url}")
+    user_search_rsp = requests.get(
+        url,
+        headers={
+            'Authorization': jwt
+        },
+    )
+
+    rsp = [ t["Id"] for t in user_search_rsp.json() ]
+
+    print(rsp)
+
+    assert 'abc123' in rsp
+    assert 'def456' in rsp
+
+
+def test_get_teams_for_id_no_user():
+
+    jwt = __login()
+
+    url = f"{CF_URL}/api/user/teams?user_id=willy.wonka@aquia.io"
+    print(f"Sending To: GET:{url}")
+    user_search_rsp = requests.get(
+        url,
+        headers={
+            'Authorization': jwt
+        },
+    )
+
+    rsp = user_search_rsp.json()
+
+    assert len(rsp) == 0
+

@@ -13,11 +13,14 @@ from aws_cdk import (
     aws_s3_notifications as s3n,
     aws_sqs as sqs,
     aws_ssm as ssm,
-    aws_dynamodb as dynamodb,
     Duration,
     RemovalPolicy,
 )
-from aws_cdk.aws_iam import Effect, PolicyStatement, ServicePrincipal
+from aws_cdk.aws_iam import (
+    Effect,
+    PolicyStatement,
+    ServicePrincipal,
+)
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from aws_cdk.aws_s3 import IBucket
 from constructs import Construct
@@ -44,6 +47,7 @@ from scripts.constants import (
     API_KEY_AUTHORIZER_LN,
     APP_LB_ID,
     APP_LB_SECURITY_GROUP_ID,
+    GET_TEAMS_FOR_ID_LN,
     GET_TEAM_LN,
     REGISTER_TEAM_LN,
     CIDR,
@@ -836,6 +840,37 @@ class SBOMGetTeamLambda(Construct):
     def get_lambda_function(self):
         return self.func
 
+
+class SBOMGetTeamsForUserIdLambda(Construct):
+
+    """ Lambda to get a team """
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+        table_mgr: DynamoTableManager,
+    ):
+
+        super().__init__(scope, GET_TEAMS_FOR_ID_LN)
+
+        self.func = lambda_.Function(
+            self, GET_TEAMS_FOR_ID_LN,
+            function_name=GET_TEAMS_FOR_ID_LN,
+            runtime=SBOM_API_PYTHON_RUNTIME,
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            handler="cyclonedx.api.get_teams_for_id_handler",
+            code=create_asset(),
+            timeout=Duration.seconds(10),
+            memory_size=512,
+        )
+
+        table_mgr.grant(self.func)
+
+    def get_lambda_function(self):
+        return self.func
 
 class SBOMUserSearchLambda(Construct):
 

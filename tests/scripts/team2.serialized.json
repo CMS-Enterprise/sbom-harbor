@@ -1,0 +1,32 @@
+{
+  "SbomTeamTable": [{
+    "PutRequest": {
+      "Item": {
+        "Id": { "S": "def456" },
+        "projects": {
+          "L": [{
+            "M": {
+              "projectName": { "S": "sbom-api" },
+              "codebases": {
+                "L": [{
+                  "M": {
+                    "codebaseName": { "S": "Frontend" },
+                    "language": { "L": [{ "S": "JAVASCRIPT" }] },
+                    "buildTool": { "L": [{ "S": "NPM"}] }
+                  }
+                },
+                {
+                  "M": {
+                    "codebaseName": { "S": "Service" },
+                    "language": { "L": [{ "S": "JAVA" }] },
+                    "buildTool": { "L": [{ "S": "MAVEN"}] }
+                  }
+                }]
+              }
+            }
+          }]
+        }
+      }
+    }
+  }]
+}

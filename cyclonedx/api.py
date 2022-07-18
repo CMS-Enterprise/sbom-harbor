@@ -2,19 +2,21 @@
 This module serves as the external API for CycloneDX Python Module
 """
 
+import boto3
+import datetime
+import importlib.resources as pr
+import cyclonedx.schemas as schemas
+
 from io import StringIO
 from os import environ
 from json import loads, dumps
 from uuid import uuid4
-import importlib.resources as pr
-import boto3
+from boto3.dynamodb.conditions import Attr
 from boto3 import client, resource
-import datetime
 from dateutil.relativedelta import relativedelta
 from botocore.exceptions import ClientError
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from decimal import Decimal
-import cyclonedx.schemas as schemas
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 
@@ -49,7 +51,7 @@ from cyclonedx.util import (
     __get_login_failed_response,
     __get_login_success_response,
     __get_records_from_event,
-    __handle_delete_token_error,
+    __get_team_by_team_id, __handle_delete_token_error,
     __token_response_obj,
     __upload_sbom,
     __validate,
@@ -616,37 +618,33 @@ def update_team_handler(event=None, context=None):
 def get_team_handler(event=None, context=None):
 
     team_id = event["pathParameters"]["team"]
-
-    team_table = dynamodb_resource.Table(TEAM_TABLE_NAME)
-    team_query_rsp = team_table.query(
-        Select="ALL_ATTRIBUTES",
-        KeyConditionExpression="Id = :Id",
-        ExpressionAttributeValues={
-            ":Id": team_id,
-        },
-    )
-
-    # There will be only one team that matches due to the uniqueness
-    # constraint on the partition value.
-    team = team_query_rsp["Items"][0]
-
-    team_members_table = dynamodb_resource.Table(TEAM_MEMBER_TABLE_NAME)
-    team_members_query_rsp = team_members_table.query(
-        Select="SPECIFIC_ATTRIBUTES",
-        ProjectionExpression='email,isTeamLead',
-        KeyConditionExpression="TeamId = :Id",
-        ExpressionAttributeValues={
-            ":Id": team_id,
-        },
-    )
-
-    team_members = team_members_query_rsp["Items"]
-    team["members"] = team_members
+    team = __get_team_by_team_id(team_id)
 
     return __create_team_response(
         status_code=200,
         msg=team
     )
+
+
+def get_teams_for_id_handler(event=None, context=None):
+
+    """ Handler to get all the teams for a user given their email address """
+
+    user_id = event["queryStringParameters"]['user_id']
+    team_table = dynamodb_resource.Table(TEAM_MEMBER_TABLE_NAME)
+    team_members_query_rsp = team_table.scan(
+        Select="ALL_ATTRIBUTES",
+        FilterExpression=Attr("email").eq(user_id),
+    )
+
+    teams = team_members_query_rsp["Items"]
+    rsp_data = [__get_team_by_team_id(team["TeamId"]) for team in teams]
+
+    return {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "body":dumps(rsp_data),
+    }
 
 
 def user_search_handler(event=None, context=None):
@@ -655,7 +653,6 @@ def user_search_handler(event=None, context=None):
 
     filter_str = query_params["filter"]
     user_filter = f"email ^= \"{filter_str}\""
-
 
     response = cognito_client.list_users(
         UserPoolId=environ.get(USER_POOL_NAME_KEY),

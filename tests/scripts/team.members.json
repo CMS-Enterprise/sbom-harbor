@@ -4,7 +4,15 @@
       "Item": {
         "TeamId": { "S": "abc123" },
         "isTeamLead": { "BOOL": true },
-        "email": { "S": "quinn.peters@aquia.io" }
+        "email": { "S": "bill@aquia.io" }
+      }
+    }
+  },{
+    "PutRequest": {
+      "Item": {
+        "TeamId": { "S": "def456" },
+        "isTeamLead": { "BOOL": true },
+        "email": { "S": "bill@aquia.io" }
       }
     }
   },{
@@ -12,7 +20,7 @@
       "Item": {
         "TeamId": { "S": "abc123" },
         "isTeamLead": { "BOOL": true },
-        "email": { "S": "sinan.bolel@aquia.io" }
+        "email": { "S": "fred@aquia.io" }
       }
     }
   }]

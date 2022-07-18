@@ -5,6 +5,7 @@ source "$(dirname $(realpath $BASH_SOURCE))/utils.sh"
 for user_name in ${COGNITO_USERNAMES};
 do
   email_username="${user_name}@aquia.io"
+  echo create_user ${email_username}
   create_user_resp=$(create_user "${email_username}")
 
   if [ $? -ne 0 ]; then
