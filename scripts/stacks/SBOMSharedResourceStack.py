@@ -5,6 +5,8 @@ that the other stacks use when deploying the application"""
 from constructs import Construct
 from aws_cdk import (
     aws_s3 as s3,
+    aws_ec2 as ec2,
+    aws_events as eventbridge,
     aws_dynamodb as dynamodb,
     RemovalPolicy,
     Stack,
@@ -22,6 +24,7 @@ from scripts.constructs import (
 )
 from scripts.util import DynamoTableManager
 
+from cyclonedx.constants import EVENT_BUS_NAME
 
 class SBOMSharedResourceStack(Stack):
 
@@ -49,6 +52,12 @@ class SBOMSharedResourceStack(Stack):
             bucket_name=S3_BUCKET_NAME,
             public_read_access=False,
             removal_policy=RemovalPolicy.DESTROY,
+            event_bridge_enabled=True,
+        )
+
+        self.event_bus = eventbridge.EventBus(
+            self, EVENT_BUS_NAME,
+            event_bus_name=EVENT_BUS_NAME,
         )
 
         team_table: dynamodb.Table = SBOMTeamTable(self).get_construct()
@@ -61,24 +70,26 @@ class SBOMSharedResourceStack(Stack):
             team_token_table
         )
 
-    def get_vpc(self):
+    def get_vpc(self) -> ec2.Vpc:
 
         """Gets the VPC"""
 
         return self.vpc
 
-    def get_lb(self):
-
-        """Gets the Application Load Balancer"""
-
-        return self.lb
-
-    def get_s3_bucket(self):
+    def get_s3_bucket(self) -> s3.Bucket:
 
         """Gets the S3 Bucket"""
 
         return self.s3_bucket
 
-    def get_dynamo_table_manager(self):
+    def get_dynamo_table_manager(self) -> DynamoTableManager:
+
+        """Gets the table manager for DynamoDB"""
 
         return self.table_manager
+
+    def get_event_bus(self) -> eventbridge.EventBus:
+
+        """Gets the Harbor's Event Bus"""
+
+        return self.event_bus

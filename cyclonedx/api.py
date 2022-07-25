@@ -1,10 +1,14 @@
 """
 This module serves as the external API for CycloneDX Python Module
 """
+from time import sleep
 
 import boto3
 import datetime
 import importlib.resources as pr
+
+import requests
+
 import cyclonedx.schemas as schemas
 
 from io import StringIO
@@ -12,7 +16,7 @@ from os import environ
 from json import loads, dumps
 from uuid import uuid4
 from boto3.dynamodb.conditions import Attr
-from boto3 import client, resource
+from boto3 import resource
 from dateutil.relativedelta import relativedelta
 from botocore.exceptions import ClientError
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
@@ -21,9 +25,7 @@ from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 
 from cyclonedx.constants import (
-    DT_QUEUE_URL_EV,
-    ENRICHMENT_ID_SQS_KEY,
-    ENRICHMENT_ID,
+    EVENT_BUS_NAME,
     S3_META_CODEBASE_KEY,
     S3_META_PROJECT_KEY,
     S3_META_TEAM_KEY,
@@ -39,11 +41,13 @@ from cyclonedx.constants import (
 
 from cyclonedx.core import CycloneDxCore
 from cyclonedx.util import (
+    ICClient,
     __create_project,
     __create_pristine_response_obj,
     __create_team_response,
     __create_user_search_response_obj,
     __delete_project,
+    __get_all_s3_obj_data,
     __get_body_from_event,
     __get_query_string_params_from_event,
     __get_body_from_first_record,
@@ -51,7 +55,8 @@ from cyclonedx.util import (
     __get_login_failed_response,
     __get_login_success_response,
     __get_records_from_event,
-    __get_team_by_team_id, __handle_delete_token_error,
+    __get_team_by_team_id,
+    __handle_delete_token_error,
     __token_response_obj,
     __upload_sbom,
     __validate,
@@ -68,13 +73,15 @@ team_schema = loads(
     )
 )
 
-def pristine_sbom_ingress_handler(event, context) -> dict:
+def pristine_sbom_ingress_handler(event: dict=None, context: dict=None) -> dict:
 
     """
     This is the Lambda Handler that validates an incoming SBOM
     and if valid, puts the SBOM into the S3 bucket associated
     to the application.
     """
+
+    s3 = resource("s3")
 
     # Extract the path parameters and get the team
     path_params = event["pathParameters"]
@@ -83,13 +90,6 @@ def pristine_sbom_ingress_handler(event, context) -> dict:
     codebase = path_params["codebase"]
 
     bom_obj = __get_body_from_event(event)
-
-    print(f"<BOM OBJECT>")
-    print(bom_obj)
-    print(f"Type: {type(bom_obj)}")
-    print(f"</BOM OBJECT>")
-
-    s3 = resource("s3")
 
     # Get the bucket name from the environment variable
     # This is set during deployment
@@ -131,15 +131,12 @@ def pristine_sbom_ingress_handler(event, context) -> dict:
     return response_obj
 
 
-def enrichment_ingress_handler(event=None, context=None):
+def enrichment_ingress_handler(event: dict=None, context: dict=None):
 
     """
     Handler that listens for S3 put events and routes the SBOM
     to the enrichment code
     """
-
-    s3 = resource("s3")
-    sqs_client = client("sqs")
 
     if not event:
         raise ValidationError("event should never be none")
@@ -148,7 +145,6 @@ def enrichment_ingress_handler(event=None, context=None):
 
     print(f"<Records records={records}>")
 
-    queue_url = environ[DT_QUEUE_URL_EV]
     for record in records:
 
         s3_obj = record["s3"]
@@ -157,66 +153,62 @@ def enrichment_ingress_handler(event=None, context=None):
         sbom_obj = s3_obj["object"]
         key: str = sbom_obj["key"]
 
-        if key.startswith("sbom"):
+        eb_client = boto3.client('events')
 
-            s3_object = s3.Object(bucket_name, key).get()
 
-            try:
-                enrichment_id = s3_object["Metadata"][ENRICHMENT_ID]
-            except KeyError as key_err:
-                print(f"<s3Object object={s3_object} />")
-                enrichment_id = f"ERROR: {key_err}"
+        # s3_object = s3.Object(bucket_name, key).get()
 
-            try:
-                sqs_client.send_message(
-                    QueueUrl=queue_url,
-                    MessageAttributes={
-                        ENRICHMENT_ID_SQS_KEY: {
-                            "DataType": "String",
-                            "StringValue": enrichment_id,
-                        }
-                    },
-                    MessageGroupId="dt_enrichment",
-                    MessageBody=dumps(
+        # try:
+        #     enrichment_id = s3_object["Metadata"][ENRICHMENT_ID]
+        # except KeyError as key_err:
+        #     print(f"<s3Object object={s3_object} />")
+        #     enrichment_id = f"ERROR: {key_err}"
+
+        response = eb_client.put_events(
+            Entries=[
+                {
+                    'Source': 'enrichment.lambda',
+                    'DetailType': 'test_detail_type_string',
+                    'Detail': dumps(
                         {
                             SBOM_BUCKET_NAME_KEY: bucket_name,
                             SBOM_S3_KEY: key,
-                        }
+                            'results': {},
+                            'output': {},
+                        },
                     ),
-                )
-            except ClientError:
-                print(f"Could not send message to the - {queue_url}.")
-                raise
-        else:
-            print(f"Non-BOM{key} added to the s3 bucket.  Don't care.")
+                    'EventBusName': EVENT_BUS_NAME,
+                },
+            ],
+        )
+
+        print(f"<PutEventsResponse response='{response}' />")
 
 
-def dt_interface_handler(event=None, context=None):
+def dt_interface_handler(event: dict=None, context: dict=None):
 
-    """
-    Dependency Track Ingress Handler
+    """ Dependency Track Ingress Handler
     This code takes an SBOM in the S3 Bucket and submits it to Dependency Track
     to get findings.  To accomplish this, a project must be created in DT, the
     SBOM submitted under that project, then the project is deleted.
     """
 
-    s3 = resource("s3")
+    s3_resource = resource("s3")
+
+    print(f"<Event event='{event}' />")
 
     # Currently making sure it isn't empty
     __validate(event)
 
-    # Extract the body from the first Record in the event.
-    # it will contain the S3 Bucket name and the key to
-    # the SBOM in the bucket.
-    s3_info = __get_body_from_first_record(event)
-    bucket_name = s3_info[SBOM_BUCKET_NAME_KEY]
-    key: str = s3_info[SBOM_S3_KEY]
+    # EventBridge 'detail' key has the data we need.
+    bucket_name = event[SBOM_BUCKET_NAME_KEY]
+    key: str = event[SBOM_S3_KEY]
 
     # Get the SBOM from the bucket and stick it
     # into a string based file handle.
-    s3_object = s3.Object(bucket_name, key).get()
-    sbom = s3_object["Body"].read()
-    d_sbom = sbom.decode("utf-8")
+    s3_object = s3_resource.Object(bucket_name, key).get()
+    sbom: bytes = s3_object["Body"].read()
+    d_sbom: str = sbom.decode("utf-8")
     bom_str_file: StringIO = StringIO(d_sbom)
 
     # Create a new Dependency Track Project to analyze the SBOM
@@ -236,14 +228,141 @@ def dt_interface_handler(event=None, context=None):
     # in the S3 bucket along with the SBOM the findings
     # came from.
     findings_bytes = bytearray(dumps(findings), "utf-8")
-    findings_key: str = f"findings-{s3_info[SBOM_S3_KEY]}"
-    s3.Object(bucket_name, findings_key).put(
+    findings_key: str = f"findings-dt-{key}"
+    s3_resource.Object(bucket_name, findings_key).put(
         Body=findings_bytes,
     )
 
     print(f"Findings are in the s3 bucket: {bucket_name}/{findings_key}")
 
-    return True
+    return findings_key
+
+
+def ic_interface_handler(event: dict=None, context: dict=None):
+
+    """
+    Ion Channel Ingress Handler
+    This code takes an SBOM in the S3 Bucket and submits it to Ion Channel
+    to get findings.
+    """
+
+    all_data = __get_all_s3_obj_data(event)
+    sbom_str_file = all_data['data']
+    team = all_data['team']
+    project = all_data['project']
+    codebase = all_data['codebase']
+
+    # Here is where the SBOM name, or the Ion Channel Team Name
+    # is created.
+    sbom_name: str = f"{team}-{project}-{codebase}"
+
+    # Create an Ion Channel Request Factory
+    # and import the SBOM
+    ic_client = ICClient(sbom_name, True)
+    ic_client.import_sbom(sbom_str_file)
+    ic_client.analyze_sbom()
+
+    return sbom_name
+
+
+def des_interface_handler(event: dict=None, context: dict=None):
+
+    s3_resource = resource("s3")
+
+    print(f"<event value='{event}' />")
+    all_data = __get_all_s3_obj_data(event)
+    sbom = loads(all_data['data'].read())
+    sbom_name = all_data['s3_obj_name']
+    bucket_name = all_data['bucket_name']
+    findings_file_name = f"findings-des-{sbom_name}"
+
+    nvd_base_url = "https://services.nvd.nist.gov"
+    nvd_api_path = "/rest/json/cpes/1.0"
+
+    findings = []
+
+    components: list = sbom["components"]
+    components_seen = 0
+
+    api_keys = [
+        '7e762116-c587-4a4b-9eb4-f7b5fef84024',
+        '3f501a51-373a-4a11-9a5d-6f691b522adc',
+        '2d2a6475-2f19-4876-9a03-ba8de575d477',
+        '99eaef67-ca08-423f-92ac-6e79a4a4bae9',
+        'd0844f1d-ff53-4a6b-82ab-3ee143198311',
+    ]
+
+    for component in components[:100]: # TODO Remove Slice
+
+        components_seen += 1
+        print(f"Looking at component# {components_seen} of {len(components)}")
+
+        vendor = "*"
+        product = component["name"]
+        version = component["version"]
+
+        key = api_keys[ components_seen % len(api_keys) ]
+        print(f"Request Key: {key}")
+        cpe_search_str = f"cpe:2.3:a:{vendor}:{product}:{version}"
+        nvd_query_params = f"?addOns=cves&cpeMatchString={cpe_search_str}&apiKey={key}"
+        nvd_url = f"{nvd_base_url}/{nvd_api_path}/{nvd_query_params}"
+
+        nvd_response = requests.get(nvd_url)
+
+        if nvd_response.status_code == 403:
+            print("Hit NVD Administrative limit, backing off for 10 seconds.")
+            components.append(component)
+            sleep(10)
+            continue
+
+        nvd_rsp_json = nvd_response.json()
+        num_results = nvd_rsp_json['totalResults']
+
+        if num_results > 0:
+            print(f"# Results: {num_results}")
+            findings.append(nvd_rsp_json)
+        else:
+            print("No Results")
+
+    print("Made it out of the loop!!!")
+
+    # print(dumps(response.json(), indent=2))
+    # Dump the findings into a byte array and store them
+    # in the S3 bucket along with the SBOM the findings
+    # came from.
+    findings_bytes = bytearray(dumps(findings), "utf-8")
+    s3_resource.Object(bucket_name, findings_file_name).put(
+        Body=findings_bytes,
+    )
+
+    return findings_file_name
+
+
+def summarizer_handler(event: dict=None, context: dict=None):
+
+    compiled_results = []
+
+    ( bucket_name, findings_report_name ) = ( "", "" )
+
+    s3 = resource("s3")
+    for result in event:
+
+        bucket_name = result[SBOM_BUCKET_NAME_KEY]
+        sbom_name = result[SBOM_S3_KEY]
+        findings_report_name = f"report-{sbom_name}"
+
+        results = result["results"]
+        findings_s3_obj = results["Payload"]
+
+        s3_obj_wrapper = s3.Object(bucket_name, findings_s3_obj)
+        s3_object: dict = s3_obj_wrapper.get()
+        sbom = s3_object["Body"].read()
+        d_sbom = sbom.decode("utf-8")
+        compiled_results.append(loads(d_sbom))
+
+    s3.Object(bucket_name, findings_report_name).put(
+        Body=bytearray(dumps(compiled_results), "utf-8"),
+    )
 
 
 def login_handler(event, context):

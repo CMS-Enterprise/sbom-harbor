@@ -1,13 +1,22 @@
 """ End-to-End Test for the system """
 import boto3
+import os
 import importlib.resources as pr
 import tests.sboms as sboms
-from json import loads
-from uuid import uuid4
-
 import tests.data as data
 import requests
+
+from json import loads
+from uuid import uuid4
 from optparse import OptionParser
+
+from cyclonedx.api import des_interface_handler
+from cyclonedx.util import ICClient
+from cyclonedx.constants import (
+    S3_META_CODEBASE_KEY,
+    S3_META_PROJECT_KEY,
+    S3_META_TEAM_KEY,
+)
 
 client = boto3.client('cloudfront')
 distributions = client.list_distributions()
@@ -46,7 +55,7 @@ codebase = "Website"
 SBOM_UPLOAD_URL = f"{URL}/api/{team}/{project}/{codebase}/sbom"
 USER_SEARCH_URL = f"{URL}/api/user/search"
 
-SBOM = loads(pr.read_text(sboms, "cms_npm_package.json"))
+SBOM = loads(pr.read_text(sboms, "keycloak.json"))
 parser = OptionParser("usage: %prog [options]")
 parser.add_option('--fail', dest="fail", help='fail flag', action="store")
 
@@ -141,7 +150,7 @@ def test_team():
     team_rsp = get_team_update_rsp.json()
     print(f"Response: {team_rsp}")
 
-def token_test():
+def test_token():
 
     """
     Posts some SBOMS to the Endpoint currently running in AWS
@@ -205,7 +214,7 @@ def token_test():
             print(delete_token_rsp.text)
 
 
-def sbom_upload_test():
+def test_sbom_upload():
     """
     Posts some SBOMS to the Endpoint currently running in AWS
     """
@@ -273,7 +282,7 @@ def sbom_upload_test():
         print(f"Expired Token test failed, received: {expired_token_rsp.status_code}")
         print(expired_token_rsp.text)
 
-def user_search_test():
+def test_user_search():
 
     jwt = __login()
 
@@ -350,3 +359,56 @@ def test_get_teams_for_id_no_user():
 
     assert len(rsp) == 0
 
+def test_put_sbom_in_s3():
+
+    dirname = os.path.dirname(__file__)
+    filename = os.path.join(dirname, 'sboms/keycloak.json')
+
+    s3 = boto3.resource('s3')
+    s3_obj = s3.Object(
+        'sbom.bucket.531175407938',
+        'sbom-keycloak.json',
+    )
+    s3_obj.put(
+        Body=open(filename, 'rb'),
+        Metadata={
+            S3_META_TEAM_KEY: 'EVAL TestTeam',
+            S3_META_PROJECT_KEY: 'TestProject',
+            S3_META_CODEBASE_KEY: "TestCodebase",
+        }
+    )
+
+def test_get_analysis_id():
+
+    from json import dumps
+
+    try:
+        name: str = "TEST STeam-SProject-SCodebase"
+        ic_client = ICClient(name, True)
+        response = ic_client.get_analysis_id('6c4ce5c9-fcf4-43af-9c8e-f42f06267cd4')
+
+        print(dumps(response, indent=2))
+
+    except ValueError as ex:
+        print(f"Problem starting ICClient: {ex}")
+
+def test_nvd_lookup():
+
+    # cpe:2.3: part : vendor : product : version : update : edition :
+    #    language : sw_edition : target_sw : target_hw : other
+    # https://nvlpubs.nist.gov/nistpubs/Legacy/IR/nistir7695.pdf
+
+    des_interface_handler({
+      "version": "0",
+      "id": "53fa0c0f-dbc7-e64b-a003-a5b7e8cdb600",
+      "detail-type": "test_detail_type_string",
+      "source": "enrichment.lambda",
+      "account": "531175407938",
+      "time": "2022-06-30T07:36:07Z",
+      "region": "us-east-1",
+      "resources": [],
+      "detail": {
+        "sbom_bucket": "sbom.bucket.531175407938",
+        "sbom_s3_key": "keycloak.json"
+      }
+    })

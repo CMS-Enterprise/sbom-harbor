@@ -1,11 +1,10 @@
 """ This module is the start of the deployment for SBOM-API """
 
 from os import system
-from sys import path
 import aws_cdk as cdk
 from aws_cdk import (
     aws_cognito as cognito,
-    aws_dynamodb as dynamodb,
+    aws_events as eventbridge,
 )
 from scripts.constants import CONFIG
 from scripts.stacks import (
@@ -41,6 +40,7 @@ def dodep() -> None:
     shared_resources = SBOMSharedResourceStack(app, env=env)
     vpc = shared_resources.get_vpc()
     table_manager: DynamoTableManager = shared_resources.get_dynamo_table_manager()
+    event_bus: eventbridge.EventBus = shared_resources.get_event_bus()
 
     user_management = SBOMUserManagement(app, vpc=vpc, env=env)
     user_pool: cognito.UserPool = user_management.get_user_pool()
@@ -55,7 +55,11 @@ def dodep() -> None:
     )
 
     # The Enrichment Stack sets up the infrastructure to enrich SBOMs
-    SBOMEnrichmentPiplineStack(app, vpc, env=env)
+    SBOMEnrichmentPiplineStack(
+        app, vpc,
+        env=env,
+        event_bus=event_bus,
+    )
 
     # The Web Stack has all the web oriented entities to manage the website
     web_stack = SBOMWebStack(app, user_pool)

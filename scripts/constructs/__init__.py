@@ -1,4 +1,5 @@
 """ This module is where all the higher level CDK constructs are stored """
+import os
 from os import path
 from aws_cdk import (
     aws_cognito as cognito,
@@ -11,8 +12,8 @@ from aws_cdk import (
     aws_lambda as lambda_,
     aws_s3 as s3,
     aws_s3_notifications as s3n,
-    aws_sqs as sqs,
     aws_ssm as ssm,
+    aws_events as eventbridge,
     Duration,
     RemovalPolicy,
 )
@@ -21,7 +22,6 @@ from aws_cdk.aws_iam import (
     PolicyStatement,
     ServicePrincipal,
 )
-from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from aws_cdk.aws_s3 import IBucket
 from constructs import Construct
 from cyclonedx.constants import (
@@ -36,9 +36,11 @@ from cyclonedx.constants import (
     DT_LOAD_BALANCER_ID,
     DT_LOAD_BALANCER_LISTENER_ID,
     DT_LOAD_BALANCER_TARGET_ID,
-    DT_QUEUE_URL_EV,
     DT_ROOT_PWD,
     EMPTY_VALUE,
+    IC_API_BASE,
+    IC_API_KEY,
+    IC_RULESET_TEAM_ID,
     SBOM_BUCKET_NAME_KEY,
     USER_POOL_CLIENT_ID_KEY,
     USER_POOL_NAME_KEY,
@@ -47,8 +49,10 @@ from scripts.constants import (
     API_KEY_AUTHORIZER_LN,
     APP_LB_ID,
     APP_LB_SECURITY_GROUP_ID,
+    DEFAULT_INTERFACE_LN,
     GET_TEAMS_FOR_ID_LN,
     GET_TEAM_LN,
+    IC_INTERFACE_LN,
     REGISTER_TEAM_LN,
     CIDR,
     COGNITO_DOMAIN_PREFIX,
@@ -72,7 +76,7 @@ from scripts.constants import (
     PUBLIC,
     SBOM_API_PYTHON_RUNTIME,
     SBOM_ENRICHMENT_LN,
-    UPDATE_TEAM_LN,
+    SUMMARIZER_LN, UPDATE_TEAM_LN,
     USER_POOL_APP_CLIENT_ID,
     USER_POOL_DOMAIN_ID,
     USER_POOL_GROUP_DESCRIPTION,
@@ -595,12 +599,12 @@ class EnrichmentIngressLambda(Construct):
         s3_bucket: s3.IBucket,
         *,
         vpc: ec2.Vpc,
-        output_queue: sqs.Queue,
+        event_bus: eventbridge.EventBus,
     ):
 
         super().__init__(scope, SBOM_ENRICHMENT_LN)
 
-        sbom_enrichment_ingress_func = lambda_.Function(
+        self.func = lambda_.Function(
             self,
             SBOM_ENRICHMENT_LN,
             function_name="EnrichmentIngressLambda",
@@ -611,27 +615,30 @@ class EnrichmentIngressLambda(Construct):
             code=create_asset(),
             environment={
                 SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name,
-                DT_QUEUE_URL_EV: output_queue.queue_url,
             },
             timeout=Duration.seconds(10),
             memory_size=512,
         )
 
         # Bucket rights granted
-        s3_bucket.grant_read(sbom_enrichment_ingress_func)
+        s3_bucket.grant_read(self.func)
 
-        # Grant rights to send messages to the Queue
-        output_queue.grant_send_messages(sbom_enrichment_ingress_func)
+        # Write to EventBridge
+        event_bus.grant_put_events_to(self.func)
 
         # Set up the S3 Bucket to send a notification to the Lambda
-        # if someone puts something in the bucket. We really need to
-        # think about how we should structure the file names to be
-        # identifiable for our purposes #TODO
+        # if someone puts something in the bucket.
         s3_bucket.add_event_notification(
             s3.EventType.OBJECT_CREATED,
-            s3n.LambdaDestination(sbom_enrichment_ingress_func),
+            s3n.LambdaDestination(self.func),
+            s3.NotificationKeyFilter(
+                prefix="sbom",
+            ),
         )
 
+
+    def get_lambda_function(self):
+        return self.func
 
 class SBOMLoginLambda(Construct):
 
@@ -1142,7 +1149,7 @@ class DependencyTrackInterfaceLambda(Construct):
         *,
         vpc: ec2.Vpc,
         s3_bucket: IBucket,
-        input_queue: sqs.Queue,
+        event_bus: eventbridge.EventBus,
         load_balancer: DependencyTrackLoadBalancer,
     ):
 
@@ -1154,7 +1161,7 @@ class DependencyTrackInterfaceLambda(Construct):
         alb.load_balancer_security_groups.append(dt_func_sg)
         fq_dn = alb.load_balancer_dns_name
 
-        dt_interface_function = lambda_.Function(
+        self.func = lambda_.Function(
             self,
             DT_INTERFACE_LN,
             function_name="DependencyTrackInterfaceLambda",
@@ -1171,8 +1178,9 @@ class DependencyTrackInterfaceLambda(Construct):
             memory_size=512,
         )
 
-        s3_bucket.grant_put(dt_interface_function)
-        s3_bucket.grant_read_write(dt_interface_function)
+        event_bus.grant_put_events_to(self.func)
+        s3_bucket.grant_put(self.func)
+        s3_bucket.grant_read_write(self.func)
 
         root_pwd_param = ssm.StringParameter(
             self,
@@ -1181,15 +1189,162 @@ class DependencyTrackInterfaceLambda(Construct):
             parameter_name=DT_ROOT_PWD,
         )
 
-        root_pwd_param.grant_read(dt_interface_function)
-        root_pwd_param.grant_write(dt_interface_function)
+        root_pwd_param.grant_read(self.func)
+        root_pwd_param.grant_write(self.func)
 
         api_key_param = ssm.StringParameter(
-            self, DT_API_KEY, string_value=EMPTY_VALUE, parameter_name=DT_API_KEY
+            self, DT_API_KEY,
+            string_value=EMPTY_VALUE,
+            parameter_name=DT_API_KEY,
         )
 
-        api_key_param.grant_read(dt_interface_function)
-        api_key_param.grant_write(dt_interface_function)
+        api_key_param.grant_read(self.func)
+        api_key_param.grant_write(self.func)
 
-        event_source = SqsEventSource(input_queue)
-        dt_interface_function.add_event_source(event_source)
+
+    def get_lambda_function(self):
+        return self.func
+
+
+class IonChannelInterfaceLambda(Construct):
+
+    """This Construct creates a Lambda
+    use to manage Dependency Track operations"""
+
+    def __init__(
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+        s3_bucket: IBucket,
+        event_bus: eventbridge.EventBus,
+    ):
+
+        super().__init__(scope, IC_INTERFACE_LN)
+
+        dt_func_sg = ec2.SecurityGroup(self, "LaunchTemplateSG", vpc=vpc)
+
+        self.func = lambda_.Function(
+            self,
+            IC_INTERFACE_LN,
+            function_name=IC_INTERFACE_LN,
+            runtime=SBOM_API_PYTHON_RUNTIME,
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            handler="cyclonedx.api.ic_interface_handler",
+            code=create_asset(),
+            timeout=Duration.minutes(1),
+            security_groups=[dt_func_sg],
+            memory_size=512,
+        )
+
+        event_bus.grant_put_events_to(self.func)
+        s3_bucket.grant_put(self.func)
+        s3_bucket.grant_read_write(self.func)
+
+        # Ion Channel JWT Needs to be in the 'ION_CHANNEL_TOKEN'
+        # Environment Variable
+        api_key_param = ssm.StringParameter(
+            self, IC_API_KEY,
+            string_value=os.environ.get("ION_CHANNEL_TOKEN"),
+            parameter_name=IC_API_KEY,
+        )
+        api_key_param.grant_read(self.func)
+
+        # Storing the Ion Channel Host here for consistency.
+        ic_base_url_param = ssm.StringParameter(
+            self, IC_API_BASE,
+            string_value="api.ionchannel.io",
+            parameter_name=IC_API_BASE,
+        )
+        ic_base_url_param.grant_read(self.func)
+
+        # Storing the Ion Channel Team ID here for consistency as well.
+        ic_team_id_param = ssm.StringParameter(
+            self, IC_RULESET_TEAM_ID,
+            string_value="232a5775-9231-4083-9422-c2333cecb7da",
+            parameter_name=IC_RULESET_TEAM_ID,
+        )
+        ic_team_id_param.grant_read(self.func)
+
+    def get_lambda_function(self):
+        return self.func
+
+
+class DefaultEnrichmentInterfaceLambda(Construct):
+
+    """This Construct creates a Lambda
+    that can enrich an SBOM with data from NVD
+    """
+
+    def __init__(
+            self,
+            scope: Construct,
+            *,
+            vpc: ec2.Vpc,
+            s3_bucket: IBucket,
+            event_bus: eventbridge.EventBus,
+    ):
+        super().__init__(scope, DEFAULT_INTERFACE_LN)
+
+        dt_func_sg = ec2.SecurityGroup(self, "LaunchTemplateSG", vpc=vpc)
+
+        self.func = lambda_.Function(
+            self,
+            DEFAULT_INTERFACE_LN,
+            function_name=DEFAULT_INTERFACE_LN,
+            runtime=SBOM_API_PYTHON_RUNTIME,
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            handler="cyclonedx.api.des_interface_handler",
+            code=create_asset(),
+            timeout=Duration.minutes(15),
+            security_groups=[dt_func_sg],
+            memory_size=512,
+        )
+
+        event_bus.grant_put_events_to(self.func)
+        s3_bucket.grant_put(self.func)
+        s3_bucket.grant_read_write(self.func)
+
+    def get_lambda_function(self):
+        return self.func
+
+
+class SummarizerLambda(Construct):
+
+    """This Construct creates a Lambda
+    use to manage Dependency Track operations"""
+
+    def __init__(
+            self,
+            scope: Construct,
+            *,
+            vpc: ec2.Vpc,
+            s3_bucket: IBucket,
+            event_bus: eventbridge.EventBus,
+    ):
+        super().__init__(scope, SUMMARIZER_LN)
+
+        dt_func_sg = ec2.SecurityGroup(self, "LaunchTemplateSG", vpc=vpc)
+
+        self.func = lambda_.Function(
+            self,
+            SUMMARIZER_LN,
+            function_name=SUMMARIZER_LN,
+            runtime=SBOM_API_PYTHON_RUNTIME,
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            handler="cyclonedx.api.summarizer_handler",
+            code=create_asset(),
+            timeout=Duration.minutes(1),
+            security_groups=[dt_func_sg],
+            memory_size=512,
+        )
+
+        event_bus.grant_put_events_to(self.func)
+        s3_bucket.grant_put(self.func)
+        s3_bucket.grant_read_write(self.func)
+
+    def get_lambda_function(self):
+        return self.func

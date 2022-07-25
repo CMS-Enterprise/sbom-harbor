@@ -43,10 +43,13 @@ USER_SEARCH_LN = "UserSearchLambda"
 LOGIN_LN = "LoginLambda"
 SBOM_ENRICHMENT_LN = "SBOMEnrichmentIngressLambda"
 DT_INTERFACE_LN = "DependencyTrackInterfaceLambda"
+IC_INTERFACE_LN = "IonChannelInterfaceLambda"
+DEFAULT_INTERFACE_LN = "DefaultEnrichmentInterfaceLambda"
 ENRICHMENT_EGRESS_LN = "EnrichmentEgressLambda"
 AUTHORIZER_LN = "JwtTokenAuthorizer"
 TOKEN_AUTHORIZER_LN = "APITokenAuthorizer"
 API_KEY_AUTHORIZER_LN = "APIKeyAuthorizer"
+SUMMARIZER_LN = "SummarizerLambda"
 
 # Dependency Track
 DT_API_INTEGRATION = "DT_API_INT"

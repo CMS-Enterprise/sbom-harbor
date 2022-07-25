@@ -29,6 +29,7 @@ urllib3 = "^1.26.9"
 "aws-cdk.aws-apigatewayv2-integrations-alpha" = "^2.22.0-alpha.0"
 genson = "^1.2.2"
 python-dotenv = "^0.20.0"
+dparse = "^0.5.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

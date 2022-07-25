@@ -1,0 +1,2073 @@
+SPDXVersion: SPDX-2.2
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: chainguard.dev/chainctl
+DocumentNamespace: http://spdx.org/spdxpackages/chainguard.dev/chainctl
+Creator: Tool: ko 0.11.2
+Created: 2022-06-02T02:03:37Z
+
+##### Package representing chainguard.dev/chainctl
+
+PackageName: chainguard.dev/chainctl
+SPDXID: SPDXRef-Package-chainguard.dev.chainctl
+PackageSupplier: Organization: chainguard.dev/chainctl
+PackageDownloadLocation: https://chainguard.dev/chainctl
+FilesAnalyzed: false
+PackageHomePage: https://chainguard.dev/chainctl
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-Package-chainguard.dev.chainctl
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-chainguard.dev.api-v0.0.0-00010101000000-000000000000
+
+##### Package representing chainguard.dev/api
+
+PackageName: chainguard.dev/api
+SPDXID: SPDXRef-Package-chainguard.dev.api-v0.0.0-00010101000000-000000000000
+PackageVersion: v0.0.0-00010101000000-000000000000
+PackageSupplier: Organization: chainguard.dev/api
+PackageDownloadLocation: https://proxy.golang.org/chainguard.dev/api/@v/v0.0.0-00010101000000-000000000000.zip
+FilesAnalyzed: false
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-chainguard.dev.exitdir-v0.0.1
+
+##### Package representing chainguard.dev/exitdir
+
+PackageName: chainguard.dev/exitdir
+SPDXID: SPDXRef-Package-chainguard.dev.exitdir-v0.0.1
+PackageVersion: v0.0.1
+PackageSupplier: Organization: chainguard.dev/exitdir
+PackageDownloadLocation: https://proxy.golang.org/chainguard.dev/exitdir/@v/v0.0.1.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 8181f4382084e666c728d4e44f399ea97da96bc7fbb7101c4de34b9a83991861
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-chainguard.dev.go-grpc-kit-v0.4.0
+
+##### Package representing chainguard.dev/go-grpc-kit
+
+PackageName: chainguard.dev/go-grpc-kit
+SPDXID: SPDXRef-Package-chainguard.dev.go-grpc-kit-v0.4.0
+PackageVersion: v0.4.0
+PackageSupplier: Organization: chainguard.dev/go-grpc-kit
+PackageDownloadLocation: https://proxy.golang.org/chainguard.dev/go-grpc-kit/@v/v0.4.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: bd238b42b101f11b34e92fed89fb434243b5b8192c02dd8ebb4671aa354fac1d
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-cloud.google.com.go.compute-v1.6.1
+
+##### Package representing cloud.google.com/go/compute
+
+PackageName: cloud.google.com/go/compute
+SPDXID: SPDXRef-Package-cloud.google.com.go.compute-v1.6.1
+PackageVersion: v1.6.1
+PackageSupplier: Organization: cloud.google.com/go/compute
+PackageDownloadLocation: https://proxy.golang.org/cloud.google.com/go/compute/@v/v1.6.1.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: dac326b7ca6b0a7ec33da1b83e687437722799cf1c4fc69ee64d4ce9527d5aa7
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-contrib.go.opencensus.io.exporter.ocagent-v0.7.1-0.20200907061046-05415f1de66d
+
+##### Package representing contrib.go.opencensus.io/exporter/ocagent
+
+PackageName: contrib.go.opencensus.io/exporter/ocagent
+SPDXID: SPDXRef-Package-contrib.go.opencensus.io.exporter.ocagent-v0.7.1-0.20200907061046-05415f1de66d
+PackageVersion: v0.7.1-0.20200907061046-05415f1de66d
+PackageSupplier: Organization: contrib.go.opencensus.io/exporter/ocagent
+PackageDownloadLocation: https://proxy.golang.org/contrib.go.opencensus.io/exporter/ocagent/@v/v0.7.1-0.20200907061046-05415f1de66d.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 2db95fa281f594a3a9a7584886e924b66480c4592a30f164f4a47a899d0c24d2
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-contrib.go.opencensus.io.exporter.prometheus-v0.4.0
+
+##### Package representing contrib.go.opencensus.io/exporter/prometheus
+
+PackageName: contrib.go.opencensus.io/exporter/prometheus
+SPDXID: SPDXRef-Package-contrib.go.opencensus.io.exporter.prometheus-v0.4.0
+PackageVersion: v0.4.0
+PackageSupplier: Organization: contrib.go.opencensus.io/exporter/prometheus
+PackageDownloadLocation: https://proxy.golang.org/contrib.go.opencensus.io/exporter/prometheus/@v/v0.4.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: d107c8923f73fe255980adf50fd1fda218e320302923618e3d27022b0c5e75bb
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.atotto.clipboard-v0.1.4
+
+##### Package representing github.com/atotto/clipboard
+
+PackageName: github.com/atotto/clipboard
+SPDXID: SPDXRef-Package-github.com.atotto.clipboard-v0.1.4
+PackageVersion: v0.1.4
+PackageSupplier: Organization: github.com/atotto/clipboard
+PackageDownloadLocation: https://proxy.golang.org/github.com/atotto/clipboard/@v/v0.1.4.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 107d334959de64f4ae151d7506547d629a504d50db879fb5e8099c262e20d73e
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.aws.aws-sdk-go-v2-v1.16.4
+
+##### Package representing github.com/aws/aws-sdk-go-v2
+
+PackageName: github.com/aws/aws-sdk-go-v2
+SPDXID: SPDXRef-Package-github.com.aws.aws-sdk-go-v2-v1.16.4
+PackageVersion: v1.16.4
+PackageSupplier: Organization: github.com/aws/aws-sdk-go-v2
+PackageDownloadLocation: https://proxy.golang.org/github.com/aws/aws-sdk-go-v2/@v/v1.16.4.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: b30413110532245fd490403de3f19ae799a288a1685e69bf65debb5c78268d28
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.aws.aws-sdk-go-v2.config-v1.14.0
+
+##### Package representing github.com/aws/aws-sdk-go-v2/config
+
+PackageName: github.com/aws/aws-sdk-go-v2/config
+SPDXID: SPDXRef-Package-github.com.aws.aws-sdk-go-v2.config-v1.14.0
+PackageVersion: v1.14.0
+PackageSupplier: Organization: github.com/aws/aws-sdk-go-v2/config
+PackageDownloadLocation: https://proxy.golang.org/github.com/aws/aws-sdk-go-v2/config/@v/v1.14.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 62bf3fed1e87f27aaa7ea80b013adc07cddac7a144d877035c4079e173e113df
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.aws.aws-sdk-go-v2.credentials-v1.9.0
+
+##### Package representing github.com/aws/aws-sdk-go-v2/credentials
+
+PackageName: github.com/aws/aws-sdk-go-v2/credentials
+SPDXID: SPDXRef-Package-github.com.aws.aws-sdk-go-v2.credentials-v1.9.0
+PackageVersion: v1.9.0
+PackageSupplier: Organization: github.com/aws/aws-sdk-go-v2/credentials
+PackageDownloadLocation: https://proxy.golang.org/github.com/aws/aws-sdk-go-v2/credentials/@v/v1.9.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 477439b35b862d4834694ce2fa845a52a45785dd7b1bff7e3e25670305e9e2c6
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.aws.aws-sdk-go-v2.feature.ec2.imds-v1.11.0
+
+##### Package representing github.com/aws/aws-sdk-go-v2/feature/ec2/imds
+
+PackageName: github.com/aws/aws-sdk-go-v2/feature/ec2/imds
+SPDXID: SPDXRef-Package-github.com.aws.aws-sdk-go-v2.feature.ec2.imds-v1.11.0
+PackageVersion: v1.11.0
+PackageSupplier: Organization: github.com/aws/aws-sdk-go-v2/feature/ec2/imds
+PackageDownloadLocation: https://proxy.golang.org/github.com/aws/aws-sdk-go-v2/feature/ec2/imds/@v/v1.11.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 0a433877794d78c5cc6740435f706d0a4b67280d45b6e77ce076fa77e231e119
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.aws.aws-sdk-go-v2.internal.configsources-v1.1.11
+
+##### Package representing github.com/aws/aws-sdk-go-v2/internal/configsources
+
+PackageName: github.com/aws/aws-sdk-go-v2/internal/configsources
+SPDXID: SPDXRef-Package-github.com.aws.aws-sdk-go-v2.internal.configsources-v1.1.11
+PackageVersion: v1.1.11
+PackageSupplier: Organization: github.com/aws/aws-sdk-go-v2/internal/configsources
+PackageDownloadLocation: https://proxy.golang.org/github.com/aws/aws-sdk-go-v2/internal/configsources/@v/v1.1.11.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 82ca87a65361d43690ba710a64848ae7ac25a5b0a0d322b1355bc658216e1759
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.aws.aws-sdk-go-v2.internal.endpoints.v2-v2.4.5
+
+##### Package representing github.com/aws/aws-sdk-go-v2/internal/endpoints/v2
+
+PackageName: github.com/aws/aws-sdk-go-v2/internal/endpoints/v2
+SPDXID: SPDXRef-Package-github.com.aws.aws-sdk-go-v2.internal.endpoints.v2-v2.4.5
+PackageVersion: v2.4.5
+PackageSupplier: Organization: github.com/aws/aws-sdk-go-v2/internal/endpoints/v2
+PackageDownloadLocation: https://proxy.golang.org/github.com/aws/aws-sdk-go-v2/internal/endpoints/v2/@v/v2.4.5.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 3cb163f8cd8f8080c71bffe1c374f43b428b2388ad56d023b71ad9c780073cb8
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.aws.aws-sdk-go-v2.internal.ini-v1.3.6
+
+##### Package representing github.com/aws/aws-sdk-go-v2/internal/ini
+
+PackageName: github.com/aws/aws-sdk-go-v2/internal/ini
+SPDXID: SPDXRef-Package-github.com.aws.aws-sdk-go-v2.internal.ini-v1.3.6
+PackageVersion: v1.3.6
+PackageSupplier: Organization: github.com/aws/aws-sdk-go-v2/internal/ini
+PackageDownloadLocation: https://proxy.golang.org/github.com/aws/aws-sdk-go-v2/internal/ini/@v/v1.3.6.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 73cb3d12120f5453054be475fabb448211ab7fbbfcde049459b702617fce3deb
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.aws.aws-sdk-go-v2.service.internal.presigned-url-v1.8.0
+
+##### Package representing github.com/aws/aws-sdk-go-v2/service/internal/presigned-url
+
+PackageName: github.com/aws/aws-sdk-go-v2/service/internal/presigned-url
+SPDXID: SPDXRef-Package-github.com.aws.aws-sdk-go-v2.service.internal.presigned-url-v1.8.0
+PackageVersion: v1.8.0
+PackageSupplier: Organization: github.com/aws/aws-sdk-go-v2/service/internal/presigned-url
+PackageDownloadLocation: https://proxy.golang.org/github.com/aws/aws-sdk-go-v2/service/internal/presigned-url/@v/v1.8.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 24d3002d8f3f66716c7c0cc11ed0b882af097993c036622823655a0606336dff
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.aws.aws-sdk-go-v2.service.sso-v1.10.0
+
+##### Package representing github.com/aws/aws-sdk-go-v2/service/sso
+
+PackageName: github.com/aws/aws-sdk-go-v2/service/sso
+SPDXID: SPDXRef-Package-github.com.aws.aws-sdk-go-v2.service.sso-v1.10.0
+PackageVersion: v1.10.0
+PackageSupplier: Organization: github.com/aws/aws-sdk-go-v2/service/sso
+PackageDownloadLocation: https://proxy.golang.org/github.com/aws/aws-sdk-go-v2/service/sso/@v/v1.10.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: a82b92462421b0f538e8d1fbf475323d0127e40729323fb682ca8c630b73770f
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.aws.aws-sdk-go-v2.service.sts-v1.15.0
+
+##### Package representing github.com/aws/aws-sdk-go-v2/service/sts
+
+PackageName: github.com/aws/aws-sdk-go-v2/service/sts
+SPDXID: SPDXRef-Package-github.com.aws.aws-sdk-go-v2.service.sts-v1.15.0
+PackageVersion: v1.15.0
+PackageSupplier: Organization: github.com/aws/aws-sdk-go-v2/service/sts
+PackageDownloadLocation: https://proxy.golang.org/github.com/aws/aws-sdk-go-v2/service/sts/@v/v1.15.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: cc2fef1f159396a674b483c922d834cd61ec6b6e5c1fbb57b14927486707dfda
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.aws.smithy-go-v1.11.2
+
+##### Package representing github.com/aws/smithy-go
+
+PackageName: github.com/aws/smithy-go
+SPDXID: SPDXRef-Package-github.com.aws.smithy-go-v1.11.2
+PackageVersion: v1.11.2
+PackageSupplier: Organization: github.com/aws/smithy-go
+PackageDownloadLocation: https://proxy.golang.org/github.com/aws/smithy-go/@v/v1.11.2.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 786fcdf82714300bec75f7e032f8cc2b07f20f32248ccea97f1309f0ccdcea61
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.beorn7.perks-v1.0.1
+
+##### Package representing github.com/beorn7/perks
+
+PackageName: github.com/beorn7/perks
+SPDXID: SPDXRef-Package-github.com.beorn7.perks-v1.0.1
+PackageVersion: v1.0.1
+PackageSupplier: Organization: github.com/beorn7/perks
+PackageDownloadLocation: https://proxy.golang.org/github.com/beorn7/perks/@v/v1.0.1.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 5656ca2a735f57c6c9cdeaa86b870e2aa3ba6d8af75a0299c4ef19d7afa1b0e3
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.blendle.zapdriver-v1.3.1
+
+##### Package representing github.com/blendle/zapdriver
+
+PackageName: github.com/blendle/zapdriver
+SPDXID: SPDXRef-Package-github.com.blendle.zapdriver-v1.3.1
+PackageVersion: v1.3.1
+PackageSupplier: Organization: github.com/blendle/zapdriver
+PackageDownloadLocation: https://proxy.golang.org/github.com/blendle/zapdriver/@v/v1.3.1.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 0b777274139661188e93e07c5fd21567920e7beedc97eb4639ec4de10a877e91
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.census-instrumentation.opencensus-proto-v0.3.0
+
+##### Package representing github.com/census-instrumentation/opencensus-proto
+
+PackageName: github.com/census-instrumentation/opencensus-proto
+SPDXID: SPDXRef-Package-github.com.census-instrumentation.opencensus-proto-v0.3.0
+PackageVersion: v0.3.0
+PackageSupplier: Organization: github.com/census-instrumentation/opencensus-proto
+PackageDownloadLocation: https://proxy.golang.org/github.com/census-instrumentation/opencensus-proto/@v/v0.3.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: b7f2e15192d58ad4753b0d983a776e0ac6af87015492504ca06558502aa60aa9
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.cespare.xxhash.v2-v2.1.2
+
+##### Package representing github.com/cespare/xxhash/v2
+
+PackageName: github.com/cespare/xxhash/v2
+SPDXID: SPDXRef-Package-github.com.cespare.xxhash.v2-v2.1.2
+PackageVersion: v2.1.2
+PackageSupplier: Organization: github.com/cespare/xxhash/v2
+PackageDownloadLocation: https://proxy.golang.org/github.com/cespare/xxhash/v2/@v/v2.1.2.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 6115e129f4c36aebb86a3320d533e014ee639e50b61c26e62d731c4c6e5c6d81
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.charmbracelet.bubbles-v0.10.3
+
+##### Package representing github.com/charmbracelet/bubbles
+
+PackageName: github.com/charmbracelet/bubbles
+SPDXID: SPDXRef-Package-github.com.charmbracelet.bubbles-v0.10.3
+PackageVersion: v0.10.3
+PackageSupplier: Organization: github.com/charmbracelet/bubbles
+PackageDownloadLocation: https://proxy.golang.org/github.com/charmbracelet/bubbles/@v/v0.10.3.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 7ca6ab6d168e6cb9ff0c2b193b8637bca0b0454cf29d00fd2fe8067afd44fe1a
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.charmbracelet.bubbletea-v0.20.0
+
+##### Package representing github.com/charmbracelet/bubbletea
+
+PackageName: github.com/charmbracelet/bubbletea
+SPDXID: SPDXRef-Package-github.com.charmbracelet.bubbletea-v0.20.0
+PackageVersion: v0.20.0
+PackageSupplier: Organization: github.com/charmbracelet/bubbletea
+PackageDownloadLocation: https://proxy.golang.org/github.com/charmbracelet/bubbletea/@v/v0.20.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: fdbf0b10f8026cdafb5966762ee13f055d7faf8b793f2609b436fe277be9c317
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.charmbracelet.lipgloss-v0.5.0
+
+##### Package representing github.com/charmbracelet/lipgloss
+
+PackageName: github.com/charmbracelet/lipgloss
+SPDXID: SPDXRef-Package-github.com.charmbracelet.lipgloss-v0.5.0
+PackageVersion: v0.5.0
+PackageSupplier: Organization: github.com/charmbracelet/lipgloss
+PackageDownloadLocation: https://proxy.golang.org/github.com/charmbracelet/lipgloss/@v/v0.5.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 96e9501ee55ea1d4a00decfedeb1a2bb194f5574a786d878e360c04d1dbff2df
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.common-nighthawk.go-figure-v0.0.0-20210622060536-734e95fb86be
+
+##### Package representing github.com/common-nighthawk/go-figure
+
+PackageName: github.com/common-nighthawk/go-figure
+SPDXID: SPDXRef-Package-github.com.common-nighthawk.go-figure-v0.0.0-20210622060536-734e95fb86be
+PackageVersion: v0.0.0-20210622060536-734e95fb86be
+PackageSupplier: Organization: github.com/common-nighthawk/go-figure
+PackageDownloadLocation: https://proxy.golang.org/github.com/common-nighthawk/go-figure/@v/v0.0.0-20210622060536-734e95fb86be.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 27904bda4b2402557d724804b0d417b1c8c868b88e62267be5de1ef7813a75c4
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.containerd.console-v1.0.3
+
+##### Package representing github.com/containerd/console
+
+PackageName: github.com/containerd/console
+SPDXID: SPDXRef-Package-github.com.containerd.console-v1.0.3
+PackageVersion: v1.0.3
+PackageSupplier: Organization: github.com/containerd/console
+PackageDownloadLocation: https://proxy.golang.org/github.com/containerd/console/@v/v1.0.3.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 948afb4a50393f1672315df46c35b43066e238f5f073adf246e08fd0046e6cbc
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.coreos.go-oidc.v3-v3.2.0
+
+##### Package representing github.com/coreos/go-oidc/v3
+
+PackageName: github.com/coreos/go-oidc/v3
+SPDXID: SPDXRef-Package-github.com.coreos.go-oidc.v3-v3.2.0
+PackageVersion: v3.2.0
+PackageSupplier: Organization: github.com/coreos/go-oidc/v3
+PackageDownloadLocation: https://proxy.golang.org/github.com/coreos/go-oidc/v3/@v/v3.2.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: d9e47630647bb61057490d986ce0e51747dc9a0b6588b09fafd897e915b5d5f7
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.davecgh.go-spew-v1.1.1
+
+##### Package representing github.com/davecgh/go-spew
+
+PackageName: github.com/davecgh/go-spew
+SPDXID: SPDXRef-Package-github.com.davecgh.go-spew-v1.1.1
+PackageVersion: v1.1.1
+PackageSupplier: Organization: github.com/davecgh/go-spew
+PackageDownloadLocation: https://proxy.golang.org/github.com/davecgh/go-spew/@v/v1.1.1.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: be3f63feed5baa7bc211f24ec1486d94e011aacdfeae41d8635de36164d4f7b7
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.evanphx.json-patch.v5-v5.6.0
+
+##### Package representing github.com/evanphx/json-patch/v5
+
+PackageName: github.com/evanphx/json-patch/v5
+SPDXID: SPDXRef-Package-github.com.evanphx.json-patch.v5-v5.6.0
+PackageVersion: v5.6.0
+PackageSupplier: Organization: github.com/evanphx/json-patch/v5
+PackageDownloadLocation: https://proxy.golang.org/github.com/evanphx/json-patch/v5/@v/v5.6.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 6fdd4d8567dacf4d88b95c4ef5f692965c80b4d5c730f902e49f2c2422ee9f0c
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.fsnotify.fsnotify-v1.5.1
+
+##### Package representing github.com/fsnotify/fsnotify
+
+PackageName: github.com/fsnotify/fsnotify
+SPDXID: SPDXRef-Package-github.com.fsnotify.fsnotify-v1.5.1
+PackageVersion: v1.5.1
+PackageSupplier: Organization: github.com/fsnotify/fsnotify
+PackageDownloadLocation: https://proxy.golang.org/github.com/fsnotify/fsnotify/@v/v1.5.1.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 9997105075505105a83d75edb9ff72b845cab9d915dacc75134e9469d296a602
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.go-kit.log-v0.2.0
+
+##### Package representing github.com/go-kit/log
+
+PackageName: github.com/go-kit/log
+SPDXID: SPDXRef-Package-github.com.go-kit.log-v0.2.0
+PackageVersion: v0.2.0
+PackageSupplier: Organization: github.com/go-kit/log
+PackageDownloadLocation: https://proxy.golang.org/github.com/go-kit/log/@v/v0.2.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: ee2d8adde293a2cdd57347a72827e755c807876a25aff3327dba18abb700705c
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.go-logfmt.logfmt-v0.5.1
+
+##### Package representing github.com/go-logfmt/logfmt
+
+PackageName: github.com/go-logfmt/logfmt
+SPDXID: SPDXRef-Package-github.com.go-logfmt.logfmt-v0.5.1
+PackageVersion: v0.5.1
+PackageSupplier: Organization: github.com/go-logfmt/logfmt
+PackageDownloadLocation: https://proxy.golang.org/github.com/go-logfmt/logfmt/@v/v0.5.1.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: a2da72e69a810816759e0f5143474fbb83cdedb6bbe58fda03e529a300f23550
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.go-logr.logr-v1.2.2
+
+##### Package representing github.com/go-logr/logr
+
+PackageName: github.com/go-logr/logr
+SPDXID: SPDXRef-Package-github.com.go-logr.logr-v1.2.2
+PackageVersion: v1.2.2
+PackageSupplier: Organization: github.com/go-logr/logr
+PackageDownloadLocation: https://proxy.golang.org/github.com/go-logr/logr/@v/v1.2.2.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 6a11e697fc94a6795bf7a469f070afb5854f63c658a71ab783b518721218c1bb
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.gogo.protobuf-v1.3.2
+
+##### Package representing github.com/gogo/protobuf
+
+PackageName: github.com/gogo/protobuf
+SPDXID: SPDXRef-Package-github.com.gogo.protobuf-v1.3.2
+PackageVersion: v1.3.2
+PackageSupplier: Organization: github.com/gogo/protobuf
+PackageDownloadLocation: https://proxy.golang.org/github.com/gogo/protobuf/@v/v1.3.2.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 3afd5cbdce7c505ddbe578c19d9bfbfa8a5c4dc40565e6d88d6ce2df8bdd9b84
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.golang.groupcache-v0.0.0-20210331224755-41bb18bfe9da
+
+##### Package representing github.com/golang/groupcache
+
+PackageName: github.com/golang/groupcache
+SPDXID: SPDXRef-Package-github.com.golang.groupcache-v0.0.0-20210331224755-41bb18bfe9da
+PackageVersion: v0.0.0-20210331224755-41bb18bfe9da
+PackageSupplier: Organization: github.com/golang/groupcache
+PackageDownloadLocation: https://proxy.golang.org/github.com/golang/groupcache/@v/v0.0.0-20210331224755-41bb18bfe9da.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: a08e710aab02a39eb897c88d53e0f00797a9c66b1aa81fab8462f49b98ed62a1
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.golang.protobuf-v1.5.2
+
+##### Package representing github.com/golang/protobuf
+
+PackageName: github.com/golang/protobuf
+SPDXID: SPDXRef-Package-github.com.golang.protobuf-v1.5.2
+PackageVersion: v1.5.2
+PackageSupplier: Organization: github.com/golang/protobuf
+PackageDownloadLocation: https://proxy.golang.org/github.com/golang/protobuf/@v/v1.5.2.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 44e3ca04d15f4203943227c7c8ff8a61bbe98db76814db3e68aec35e58e2d13c
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.google.go-cmp-v0.5.8
+
+##### Package representing github.com/google/go-cmp
+
+PackageName: github.com/google/go-cmp
+SPDXID: SPDXRef-Package-github.com.google.go-cmp-v0.5.8
+PackageVersion: v0.5.8
+PackageSupplier: Organization: github.com/google/go-cmp
+PackageDownloadLocation: https://proxy.golang.org/github.com/google/go-cmp/@v/v0.5.8.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 7ba3fbab6964d4efaa2496f806d0905e52bcbd610ef15d597ae11d24d3aa6728
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.google.gofuzz-v1.2.0
+
+##### Package representing github.com/google/gofuzz
+
+PackageName: github.com/google/gofuzz
+SPDXID: SPDXRef-Package-github.com.google.gofuzz-v1.2.0
+PackageVersion: v1.2.0
+PackageSupplier: Organization: github.com/google/gofuzz
+PackageDownloadLocation: https://proxy.golang.org/github.com/google/gofuzz/@v/v1.2.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: c51cb803e46165a88a8c9d5b3dfc10f2c79d080f984b661c0875ba79cec9322d
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.google.uuid-v1.3.0
+
+##### Package representing github.com/google/uuid
+
+PackageName: github.com/google/uuid
+SPDXID: SPDXRef-Package-github.com.google.uuid-v1.3.0
+PackageVersion: v1.3.0
+PackageSupplier: Organization: github.com/google/uuid
+PackageDownloadLocation: https://proxy.golang.org/github.com/google/uuid/@v/v1.3.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: b7a2625e09b05cc8c4b3c56eb172099360571ec9fec31f0165d4daa19e5fbbb2
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.googleapis.gax-go.v2-v2.3.0
+
+##### Package representing github.com/googleapis/gax-go/v2
+
+PackageName: github.com/googleapis/gax-go/v2
+SPDXID: SPDXRef-Package-github.com.googleapis.gax-go.v2-v2.3.0
+PackageVersion: v2.3.0
+PackageSupplier: Organization: github.com/googleapis/gax-go/v2
+PackageDownloadLocation: https://proxy.golang.org/github.com/googleapis/gax-go/v2/@v/v2.3.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 9d126d937cbc166efbd03e36415e93f74667bc567293b6a04a8dd0f99f69dd62
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.googleapis.gnostic-v0.5.5
+
+##### Package representing github.com/googleapis/gnostic
+
+PackageName: github.com/googleapis/gnostic
+SPDXID: SPDXRef-Package-github.com.googleapis.gnostic-v0.5.5
+PackageVersion: v0.5.5
+PackageSupplier: Organization: github.com/googleapis/gnostic
+PackageDownloadLocation: https://proxy.golang.org/github.com/googleapis/gnostic/@v/v0.5.5.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: f5f1c0b4ad2e0dfa6f79eaaaa3586411925c16f61702208ddd4bad2fc17dc47c
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.grpc-ecosystem.grpc-gateway-v1.16.0
+
+##### Package representing github.com/grpc-ecosystem/grpc-gateway
+
+PackageName: github.com/grpc-ecosystem/grpc-gateway
+SPDXID: SPDXRef-Package-github.com.grpc-ecosystem.grpc-gateway-v1.16.0
+PackageVersion: v1.16.0
+PackageSupplier: Organization: github.com/grpc-ecosystem/grpc-gateway
+PackageDownloadLocation: https://proxy.golang.org/github.com/grpc-ecosystem/grpc-gateway/@v/v1.16.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 826706d4a689e7b2e8a615335b41f2f0d98f8673196f8334fa43e92e87d1741a
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.grpc-ecosystem.grpc-gateway.v2-v2.10.0
+
+##### Package representing github.com/grpc-ecosystem/grpc-gateway/v2
+
+PackageName: github.com/grpc-ecosystem/grpc-gateway/v2
+SPDXID: SPDXRef-Package-github.com.grpc-ecosystem.grpc-gateway.v2-v2.10.0
+PackageVersion: v2.10.0
+PackageSupplier: Organization: github.com/grpc-ecosystem/grpc-gateway/v2
+PackageDownloadLocation: https://proxy.golang.org/github.com/grpc-ecosystem/grpc-gateway/v2/@v/v2.10.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 112132a90a975c521c2268ff044f282845f7ed9b2e71e6f671923e10bff33426
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.hashicorp.golang-lru-v0.5.4
+
+##### Package representing github.com/hashicorp/golang-lru
+
+PackageName: github.com/hashicorp/golang-lru
+SPDXID: SPDXRef-Package-github.com.hashicorp.golang-lru-v0.5.4
+PackageVersion: v0.5.4
+PackageSupplier: Organization: github.com/hashicorp/golang-lru
+PackageDownloadLocation: https://proxy.golang.org/github.com/hashicorp/golang-lru/@v/v0.5.4.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 6038eeb27dbd408fc36acda23bd3340479c86f13decae087b23316fa525fc937
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.hashicorp.hcl-v1.0.0
+
+##### Package representing github.com/hashicorp/hcl
+
+PackageName: github.com/hashicorp/hcl
+SPDXID: SPDXRef-Package-github.com.hashicorp.hcl-v1.0.0
+PackageVersion: v1.0.0
+PackageSupplier: Organization: github.com/hashicorp/hcl
+PackageDownloadLocation: https://proxy.golang.org/github.com/hashicorp/hcl/@v/v1.0.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: d009e5ce3a62e2f11ab1378d167da62c98134b0b74fbab1fb224c6f2a7161b1e
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.imdario.mergo-v0.3.12
+
+##### Package representing github.com/imdario/mergo
+
+PackageName: github.com/imdario/mergo
+SPDXID: SPDXRef-Package-github.com.imdario.mergo-v0.3.12
+PackageVersion: v0.3.12
+PackageSupplier: Organization: github.com/imdario/mergo
+PackageDownloadLocation: https://proxy.golang.org/github.com/imdario/mergo/@v/v0.3.12.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 6fa47606c9536c8113a002ca3fb2f152f8a34ec348f5301ef34a4b58dda0fc75
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.json-iterator.go-v1.1.12
+
+##### Package representing github.com/json-iterator/go
+
+PackageName: github.com/json-iterator/go
+SPDXID: SPDXRef-Package-github.com.json-iterator.go-v1.1.12
+PackageVersion: v1.1.12
+PackageSupplier: Organization: github.com/json-iterator/go
+PackageDownloadLocation: https://proxy.golang.org/github.com/json-iterator/go/@v/v1.1.12.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 3d5f29788e1ad32b27733ae0f8bb71ca40fc2df298f4c2fabb68e7c5a127ae73
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.kelseyhightower.envconfig-v1.4.0
+
+##### Package representing github.com/kelseyhightower/envconfig
+
+PackageName: github.com/kelseyhightower/envconfig
+SPDXID: SPDXRef-Package-github.com.kelseyhightower.envconfig-v1.4.0
+PackageVersion: v1.4.0
+PackageSupplier: Organization: github.com/kelseyhightower/envconfig
+PackageDownloadLocation: https://proxy.golang.org/github.com/kelseyhightower/envconfig/@v/v1.4.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 226ea138d85dde92e47c316c6d182eebc443364185d6bdddbcc52d0d3a3672ff
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.lucasb-eyer.go-colorful-v1.2.0
+
+##### Package representing github.com/lucasb-eyer/go-colorful
+
+PackageName: github.com/lucasb-eyer/go-colorful
+SPDXID: SPDXRef-Package-github.com.lucasb-eyer.go-colorful-v1.2.0
+PackageVersion: v1.2.0
+PackageSupplier: Organization: github.com/lucasb-eyer/go-colorful
+PackageDownloadLocation: https://proxy.golang.org/github.com/lucasb-eyer/go-colorful/@v/v1.2.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: d679e918eae1c9966e3727eed508ca89420243be3edc534237af408fa2bb9e46
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.magiconair.properties-v1.8.6
+
+##### Package representing github.com/magiconair/properties
+
+PackageName: github.com/magiconair/properties
+SPDXID: SPDXRef-Package-github.com.magiconair.properties-v1.8.6
+PackageVersion: v1.8.6
+PackageSupplier: Organization: github.com/magiconair/properties
+PackageDownloadLocation: https://proxy.golang.org/github.com/magiconair/properties/@v/v1.8.6.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: e626d667a898d0d72d3465a8f3b2da94394467a478d53a9b6c36a685f1bf433a
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.mattn.go-isatty-v0.0.14
+
+##### Package representing github.com/mattn/go-isatty
+
+PackageName: github.com/mattn/go-isatty
+SPDXID: SPDXRef-Package-github.com.mattn.go-isatty-v0.0.14
+PackageVersion: v0.0.14
+PackageSupplier: Organization: github.com/mattn/go-isatty
+PackageDownloadLocation: https://proxy.golang.org/github.com/mattn/go-isatty/@v/v0.0.14.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: c95b806b2b3a0477f18a38193f3c3edd996ee724202863f6fe17106c76fb4bd6
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.mattn.go-runewidth-v0.0.13
+
+##### Package representing github.com/mattn/go-runewidth
+
+PackageName: github.com/mattn/go-runewidth
+SPDXID: SPDXRef-Package-github.com.mattn.go-runewidth-v0.0.13
+PackageVersion: v0.0.13
+PackageSupplier: Organization: github.com/mattn/go-runewidth
+PackageDownloadLocation: https://proxy.golang.org/github.com/mattn/go-runewidth/@v/v0.0.13.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 9531a60ec6c062de4398ae8e9e857b12e205d7010814073195deb2a54e0e4a05
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.matttproud.golang_protobuf_extensions-v1.0.2-0.20181231171920-c182affec369
+
+##### Package representing github.com/matttproud/golang_protobuf_extensions
+
+PackageName: github.com/matttproud/golang_protobuf_extensions
+SPDXID: SPDXRef-Package-github.com.matttproud.golang_protobuf_extensions-v1.0.2-0.20181231171920-c182affec369
+PackageVersion: v1.0.2-0.20181231171920-c182affec369
+PackageSupplier: Organization: github.com/matttproud/golang_protobuf_extensions
+PackageDownloadLocation: https://proxy.golang.org/github.com/matttproud/golang_protobuf_extensions/@v/v1.0.2-0.20181231171920-c182affec369.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 2345d6f7e7b55d60f175c127895e2b40020e3d4183abaec94828910a018264b2
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.mitchellh.mapstructure-v1.5.0
+
+##### Package representing github.com/mitchellh/mapstructure
+
+PackageName: github.com/mitchellh/mapstructure
+SPDXID: SPDXRef-Package-github.com.mitchellh.mapstructure-v1.5.0
+PackageVersion: v1.5.0
+PackageSupplier: Organization: github.com/mitchellh/mapstructure
+PackageDownloadLocation: https://proxy.golang.org/github.com/mitchellh/mapstructure/@v/v1.5.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 8de32c648604ff4f6c58b6b3e373cbec6cba46e3230f6789572b9a73967685d6
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.modern-go.concurrent-v0.0.0-20180306012644-bacd9c7ef1dd
+
+##### Package representing github.com/modern-go/concurrent
+
+PackageName: github.com/modern-go/concurrent
+SPDXID: SPDXRef-Package-github.com.modern-go.concurrent-v0.0.0-20180306012644-bacd9c7ef1dd
+PackageVersion: v0.0.0-20180306012644-bacd9c7ef1dd
+PackageSupplier: Organization: github.com/modern-go/concurrent
+PackageDownloadLocation: https://proxy.golang.org/github.com/modern-go/concurrent/@v/v0.0.0-20180306012644-bacd9c7ef1dd.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 4d12da67d703ff0f0f561f779ec3d76b556b43a8e5c0be6837c975e1095c35f8
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.modern-go.reflect2-v1.0.2
+
+##### Package representing github.com/modern-go/reflect2
+
+PackageName: github.com/modern-go/reflect2
+SPDXID: SPDXRef-Package-github.com.modern-go.reflect2-v1.0.2
+PackageVersion: v1.0.2
+PackageSupplier: Organization: github.com/modern-go/reflect2
+PackageDownloadLocation: https://proxy.golang.org/github.com/modern-go/reflect2/@v/v1.0.2.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: c416a0a0bb45b3de02067b7196e29e696813329bcbc42e2eaf79cc682f46cf43
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.muesli.ansi-v0.0.0-20211018074035-2e021307bc4b
+
+##### Package representing github.com/muesli/ansi
+
+PackageName: github.com/muesli/ansi
+SPDXID: SPDXRef-Package-github.com.muesli.ansi-v0.0.0-20211018074035-2e021307bc4b
+PackageVersion: v0.0.0-20211018074035-2e021307bc4b
+PackageSupplier: Organization: github.com/muesli/ansi
+PackageDownloadLocation: https://proxy.golang.org/github.com/muesli/ansi/@v/v0.0.0-20211018074035-2e021307bc4b.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: d57176e2655a8aeeeef82172c1375c0e8da27b5a73ce1c23b7a447ab3a4c537e
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.muesli.reflow-v0.3.0
+
+##### Package representing github.com/muesli/reflow
+
+PackageName: github.com/muesli/reflow
+SPDXID: SPDXRef-Package-github.com.muesli.reflow-v0.3.0
+PackageVersion: v0.3.0
+PackageSupplier: Organization: github.com/muesli/reflow
+PackageDownloadLocation: https://proxy.golang.org/github.com/muesli/reflow/@v/v0.3.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 205b0de8af4d7c6b637a08053feebc2387212d9576c882ac5c914d67e79687ab
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.muesli.termenv-v0.11.1-0.20220212125758-44cd13922739
+
+##### Package representing github.com/muesli/termenv
+
+PackageName: github.com/muesli/termenv
+SPDXID: SPDXRef-Package-github.com.muesli.termenv-v0.11.1-0.20220212125758-44cd13922739
+PackageVersion: v0.11.1-0.20220212125758-44cd13922739
+PackageSupplier: Organization: github.com/muesli/termenv
+PackageDownloadLocation: https://proxy.golang.org/github.com/muesli/termenv/@v/v0.11.1-0.20220212125758-44cd13922739.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 4003641a21abdfd9751044aaac4d20670d3f009358cc8be818b848a1562d96e2
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.olekukonko.tablewriter-v0.0.5
+
+##### Package representing github.com/olekukonko/tablewriter
+
+PackageName: github.com/olekukonko/tablewriter
+SPDXID: SPDXRef-Package-github.com.olekukonko.tablewriter-v0.0.5
+PackageVersion: v0.0.5
+PackageSupplier: Organization: github.com/olekukonko/tablewriter
+PackageDownloadLocation: https://proxy.golang.org/github.com/olekukonko/tablewriter/@v/v0.0.5.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 3f619af370f7e308b5a3d27a5a1d6646ea9de2617fc7f960052ecdec06c385e7
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.pelletier.go-toml-v1.9.4
+
+##### Package representing github.com/pelletier/go-toml
+
+PackageName: github.com/pelletier/go-toml
+SPDXID: SPDXRef-Package-github.com.pelletier.go-toml-v1.9.4
+PackageVersion: v1.9.4
+PackageSupplier: Organization: github.com/pelletier/go-toml
+PackageDownloadLocation: https://proxy.golang.org/github.com/pelletier/go-toml/@v/v1.9.4.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: b6310d17a31f64083c7b8666653796696893daf5edb283bafa2b8e8c58440b03
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.pkg.errors-v0.9.1
+
+##### Package representing github.com/pkg/errors
+
+PackageName: github.com/pkg/errors
+SPDXID: SPDXRef-Package-github.com.pkg.errors-v0.9.1
+PackageVersion: v0.9.1
+PackageSupplier: Organization: github.com/pkg/errors
+PackageDownloadLocation: https://proxy.golang.org/github.com/pkg/errors/@v/v0.9.1.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 14404bc75cd2db5e28c298f2eeab017a2c5b51192e850030acae54c0b193c2de
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.prometheus.client_golang-v1.12.1
+
+##### Package representing github.com/prometheus/client_golang
+
+PackageName: github.com/prometheus/client_golang
+SPDXID: SPDXRef-Package-github.com.prometheus.client_golang-v1.12.1
+PackageVersion: v1.12.1
+PackageSupplier: Organization: github.com/prometheus/client_golang
+PackageDownloadLocation: https://proxy.golang.org/github.com/prometheus/client_golang/@v/v1.12.1.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 66268fb269bdba205e692311ce72ac08336d3c24b44f72550c617ed3a8230739
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.prometheus.client_model-v0.2.0
+
+##### Package representing github.com/prometheus/client_model
+
+PackageName: github.com/prometheus/client_model
+SPDXID: SPDXRef-Package-github.com.prometheus.client_model-v0.2.0
+PackageVersion: v0.2.0
+PackageSupplier: Organization: github.com/prometheus/client_model
+PackageDownloadLocation: https://proxy.golang.org/github.com/prometheus/client_model/@v/v0.2.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: baae61d1df86bb18972c92cd001320a76a945833e22ef802cf3d9d511fbf5bf3
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.prometheus.common-v0.33.0
+
+##### Package representing github.com/prometheus/common
+
+PackageName: github.com/prometheus/common
+SPDXID: SPDXRef-Package-github.com.prometheus.common-v0.33.0
+PackageVersion: v0.33.0
+PackageSupplier: Organization: github.com/prometheus/common
+PackageDownloadLocation: https://proxy.golang.org/github.com/prometheus/common/@v/v0.33.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: ac781abffd1aebeb9880674db778f0cfc14d49eb0efc7b1a9e0dced13f40e521
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.prometheus.procfs-v0.7.3
+
+##### Package representing github.com/prometheus/procfs
+
+PackageName: github.com/prometheus/procfs
+SPDXID: SPDXRef-Package-github.com.prometheus.procfs-v0.7.3
+PackageVersion: v0.7.3
+PackageSupplier: Organization: github.com/prometheus/procfs
+PackageDownloadLocation: https://proxy.golang.org/github.com/prometheus/procfs/@v/v0.7.3.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: e23557865900cb33927260a45c14ce2d12d3cfc11e53e7b28ebc01fc43ead155
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.prometheus.statsd_exporter-v0.21.0
+
+##### Package representing github.com/prometheus/statsd_exporter
+
+PackageName: github.com/prometheus/statsd_exporter
+SPDXID: SPDXRef-Package-github.com.prometheus.statsd_exporter-v0.21.0
+PackageVersion: v0.21.0
+PackageSupplier: Organization: github.com/prometheus/statsd_exporter
+PackageDownloadLocation: https://proxy.golang.org/github.com/prometheus/statsd_exporter/@v/v0.21.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 840d394394457888e0c0a21811d15de7dc6ee56c1ace77f7df2288fa9c97e93f
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.rivo.uniseg-v0.2.0
+
+##### Package representing github.com/rivo/uniseg
+
+PackageName: github.com/rivo/uniseg
+SPDXID: SPDXRef-Package-github.com.rivo.uniseg-v0.2.0
+PackageVersion: v0.2.0
+PackageSupplier: Organization: github.com/rivo/uniseg
+PackageDownloadLocation: https://proxy.golang.org/github.com/rivo/uniseg/@v/v0.2.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 4b5a43f7079906e25d166a303706e98bb049f1335fb725089a3ff45908bbda36
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.sahilm.fuzzy-v0.1.0
+
+##### Package representing github.com/sahilm/fuzzy
+
+PackageName: github.com/sahilm/fuzzy
+SPDXID: SPDXRef-Package-github.com.sahilm.fuzzy-v0.1.0
+PackageVersion: v0.1.0
+PackageSupplier: Organization: github.com/sahilm/fuzzy
+PackageDownloadLocation: https://proxy.golang.org/github.com/sahilm/fuzzy/@v/v0.1.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 1735866b0d8ea6acaefbbf78650f526227d6bf61085e9c0fe2af1d6359030302
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.segmentio.ksuid-v1.0.4
+
+##### Package representing github.com/segmentio/ksuid
+
+PackageName: github.com/segmentio/ksuid
+SPDXID: SPDXRef-Package-github.com.segmentio.ksuid-v1.0.4
+PackageVersion: v1.0.4
+PackageSupplier: Organization: github.com/segmentio/ksuid
+PackageDownloadLocation: https://proxy.golang.org/github.com/segmentio/ksuid/@v/v1.0.4.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: b01a3605d4a15e399cba000cc23ba0a0651d515d29731639996e312919f7bf87
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.sigstore.cosign-v1.8.1-0.20220520201846-0605cedf7dc2
+
+##### Package representing github.com/sigstore/cosign
+
+PackageName: github.com/sigstore/cosign
+SPDXID: SPDXRef-Package-github.com.sigstore.cosign-v1.8.1-0.20220520201846-0605cedf7dc2
+PackageVersion: v1.8.1-0.20220520201846-0605cedf7dc2
+PackageSupplier: Organization: github.com/sigstore/cosign
+PackageDownloadLocation: https://proxy.golang.org/github.com/sigstore/cosign/@v/v1.8.1-0.20220520201846-0605cedf7dc2.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 93ed9da97cc413b4f369f709b33c4a758c9df6c671f71961978970cb357d1fb9
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.sigstore.sigstore-v1.2.1-0.20220517203520-93ce83293ab2
+
+##### Package representing github.com/sigstore/sigstore
+
+PackageName: github.com/sigstore/sigstore
+SPDXID: SPDXRef-Package-github.com.sigstore.sigstore-v1.2.1-0.20220517203520-93ce83293ab2
+PackageVersion: v1.2.1-0.20220517203520-93ce83293ab2
+PackageSupplier: Organization: github.com/sigstore/sigstore
+PackageDownloadLocation: https://proxy.golang.org/github.com/sigstore/sigstore/@v/v1.2.1-0.20220517203520-93ce83293ab2.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 96d6aa8697577568a2196e74794f752e0c988d53ea494f64d780a7c716a8fdcc
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.skratchdot.open-golang-v0.0.0-20200116055534-eef842397966
+
+##### Package representing github.com/skratchdot/open-golang
+
+PackageName: github.com/skratchdot/open-golang
+SPDXID: SPDXRef-Package-github.com.skratchdot.open-golang-v0.0.0-20200116055534-eef842397966
+PackageVersion: v0.0.0-20200116055534-eef842397966
+PackageSupplier: Organization: github.com/skratchdot/open-golang
+PackageDownloadLocation: https://proxy.golang.org/github.com/skratchdot/open-golang/@v/v0.0.0-20200116055534-eef842397966.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 24802eab71047fd7206d4e80b463cae024c6dd97fa08a30da9fd0c1d38200140
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.spf13.afero-v1.8.2
+
+##### Package representing github.com/spf13/afero
+
+PackageName: github.com/spf13/afero
+SPDXID: SPDXRef-Package-github.com.spf13.afero-v1.8.2
+PackageVersion: v1.8.2
+PackageSupplier: Organization: github.com/spf13/afero
+PackageDownloadLocation: https://proxy.golang.org/github.com/spf13/afero/@v/v1.8.2.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: c5e852c956b46271d6b09e3d2459633298351d7d7d57a3436757e49b55f39dba
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.spf13.cast-v1.4.1
+
+##### Package representing github.com/spf13/cast
+
+PackageName: github.com/spf13/cast
+SPDXID: SPDXRef-Package-github.com.spf13.cast-v1.4.1
+PackageVersion: v1.4.1
+PackageSupplier: Organization: github.com/spf13/cast
+PackageDownloadLocation: https://proxy.golang.org/github.com/spf13/cast/@v/v1.4.1.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: b348737be274d7de997c4313b3cd0ded4945b74043b90ed0f890e71e231629d0
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.spf13.cobra-v1.4.0
+
+##### Package representing github.com/spf13/cobra
+
+PackageName: github.com/spf13/cobra
+SPDXID: SPDXRef-Package-github.com.spf13.cobra-v1.4.0
+PackageVersion: v1.4.0
+PackageSupplier: Organization: github.com/spf13/cobra
+PackageDownloadLocation: https://proxy.golang.org/github.com/spf13/cobra/@v/v1.4.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: cbec09a71eb8c5c80ed55f91727c16d0b107c532918b66433d20635a7ae0f3c4
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.spf13.jwalterweatherman-v1.1.0
+
+##### Package representing github.com/spf13/jwalterweatherman
+
+PackageName: github.com/spf13/jwalterweatherman
+SPDXID: SPDXRef-Package-github.com.spf13.jwalterweatherman-v1.1.0
+PackageVersion: v1.1.0
+PackageSupplier: Organization: github.com/spf13/jwalterweatherman
+PackageDownloadLocation: https://proxy.golang.org/github.com/spf13/jwalterweatherman/@v/v1.1.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: b9eeafa02e5b47917c6312394baee3f62e7cd8553842fa366e6aa7a8c6000c59
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.spf13.pflag-v1.0.5
+
+##### Package representing github.com/spf13/pflag
+
+PackageName: github.com/spf13/pflag
+SPDXID: SPDXRef-Package-github.com.spf13.pflag-v1.0.5
+PackageVersion: v1.0.5
+PackageSupplier: Organization: github.com/spf13/pflag
+PackageDownloadLocation: https://proxy.golang.org/github.com/spf13/pflag/@v/v1.0.5.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 8b2f951543823f56bef3216da3f76b836089e6ed3246807b7d9c370cabff2570
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.spf13.viper-v1.11.0
+
+##### Package representing github.com/spf13/viper
+
+PackageName: github.com/spf13/viper
+SPDXID: SPDXRef-Package-github.com.spf13.viper-v1.11.0
+PackageVersion: v1.11.0
+PackageSupplier: Organization: github.com/spf13/viper
+PackageDownloadLocation: https://proxy.golang.org/github.com/spf13/viper/@v/v1.11.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: ece5ffd454ba9fb8c70f5cc6ad94cced6b58d776442d1ca8b0ae24f77a0faf8e
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-github.com.subosito.gotenv-v1.2.0
+
+##### Package representing github.com/subosito/gotenv
+
+PackageName: github.com/subosito/gotenv
+SPDXID: SPDXRef-Package-github.com.subosito.gotenv-v1.2.0
+PackageVersion: v1.2.0
+PackageSupplier: Organization: github.com/subosito/gotenv
+PackageDownloadLocation: https://proxy.golang.org/github.com/subosito/gotenv/@v/v1.2.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 4a5af547d1f102510a79f82ae639fd53e0e711394851ae877e01338f483977bb
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-go.opencensus.io-v0.23.0
+
+##### Package representing go.opencensus.io
+
+PackageName: go.opencensus.io
+SPDXID: SPDXRef-Package-go.opencensus.io-v0.23.0
+PackageVersion: v0.23.0
+PackageSupplier: Organization: go.opencensus.io
+PackageDownloadLocation: https://proxy.golang.org/go.opencensus.io/@v/v0.23.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 82a0b0d0b7cbc52733f22ad28bc7b141cedfc90d1f29053faa70bf5fcf95ff53
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-go.uber.org.atomic-v1.9.0
+
+##### Package representing go.uber.org/atomic
+
+PackageName: go.uber.org/atomic
+SPDXID: SPDXRef-Package-go.uber.org.atomic-v1.9.0
+PackageVersion: v1.9.0
+PackageSupplier: Organization: go.uber.org/atomic
+PackageDownloadLocation: https://proxy.golang.org/go.uber.org/atomic/@v/v1.9.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 102984f019ff5854d8c045bf6e9283dccf15b51ff34156dabc0a1a942d4f6321
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-go.uber.org.multierr-v1.7.0
+
+##### Package representing go.uber.org/multierr
+
+PackageName: go.uber.org/multierr
+SPDXID: SPDXRef-Package-go.uber.org.multierr-v1.7.0
+PackageVersion: v1.7.0
+PackageSupplier: Organization: go.uber.org/multierr
+PackageDownloadLocation: https://proxy.golang.org/go.uber.org/multierr/@v/v1.7.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: cda88efeb9a01636e609775260959071dbce0acb6199d6877ebdc69b62b1e047
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-go.uber.org.zap-v1.21.0
+
+##### Package representing go.uber.org/zap
+
+PackageName: go.uber.org/zap
+SPDXID: SPDXRef-Package-go.uber.org.zap-v1.21.0
+PackageVersion: v1.21.0
+PackageSupplier: Organization: go.uber.org/zap
+PackageDownloadLocation: https://proxy.golang.org/go.uber.org/zap/@v/v1.21.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 59e7cc7ae961a2fa19dac617cfbb2de8ad2c2e3edb061a6215ab9de2be33493f
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-golang.org.x.crypto-v0.0.0-20220411220226-7b82a4e95df4
+
+##### Package representing golang.org/x/crypto
+
+PackageName: golang.org/x/crypto
+SPDXID: SPDXRef-Package-golang.org.x.crypto-v0.0.0-20220411220226-7b82a4e95df4
+PackageVersion: v0.0.0-20220411220226-7b82a4e95df4
+PackageSupplier: Organization: golang.org/x/crypto
+PackageDownloadLocation: https://proxy.golang.org/golang.org/x/crypto/@v/v0.0.0-20220411220226-7b82a4e95df4.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 914843ee74c3a08ddf55df46e0e456adb579358d25884b3f260da9bf97fe6c10
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-golang.org.x.net-v0.0.0-20220516155154-20f960328961
+
+##### Package representing golang.org/x/net
+
+PackageName: golang.org/x/net
+SPDXID: SPDXRef-Package-golang.org.x.net-v0.0.0-20220516155154-20f960328961
+PackageVersion: v0.0.0-20220516155154-20f960328961
+PackageSupplier: Organization: golang.org/x/net
+PackageDownloadLocation: https://proxy.golang.org/golang.org/x/net/@v/v0.0.0-20220516155154-20f960328961.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: f96fe24cc3c6d042fb696fbf6ad9ed67066bbd24488f79b7c97e35e1d4942d45
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-golang.org.x.oauth2-v0.0.0-20220411215720-9780585627b5
+
+##### Package representing golang.org/x/oauth2
+
+PackageName: golang.org/x/oauth2
+SPDXID: SPDXRef-Package-golang.org.x.oauth2-v0.0.0-20220411215720-9780585627b5
+PackageVersion: v0.0.0-20220411215720-9780585627b5
+PackageSupplier: Organization: golang.org/x/oauth2
+PackageDownloadLocation: https://proxy.golang.org/golang.org/x/oauth2/@v/v0.0.0-20220411215720-9780585627b5.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 3929d659c39dfc2b56402d9c6120606d3489bf7722a9df2be78c92216db2dd11
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-golang.org.x.sync-v0.0.0-20220513210516-0976fa681c29
+
+##### Package representing golang.org/x/sync
+
+PackageName: golang.org/x/sync
+SPDXID: SPDXRef-Package-golang.org.x.sync-v0.0.0-20220513210516-0976fa681c29
+PackageVersion: v0.0.0-20220513210516-0976fa681c29
+PackageSupplier: Organization: golang.org/x/sync
+PackageDownloadLocation: https://proxy.golang.org/golang.org/x/sync/@v/v0.0.0-20220513210516-0976fa681c29.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: c3cb37db0c71dec63e3a32e5bfdaa5b642d4e72bc9cf18e38221d62e3748730e
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-golang.org.x.sys-v0.0.0-20220513210249-45d2b4557a2a
+
+##### Package representing golang.org/x/sys
+
+PackageName: golang.org/x/sys
+SPDXID: SPDXRef-Package-golang.org.x.sys-v0.0.0-20220513210249-45d2b4557a2a
+PackageVersion: v0.0.0-20220513210249-45d2b4557a2a
+PackageSupplier: Organization: golang.org/x/sys
+PackageDownloadLocation: https://proxy.golang.org/golang.org/x/sys/@v/v0.0.0-20220513210249-45d2b4557a2a.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 3764f58d4ad3404f517ba4c51793e1bc41d71c282eca71a12a3595b0852de5c6
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-golang.org.x.term-v0.0.0-20210927222741-03fcf44c2211
+
+##### Package representing golang.org/x/term
+
+PackageName: golang.org/x/term
+SPDXID: SPDXRef-Package-golang.org.x.term-v0.0.0-20210927222741-03fcf44c2211
+PackageVersion: v0.0.0-20210927222741-03fcf44c2211
+PackageSupplier: Organization: golang.org/x/term
+PackageDownloadLocation: https://proxy.golang.org/golang.org/x/term/@v/v0.0.0-20210927222741-03fcf44c2211.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 2468113a02a5f4df03b96db4a054b983173e944ebbfcddc57309813cc7bb02b6
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-golang.org.x.text-v0.3.7
+
+##### Package representing golang.org/x/text
+
+PackageName: golang.org/x/text
+SPDXID: SPDXRef-Package-golang.org.x.text-v0.3.7
+PackageVersion: v0.3.7
+PackageSupplier: Organization: golang.org/x/text
+PackageDownloadLocation: https://proxy.golang.org/golang.org/x/text/@v/v0.3.7.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: a25a70bcfd8a69c5b5656bec47bb90868c9362f280ba97d0ad118114cdf9d869
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-golang.org.x.time-v0.0.0-20220224211638-0e9765cccd65
+
+##### Package representing golang.org/x/time
+
+PackageName: golang.org/x/time
+SPDXID: SPDXRef-Package-golang.org.x.time-v0.0.0-20220224211638-0e9765cccd65
+PackageVersion: v0.0.0-20220224211638-0e9765cccd65
+PackageSupplier: Organization: golang.org/x/time
+PackageDownloadLocation: https://proxy.golang.org/golang.org/x/time/@v/v0.0.0-20220224211638-0e9765cccd65.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 33bdc8ba3df16db6fd524d43621cf276d86c8faa0e77a97d6e9b8570da14bd3b
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-gomodules.xyz.jsonpatch.v2-v2.2.0
+
+##### Package representing gomodules.xyz/jsonpatch/v2
+
+PackageName: gomodules.xyz/jsonpatch/v2
+SPDXID: SPDXRef-Package-gomodules.xyz.jsonpatch.v2-v2.2.0
+PackageVersion: v2.2.0
+PackageSupplier: Organization: gomodules.xyz/jsonpatch/v2
+PackageDownloadLocation: https://proxy.golang.org/gomodules.xyz/jsonpatch/v2/@v/v2.2.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: e294f8dfd415f372fe1bd164702ae263a124a5c2baafa6caf80e45054308eea6
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-google.golang.org.api-v0.80.0
+
+##### Package representing google.golang.org/api
+
+PackageName: google.golang.org/api
+SPDXID: SPDXRef-Package-google.golang.org.api-v0.80.0
+PackageVersion: v0.80.0
+PackageSupplier: Organization: google.golang.org/api
+PackageDownloadLocation: https://proxy.golang.org/google.golang.org/api/@v/v0.80.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 21059a1950989ec9b830ede187e5ad497333333bb2171fdfb91f2a90ddc0d10a
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-google.golang.org.genproto-v0.0.0-20220518221133-4f43b3371335
+
+##### Package representing google.golang.org/genproto
+
+PackageName: google.golang.org/genproto
+SPDXID: SPDXRef-Package-google.golang.org.genproto-v0.0.0-20220518221133-4f43b3371335
+PackageVersion: v0.0.0-20220518221133-4f43b3371335
+PackageSupplier: Organization: google.golang.org/genproto
+PackageDownloadLocation: https://proxy.golang.org/google.golang.org/genproto/@v/v0.0.0-20220518221133-4f43b3371335.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: d83d0e4fab4f55dad04ce9d57b55508df24f4c40fa119edf749fdfe836fa3ac6
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-google.golang.org.grpc-v1.46.2
+
+##### Package representing google.golang.org/grpc
+
+PackageName: google.golang.org/grpc
+SPDXID: SPDXRef-Package-google.golang.org.grpc-v1.46.2
+PackageVersion: v1.46.2
+PackageSupplier: Organization: google.golang.org/grpc
+PackageDownloadLocation: https://proxy.golang.org/google.golang.org/grpc/@v/v1.46.2.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: bbe30b1a055feef45d8c4619f300c584054d9a191b279866ac0d4b3162b50804
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-google.golang.org.protobuf-v1.28.0
+
+##### Package representing google.golang.org/protobuf
+
+PackageName: google.golang.org/protobuf
+SPDXID: SPDXRef-Package-google.golang.org.protobuf-v1.28.0
+PackageVersion: v1.28.0
+PackageSupplier: Organization: google.golang.org/protobuf
+PackageDownloadLocation: https://proxy.golang.org/google.golang.org/protobuf/@v/v1.28.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: c38df289abfee9b5454c1405657d2bee2a5ef4943542c6cc807c1b0738ac70bc
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-gopkg.in.inf.v0-v0.9.1
+
+##### Package representing gopkg.in/inf.v0
+
+PackageName: gopkg.in/inf.v0
+SPDXID: SPDXRef-Package-gopkg.in.inf.v0-v0.9.1
+PackageVersion: v0.9.1
+PackageSupplier: Organization: gopkg.in/inf.v0
+PackageDownloadLocation: https://proxy.golang.org/gopkg.in/inf.v0/@v/v0.9.1.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: ef73390a86728b764b30ec83950874df50b1e8df4d0c9d95bdf97be840c08037
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-gopkg.in.ini.v1-v1.66.4
+
+##### Package representing gopkg.in/ini.v1
+
+PackageName: gopkg.in/ini.v1
+SPDXID: SPDXRef-Package-gopkg.in.ini.v1-v1.66.4
+PackageVersion: v1.66.4
+PackageSupplier: Organization: gopkg.in/ini.v1
+PackageDownloadLocation: https://proxy.golang.org/gopkg.in/ini.v1/@v/v1.66.4.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 4ac01c7fe98cee6459a369c9346b7c9990a31bc65168d18c511270ec1b08493e
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-gopkg.in.square.go-jose.v2-v2.6.0
+
+##### Package representing gopkg.in/square/go-jose.v2
+
+PackageName: gopkg.in/square/go-jose.v2
+SPDXID: SPDXRef-Package-gopkg.in.square.go-jose.v2-v2.6.0
+PackageVersion: v2.6.0
+PackageSupplier: Organization: gopkg.in/square/go-jose.v2
+PackageDownloadLocation: https://proxy.golang.org/gopkg.in/square/go-jose.v2/@v/v2.6.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 34693be164e73ca04d521373417ecf61c4cb523a2aee6cca93638a6efc24da22
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-gopkg.in.yaml.v2-v2.4.0
+
+##### Package representing gopkg.in/yaml.v2
+
+PackageName: gopkg.in/yaml.v2
+SPDXID: SPDXRef-Package-gopkg.in.yaml.v2-v2.4.0
+PackageVersion: v2.4.0
+PackageSupplier: Organization: gopkg.in/yaml.v2
+PackageDownloadLocation: https://proxy.golang.org/gopkg.in/yaml.v2/@v/v2.4.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 0fcc60c04098ec262fc7e6369f8b01cfddc99fd251bf1762cb2a3c0937ee29a6
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-gopkg.in.yaml.v3-v3.0.0-20210107192922-496545a6307b
+
+##### Package representing gopkg.in/yaml.v3
+
+PackageName: gopkg.in/yaml.v3
+SPDXID: SPDXRef-Package-gopkg.in.yaml.v3-v3.0.0-20210107192922-496545a6307b
+PackageVersion: v3.0.0-20210107192922-496545a6307b
+PackageSupplier: Organization: gopkg.in/yaml.v3
+PackageDownloadLocation: https://proxy.golang.org/gopkg.in/yaml.v3/@v/v3.0.0-20210107192922-496545a6307b.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 87ca83a2d6843ee2404eb3265b4e0d0b083bbf6d9a1c7dbcc30a5ab9484af4ea
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-k8s.io.api-v0.23.5
+
+##### Package representing k8s.io/api
+
+PackageName: k8s.io/api
+SPDXID: SPDXRef-Package-k8s.io.api-v0.23.5
+PackageVersion: v0.23.5
+PackageSupplier: Organization: k8s.io/api
+PackageDownloadLocation: https://proxy.golang.org/k8s.io/api/@v/v0.23.5.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: ce7a372d488cb9bc43fd5d59c378a3c8a3b7c31ae16d41750a4f958c1bdf6a80
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-k8s.io.apimachinery-v0.23.5
+
+##### Package representing k8s.io/apimachinery
+
+PackageName: k8s.io/apimachinery
+SPDXID: SPDXRef-Package-k8s.io.apimachinery-v0.23.5
+PackageVersion: v0.23.5
+PackageSupplier: Organization: k8s.io/apimachinery
+PackageDownloadLocation: https://proxy.golang.org/k8s.io/apimachinery/@v/v0.23.5.zip
+FilesAnalyzed: false
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-k8s.io.client-go-v1.5.2
+
+##### Package representing k8s.io/client-go
+
+PackageName: k8s.io/client-go
+SPDXID: SPDXRef-Package-k8s.io.client-go-v1.5.2
+PackageVersion: v1.5.2
+PackageSupplier: Organization: k8s.io/client-go
+PackageDownloadLocation: https://proxy.golang.org/k8s.io/client-go/@v/v1.5.2.zip
+FilesAnalyzed: false
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-k8s.io.klog.v2-v2.60.1-0.20220317184644-43cc75f9ae89
+
+##### Package representing k8s.io/klog/v2
+
+PackageName: k8s.io/klog/v2
+SPDXID: SPDXRef-Package-k8s.io.klog.v2-v2.60.1-0.20220317184644-43cc75f9ae89
+PackageVersion: v2.60.1-0.20220317184644-43cc75f9ae89
+PackageSupplier: Organization: k8s.io/klog/v2
+PackageDownloadLocation: https://proxy.golang.org/k8s.io/klog/v2/@v/v2.60.1-0.20220317184644-43cc75f9ae89.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 6d4365b30e726f7e77cdb28c8fcb2b3abe95d808e1cf55644caa273f52fcaf6a
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-k8s.io.kube-openapi-v0.0.0-20220124234850-424119656bbf
+
+##### Package representing k8s.io/kube-openapi
+
+PackageName: k8s.io/kube-openapi
+SPDXID: SPDXRef-Package-k8s.io.kube-openapi-v0.0.0-20220124234850-424119656bbf
+PackageVersion: v0.0.0-20220124234850-424119656bbf
+PackageSupplier: Organization: k8s.io/kube-openapi
+PackageDownloadLocation: https://proxy.golang.org/k8s.io/kube-openapi/@v/v0.0.0-20220124234850-424119656bbf.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 33d5c1b2232c970da56f66738250b44ce9013cae4d422d3f9e852b767a05c148
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-k8s.io.utils-v0.0.0-20220210201930-3a6ce19ff2f9
+
+##### Package representing k8s.io/utils
+
+PackageName: k8s.io/utils
+SPDXID: SPDXRef-Package-k8s.io.utils-v0.0.0-20220210201930-3a6ce19ff2f9
+PackageVersion: v0.0.0-20220210201930-3a6ce19ff2f9
+PackageSupplier: Organization: k8s.io/utils
+PackageDownloadLocation: https://proxy.golang.org/k8s.io/utils/@v/v0.0.0-20220210201930-3a6ce19ff2f9.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 1cd4838030abaffe8bcb758418a65fb6213b218d7d573d8675b382c88e2aaa17
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-knative.dev.pkg-v0.0.0-20220329144915-0a1ec2e0d46c
+
+##### Package representing knative.dev/pkg
+
+PackageName: knative.dev/pkg
+SPDXID: SPDXRef-Package-knative.dev.pkg-v0.0.0-20220329144915-0a1ec2e0d46c
+PackageVersion: v0.0.0-20220329144915-0a1ec2e0d46c
+PackageSupplier: Organization: knative.dev/pkg
+PackageDownloadLocation: https://proxy.golang.org/knative.dev/pkg/@v/v0.0.0-20220329144915-0a1ec2e0d46c.zip
+FilesAnalyzed: false
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-sigs.k8s.io.json-v0.0.0-20211208200746-9f7c6b3444d2
+
+##### Package representing sigs.k8s.io/json
+
+PackageName: sigs.k8s.io/json
+SPDXID: SPDXRef-Package-sigs.k8s.io.json-v0.0.0-20211208200746-9f7c6b3444d2
+PackageVersion: v0.0.0-20211208200746-9f7c6b3444d2
+PackageSupplier: Organization: sigs.k8s.io/json
+PackageDownloadLocation: https://proxy.golang.org/sigs.k8s.io/json/@v/v0.0.0-20211208200746-9f7c6b3444d2.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 9038b8241340b0959fcf56845e13bc260f3b24968f34b879b48cd81e04ad43d6
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-sigs.k8s.io.release-utils-v0.6.0
+
+##### Package representing sigs.k8s.io/release-utils
+
+PackageName: sigs.k8s.io/release-utils
+SPDXID: SPDXRef-Package-sigs.k8s.io.release-utils-v0.6.0
+PackageVersion: v0.6.0
+PackageSupplier: Organization: sigs.k8s.io/release-utils
+PackageDownloadLocation: https://proxy.golang.org/sigs.k8s.io/release-utils/@v/v0.6.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: c090eecd626a3c7e1ae45031017136681bdb07a50c216ee260c86c2a720c4240
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-sigs.k8s.io.structured-merge-diff.v4-v4.2.1
+
+##### Package representing sigs.k8s.io/structured-merge-diff/v4
+
+PackageName: sigs.k8s.io/structured-merge-diff/v4
+SPDXID: SPDXRef-Package-sigs.k8s.io.structured-merge-diff.v4-v4.2.1
+PackageVersion: v4.2.1
+PackageSupplier: Organization: sigs.k8s.io/structured-merge-diff/v4
+PackageDownloadLocation: https://proxy.golang.org/sigs.k8s.io/structured-merge-diff/v4/@v/v4.2.1.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 6ca0aa13d1af439b625479f9adf9f5afec9aa3768b40468bce49260247fe03a6
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
+Relationship: SPDXRef-Package-chainguard.dev.chainctl DEPENDS_ON SPDXRef-Package-sigs.k8s.io.yaml-v1.3.0
+
+##### Package representing sigs.k8s.io/yaml
+
+PackageName: sigs.k8s.io/yaml
+SPDXID: SPDXRef-Package-sigs.k8s.io.yaml-v1.3.0
+PackageVersion: v1.3.0
+PackageSupplier: Organization: sigs.k8s.io/yaml
+PackageDownloadLocation: https://proxy.golang.org/sigs.k8s.io/yaml/@v/v1.3.0.zip
+FilesAnalyzed: false
+PackageChecksum: SHA256: 6b655c94bcce1abc0e1c3895f047c11a1be31ef3f8e82b56e63e8f3af858186a
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+PackageLicenseComments: NOASSERTION
+PackageComment: NOASSERTION
+
+
