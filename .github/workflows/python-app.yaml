@@ -3,13 +3,21 @@ name: Push Event
 
 on:
   push:
-    branches: [master]
+    branches: [master, chore/ISPGCASP-602/add-syft-to-github-action]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      
+      - uses: actions/checkout@v3
+      
+      - name: Gen SBOM with Syft
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./
+          artifact-name: sbom-harbor-backend.json
+          format: cyclonedx-json
 
       - name: Set up Python 3.9
         uses: actions/setup-python@v2
@@ -38,3 +46,4 @@ jobs:
       - name: Package for Lambda
         run: |
           poetry run package
+
