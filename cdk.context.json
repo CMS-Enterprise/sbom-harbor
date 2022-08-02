@@ -1,5 +1,5 @@
 {
-  "availability-zones:account=152424352374:region=us-east-1": [
+  "availability-zones:account=476877758413:region=us-east-1": [
     "us-east-1a",
     "us-east-1b",
     "us-east-1c",
@@ -7,55 +7,8 @@
     "us-east-1e",
     "us-east-1f"
   ],
-  "vpc-provider:account=152424352374:filter.tag:Name=sbom.vpc:region=us-east-1:returnAsymmetricSubnets=true": {
-    "vpcId": "vpc-0cc7e56152d40aee8",
-    "vpcCidrBlock": "10.0.0.0/16",
-    "availabilityZones": [],
-    "subnetGroups": [
-      {
-        "name": "SBOMPublicSubnet",
-        "type": "Public",
-        "subnets": [
-          {
-            "subnetId": "subnet-01ee34e8d5404dcec",
-            "cidr": "10.0.0.128/26",
-            "availabilityZone": "us-east-1a",
-            "routeTableId": "rtb-081829c5ea7476d3f"
-          },
-          {
-            "subnetId": "subnet-053ef0a519ab9415c",
-            "cidr": "10.0.0.192/26",
-            "availabilityZone": "us-east-1b",
-            "routeTableId": "rtb-0ef5fe4c881502d5a"
-          }
-        ]
-      },
-      {
-        "name": "SBOMPrivateSubnet",
-        "type": "Private",
-        "subnets": [
-          {
-            "subnetId": "subnet-0e71752d7f64a6e39",
-            "cidr": "10.0.0.0/26",
-            "availabilityZone": "us-east-1a",
-            "routeTableId": "rtb-01d43e441baad100c"
-          },
-          {
-            "subnetId": "subnet-0296c130e174745a1",
-            "cidr": "10.0.0.64/26",
-            "availabilityZone": "us-east-1b",
-            "routeTableId": "rtb-0348971da880f89e8"
-          }
-        ]
-      }
-    ]
-  },
-  "availability-zones:account=531175407938:region=us-east-1": [
-    "us-east-1a",
-    "us-east-1b",
-    "us-east-1c",
-    "us-east-1d",
-    "us-east-1e",
-    "us-east-1f"
-  ]
+  "hosted-zone:account=476877758413:domainName=sbomharbor.com:region=us-east-1": {
+    "Id": "/hostedzone/Z06165603LFKNXR702EXS",
+    "Name": "sbomharbor.com."
+  }
 }

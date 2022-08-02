@@ -1,8 +1,8 @@
 import os
-import json
+
+import constructs
 from aws_cdk import (
     aws_cloudfront as cf,
-    aws_cognito as cognito,
     aws_iam as iam,
     aws_s3 as s3,
     aws_s3_deployment as s3d,
@@ -14,94 +14,36 @@ from aws_cdk import (
 from constructs import Construct
 from scripts.constants import (
     API_GW_ID_EXPORT_NAME,
-    API_GW_URL_KEY,
     AUTHORIZATION_HEADER,
-    CLOUDFRONT_BUCKET_NAME,
     CLOUDFRONT_DIST_NAME,
     S3_WS_BUCKET_ID,
     S3_WS_BUCKET_NAME,
-    UI_CONFIG_FILE_NAME,
     UI_DEPLOYMENT_ID,
+    VPC_NAME,
     WEB_STACK_ID,
 )
-
+from scripts.util.SBOMHarborCertificate import Cert as SBOMHarborCert
 
 class SBOMWebStack(Stack):
 
     __cwd = os.path.dirname(__file__)
     __ui_loc = f"{__cwd}/../../ui/sbom/build"
 
-    def __create_ui_config_file(self, apigw_url):
+    def __get_cloudfront_distribution(
+            self: constructs.Construct,
+            apigw_url: str,
+            harbor_cert: SBOMHarborCert,
+            oai: cf.OriginAccessIdentity,
+            website_bucket: s3.Bucket
+    ):
 
-        config_file = f"{self.__ui_loc}/{UI_CONFIG_FILE_NAME}"
-        config = {
-            API_GW_URL_KEY: apigw_url
-        }
+        kw_args = {}
+        if harbor_cert.enabled:
+            kw_args["viewer_certificate"] = harbor_cert.get_viewer_cert()
 
-        if os.path.exists(config_file):
-            os.remove(config_file)
-
-        fh = open(config_file, "w")
-        fh.write(json.dumps(config))
-        fh.close()
-
-    def __init__(
-        self,
-        scope: Construct,
-        user_pool: cognito.UserPool,
-        **kwargs,
-    ) -> None:
-
-        super().__init__(scope, WEB_STACK_ID, **kwargs)
-
-        website_bucket = s3.Bucket(
-            self, S3_WS_BUCKET_ID,
-            bucket_name=S3_WS_BUCKET_NAME,
-            public_read_access=True,
-            auto_delete_objects=True,
-            removal_policy=RemovalPolicy.DESTROY,
-            website_index_document="index.html",
-        )
-
-        oai = cf.OriginAccessIdentity(
-            self, "SBOMCFOAI",
-            comment="SBOM Origin Access Identity"
-        )
-
-        website_bucket.add_to_resource_policy(iam.PolicyStatement(
-            actions=["s3:GetObject"],
-            resources=[f"{website_bucket.bucket_arn}/*"],
-            principals=[oai.grant_principal],
-        ))
-
-        apigw_url = Fn.import_value(API_GW_ID_EXPORT_NAME)
-
-        # This line specifies where the UI is as an asset.
-        # We need to have written whatever we needed already to the
-        # UI build folder before this line runs.
-        sources = s3d.Source.asset(self.__ui_loc)
-
-        s3d.BucketDeployment(
-            self, UI_DEPLOYMENT_ID,
-            sources=[sources],
-            destination_bucket=website_bucket,
-        )
-
-        logging_bucket = s3.Bucket(
-            self, "TmpLoggingBucket",
-            bucket_name=CLOUDFRONT_BUCKET_NAME,
-            public_read_access=False,
-            auto_delete_objects=True,
-            removal_policy=RemovalPolicy.DESTROY,
-        )
-
-        cf.CloudFrontWebDistribution(
+        return cf.CloudFrontWebDistribution(
             self, CLOUDFRONT_DIST_NAME,
-            logging_config=cf.LoggingConfiguration(
-                bucket=logging_bucket,
-                include_cookies=False,
-                prefix="prefix"
-            ),
+            **kw_args,
             origin_configs=[
                 cf.SourceConfiguration(
                     custom_origin_source=cf.CustomOriginConfig(
@@ -144,3 +86,70 @@ class SBOMWebStack(Stack):
                 ),
             ]
         )
+
+    def __get_logging_configuration(self):
+        return cf.LoggingConfiguration(
+            bucket=s3.Bucket(
+                self, "cloudfront.logging.bucket",
+                bucket_name="sbom.harbor.cf",
+                public_read_access=False,
+                auto_delete_objects=True,
+                removal_policy=RemovalPolicy.DESTROY,
+            ),
+            include_cookies=False,
+            prefix="prefix"
+        )
+
+    def __init__(
+        self,
+        scope: Construct,
+        **kwargs,
+    ) -> None:
+
+        super().__init__(scope, WEB_STACK_ID, **kwargs)
+
+        website_bucket = s3.Bucket(
+            self, S3_WS_BUCKET_ID,
+            bucket_name=S3_WS_BUCKET_NAME,
+            public_read_access=True,
+            auto_delete_objects=True,
+            removal_policy=RemovalPolicy.DESTROY,
+            website_index_document="index.html",
+        )
+
+        oai = cf.OriginAccessIdentity(
+            self, "SBOMHarborOriginAccessIdentity",
+            comment="SBOM Origin Access Identity"
+        )
+
+        website_bucket.add_to_resource_policy(
+            iam.PolicyStatement(
+                actions=["s3:GetObject"],
+                resources=[f"{website_bucket.bucket_arn}/*"],
+                principals=[oai.grant_principal],
+            )
+        )
+
+        # This line specifies where the UI is as an asset.
+        # We need to have written whatever we needed already to the
+        # UI build folder before this line runs.
+        sources = s3d.Source.asset(self.__ui_loc)
+
+        s3d.BucketDeployment(
+            self, UI_DEPLOYMENT_ID,
+            sources=[sources],
+            destination_bucket=website_bucket,
+        )
+
+        # Create a Certificate to read the environment
+        # and decide if we should be deploying the harbor with
+        # a public domain.
+        harbor_cert = SBOMHarborCert(self)
+
+        distribution = self.__get_cloudfront_distribution(
+            website_bucket=website_bucket, oai=oai,
+            apigw_url=Fn.import_value(API_GW_ID_EXPORT_NAME),
+            harbor_cert=harbor_cert,
+        )
+
+        harbor_cert.create_host_record(distribution)

@@ -1,5 +1,5 @@
 """ This module is the start of the deployment for SBOM-API """
-
+import os
 from os import system
 import aws_cdk as cdk
 from aws_cdk import (
@@ -26,9 +26,10 @@ def dodep() -> None:
 
     default_region = CONFIG["AWS_DEFAULT_REGION"]
     region = CONFIG["AWS_REGION"]
+    account = os.environ.get("AWS_ACCOUNT_NUM")
 
     env = cdk.Environment(
-        account = CONFIG["AWS_ACCOUNT_NUM"],
+        account=account,
         region = region if region is not None else default_region,
     )
 
@@ -62,7 +63,7 @@ def dodep() -> None:
     )
 
     # The Web Stack has all the web oriented entities to manage the website
-    web_stack = SBOMWebStack(app, user_pool)
+    web_stack = SBOMWebStack(app, env=env)
     web_stack.add_dependency(ingress_stack)
 
     # Synth the CDK app

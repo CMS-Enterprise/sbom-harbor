@@ -30,8 +30,11 @@ class SBOMEnrichmentPiplineStack(Stack):
     """This Stack deploys the Enrichment Pipeline"""
 
     def __init__(
-        self, scope: Construct, vpc: ec2.Vpc,
-        event_bus: eventbridge.EventBus, **kwargs) -> None:
+            self,
+            scope: Construct,
+            vpc: ec2.Vpc,
+            event_bus: eventbridge.EventBus,
+            **kwargs) -> None:
 
         # Run the constructor of the Stack superclass.
         super().__init__(scope, ENRICHMENT_STACK_ID, **kwargs)
