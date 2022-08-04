@@ -1,7 +1,7 @@
 name: Test UI
 on:
   push:
-    branches: [master, chore/ISPGCASP-602/add-syft-to-github-action]
+    branches: [master]
   pull_request:
     types: [opened, reopened, synchronize]
 jobs:

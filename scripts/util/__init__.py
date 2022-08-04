@@ -1,2 +1,0 @@
-
-from .DynamoTableManager import DynamoTableManager

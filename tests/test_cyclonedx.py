@@ -7,7 +7,7 @@ import requests
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 
-import cyclonedx.util as util
+import cyclonedx.core_utils as util
 import cyclonedx.schemas as schemas
 import tests.sboms as sboms
 import tests.data as data
@@ -15,8 +15,8 @@ import importlib.resources as pr
 from time import sleep
 from json import dumps, loads
 from requests import Response, get, put
-from cyclonedx import core
-from cyclonedx import api
+from cyclonedx import core_utils, handlers
+from cyclonedx.teams.update_team_handler import replace_members
 from cyclonedx.dtendpoints import DTEndpoints
 
 team_schema = loads(
@@ -38,7 +38,7 @@ def test_replace_members():
 
     team_id = '873f79ff-9328-4cf0-a183-e7e1814c88ea'
 
-    api.replace_members(
+    replace_members(
         team_id=team_id,
         new_members=new_members
     )
@@ -49,7 +49,7 @@ def test_get_schemas() -> None:
     Get Schema Test
     """
 
-    cdx_core = core.CycloneDxCore()
+    cdx_core = core_utils.CycloneDxCore()
     schema = cdx_core.get_schema("1.2")
     assert schema is not None
 
@@ -73,7 +73,7 @@ def __upload_bom(bom):
     Testing uploading a bom into DT
     """
 
-    response = api.dt_ingress_handler(bom)
+    response = handlers.dt_ingress_handler(bom)
     print(response.text)
 
     return response.json()
@@ -118,7 +118,7 @@ def test_bom_upload_state():
     token_container: dict = __upload_bom(bom)
 
     # pylint: disable=W0212
-    while not util.__findings_ready(key, token_container["token"]):
+    while not core_utils.__findings_ready(key, token_container["token"]):
         sleep(0.5)
         print("Not ready...")
 
@@ -162,7 +162,7 @@ def test_dt_ingress_handler():
 
     juice_sbom = pr.read_text(sboms, "juice.json")
     juice_sbom = dumps(loads(juice_sbom))
-    rsp = api.dt_interface_handler(juice_sbom)
+    rsp = handlers.dt_interface_handler(juice_sbom)
     print(rsp)
 
 
@@ -170,7 +170,7 @@ def test_upload_bom():
 
     juice_sbom = pr.read_text(sboms, "juice.json")
     juice_sbom = dumps(loads(juice_sbom))
-    token = util.__upload_sbom("2f357abe-954d-4680-b978-60b597a4cd47", juice_sbom)
+    token = core_utils.__upload_sbom("2f357abe-954d-4680-b978-60b597a4cd47", juice_sbom)
     print(f"Token: {token}")
 
 

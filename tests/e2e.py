@@ -10,8 +10,8 @@ from json import loads
 from uuid import uuid4
 from optparse import OptionParser
 
-from cyclonedx.api import des_interface_handler
-from cyclonedx.util import ICClient
+from cyclonedx.enrichment import des_interface_handler
+from cyclonedx.core_utils import ICClient
 from cyclonedx.constants import (
     S3_META_CODEBASE_KEY,
     S3_META_PROJECT_KEY,
@@ -28,11 +28,11 @@ cf_domain_name = sbom_api_distribution["DomainName"]
 
 origins = sbom_api_distribution["Origins"]["Items"]
 
-apigw_domain_name = ""
-for origin in origins:
-    domain_name: str = origin["DomainName"]
-    if "execute-api" in domain_name:
-        apigw_domain_name = domain_name
+apigw_domain_name = "3bl0128zo0.execute-api.us-east-1.amazonaws.com"
+# for origin in origins:
+#     domain_name: str = origin["DomainName"]
+#     if "execute-api" in domain_name:
+#         apigw_domain_name = domain_name
 
 CF_URL = f"https://{cf_domain_name}"
 APIGW_URL = f"https://{apigw_domain_name}"
@@ -79,6 +79,8 @@ def __login():
             "password": PASS
         }
     )
+
+    print(f"Login Rsp: {login_rsp.text}")
 
     login_rsp_json = login_rsp.json()
     return login_rsp_json["token"]
@@ -325,7 +327,7 @@ def test_get_teams_for_id():
 
     jwt = __login()
 
-    url = f"{CF_URL}/api/user/teams?user_id=bill@aquia.io"
+    url = f"{APIGW_URL}/api/user/teams?user_id=bill@aquia.io"
     print(f"Sending To: GET:{url}")
     user_search_rsp = requests.get(
         url,
@@ -402,7 +404,7 @@ def test_nvd_lookup():
       "version": "0",
       "id": "53fa0c0f-dbc7-e64b-a003-a5b7e8cdb600",
       "detail-type": "test_detail_type_string",
-      "source": "enrichment.lambda",
+      "source": "enrichment.lambda_objects",
       "account": "531175407938",
       "time": "2022-06-30T07:36:07Z",
       "region": "us-east-1",

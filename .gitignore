@@ -6,6 +6,7 @@
 **/dist/
 **/.coverage/
 cdk.out/
+cdk.context.json
 
 # python
 __pycache__/

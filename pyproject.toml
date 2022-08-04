@@ -2,21 +2,21 @@
 name = "cyclonedx"
 version = "0.1.0"
 description = "Api to ingest and process SBOMS"
-authors = ["qtpeters <quinn.t.peters@gmail.com>"]
+authors = ["jon smith <jonsmith@example.com>"]
 
 [tool.poetry.scripts]
-clean = "scripts.build:clean"
-build = "scripts.build:run"
-lint = "scripts.build:lint"
-test = "scripts.build:test"
-package = "scripts.build:package"
-deploy = "scripts.deploy:run"
+clean = "deploy.build:clean"
+build = "deploy.build:run"
+lint = "deploy.build:lint"
+test = "deploy.build:test"
+package = "deploy.build:package"
+deploy = "deploy.deploy:run"
 tokentest = "tests.e2e:token_test"
 teamtest = "tests.e2e:team_test"
 sbomuploadtest = "tests.e2e:sbom_upload_test"
 usersearchtest = "tests.e2e:user_search_test"
-dodep = "scripts.deploy:dodep"
-setupadmin = "scripts.deploy:setup_admin_user"
+dodep = "deploy.deploy:dodep"
+setupadmin = "deploy.deploy:setup_admin_user"
 
 [tool.poetry.dependencies]
 python = "^3.9"

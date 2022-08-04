@@ -6,5 +6,8 @@
   "prettier.tabWidth": 2,
   "prettier.trailingComma": "es5",
   "prettier.useEditorConfig": true,
-  "prettier.useTabs": false
+  "prettier.useTabs": false,
+  "python.linting.enabled": true,
+  "python.linting.flake8Enabled": false,
+  "python.linting.pylintEnabled": true
 }

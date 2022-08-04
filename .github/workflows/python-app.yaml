@@ -3,7 +3,7 @@ name: Push Event
 
 on:
   push:
-    branches: [master, chore/ISPGCASP-602/add-syft-to-github-action]
+    branches: [master]
 
 jobs:
   build:
