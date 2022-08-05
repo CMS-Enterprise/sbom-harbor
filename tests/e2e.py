@@ -28,16 +28,16 @@ cf_domain_name = sbom_api_distribution["DomainName"]
 
 origins = sbom_api_distribution["Origins"]["Items"]
 
-apigw_domain_name = "3bl0128zo0.execute-api.us-east-1.amazonaws.com"
-# for origin in origins:
-#     domain_name: str = origin["DomainName"]
-#     if "execute-api" in domain_name:
-#         apigw_domain_name = domain_name
+apigw_domain_name = ""
+for origin in origins:
+    domain_name: str = origin["DomainName"]
+    if "execute-api" in domain_name:
+        apigw_domain_name = domain_name
 
 CF_URL = f"https://{cf_domain_name}"
 APIGW_URL = f"https://{apigw_domain_name}"
 
-URL = APIGW_URL
+URL = CF_URL
 
 REGION = "us-east-1"
 STAGE = "prod"
@@ -288,8 +288,8 @@ def test_user_search():
 
     jwt = __login()
 
-    USER = "mar"
-    url = f"{USER_SEARCH_URL}?filter={USER}"
+    user_mar = "mar"
+    url = f"{USER_SEARCH_URL}?filter={user_mar}"
     print(f"Sending To: GET:{url}")
     user_search_rsp = requests.get(
         url,
@@ -304,12 +304,11 @@ def test_user_search():
     else:
         print("Failed using 'mar' filter")
 
-    USER = "qui"
-    url = f"{USER_SEARCH_URL}?filter={USER}"
+    user_qui = "qui"
+    url = f"{USER_SEARCH_URL}?filter={user_qui}"
     print(f"Sending To: GET:{url}")
     user_search_rsp = requests.get(
-        url,
-        headers={
+        url, headers={
             'Authorization': jwt
         },
     )
@@ -327,7 +326,7 @@ def test_get_teams_for_id():
 
     jwt = __login()
 
-    url = f"{APIGW_URL}/api/user/teams?user_id=bill@aquia.io"
+    url = f"{URL}/api/user/teams?user_id=bill@aquia.io"
     print(f"Sending To: GET:{url}")
     user_search_rsp = requests.get(
         url,
