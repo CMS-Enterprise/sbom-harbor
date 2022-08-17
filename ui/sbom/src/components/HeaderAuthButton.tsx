@@ -6,7 +6,7 @@ import { Link as RouterLink } from 'react-router-dom'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import { AuthContext } from '@/providers/AuthContext'
+import { useAuth } from '@/hooks/useAuth'
 
 const ButtonBox = styled(Box)({
   ml: 1,
@@ -36,19 +36,15 @@ const LogoutButton = (): JSX.Element => {
 const sx = { ml: 2, mr: 2, pl: 2, pr: 2 }
 
 const AuthButton = (): JSX.Element => {
-  const { user } = React.useContext(AuthContext)
+  const { user } = useAuth()
 
-  // session doesn't exist, so render login button
+  // AuthContext.initAuth hasn't resolved yet, so don't render anything
   if (user === null) {
-    return (
-      <Box sx={sx}>
-        <LoginButton />
-      </Box>
-    )
+    return <Box sx={sx} />
   }
 
   // session is defined, so render logout button
-  if (user !== null && typeof user !== 'undefined') {
+  if (user && user.jwt) {
     return (
       <Box sx={sx}>
         <LogoutButton />
@@ -56,8 +52,12 @@ const AuthButton = (): JSX.Element => {
     )
   }
 
-  // getSession hasn't resolved yet, so don't render anything
-  return <Box sx={sx} />
+  // session doesn't exist, so render login button
+  return (
+    <Box sx={sx}>
+      <LoginButton />
+    </Box>
+  )
 }
 
 export default AuthButton

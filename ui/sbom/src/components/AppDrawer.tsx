@@ -2,9 +2,15 @@ import { styled } from '@mui/material/styles'
 import MuiDrawer from '@mui/material/Drawer'
 import { MuiDrawerWidth } from '@/utils/theme'
 
-const Drawer = styled(MuiDrawer, {
+const AppDrawer = styled(MuiDrawer, {
   shouldForwardProp: (prop) => prop !== 'open',
 })(({ theme, open }) => ({
+  '& .MuiPaper-root': {
+    backgroundColor:
+      theme.palette.mode === 'light'
+        ? theme.palette.grey[200]
+        : theme.palette.grey[900],
+  },
   '& .MuiDrawer-paper': {
     position: 'relative',
     whiteSpace: 'nowrap',
@@ -35,4 +41,4 @@ const Drawer = styled(MuiDrawer, {
   },
 }))
 
-export default Drawer
+export default AppDrawer

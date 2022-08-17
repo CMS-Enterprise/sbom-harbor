@@ -1,28 +1,27 @@
 {
   "compilerOptions": {
-    "strict": true,
-    "target": "es5",
-    "module": "esnext",
-    "moduleResolution": "node",
-    "jsx": "react-jsx",
     "baseUrl": ".",
     "rootDir": "../../",
     "rootDirs": ["../../"],
-    "paths": {
-      "@/*": ["src/*"]
-    },
+    "target": "es6",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "types": ["node", "jest", "react", "react-dom"],
-    "plugins": [{ "name": "typescript-plugin-css-modules" }],
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "moduleResolution": "node",
     "noEmit": true,
     "noFallthroughCasesInSwitch": true,
+    "paths": { "@/*": ["src/*"] },
+    "plugins": [{ "name": "typescript-plugin-css-modules" }],
     "resolveJsonModule": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "strict": true,
+    "types": ["node", "jest", "react", "react-dom"],
   },
-  "include": ["src", "types.d.ts"]
+  "include": ["src", "declaration.d.ts"],
+  "exclude": ["node_modules"]
 }

@@ -1,16 +1,20 @@
 /**
- * This component is used to sign out the user and redirect
- *  her to the login page. It does not render anything.
+ * This component is used to sign out the user and redirect to the login page.
+ * It does not render any visible UI and returns an empty React Fragment.
  * @module @cyclonedx/ui/sbom/views/SignOut/SignOut
  */
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Auth } from '@aws-amplify/auth'
-import { AuthContext } from '@/providers/AuthContext'
+import { useAuth } from '@/hooks/useAuth'
 
-const SignOutContainer = (): JSX.Element => {
+/**
+ * A blank component that signs out the user and redirects to the login page.
+ * @returns {JSX.Element} A component that renders an empty React Fragment.
+ */
+const SignOut = (): JSX.Element => {
   const navigate = useNavigate()
-  const { setUser } = React.useContext(AuthContext)
+  const { setUser } = useAuth()
 
   React.useEffect(() => {
     const handleLogout = async () => {
@@ -28,4 +32,4 @@ const SignOutContainer = (): JSX.Element => {
   return <></>
 }
 
-export default SignOutContainer
+export default SignOut

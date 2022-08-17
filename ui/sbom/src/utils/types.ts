@@ -1,9 +1,9 @@
 import { CognitoUser } from '@aws-amplify/auth'
-import { CognitoUserSession } from 'amazon-cognito-identity-js'
 
 export type AppConfig = {
   AWS_REGION: string | 'us-east-1'
   API_URL: string
+  USER_API_URL: string
   TEAMS_API_URL: string
   CF_DOMAIN: string
   USER_POOL_ID: string
@@ -11,8 +11,16 @@ export type AppConfig = {
 }
 
 export type AppState = {
-  teams: Team[]
-  user?: CognitoUserSession | null
+  teams: Team[] | []
+}
+
+export type CognitoUserInfo = {
+  attributes: {
+    email: string
+    sub?: string
+  }
+  id?: string
+  username: string
 }
 
 export type SessionContextType = {
@@ -35,8 +43,8 @@ export type Token = {
 
 export type Project = {
   projectName: string
-  codebases: Codebase[]
-  tokens: Token[]
+  codebases?: Array<Codebase>
+  tokens?: Array<Token>
 }
 
 export type TeamMember = {
@@ -46,5 +54,31 @@ export type TeamMember = {
 
 export type Team = {
   Id: string
-  members: TeamMember[]
+  members: Array<TeamMember>
+  projects?: Array<Project>
+}
+
+export enum CodebaseLanguage {
+  C = 'C',
+  CPP = 'C++',
+  DOTNET = '.NET',
+  GO = 'GO',
+  JAVA = 'JAVA',
+  JAVASCRIPT = 'JAVASCRIPT',
+  NODE = 'NODE',
+  PHP = 'PHP',
+  PYTHON = 'PYTHON',
+  RUBY = 'RUBY',
+  RUST = 'RUST',
+  OTHER = 'OTHER',
+}
+
+export enum BuildTool {
+  ANT = 'ANT',
+  GRADLE = 'GRADLE',
+  MAVEN = 'MAVEN',
+  NPM = 'NPM',
+  PIP = 'PIP',
+  VISUAL_STUDIO_BUILD_TOOLS = 'VISUAL_STUDIO_BUILD_TOOLS',
+  OTHER = 'OTHER',
 }

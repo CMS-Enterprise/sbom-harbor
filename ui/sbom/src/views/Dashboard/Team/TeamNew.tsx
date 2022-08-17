@@ -1,4 +1,13 @@
+/**
+ * A component that renders a page with a form for creating a team.
+ * URL: /team/new - @see {@link @cyclonedx/ui/sbom/Routes}.
+ * @module @cyclonedx/ui/sbom/views/Dashboard/Team/TeamNew
+ */
 import * as React from 'react'
+import { useForm } from 'react-hook-form'
+import { Auth } from '@aws-amplify/auth'
+
+// ** MUI Components
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Container from '@mui/material/Container'
@@ -11,12 +20,18 @@ import InputLabel from '@mui/material/InputLabel'
 import Paper from '@mui/material/Paper'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import AddCircleIcon from '@mui/icons-material/AddCircle'
-import RemoveCircleIcon from '@mui/icons-material/RemoveCircleOutlineTwoTone'
-import { useData } from '@/providers/DataContext'
-import { Team, TeamMember } from '@/utils/types'
-import { useConfig } from '@/providers/ConfigContext'
-import { AuthContext } from '@/providers/AuthContext'
+
+// ** Icon Components
+import AddCircleIcon from '@mui/icons-material/AddCircleOutline'
+import RemoveCircleIcon from '@mui/icons-material/RemoveCircleOutline'
+
+// ** App Components
+import { useAlert } from '@/hooks/useAlert'
+import { useData } from '@/hooks/useData'
+import { TEAMS_API_URL } from '@/utils/constants'
+import { CognitoUserInfo, TeamMember } from '@/utils/types'
+import UserSearchInput from '@/components/UserAutocomplete'
+import TeamMembersTable, { TableBodyRowType } from './TeamMembersTable'
 
 type FormState = {
   Id?: string
@@ -31,6 +46,50 @@ const defaultFormState = {
   newMemberEmail: '',
   members: [],
 }
+
+const TeamMemberReadOnly = ({
+  index,
+  email,
+  handleRemove,
+}: {
+  index: number
+  email: string
+  handleRemove: (event: React.MouseEvent<HTMLButtonElement>) => void
+}) => (
+  <Input
+    id={`member-${index}`}
+    name={`member-${index}`}
+    disabled
+    readOnly
+    fullWidth
+    value={email}
+    sx={(theme) => ({
+      '& .Mui-disabled': {
+        color:
+          theme.palette.mode === 'dark'
+            ? 'white !important'
+            : 'black !important',
+        WebkitTextFillColor:
+          theme.palette.mode === 'dark'
+            ? 'rgba(255, 255, 255, 1) !important'
+            : 'rgba(0, 0, 0, 1) !important',
+      },
+    })}
+    endAdornment={
+      <InputAdornment position="end" sx={{ pr: 1 }}>
+        <IconButton
+          aria-label="remove"
+          data-value={email}
+          onClick={handleRemove}
+          onMouseDown={handleRemove}
+          edge="end"
+        >
+          <RemoveCircleIcon />
+        </IconButton>
+      </InputAdornment>
+    }
+  />
+)
 
 const TeamMembersSection = ({
   members = [],
@@ -49,6 +108,22 @@ const TeamMembersSection = ({
   handleRemove: (event: React.MouseEvent<HTMLButtonElement>) => void
   handleChange: (event: React.ChangeEvent<HTMLInputElement>) => void
 }): JSX.Element => {
+  /**
+   * Wrapper for the handleAdd function that accepts a keyboard event argument
+   *  to prevent the event from bubbling up to the form and causing the form to
+   *  submit if the enter key is pressed. Instead, when the enter key is pressed,
+   *  this adds the new email to the list of member emails in the team edit form.
+   * @param {KeyboardEvent} event keyboard event to check if enter key was pressed.
+   */
+  const handleAddWrapper = (
+    event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    if (event.key === 'Enter') {
+      event?.preventDefault()
+      handleAdd()
+    }
+  }
+
   return (
     <>
       <Typography
@@ -62,31 +137,10 @@ const TeamMembersSection = ({
         {members.map(({ email }, index) => (
           <Grid item xs={12} key={index}>
             <FormControl fullWidth variant="standard" disabled margin="none">
-              <Input
-                id={`member-${index}`}
-                name={`member-${index}`}
-                disabled
-                fullWidth
-                value={email}
-                inputProps={{
-                  style: {
-                    color: 'white !important',
-                    WebkitTextFillColor: 'rgba(255, 255, 255, 1)',
-                  },
-                }}
-                endAdornment={
-                  <InputAdornment position="end" sx={{ pr: 1 }}>
-                    <IconButton
-                      aria-label="remove"
-                      data-value={email}
-                      onClick={handleRemove}
-                      onMouseDown={handleRemove}
-                      edge="end"
-                    >
-                      <RemoveCircleIcon />
-                    </IconButton>
-                  </InputAdornment>
-                }
+              <TeamMemberReadOnly
+                index={index}
+                email={email}
+                handleRemove={handleRemove}
               />
             </FormControl>
           </Grid>
@@ -107,13 +161,12 @@ const TeamMembersSection = ({
               fullWidth
               onChange={handleChange}
               value={newEmail}
-              onKeyDown={(evt) => {
-                if (evt.key === 'Enter') handleAdd()
-              }}
+              onKeyDown={handleAddWrapper}
               endAdornment={
                 <InputAdornment position="end" sx={{ pr: 1 }}>
                   <IconButton
                     aria-label="add"
+                    data-value={newEmail}
                     onClick={handleAdd}
                     onMouseDown={handleAdd}
                     edge="end"
@@ -131,37 +184,39 @@ const TeamMembersSection = ({
 }
 
 const TeamForm = () => {
-  // get the Teams API url from readonly ConfigContext
-  const { TEAMS_API_URL } = useConfig()
-
-  // use the session context to get the user
-  const { user } = React.useContext(AuthContext)
-
-  // get the global app data from the DataContext
+  const { setAlert } = useAlert()
   const {
-    data,
-    data: { teams: [team = {} as Team] = [] },
-    setValues,
+    data: { teams },
+    setTeams,
   } = useData()
 
+  // reducer for the form state
   const [formInput, setFormInput] = React.useReducer(
     (state: FormState, newState: FormState) => ({ ...state, ...newState }),
     defaultFormState
   )
 
-  React.useEffect(() => {
-    if (team?.members?.length) {
-      const { members = [], Id = '' } = team
-      setFormInput({ members, Id })
-    }
-  }, [team])
+  // react-form hook
+  const { control } = useForm({
+    mode: 'all',
+    shouldUnregister: true,
+  })
 
+  // function that handlers change events on form inputs
   const handleInput = (
     evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const name = evt.currentTarget.name
-    const newValue = evt.currentTarget.value
-    setFormInput({ [name]: newValue })
+    const { name, value } = evt.currentTarget
+    setFormInput({ [name]: value })
+  }
+
+  // function that handles removing a team member from the form state
+  const handleRemoveTeamMember = (
+    event: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    const email = event.currentTarget.dataset.value
+    const members = formInput?.members?.filter((m) => m.email !== email)
+    setFormInput({ members })
   }
 
   // TODO: dedupe these handleAdd functions
@@ -198,33 +253,37 @@ const TeamForm = () => {
     })
   }
 
-  const handleRemoveTeamMember = (
-    event: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    const email = event.currentTarget.dataset.value
-    const members = formInput?.members?.filter((m) => m.email !== email)
-    setFormInput({ members })
-  }
-
   const handleSubmitForm = async (event: React.FormEvent<HTMLFormElement>) => {
-    // prevent the default for submission behavior
     event.preventDefault()
-
-    // create abort controller to cancel the request if the component unmounts
     const abortController = new AbortController()
 
     try {
+      // get the user's info and token from Amplify Auth
+      const [cognitoUser, token]: [CognitoUserInfo, string] = await Promise.all(
+        [
+          Auth.currentUserInfo(),
+          Auth.currentSession().then((session) =>
+            session.getIdToken().getJwtToken()
+          ),
+        ]
+      )
+
+      const {
+        attributes: { email },
+      } = cognitoUser
+
       // get the team id and the final list of members from the form
-      const { Id = team.Id, members = team.members } = formInput
+      // TODO: create a new team id
+      const { Id = 'RANDOM', members = [] as TeamMember[] } = formInput
 
-      // create the new team object to send to the API
-      const newTeamData = { ...team, Id, members }
+      // add the current user to the members list as an admin
+      if (!members.find((member) => member.email === email)) {
+        members.push({ email: email, isTeamLead: true })
+      }
 
-      // get the bearer token from the session context
-      const token = user
-        ?.getSignInUserSession()
-        ?.getAccessToken()
-        ?.getJwtToken()
+      // create an object representing the new team
+      // TODO: add creating projects and codebases to the form
+      const newTeamData = { Id, members, projects: [], codebases: [] }
 
       // fetch the user's team from the Teams API endpoint
       const response = await fetch(`${TEAMS_API_URL}`, {
@@ -240,9 +299,16 @@ const TeamForm = () => {
       }
 
       // update global app data with the new team since API call was successful
-      setValues({ ...data, teams: [newTeamData] })
+      setTeams([...teams, newTeamData])
+      setAlert({
+        message: 'Team updated successfully',
+        severity: 'success',
+      })
     } catch (error) {
-      // TODO: show error message to the user and handle the error gracefully
+      setAlert({
+        message: 'Something went wrong, unable to update team!',
+        severity: 'error',
+      })
       console.error(error)
     }
 
@@ -256,8 +322,8 @@ const TeamForm = () => {
         variant="outlined"
         sx={{ mt: { xs: 3, md: 6 }, p: { xs: 2, md: 3 } }}
       >
-        <Typography variant="h4" gutterBottom>
-          Your Team
+        <Typography variant="h4" sx={{ mt: 2 }}>
+          Create a Team
         </Typography>
         <Box
           component="form"
@@ -276,6 +342,16 @@ const TeamForm = () => {
                 required
                 value={formInput.Id}
                 variant="standard"
+                InputProps={{
+                  sx: {
+                    '& .Mui-disabled': {
+                      color: 'text.primary',
+                    },
+                  },
+                }}
+                sx={{
+                  display: 'revert',
+                }}
               />
             </Grid>
             <Grid item xs={6}>
@@ -298,6 +374,20 @@ const TeamForm = () => {
                 handleRemove={handleRemoveTeamMember}
                 members={formInput.members?.filter((m) => !m.isTeamLead)}
                 newEmail={formInput.newMemberEmail}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <UserSearchInput
+                label="Add new User"
+                name="newUserSearch"
+                control={control}
+              />
+            </Grid>
+          </Grid>
+          <Grid container spacing={6} className="match-height">
+            <Grid item xs={12} md={12}>
+              <TeamMembersTable
+                members={(formInput?.members || []) as TableBodyRowType[]}
               />
             </Grid>
           </Grid>

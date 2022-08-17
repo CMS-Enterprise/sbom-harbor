@@ -5,7 +5,6 @@ import ListItemButton from '@mui/material/ListItemButton'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
 import DashboardIcon from '@mui/icons-material/Dashboard'
-import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
 
 const MenuLink = ({
   title,
@@ -28,8 +27,6 @@ const MenuListItems = () => (
   <React.Fragment>
     {/* Dashboard */}
     <MenuLink title="Dashboard" to="" icon={<DashboardIcon />} />
-    {/* Team */}
-    <MenuLink title="Team" to="team" icon={<PeopleAltIcon />} />
   </React.Fragment>
 )
 
