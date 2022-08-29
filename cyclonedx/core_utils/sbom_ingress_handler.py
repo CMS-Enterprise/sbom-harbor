@@ -18,6 +18,7 @@ from cyclonedx.core_utils.cyclonedx_util import (
     __get_body_from_event,
 )
 
+from cyclonedx.core import CycloneDxCore
 
 def sbom_ingress_handler(event: dict = None, context: dict = None) -> dict:
 

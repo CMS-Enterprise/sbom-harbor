@@ -1,5 +1,6 @@
 .idea
 .vscode
+.coverage
 
 # outputs
 **/build/

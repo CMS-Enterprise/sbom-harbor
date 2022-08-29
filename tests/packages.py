@@ -112,7 +112,7 @@ def get_from_files(fhs: List[IO[str]]) -> List[Package]:
                         version += 1
                     versions.append(version)
             version = min(versions or [_Version("0")])
-            pkg = Package(dep.name, version.base_version)
+            pkg = Package(dep._name, version.base_version)
             if pkg not in pkgs:
                 pkgs.append(pkg)
     return pkgs

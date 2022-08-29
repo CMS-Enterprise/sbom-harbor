@@ -74,7 +74,6 @@ def test():
     Run Pytest and get coverage
     """
 
-    path.insert(0, "cyclonedx/")
     system("poetry run python -m pytest -v --cov=cyclonedx/ tests/")
     run_ui_if_enabled()
 

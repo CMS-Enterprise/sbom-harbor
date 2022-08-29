@@ -7,17 +7,16 @@ import requests
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 
-import cyclonedx.core_utils as util
 import cyclonedx.schemas as schemas
-import tests.sboms as sboms
 import tests.data as data
 import importlib.resources as pr
-from time import sleep
 from json import dumps, loads
 from requests import Response, get, put
-from cyclonedx import core_utils, handlers
+
 from cyclonedx.teams.update_team_handler import replace_members
 from cyclonedx.dtendpoints import DTEndpoints
+
+from cyclonedx.core import CycloneDxCore
 
 team_schema = loads(
     pr.read_text(
@@ -25,6 +24,9 @@ team_schema = loads(
     )
 )
 
+@pytest.mark.skip(
+    reason="Don't want to delete it, but it's not supposed to run automatically"
+)
 def test_replace_members():
     new_members: list = [
         {
@@ -43,13 +45,16 @@ def test_replace_members():
         new_members=new_members
     )
 
+@pytest.mark.skip(
+    reason="Don't want to delete it, but it's not supposed to run automatically"
+)
 def test_get_schemas() -> None:
 
     """
     Get Schema Test
     """
 
-    cdx_core = core_utils.CycloneDxCore()
+    cdx_core = CycloneDxCore()
     schema = cdx_core.get_schema("1.2")
     assert schema is not None
 
@@ -67,18 +72,9 @@ def test_store_handler() -> None:
     # cyclonedx.api.store_handler(mock_event, {})
 
 
-def __upload_bom(bom):
-
-    """
-    Testing uploading a bom into DT
-    """
-
-    response = handlers.dt_ingress_handler(bom)
-    print(response.text)
-
-    return response.json()
-
-
+@pytest.mark.skip(
+    reason="Don't want to delete it, but it's not supposed to run automatically"
+)
 def dt_team():
 
     """
@@ -91,7 +87,9 @@ def dt_team():
     response = get(DTEndpoints.get_teams_data(), headers=headers)
     print(response.text)
 
-
+@pytest.mark.skip(
+    reason="Don't want to delete it, but it's not supposed to run automatically"
+)
 def get_findings():
 
     """
@@ -106,34 +104,9 @@ def get_findings():
 
     print(response.text)
 
-
-def test_bom_upload_state():
-
-    """
-    Uploads an SBOM
-    """
-
-    key: str = os.getenv("DT_API_KEY")
-    bom: dict = loads(pr.read_text(sboms, "keycloak.json"))
-    token_container: dict = __upload_bom(bom)
-
-    # pylint: disable=W0212
-    while not core_utils.__findings_ready(key, token_container["token"]):
-        sleep(0.5)
-        print("Not ready...")
-
-    print("Results are in!")
-
-    end_point = DTEndpoints.get_findings(key)
-    print(f"Hitting endpoint: {end_point}")
-
-    findings = get(end_point)
-
-    print("<findings>")
-    print(findings)
-    print("</findings>")
-
-
+@pytest.mark.skip(
+    reason="Don't want to delete it, but it's not supposed to run automatically"
+)
 def test_create_project():
 
     create_project_headers: dict = {
@@ -157,23 +130,9 @@ def test_create_project():
     print(f"Sending request to endpoint: {DTEndpoints.create_project()}")
     print(create_proj_rsp)
 
-
-def test_dt_ingress_handler():
-
-    juice_sbom = pr.read_text(sboms, "juice.json")
-    juice_sbom = dumps(loads(juice_sbom))
-    rsp = handlers.dt_interface_handler(juice_sbom)
-    print(rsp)
-
-
-def test_upload_bom():
-
-    juice_sbom = pr.read_text(sboms, "juice.json")
-    juice_sbom = dumps(loads(juice_sbom))
-    token = core_utils.__upload_sbom("2f357abe-954d-4680-b978-60b597a4cd47", juice_sbom)
-    print(f"Token: {token}")
-
-
+@pytest.mark.skip(
+    reason="Don't want to delete it, but it's not supposed to run automatically"
+)
 def cpe_test():
 
     """API Explained here: https://nvd.nist.gov/developers/products"""
@@ -193,7 +152,9 @@ def cpe_test():
 
     print(f"Calling to: {cpe_ep},  Response: {rsp.text}")
 
-
+@pytest.mark.skip(
+    reason="Don't want to delete it, but it's not supposed to run automatically"
+)
 def cve_test():
 
     # Adobe Illustrator versions 25.4.3 (and earlier) and 26.0.2
@@ -212,6 +173,9 @@ def cve_test():
     print(f"Calling to: {url},  Response: {rsp.text}")
 
 
+@pytest.mark.skip(
+    reason="Don't want to delete it, but it's not supposed to run automatically"
+)
 def correct_team_schema_test():
 
     team_json = loads(
@@ -237,6 +201,9 @@ def correct_team_schema_test():
         print(f"Test failed, error: {err}")
 
 
+@pytest.mark.skip(
+    reason="Don't want to delete it, but it's not supposed to run automatically"
+)
 def test_invalid_email_team_schema():
 
     team_json = loads(
@@ -255,6 +222,9 @@ def test_invalid_email_team_schema():
         print(f"Test Passed.  Validation error: {err}")
 
 
+@pytest.mark.skip(
+    reason="Don't want to delete it, but it's not supposed to run automatically"
+)
 def test_invalid_codebase_team_schema_test():
 
     team_json = loads(
@@ -273,6 +243,9 @@ def test_invalid_codebase_team_schema_test():
         print(f"Test Passed.  Validation error: {err}")
 
 
+@pytest.mark.skip(
+    reason="Don't want to delete it, but it's not supposed to run automatically"
+)
 def test_json_schema_enum():
 
     language = {

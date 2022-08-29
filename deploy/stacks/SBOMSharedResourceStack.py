@@ -21,6 +21,7 @@ from deploy.constructs import (
     SBOMTeamTable,
     SBOMTeamMemberTable
 )
+from deploy.constructs.harbor_teams_table import HarborTeamsTable
 from deploy.util import SBOMApiVpc
 from deploy.util import DynamoTableManager
 
@@ -64,11 +65,13 @@ class SBOMSharedResourceStack(Stack):
         team_table: dynamodb.Table = SBOMTeamTable(self).get_construct()
         team_member_table: dynamodb.Table = SBOMTeamMemberTable(self).get_construct()
         team_token_table: dynamodb.Table = SBOMTeamTokenTable(self).get_construct()
+        harbor_teams_table: dynamodb.Table = HarborTeamsTable(self).get_construct()
 
         self.table_manager = DynamoTableManager(
             team_table,
             team_member_table,
-            team_token_table
+            team_token_table,
+            harbor_teams_table,
         )
 
     def get_vpc(self) -> ec2.Vpc:
