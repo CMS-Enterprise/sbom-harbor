@@ -18,8 +18,8 @@ const LandingPageContainer = (): JSX.Element => (
         marginTop: 8,
       }}
     >
-      <p>Welcome to</p>
-      <h1 className={classes.headerTitle}>Pallet</h1>
+      <p>Welcome to the</p>
+      <h1 className={classes.headerTitle}>Harbor</h1>
       <img src={logo} className={classes.logo} alt="logo" loading="lazy" />
     </Box>
   </Container>

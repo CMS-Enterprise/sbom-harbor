@@ -21,7 +21,7 @@ const Header = (): JSX.Element => {
             <Image alt={company} src={logo} sx={{ height: 40, width: 40 }} />
           </Box>
           <Typography component="div" sx={{ flexGrow: 1 }} variant="h6">
-            SBOM Shelter
+            SBOM Harbor
           </Typography>
           <AuthButton />
         </Toolbar>
