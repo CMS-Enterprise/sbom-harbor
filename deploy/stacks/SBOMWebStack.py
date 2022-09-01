@@ -111,7 +111,7 @@ class SBOMWebStack(Stack):
         website_bucket = s3.Bucket(
             self, S3_WS_BUCKET_ID,
             bucket_name=S3_WS_BUCKET_NAME,
-            public_read_access=True,
+            public_read_access=False,
             auto_delete_objects=True,
             removal_policy=RemovalPolicy.DESTROY,
             website_index_document="index.html",
