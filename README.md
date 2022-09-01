@@ -17,7 +17,7 @@ This project depends on Python version: `3.9.10` and Node.js version: `^18.0.0`.
 
 ## Getting Started
 
-1. Install `jq` command-line JSON processor by following the [`jq` Download Guide](https://stedolan.github.io/jq/download/)
+1. `jq` command-line JSON processor by following the [`jq` Download Guide](https://stedolan.github.io/jq/download/)
 
 2. Set up Python
     - Install Pyenv (either option):

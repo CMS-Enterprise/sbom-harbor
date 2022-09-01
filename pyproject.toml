@@ -30,6 +30,8 @@ urllib3 = "^1.26.9"
 genson = "^1.2.2"
 python-dotenv = "^0.20.0"
 dparse = "^0.5.1"
+pytest-mock = "^3.8.2"
+moto = "^4.0.1"
 docker = "^5.0.3"
 
 [tool.poetry.dev-dependencies]
