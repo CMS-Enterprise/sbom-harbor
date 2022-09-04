@@ -12,6 +12,7 @@ from aws_cdk import (
 from aws_cdk.aws_stepfunctions import Chain, Parallel
 from constructs import Construct
 
+from cyclonedx.constants import EVENT_BUS_SOURCE
 from deploy.constants import (
     ENRICHMENT_STACK_ID,
     S3_BUCKET_NAME,
@@ -153,7 +154,7 @@ class SBOMEnrichmentPiplineStack(Stack):
             rule_name="ENRICHMENT_EVENTBRIDGE_RULE",
             enabled=True,
             event_pattern=eventbridge.EventPattern(
-                source=["enrichment.lambda"],
+                source=[EVENT_BUS_SOURCE],
             ),
             targets=[
                 targets.SfnStateMachine(enrichment_machine),

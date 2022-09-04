@@ -53,3 +53,5 @@ HARBOR_TEAMS_TABLE_SORT_KEY = "EntityKey"
 
 # Event Bus
 EVENT_BUS_NAME = "SBOMEnrichmentEventBus"
+EVENT_BUS_SOURCE = "enrichment.lambda"
+EVENT_BUS_DETAIL_TYPE = "SBOM.Event.Detail.Type"

@@ -4,6 +4,8 @@ import boto3
 from jsonschema.exceptions import ValidationError
 
 from cyclonedx.constants import (
+    EVENT_BUS_DETAIL_TYPE,
+    EVENT_BUS_SOURCE,
     SBOM_BUCKET_NAME_KEY,
     SBOM_S3_KEY,
     EVENT_BUS_NAME
@@ -47,8 +49,8 @@ def enrichment_ingress_handler(event: dict = None, context: dict = None):
         response = eb_client.put_events(
             Entries=[
                 {
-                    'Source': 'enrichment.lambda_objects',
-                    'DetailType': 'test_detail_type_string',
+                    'Source': EVENT_BUS_SOURCE,
+                    'DetailType': EVENT_BUS_DETAIL_TYPE,
                     'Detail': dumps(
                         {
                             SBOM_BUCKET_NAME_KEY: bucket_name,

@@ -362,15 +362,17 @@ def test_get_teams_for_id_no_user():
 
 def test_put_sbom_in_s3():
 
+    sbom = 'sboms/keycloak.json'
+    bucket_name = f"sbom.bucket.{os.environ.get('AWS_ACCOUNT_NUM')}"
+    s3_obj_name = 'sbom-keycloak.json'
+
+    print(f"Putting: {s3_obj_name} in {bucket_name}")
+
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, 'sboms/keycloak.json')
+    filename = os.path.join(dirname, sbom)
 
     s3 = boto3.resource('s3')
-    s3_obj = s3.Object(
-        'sbom.bucket.531175407938',
-        'sbom-keycloak.json',
-    )
-    s3_obj.put(
+    s3.Object(bucket_name, s3_obj_name).put(
         Body=open(filename, 'rb'),
         Metadata={
             S3_META_TEAM_KEY: 'EVAL TestTeam',
