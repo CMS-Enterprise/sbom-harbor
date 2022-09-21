@@ -1,24 +1,30 @@
 """ This module has constants throughout the build code """
 
+from os import getenv
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_lambda as lambda_
-from deploy.environment import Environment
+from dotenv import load_dotenv
 
-env = Environment()     # load environment variables
-CONFIG = env.get_all()  # export env vars as "CONFIG"
+# load environment variables from .env file into os.environ
+load_dotenv(".env")
 
 # General
 SBOM_API_PYTHON_RUNTIME = lambda_.Runtime.PYTHON_3_9
 
+# AWS
+AWS_ACCOUNT_NUM=getenv("AWS_ACCOUNT_NUM")
+AWS_DEFAULT_REGION=getenv("AWS_DEFAULT_REGION")
+AWS_REGION=getenv("AWS_REGION")
+
 # Cognito
 AUTHORIZATION_HEADER = "Authorization"
 COGNITO_POOLS_AUTH_ID = "cognito_pools_auth_id"
-COGNITO_DOMAIN_PREFIX = f"sbom-web-app-{env.get_aws_account()}"
-USER_POOL_DOMAIN_ID = f"SBOMUserPoolDomain{env.get_aws_account()}"
-USER_POOL_ID = f"SBOMUserPool_ID_{env.get_aws_account()}"
-USER_POOL_NAME = f"SBOMUserPool_{env.get_aws_account()}"
-USER_POOL_GROUP_ID = f"SBOMUserPoolGroup_Admin_ID_{env.get_aws_account()}"
-USER_POOL_GROUP_NAME = f"SBOMUserPoolGroup_Admin_{env.get_aws_account()}"
+COGNITO_DOMAIN_PREFIX = f"sbom-web-app-{AWS_ACCOUNT_NUM}"
+USER_POOL_DOMAIN_ID = f"SBOMUserPoolDomain{AWS_ACCOUNT_NUM}"
+USER_POOL_ID = f"SBOMUserPool_ID_{AWS_ACCOUNT_NUM}"
+USER_POOL_NAME = f"SBOMUserPool_{AWS_ACCOUNT_NUM}"
+USER_POOL_GROUP_ID = f"SBOMUserPoolGroup_Admin_ID_{AWS_ACCOUNT_NUM}"
+USER_POOL_GROUP_NAME = f"SBOMUserPoolGroup_Admin_{AWS_ACCOUNT_NUM}"
 USER_POOL_GROUP_DESCRIPTION = "Default group for authenticated administrator users"
 USER_POOL_APP_CLIENT_ID = "SBOMUserPool_AppClient"
 USER_POOL_APP_CLIENT_NAME = "SBOMUserPool_App"
@@ -71,13 +77,13 @@ SBOM_INGRESS_API_ID = "SBOM-API"
 REST_API_NAME = "SBOMApi"
 
 # S3 - SBOMs
-S3_BUCKET_ID = f"sbom.bucket.id.{env.get_aws_account()}"
-S3_BUCKET_NAME = f"sbom.bucket.{env.get_aws_account()}"
+S3_BUCKET_ID = f"sbom.bucket.id.{AWS_ACCOUNT_NUM}"
+S3_BUCKET_NAME = f"sbom.bucket.{AWS_ACCOUNT_NUM}"
 INGRESS_BUCKET_NAME = f"ingress.{S3_BUCKET_NAME}"
 ENRICHMENT_BUCKET_NAME = f"enrichment.{S3_BUCKET_NAME}"
 
 # S3 - UI
-S3_WS_BUCKET_NAME = f"sbom.webapp.bucket.{env.get_aws_account()}"
+S3_WS_BUCKET_NAME = f"sbom.webapp.bucket.{AWS_ACCOUNT_NUM}"
 S3_WS_BUCKET_ID = f"{S3_WS_BUCKET_NAME}.id"
 UI_CONFIG_FILE_NAME = "config.json"
 UI_DEPLOYMENT_ID = "ui_deployment_id"
@@ -115,4 +121,4 @@ API_GW_URL_KEY = "apigw_url"
 
 # Cloudfront
 CLOUDFRONT_DIST_NAME = "sbomapidistribution"
-CLOUDFRONT_BUCKET_NAME = f"cloudfront.logging.bucket.{env.get_aws_account()}"
+CLOUDFRONT_BUCKET_NAME = f"cloudfront.logging.bucket.{AWS_ACCOUNT_NUM}"

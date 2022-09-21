@@ -1,14 +1,15 @@
 """ This module is the start of the deployment for SBOM-API """
-import os
 from os import system
-
 import aws_cdk as cdk
 from aws_cdk import (
     aws_cognito as cognito,
     aws_events as eventbridge,
 )
-
-from deploy.constants import CONFIG
+from deploy.constants import (
+    AWS_ACCOUNT_NUM,
+    AWS_DEFAULT_REGION,
+    AWS_REGION,
+)
 from deploy.stacks import (
     SBOMEnrichmentPiplineStack,
     SBOMIngressPiplineStack,
@@ -26,13 +27,9 @@ def dodep() -> None:
     construct the resources necessary to run the app.
     """
 
-    default_region = CONFIG["AWS_DEFAULT_REGION"]
-    region = CONFIG["AWS_REGION"]
-    account = os.environ.get("AWS_ACCOUNT_NUM")
-
     env = cdk.Environment(
-        account=account,
-        region = region if region is not None else default_region,
+        account=AWS_ACCOUNT_NUM,
+        region=AWS_REGION if AWS_REGION is not None else AWS_DEFAULT_REGION,
     )
 
     # Create the CDK app to pass into all the Stacks
