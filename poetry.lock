@@ -517,6 +517,14 @@ typeguard = ">=2.13.3,<2.14.0"
 typing-extensions = ">=3.7,<5.0"
 
 [[package]]
+name = "json-normalize"
+version = "1.0.0"
+description = "Recursively flattens a JSON-like structure into a list of flat dicts."
+category = "main"
+optional = false
+python-versions = "~=3.7"
+
+[[package]]
 name = "jsonschema"
 version = "4.15.0"
 description = "An implementation of JSON Schema validation for Python"
@@ -1129,6 +1137,17 @@ python-versions = ">=3.7"
 watchdog = ["watchdog"]
 
 [[package]]
+name = "werkzeug"
+version = "2.1.2"
+description = "The comprehensive WSGI web application library."
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.extras]
+watchdog = ["watchdog"]
+
+[[package]]
 name = "wrapt"
 version = "1.14.1"
 description = "Module for decorators, wrappers and monkey patching."
@@ -1219,6 +1238,7 @@ jedi = [
 jinja2 = []
 jmespath = []
 jsii = []
+json-normalize = []
 jsonschema = []
 lazy-object-proxy = [
     {file = "lazy-object-proxy-1.7.1.tar.gz", hash = "sha256:d609c75b986def706743cdebe5e47553f4a5a1da9c5ff66d76013ef396b5a8a4"},
@@ -1318,7 +1338,10 @@ py = [
 pycparser = []
 pygments = []
 pylint = []
-pyparsing = []
+pyparsing = [
+    {file = "pyparsing-3.0.9-py3-none-any.whl", hash = "sha256:5026bae9a10eeaefb61dab2f09052b9f4307d44aee4eda64b309723d8d206bbc"},
+    {file = "pyparsing-3.0.9.tar.gz", hash = "sha256:2b020ecf7d21b687f219b71ecad3631f644a47f01403fa1d1036b0c6416d70fb"},
+]
 pyrsistent = [
     {file = "pyrsistent-0.18.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:df46c854f490f81210870e509818b729db4488e1f30f2a1ce1698b2295a878d1"},
     {file = "pyrsistent-0.18.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5d45866ececf4a5fff8742c25722da6d4c9e180daa7b405dc0a2a2790d668c26"},

@@ -2,6 +2,7 @@
 """ Database and Model tests for Creating objects in the HarborTeamsTable """
 
 import uuid
+from decimal import Decimal
 
 from cyclonedx.constants import (
     HARBOR_TEAMS_TABLE_PARTITION_KEY,
@@ -14,41 +15,22 @@ from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
 from cyclonedx.model.token import Token
-from decimal import Decimal
 
-from tests import (
-    dynamodb_test_resources,
-    setup_database_tests,
-    teardown_database_tests,
-    database_smoke_test,
-)
 
-dynamodb_resources = dynamodb_test_resources["dynamodb"]
-dynamodb_resource = dynamodb_resources["resource"]
-dynamodb_client = dynamodb_resources["client"]
-harbor_teams_table = dynamodb_resources["table"]
-setup_function = setup_database_tests
-teardown_function = teardown_database_tests
-
-# This is a smoke test designed to be sure we have
-# database connectivity before launching into the
-# actual tests
-test_database = database_smoke_test
-
-def test_create_team_only():
+def test_create_team_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     entity_type = "team"
     team_name = "Dawn Patrol"
 
-    HarborDBClient(dynamodb_resource).create(
+    HarborDBClient(test_dynamo_db_resource).create(
         Team(
             team_id=team_id,
             name=team_name,
         )
     )
 
-    team = harbor_teams_table.get_item(
+    team = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: EntityType.TEAM.value,
@@ -62,12 +44,12 @@ def test_create_team_only():
     assert team_name == item["name"]
 
 
-def test_create_project_only():
+def test_create_project_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
 
-    HarborDBClient(dynamodb_resource).create(
+    HarborDBClient(test_dynamo_db_resource).create(
         Project(
             team_id=team_id,
             project_id=project_id,
@@ -76,7 +58,7 @@ def test_create_project_only():
     )
 
     pet = EntityType.PROJECT.value
-    project = harbor_teams_table.get_item(
+    project = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: "{}#{}".format(pet, project_id),
@@ -90,7 +72,7 @@ def test_create_project_only():
     assert project_id == item["name"]
 
 
-def test_create_codebase_only():
+def test_create_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
@@ -99,7 +81,7 @@ def test_create_codebase_only():
     language = "JAVASCRIPT"
     build_tool = "YARN"
 
-    HarborDBClient(dynamodb_resource).create(
+    HarborDBClient(test_dynamo_db_resource).create(
         CodeBase(
             team_id=team_id,
             project_id=project_id,
@@ -111,7 +93,7 @@ def test_create_codebase_only():
     )
 
     cet = EntityType.CODEBASE.value
-    codebase = harbor_teams_table.get_item(
+    codebase = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: "{}#{}".format(cet, codebase_id),
@@ -125,12 +107,12 @@ def test_create_codebase_only():
     assert codebase_id == item["name"]
 
 
-def test_create_member_only():
+def test_create_member_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     member_id = str(uuid.uuid4())
 
-    HarborDBClient(dynamodb_resource).create(
+    HarborDBClient(test_dynamo_db_resource).create(
         Member(
             team_id=team_id,
             member_id=member_id,
@@ -140,7 +122,7 @@ def test_create_member_only():
     )
 
     met = EntityType.MEMBER.value
-    member = harbor_teams_table.get_item(
+    member = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: "{}#{}".format(met, member_id),
@@ -155,7 +137,7 @@ def test_create_member_only():
     assert item["isTeamLead"]
 
 
-def test_create_token_only():
+def test_create_token_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     token_id = str(uuid.uuid4())
@@ -164,7 +146,7 @@ def test_create_token_only():
     created = Decimal(507482179.234)
     expires = Decimal(507492179.234)
 
-    HarborDBClient(dynamodb_resource).create(
+    HarborDBClient(test_dynamo_db_resource).create(
         Token(
             team_id=team_id,
             token_id=token_id,
@@ -176,7 +158,7 @@ def test_create_token_only():
     )
 
     tet = EntityType.TOKEN.value
-    token = harbor_teams_table.get_item(
+    token = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: "{}#{}".format(tet, token_id),
@@ -192,12 +174,12 @@ def test_create_token_only():
     assert expires == item["expires"]
     assert token_val == item["token"]
 
-def test_create_team_with_project():
+def test_create_team_with_project(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
 
-    HarborDBClient(dynamodb_resource).create(
+    HarborDBClient(test_dynamo_db_resource).create(
         Team(
             team_id=team_id,
             name=team_id,
@@ -212,7 +194,7 @@ def test_create_team_with_project():
         recurse=True,
     )
 
-    team = harbor_teams_table.get_item(
+    team = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: EntityType.TEAM.value,
@@ -220,7 +202,7 @@ def test_create_team_with_project():
     )
 
     pet = EntityType.PROJECT.value
-    project = harbor_teams_table.get_item(
+    project = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: "{}#{}".format(pet, project_id),
@@ -239,7 +221,7 @@ def test_create_team_with_project():
     assert project_id == project_item["name"]
 
 
-def test_create_team_with_a_child_of_each_type():
+def test_create_team_with_a_child_of_each_type(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
@@ -254,7 +236,7 @@ def test_create_team_with_a_child_of_each_type():
     expires = Decimal(507492179.234)
     token_val = str(uuid.uuid4())
 
-    HarborDBClient(dynamodb_resource).create(
+    HarborDBClient(test_dynamo_db_resource).create(
         Team(
             team_id=team_id,
             name=team_id,
@@ -297,7 +279,7 @@ def test_create_team_with_a_child_of_each_type():
         recurse=True,
     )
 
-    team = harbor_teams_table.get_item(
+    team = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: EntityType.TEAM.value,
@@ -305,7 +287,7 @@ def test_create_team_with_a_child_of_each_type():
     )
 
     pet = EntityType.PROJECT.value
-    project = harbor_teams_table.get_item(
+    project = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: "{}#{}".format(pet, project_id),
@@ -313,7 +295,7 @@ def test_create_team_with_a_child_of_each_type():
     )
 
     cet = EntityType.CODEBASE.value
-    codebase = harbor_teams_table.get_item(
+    codebase = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: "{}#{}".format(cet, codebase_id),
@@ -321,7 +303,7 @@ def test_create_team_with_a_child_of_each_type():
     )
 
     met = EntityType.MEMBER.value
-    member = harbor_teams_table.get_item(
+    member = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: "{}#{}".format(met, member_id),
@@ -329,7 +311,7 @@ def test_create_team_with_a_child_of_each_type():
     )
 
     tet = EntityType.TOKEN.value
-    token = harbor_teams_table.get_item(
+    token = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: "{}#{}".format(tet, token_id),

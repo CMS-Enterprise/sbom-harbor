@@ -2,6 +2,8 @@
 """ Database and Model tests for Creating objects in the HarborTeamsTable """
 
 import uuid
+from decimal import Decimal
+
 import pytest
 
 from cyclonedx.constants import (
@@ -15,28 +17,13 @@ from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
 from cyclonedx.model.token import Token
-from decimal import Decimal
 
-from tests import (
-    dynamodb_test_resources,
-    get_ek, setup_database_tests,
-    teardown_database_tests,
-    database_smoke_test,
-)
 
-dynamodb_resources = dynamodb_test_resources["dynamodb"]
-dynamodb_resource = dynamodb_resources["resource"]
-dynamodb_client = dynamodb_resources["client"]
-harbor_teams_table = dynamodb_resources["table"]
-setup_function = setup_database_tests
-teardown_function = teardown_database_tests
+def get_ek(et: str, model_id: str):
+    return "{}#{}".format(et, model_id)
 
-# This is a smoke test designed to be sure we have
-# database connectivity before launching into the
-# actual tests
-test_database = database_smoke_test
 
-def test_update_team_only():
+def test_update_team_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     entity_type = EntityType.TEAM.value
@@ -45,7 +32,7 @@ def test_update_team_only():
 
     try:
 
-        HarborDBClient(dynamodb_resource).update(
+        HarborDBClient(test_dynamo_db_resource).update(
             Team(
                 team_id=team_id,
                 name=team_name,
@@ -57,7 +44,7 @@ def test_update_team_only():
         ...
 
     # Put the Item
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: entity_type,
@@ -65,7 +52,7 @@ def test_update_team_only():
         }
     )
 
-    team = harbor_teams_table.get_item(
+    team = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: EntityType.TEAM.value,
@@ -77,14 +64,14 @@ def test_update_team_only():
     assert entity_type == item[HARBOR_TEAMS_TABLE_SORT_KEY]
     assert team_name == item[Team.Fields.NAME]
 
-    HarborDBClient(dynamodb_resource).update(
+    HarborDBClient(test_dynamo_db_resource).update(
         Team(
             team_id=team_id,
             name=new_team_name,
         )
     )
 
-    team = harbor_teams_table.get_item(
+    team = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: EntityType.TEAM.value,
@@ -97,7 +84,7 @@ def test_update_team_only():
     assert new_team_name == item[Team.Fields.NAME]
 
 
-def test_update_project_only():
+def test_update_project_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     entity_type = EntityType.PROJECT.value
 
@@ -108,7 +95,7 @@ def test_update_project_only():
 
     try:
 
-        HarborDBClient(dynamodb_resource).update(
+        HarborDBClient(test_dynamo_db_resource).update(
             Project(
                 team_id=team_id,
                 project_id=project_id,
@@ -123,7 +110,7 @@ def test_update_project_only():
     entity_key = get_ek(entity_type, project_id)
 
     # Put the Item
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: entity_key,
@@ -131,7 +118,7 @@ def test_update_project_only():
         }
     )
 
-    project = harbor_teams_table.get_item(
+    project = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: entity_key,
@@ -143,7 +130,7 @@ def test_update_project_only():
     assert entity_key == item[HARBOR_TEAMS_TABLE_SORT_KEY]
     assert project_name == item[Project.Fields.NAME]
 
-    HarborDBClient(dynamodb_resource).update(
+    HarborDBClient(test_dynamo_db_resource).update(
         Project(
             team_id=team_id,
             project_id=project_id,
@@ -151,7 +138,7 @@ def test_update_project_only():
         )
     )
 
-    project = harbor_teams_table.get_item(
+    project = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: entity_key,
@@ -164,7 +151,7 @@ def test_update_project_only():
     assert new_project_name == item[Project.Fields.NAME]
 
 
-def test_update_codebase_only():
+def test_update_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     entity_type = EntityType.CODEBASE.value
 
@@ -182,7 +169,7 @@ def test_update_codebase_only():
 
     try:
 
-        HarborDBClient(dynamodb_resource).update(
+        HarborDBClient(test_dynamo_db_resource).update(
             CodeBase(
                 team_id=team_id,
                 codebase_id=codebase_id,
@@ -200,7 +187,7 @@ def test_update_codebase_only():
     entity_key = get_ek(entity_type, codebase_id)
 
     # Put the Item
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: entity_key,
@@ -211,7 +198,7 @@ def test_update_codebase_only():
         }
     )
 
-    codebase = harbor_teams_table.get_item(
+    codebase = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: entity_key,
@@ -226,7 +213,7 @@ def test_update_codebase_only():
     assert build_tool == item[CodeBase.Fields.BUILD_TOOL]
     assert language == item[CodeBase.Fields.LANGUAGE]
 
-    HarborDBClient(dynamodb_resource).update(
+    HarborDBClient(test_dynamo_db_resource).update(
         CodeBase(
             team_id=team_id,
             codebase_id=codebase_id,
@@ -237,7 +224,7 @@ def test_update_codebase_only():
         )
     )
 
-    codebase = harbor_teams_table.get_item(
+    codebase = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: entity_key,
@@ -253,7 +240,7 @@ def test_update_codebase_only():
     assert language == item[CodeBase.Fields.LANGUAGE]
 
 
-def test_update_member_only():
+def test_update_member_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     entity_type = EntityType.MEMBER.value
 
@@ -268,7 +255,7 @@ def test_update_member_only():
 
     try:
 
-        HarborDBClient(dynamodb_resource).update(
+        HarborDBClient(test_dynamo_db_resource).update(
             Member(
                 team_id=team_id,
                 member_id=member_id,
@@ -284,7 +271,7 @@ def test_update_member_only():
     entity_key = get_ek(entity_type, member_id)
 
     # Put the Item
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: entity_key,
@@ -293,7 +280,7 @@ def test_update_member_only():
         }
     )
 
-    codebase = harbor_teams_table.get_item(
+    codebase = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: entity_key,
@@ -306,7 +293,7 @@ def test_update_member_only():
     assert email == item[Member.Fields.EMAIL]
     assert is_team_lead == item[Member.Fields.IS_TEAM_LEAD]
 
-    HarborDBClient(dynamodb_resource).update(
+    HarborDBClient(test_dynamo_db_resource).update(
         Member(
             team_id=team_id,
             member_id=member_id,
@@ -315,7 +302,7 @@ def test_update_member_only():
         )
     )
 
-    codebase = harbor_teams_table.get_item(
+    codebase = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: entity_key,
@@ -329,7 +316,7 @@ def test_update_member_only():
     assert not_team_lead_anymore == item[Member.Fields.IS_TEAM_LEAD]
 
 
-def test_update_token_only():
+def test_update_token_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     entity_type = EntityType.TOKEN.value
 
@@ -345,7 +332,7 @@ def test_update_token_only():
 
     try:
 
-        HarborDBClient(dynamodb_resource).update(
+        HarborDBClient(test_dynamo_db_resource).update(
             Token(
                 team_id=team_id,
                 token_id=token_id,
@@ -363,7 +350,7 @@ def test_update_token_only():
     entity_key = get_ek(entity_type, token_id)
 
     # Put the Item
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: entity_key,
@@ -374,7 +361,7 @@ def test_update_token_only():
         }
     )
 
-    token = harbor_teams_table.get_item(
+    token = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: entity_key,
@@ -389,7 +376,7 @@ def test_update_token_only():
     assert expires == item[Token.Fields.EXPIRES]
     assert token_val == item[Token.Fields.TOKEN]
 
-    HarborDBClient(dynamodb_resource).update(
+    HarborDBClient(test_dynamo_db_resource).update(
         Token(
             team_id=team_id,
             token_id=token_id,
@@ -400,7 +387,7 @@ def test_update_token_only():
         )
     )
 
-    codebase = harbor_teams_table.get_item(
+    codebase = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: entity_key,
@@ -416,7 +403,7 @@ def test_update_token_only():
     assert token_val == item[Token.Fields.TOKEN]
 
 
-def test_update_team_with_a_child_of_each_type():
+def test_update_team_with_a_child_of_each_type(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
@@ -447,7 +434,7 @@ def test_update_team_with_a_child_of_each_type():
     new_token_val = str(uuid.uuid4())
 
     # Put the Team
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: EntityType.TEAM.value,
@@ -458,7 +445,7 @@ def test_update_team_with_a_child_of_each_type():
     # Put the Project
     pet = EntityType.PROJECT.value
     project_range_key = "{}#{}".format(pet, project_id)
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: project_range_key,
@@ -469,7 +456,7 @@ def test_update_team_with_a_child_of_each_type():
     # Put the Codebase
     cet = EntityType.CODEBASE.value
     codebase_range_key = "{}#{}".format(cet, codebase_id)
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: codebase_range_key,
@@ -482,7 +469,7 @@ def test_update_team_with_a_child_of_each_type():
     # Put the Member
     met = EntityType.MEMBER.value
     member_range_key = "{}#{}".format(met, member_id)
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: member_range_key,
@@ -493,7 +480,7 @@ def test_update_team_with_a_child_of_each_type():
     # Put the Token
     tet = EntityType.TOKEN.value
     token_range_key = "{}#{}".format(tet, token_id)
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: token_range_key,
@@ -504,7 +491,7 @@ def test_update_team_with_a_child_of_each_type():
         }
     )
 
-    HarborDBClient(dynamodb_resource).update(
+    HarborDBClient(test_dynamo_db_resource).update(
         Team(
             team_id=team_id,
             name=new_team_name,
@@ -547,7 +534,7 @@ def test_update_team_with_a_child_of_each_type():
         recurse=True,
     )
 
-    team = harbor_teams_table.get_item(
+    team = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: EntityType.TEAM.value,
@@ -555,7 +542,7 @@ def test_update_team_with_a_child_of_each_type():
     )
 
     pet = EntityType.PROJECT.value
-    project = harbor_teams_table.get_item(
+    project = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: "{}#{}".format(pet, project_id),
@@ -563,7 +550,7 @@ def test_update_team_with_a_child_of_each_type():
     )
 
     cet = EntityType.CODEBASE.value
-    codebase = harbor_teams_table.get_item(
+    codebase = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: "{}#{}".format(cet, codebase_id),
@@ -571,7 +558,7 @@ def test_update_team_with_a_child_of_each_type():
     )
 
     met = EntityType.MEMBER.value
-    member = harbor_teams_table.get_item(
+    member = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: "{}#{}".format(met, member_id),
@@ -579,7 +566,7 @@ def test_update_team_with_a_child_of_each_type():
     )
 
     tet = EntityType.TOKEN.value
-    token = harbor_teams_table.get_item(
+    token = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: "{}#{}".format(tet, token_id),

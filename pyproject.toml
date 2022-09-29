@@ -33,6 +33,7 @@ dparse = "^0.5.1"
 pytest-mock = "^3.8.2"
 moto = "^4.0.1"
 docker = "^5.0.3"
+json-normalize = "^1.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

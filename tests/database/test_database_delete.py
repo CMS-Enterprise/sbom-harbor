@@ -2,6 +2,7 @@
 """ Database and Model tests for Deleting objects in the HarborTeamsTable """
 
 import uuid
+from decimal import Decimal
 
 import pytest
 
@@ -16,35 +17,16 @@ from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
 from cyclonedx.model.token import Token
-from decimal import Decimal
 
-from tests import (
-    dynamodb_test_resources,
-    setup_database_tests,
-    teardown_database_tests,
-    database_smoke_test,
-)
 
-dynamodb_resources = dynamodb_test_resources["dynamodb"]
-dynamodb_resource = dynamodb_resources["resource"]
-dynamodb_client = dynamodb_resources["client"]
-harbor_teams_table = dynamodb_resources["table"]
-setup_function = setup_database_tests
-teardown_function = teardown_database_tests
-
-# This is a smoke test designed to be sure we have
-# database connectivity before launching into the
-# actual tests
-test_database = database_smoke_test
-
-def test_delete_team_only():
+def test_delete_team_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     entity_type = EntityType.TEAM.value
     team_name = "Dawn Patrol"
 
     # Put the Item
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: entity_type,
@@ -53,7 +35,7 @@ def test_delete_team_only():
     )
 
     # Verify that the item is there
-    team = harbor_teams_table.get_item(
+    team = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: EntityType.TEAM.value,
@@ -66,7 +48,7 @@ def test_delete_team_only():
     assert team_name == item["name"]
 
     # Delete the item using the API
-    HarborDBClient(dynamodb_resource).delete(
+    HarborDBClient(test_dynamo_db_resource).delete(
         Team(
             team_id=team_id,
             name=team_name,
@@ -74,7 +56,7 @@ def test_delete_team_only():
     )
 
     # Verify the item is NOT there
-    team = harbor_teams_table.get_item(
+    team = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: EntityType.TEAM.value,
@@ -85,7 +67,7 @@ def test_delete_team_only():
         print(f"Exception here: {team['Item']}")
 
 
-def test_delete_project_only():
+def test_delete_project_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
@@ -94,7 +76,7 @@ def test_delete_project_only():
     range_key = "{}#{}".format(pet, project_id)
 
     # Put the Item
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: range_key,
@@ -102,7 +84,7 @@ def test_delete_project_only():
         }
     )
 
-    project = harbor_teams_table.get_item(
+    project = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: range_key,
@@ -115,7 +97,7 @@ def test_delete_project_only():
     assert project_id == item["name"]
 
     # Delete the item using the API
-    HarborDBClient(dynamodb_resource).delete(
+    HarborDBClient(test_dynamo_db_resource).delete(
         Project(
             team_id=team_id,
             project_id=project_id,
@@ -124,7 +106,7 @@ def test_delete_project_only():
     )
 
     # Verify the item is NOT there
-    project = harbor_teams_table.get_item(
+    project = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: range_key,
@@ -135,7 +117,7 @@ def test_delete_project_only():
         print(f"Exception here: {project['Item']}")
 
 
-def test_delete_codebase_only():
+def test_delete_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
@@ -148,7 +130,7 @@ def test_delete_codebase_only():
     build_tool = "YARN"
 
     # Put the Item
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: range_key,
@@ -159,7 +141,7 @@ def test_delete_codebase_only():
         }
     )
 
-    codebase = harbor_teams_table.get_item(
+    codebase = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: range_key,
@@ -174,7 +156,7 @@ def test_delete_codebase_only():
     assert language == item["language"]
     assert build_tool == item["build_tool"]
 
-    HarborDBClient(dynamodb_resource).delete(
+    HarborDBClient(test_dynamo_db_resource).delete(
         CodeBase(
             team_id=team_id,
             project_id=project_id,
@@ -185,7 +167,7 @@ def test_delete_codebase_only():
         )
     )
 
-    codebase = harbor_teams_table.get_item(
+    codebase = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: range_key,
@@ -196,7 +178,7 @@ def test_delete_codebase_only():
         print(f"Exception here: {codebase['Item']}")
 
 
-def test_delete_member_only():
+def test_delete_member_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     member_id = str(uuid.uuid4())
@@ -206,7 +188,7 @@ def test_delete_member_only():
     range_key = "{}#{}".format(met, member_id)
 
     # Put the Item
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: range_key,
@@ -215,7 +197,7 @@ def test_delete_member_only():
         }
     )
 
-    member = harbor_teams_table.get_item(
+    member = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: range_key,
@@ -228,7 +210,7 @@ def test_delete_member_only():
     assert email == item["email"]
     assert item["isTeamLead"]
 
-    HarborDBClient(dynamodb_resource).delete(
+    HarborDBClient(test_dynamo_db_resource).delete(
         Member(
             team_id=team_id,
             member_id=member_id,
@@ -237,7 +219,7 @@ def test_delete_member_only():
         )
     )
 
-    member = harbor_teams_table.get_item(
+    member = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: range_key,
@@ -248,7 +230,7 @@ def test_delete_member_only():
         print(f"Exception here: {member['Item']}")
 
 
-def test_delete_token_only():
+def test_delete_token_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     token_id = str(uuid.uuid4())
@@ -260,7 +242,7 @@ def test_delete_token_only():
     range_key = "{}#{}".format(tet, token_id)
 
     # Put the Item
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: range_key,
@@ -271,7 +253,7 @@ def test_delete_token_only():
         }
     )
 
-    token = harbor_teams_table.get_item(
+    token = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: range_key,
@@ -286,7 +268,7 @@ def test_delete_token_only():
     assert expires == item[Token.Fields.EXPIRES]
     assert token_val == item[Token.Fields.TOKEN]
 
-    HarborDBClient(dynamodb_resource).delete(
+    HarborDBClient(test_dynamo_db_resource).delete(
         Token(
             team_id=team_id,
             token_id=token_id,
@@ -297,7 +279,7 @@ def test_delete_token_only():
         )
     )
 
-    token = harbor_teams_table.get_item(
+    token = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: range_key,
@@ -308,7 +290,7 @@ def test_delete_token_only():
         print(f"Exception here: {token['Item']}")
 
 
-def test_delete_team_with_a_child_of_each_type():
+def test_delete_team_with_a_child_of_each_type(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
@@ -329,7 +311,7 @@ def test_delete_team_with_a_child_of_each_type():
     token_val = str(uuid.uuid4())
 
     # Put the Team
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: EntityType.TEAM.value,
@@ -340,7 +322,7 @@ def test_delete_team_with_a_child_of_each_type():
     # Put the Project
     pet = EntityType.PROJECT.value
     project_range_key = "{}#{}".format(pet, project_id)
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: project_range_key,
@@ -351,7 +333,7 @@ def test_delete_team_with_a_child_of_each_type():
     # Put the Codebase
     cet = EntityType.CODEBASE.value
     codebase_range_key = "{}#{}".format(cet, codebase_id)
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: codebase_range_key,
@@ -364,7 +346,7 @@ def test_delete_team_with_a_child_of_each_type():
     # Put the Member
     met = EntityType.MEMBER.value
     member_range_key = "{}#{}".format(met, member_id)
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: member_range_key,
@@ -375,7 +357,7 @@ def test_delete_team_with_a_child_of_each_type():
     # Put the Token
     tet = EntityType.TOKEN.value
     token_range_key = "{}#{}".format(tet, token_id)
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: token_range_key,
@@ -386,35 +368,35 @@ def test_delete_team_with_a_child_of_each_type():
         }
     )
 
-    team = harbor_teams_table.get_item(
+    team = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: EntityType.TEAM.value,
         }
     )
 
-    project = harbor_teams_table.get_item(
+    project = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: project_range_key,
         }
     )
 
-    codebase = harbor_teams_table.get_item(
+    codebase = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: codebase_range_key,
         }
     )
 
-    member = harbor_teams_table.get_item(
+    member = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: member_range_key,
         }
     )
 
-    token = harbor_teams_table.get_item(
+    token = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: token_range_key,
@@ -449,7 +431,7 @@ def test_delete_team_with_a_child_of_each_type():
     assert expires == token_item["expires"]
     assert token_val == token_item["token"]
 
-    HarborDBClient(dynamodb_resource).delete(
+    HarborDBClient(test_dynamo_db_resource).delete(
         Team(
             team_id=team_id,
             name=team_id,
@@ -492,7 +474,7 @@ def test_delete_team_with_a_child_of_each_type():
         recurse=True,
     )
 
-    team = harbor_teams_table.get_item(
+    team = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: EntityType.TEAM.value,
@@ -502,7 +484,7 @@ def test_delete_team_with_a_child_of_each_type():
     with pytest.raises(KeyError):
         print(f"Exception here: {team['Item']}")
 
-    project = harbor_teams_table.get_item(
+    project = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: project_range_key,
@@ -512,7 +494,7 @@ def test_delete_team_with_a_child_of_each_type():
     with pytest.raises(KeyError):
         print(f"Exception here: {project['Item']}")
 
-    codebase = harbor_teams_table.get_item(
+    codebase = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: codebase_range_key,
@@ -522,7 +504,7 @@ def test_delete_team_with_a_child_of_each_type():
     with pytest.raises(KeyError):
         print(f"Exception here: {codebase['Item']}")
 
-    member = harbor_teams_table.get_item(
+    member = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: member_range_key,
@@ -533,7 +515,7 @@ def test_delete_team_with_a_child_of_each_type():
         print(f"Exception here: {member['Item']}")
 
 
-    token = harbor_teams_table.get_item(
+    token = test_harbor_teams_table.get_item(
         Key={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: token_range_key,

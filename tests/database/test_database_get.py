@@ -2,9 +2,10 @@
 """ Database and Model tests for Getting objects in the HarborTeamsTable """
 
 import uuid
+from decimal import Decimal
 
 from cyclonedx.constants import (
-    HARBOR_TEAMS_TABLE_NAME, HARBOR_TEAMS_TABLE_PARTITION_KEY,
+    HARBOR_TEAMS_TABLE_PARTITION_KEY,
     HARBOR_TEAMS_TABLE_SORT_KEY,
 )
 from cyclonedx.db.harbor_db_client import HarborDBClient
@@ -13,34 +14,15 @@ from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
-from decimal import Decimal
-
 from cyclonedx.model.token import Token
-from tests import (
-    dynamodb_test_resources,
-    setup_database_tests,
-    teardown_database_tests,
-    database_smoke_test,
-)
 
-dynamodb_resources = dynamodb_test_resources["dynamodb"]
-dynamodb_resource = dynamodb_resources["resource"]
-dynamodb_client = dynamodb_resources["client"]
-harbor_teams_table = dynamodb_resource.Table(HARBOR_TEAMS_TABLE_NAME)
-setup_function = setup_database_tests
-teardown_function = teardown_database_tests
 
-# This is a smoke test designed to be sure we have
-# database connectivity before launching into the
-# actual tests
-test_database = database_smoke_test
-
-def test_get_team_only():
+def test_get_team_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = 'dawn-patrol'
 
     # Put the Team
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: EntityType.TEAM.value,
@@ -49,7 +31,7 @@ def test_get_team_only():
     )
 
     # Get the Team using the API
-    team: Team = HarborDBClient(dynamodb_resource).get(
+    team: Team = HarborDBClient(test_dynamo_db_resource).get(
         Team(
             team_id=team_id
         )
@@ -59,7 +41,7 @@ def test_get_team_only():
     assert team.entity_key == EntityType.TEAM.value
     assert team.name == team_id
 
-def test_get_project_only():
+def test_get_project_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id: str = 'dawn-patrol'
     project_id: str = str(uuid.uuid4())
@@ -69,7 +51,7 @@ def test_get_project_only():
     sort_key = "{}#{}".format(pet, project_id)
 
     # Put the Team
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: sort_key,
@@ -78,7 +60,7 @@ def test_get_project_only():
     )
 
     # Get the Team using the API
-    filled_project: Project = HarborDBClient(dynamodb_resource).get(
+    filled_project: Project = HarborDBClient(test_dynamo_db_resource).get(
         Project(
             team_id=team_id,
             project_id=project_id,
@@ -90,7 +72,7 @@ def test_get_project_only():
     assert filled_project._name == project_name
 
 
-def test_get_codebase_only():
+def test_get_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id: str = 'dawn-patrol'
     codebase_id: str = str(uuid.uuid4())
@@ -103,7 +85,7 @@ def test_get_codebase_only():
     sort_key = "{}#{}".format(cet, codebase_id)
 
     # Put the Codebase
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: sort_key,
@@ -115,7 +97,7 @@ def test_get_codebase_only():
     )
 
     # Get the Team using the API
-    filled_codebase: CodeBase = HarborDBClient(dynamodb_resource).get(
+    filled_codebase: CodeBase = HarborDBClient(test_dynamo_db_resource).get(
         CodeBase(
             team_id=team_id,
             codebase_id=codebase_id,
@@ -129,7 +111,7 @@ def test_get_codebase_only():
     assert filled_codebase.language == language
     assert filled_codebase.build_tool == build_tool
 
-def test_get_member_only():
+def test_get_member_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     member_id = str(uuid.uuid4())
@@ -139,7 +121,7 @@ def test_get_member_only():
     sort_key = "{}#{}".format(met, member_id)
 
     # Put the Item
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: sort_key,
@@ -148,7 +130,7 @@ def test_get_member_only():
         }
     )
 
-    member: Member = HarborDBClient(dynamodb_resource).get(
+    member: Member = HarborDBClient(test_dynamo_db_resource).get(
         Member(
             team_id=team_id,
             member_id=member_id,
@@ -161,7 +143,7 @@ def test_get_member_only():
     assert member.is_team_lead == True
 
 
-def test_get_token_only():
+def test_get_token_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     token_id = str(uuid.uuid4())
@@ -173,7 +155,7 @@ def test_get_token_only():
     sort_key = "{}#{}".format(tet, token_id)
 
     # Put the Item
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: sort_key,
@@ -184,7 +166,7 @@ def test_get_token_only():
         }
     )
 
-    token: Token = HarborDBClient(dynamodb_resource).get(
+    token: Token = HarborDBClient(test_dynamo_db_resource).get(
         Token(
             team_id=team_id,
             token_id=token_id,
@@ -198,12 +180,12 @@ def test_get_token_only():
     assert token.expires == expires
     assert token.token == token_val
 
-def test_get_team_recursively():
+def test_get_team_recursively(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = 'dawn-patrol'
 
     # Put the Team
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: EntityType.TEAM.value,
@@ -216,7 +198,7 @@ def test_get_team_recursively():
     project0_name = "project-0"
 
     # Put the first Project
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: project0_entity_key,
@@ -230,7 +212,7 @@ def test_get_team_recursively():
     project1_name = "project-1"
 
     # Put the second Project
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: project1_entity_key,
@@ -246,7 +228,7 @@ def test_get_team_recursively():
     build_tool = "MAVEN"
 
     # Put A Codebase in and associate it to project1_id
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: codebase_entity_key,
@@ -262,7 +244,7 @@ def test_get_team_recursively():
     project2_name = "project-2"
 
     # Put the third, unrelated Project
-    harbor_teams_table.put_item(
+    test_harbor_teams_table.put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: "Different-Parent",
             HARBOR_TEAMS_TABLE_SORT_KEY: project2_entity_key,
@@ -272,7 +254,7 @@ def test_get_team_recursively():
     )
 
     # Get the Team using the API
-    team: Team = HarborDBClient(dynamodb_resource).get(
+    team: Team = HarborDBClient(test_dynamo_db_resource).get(
         Team(
             team_id=team_id
         ),
