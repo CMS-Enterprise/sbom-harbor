@@ -1,7 +1,18 @@
+/**
+ * Service responsible for making teams related API requests, and
+ * for mapping the raw API response of teams data to the UI state.
+ * @module @cyclonedx/ui/sbom/services/UserService
+ *
+ */
 import { Auth } from '@aws-amplify/auth'
 import { USER_API_URL } from '@/utils/constants'
 import { CognitoUserInfo, Team } from '@/utils/types'
 
+/**
+ * Gets all teams for the current authenticated user.
+ * @param {AbortController} [abortController] - Optional cancel request controller.
+ * @returns {Promise<Team[]>} A Promise that resolves to an array of teams.
+ */
 export const getTeams = async (
   abortController?: AbortController
 ): Promise<Team[]> => {
@@ -10,12 +21,13 @@ export const getTeams = async (
     Auth.currentSession().then((session) => session.getIdToken().getJwtToken()),
   ])
 
-  // FIXME: "@" character is not allowed in the URL
+  // FIXME: "@" character is not allowed in valid URLs, so we need to encode it
   const url = `${USER_API_URL}/teams?user_id=${user.attributes.email}`
-
-  // TODO: instead use url.addQueryParameter() to add the email param
-  //* const url = new URL(USER_API_URL)
-  //* url.searchParams.append('user_id', user.attributes.email)
+  /**
+   * @example
+   * const url = new URL(USER_API_URL)
+   * url.searchParams.append('user_id', user.attributes.email)
+   */
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },

@@ -17,20 +17,19 @@ import Cog from 'mdi-material-ui/Cog'
 import AccountOutline from 'mdi-material-ui/AccountOutline'
 
 // ** App Imports
-import { ThemeColor } from '@/layouts/types'
 import { getInitials } from '@/utils/get-initials'
-import Chip from '@/components/mui/chip'
 import Avatar from '@/components/mui/avatar'
 
 export interface TableBodyRowType {
+  // ** required properties
+  email: string
+  isTeamLead: boolean
+  // ** required properties
+  avatarSrc?: string
   id?: number
   name?: string
-  email: string
-  username?: string
-  avatarSrc?: string
-  status?: 'active' | 'pending' | 'inactive' | 'unknown'
-  isTeamLead: boolean
   role?: 'admin' | 'member'
+  username?: string
 }
 
 export interface CellType {
@@ -43,12 +42,6 @@ export interface RoleObj {
   }
 }
 
-interface StatusObj {
-  [key: string]: {
-    color: ThemeColor
-  }
-}
-
 const roleObj: RoleObj = {
   admin: {
     icon: <Cog sx={{ mr: 2, color: 'error.main' }} />,
@@ -56,13 +49,6 @@ const roleObj: RoleObj = {
   member: {
     icon: <AccountOutline sx={{ mr: 2, color: 'primary.main' }} />,
   },
-}
-
-const statusObj: StatusObj = {
-  active: { color: 'success' },
-  pending: { color: 'warning' },
-  inactive: { color: 'secondary' },
-  unknown: { color: 'error' },
 }
 
 const StyledAvatar = styled(Avatar, {
@@ -90,37 +76,38 @@ const StyledAvatar = styled(Avatar, {
  * @param {string} props.name - The user's full name.
  * @returns {JSX.Element} A component that renders a table row.
  */
-const UserAvatar = ({ avatarSrc, name }: TableBodyRowType) => {
-  if (avatarSrc) {
-    return <StyledAvatar src={avatarSrc} />
-  }
-
-  return (
-    <StyledAvatar skin="light" sx={{ fontSize: '.8rem' }}>
-      {getInitials(name ? name : ' ')}
+const UserAvatar = ({ avatarSrc, name, email }: TableBodyRowType) => (
+  <>
+    {avatarSrc && <StyledAvatar src={avatarSrc} />}
+    <StyledAvatar
+      sx={{
+        fontSize: '.9rem',
+        textTransform: 'uppercase',
+      }}
+    >
+      {getInitials({ name, email })}
     </StyledAvatar>
-  )
-}
+  </>
+)
 
 const columns: GridColDef[] = [
   {
-    flex: 0.25,
+    flex: 0.05,
+    field: 'avatarSrc',
+    headerName: '',
+    renderCell: ({ row }: CellType) => {
+      return <UserAvatar {...row} />
+    },
+  },
+  {
+    flex: 0.33,
     field: 'name',
-    minWidth: 200,
     headerName: 'User',
     renderCell: ({ row }: CellType) => {
       return (
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <UserAvatar {...row} />
-          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="subtitle2" sx={{ color: 'text.primary' }}>
-              {row.name}
-            </Typography>
-            <Typography variant="caption" sx={{ lineHeight: 1.6667 }}>
-              {row.username}
-            </Typography>
-          </Box>
-        </Box>
+        <Typography variant="body2" sx={{ color: 'text.primary' }}>
+          {row.email.split('@')[0]}
+        </Typography>
       )
     },
   },
@@ -138,7 +125,9 @@ const columns: GridColDef[] = [
     minWidth: 130,
     field: 'role',
     headerName: 'Role',
-    renderCell: ({ row: { role = 'member' } }: CellType) => (
+    renderCell: ({
+      row: { isTeamLead = false, role = isTeamLead ? 'admin' : 'member' },
+    }: CellType) => (
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         {roleObj[role].icon}
         <Typography
@@ -147,24 +136,6 @@ const columns: GridColDef[] = [
           {role}
         </Typography>
       </Box>
-    ),
-  },
-  {
-    flex: 0.15,
-    minWidth: 110,
-    field: 'status',
-    headerName: 'Status',
-    renderCell: ({ row: { status = 'unknown' } }: CellType) => (
-      <Chip
-        skin="light"
-        size="small"
-        label={status}
-        color={statusObj[status || 'member'].color}
-        sx={{
-          textTransform: 'capitalize',
-          '& .MuiChip-label': { px: 2.5, lineHeight: 1.385 },
-        }}
-      />
     ),
   },
 ]
