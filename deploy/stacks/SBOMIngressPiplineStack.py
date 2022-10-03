@@ -10,6 +10,7 @@ from aws_cdk import (
     aws_ec2 as ec2,
     aws_cognito as cognito,
     aws_s3 as s3,
+    aws_lambda as lambda_,
     Stack,
 )
 from aws_cdk.aws_apigatewayv2_alpha import (
@@ -101,7 +102,10 @@ class SBOMIngressPiplineStack(Stack):
             ),
         )
 
-        authorizer_factory = AuthorizerLambdaFactory(self, vpc)
+        authorizer_factory = AuthorizerLambdaFactory(
+            self,
+            vpc=vpc,
+        )
 
         self.__enable_logging(self.api, False)
         self.__generate_apigw_url_output()

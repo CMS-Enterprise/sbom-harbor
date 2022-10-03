@@ -2,12 +2,14 @@
 """This Stack is used to set up shared resources
 that the other stacks use when deploying the application"""
 
+from os import path
 from constructs import Construct
 from aws_cdk import (
     aws_s3 as s3,
     aws_ec2 as ec2,
     aws_events as eventbridge,
     aws_dynamodb as dynamodb,
+    aws_lambda as lambda_,
     RemovalPolicy,
     Stack,
 )
@@ -61,6 +63,8 @@ class SBOMSharedResourceStack(Stack):
             self, EVENT_BUS_NAME,
             event_bus_name=EVENT_BUS_NAME,
         )
+
+        __cwd = path.dirname(__file__)
 
         team_table: dynamodb.Table = SBOMTeamTable(self).get_construct()
         team_member_table: dynamodb.Table = SBOMTeamMemberTable(self).get_construct()

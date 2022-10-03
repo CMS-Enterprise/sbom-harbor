@@ -1,7 +1,13 @@
+"""Factory for generating Authorizer Lambdas"""
+
 from aws_cdk import (
     aws_ec2 as ec2,
     aws_lambda as lambda_,
     Duration,
+)
+from aws_cdk.aws_iam import (
+    PolicyStatement,
+    Effect,
 )
 from constructs import Construct
 
@@ -12,11 +18,13 @@ from deploy.constants import (
 from deploy.util import create_asset
 
 
-class AuthorizerLambdaFactory(object):
+class AuthorizerLambdaFactory:
+
+    """Factory to generate AuthorizerLambdas"""
 
     class SBOMJwtAuthorizerLambda(Construct):
 
-        """ Lambda to check DynamoDB for a token belonging to the team sending an SBOM """
+        """Lambda to check DynamoDB for a token belonging to the team sending an SBOM"""
 
         def __init__(
             self,
@@ -41,13 +49,36 @@ class AuthorizerLambdaFactory(object):
                 memory_size=512,
             )
 
+            self.lambda_func.add_to_role_policy(
+                PolicyStatement(
+                    effect=Effect.ALLOW,
+                    actions=[
+                        "cognito-idp:AdminDisableUser",
+                        "cognito-idp:AdminEnableUser",
+                        "cognito-idp:AdminGetUser",
+                        "cognito-idp:ListUsers",
+                    ],
+                    resources=["*"],
+                )
+            )
+
         def get_lambda_function(self):
+
+            """Get the CDK Lambda Construct"""
+
             return self.lambda_func
 
-    def __init__(self, scope: Construct, vpc: ec2.Vpc):
+    def __init__(self: "AuthorizerLambdaFactory", scope: Construct, vpc: ec2.Vpc):
+
+        """Constructor"""
+
         self.scope = scope
         self.vpc = vpc
 
     def create(self, lambda_name: str):
+
+        """Create an AuthorizerLambda with the specified name"""
+
         return AuthorizerLambdaFactory.SBOMJwtAuthorizerLambda(
-            self.scope, vpc=self.vpc, name=f"{lambda_name}_Authorizer")
+            self.scope, vpc=self.vpc, name=f"{lambda_name}_Authorizer"
+        )

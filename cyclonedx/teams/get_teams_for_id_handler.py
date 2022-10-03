@@ -4,8 +4,8 @@ from json import dumps
 from boto3.dynamodb.conditions import Attr
 
 from cyclonedx.constants import TEAM_MEMBER_TABLE_NAME
-from cyclonedx.core_utils.handler_commons import dynamodb_resource
-from cyclonedx.core_utils.cyclonedx_util import __get_team_by_team_id
+from cyclonedx.handlers.common import dynamodb_resource
+from cyclonedx.handlers.cyclonedx_util import __get_team_by_team_id
 
 
 def get_teams_for_id_handler(event: dict = None, context: dict = None):

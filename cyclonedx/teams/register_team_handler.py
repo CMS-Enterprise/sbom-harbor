@@ -6,11 +6,11 @@ from cyclonedx.constants import (
     TEAM_TOKEN_TABLE_NAME,
     TEAM_TABLE_NAME,
 )
-from cyclonedx.core_utils.handler_commons import (
+from cyclonedx.handlers.common import (
     team_schema,
     dynamodb_resource
 )
-from cyclonedx.core_utils.cyclonedx_util import (
+from cyclonedx.handlers.cyclonedx_util import (
     __create_team_response,
     __get_body_from_event,
 )

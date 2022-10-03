@@ -40,7 +40,7 @@ class SbomIngressLambda(Construct):
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
-            handler="cyclonedx.core_utils.sbom_ingress_handler",
+            handler="cyclonedx.handlers.ingress.sbom_ingress_handler",
             code=create_asset(self),
             environment={
                 SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name,

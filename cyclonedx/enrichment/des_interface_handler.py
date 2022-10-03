@@ -4,7 +4,7 @@ from time import sleep
 import requests
 from boto3 import resource
 
-from cyclonedx.core_utils.cyclonedx_util import __get_all_s3_obj_data
+from cyclonedx.handlers.cyclonedx_util import __get_all_s3_obj_data
 
 
 def des_interface_handler(event: dict = None, context: dict = None):

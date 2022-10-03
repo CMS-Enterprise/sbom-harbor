@@ -6,7 +6,7 @@ from cyclonedx.constants import (
     USER_POOL_NAME_KEY,
 )
 from cyclonedx.core_utils.handler_commons import cognito_client
-from cyclonedx.core_utils.cyclonedx_util import (
+from cyclonedx.handlers.cyclonedx_util import (
     __get_body_from_first_record,
 )
 

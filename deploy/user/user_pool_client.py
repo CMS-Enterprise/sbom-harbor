@@ -50,8 +50,7 @@ class SBOMUserPoolClient(Construct):
             email_verified=True,
             phone_number_verified=True,
         ).with_custom_attributes(
-            "custom:role_name",
-            "custom:team_id",
+            "custom:teams",
         )
 
         self.client = cognito.UserPoolClient(

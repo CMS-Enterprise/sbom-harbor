@@ -3,6 +3,8 @@ import os.path
 
 from cyclonedx.enrichment.dependency_track import summarizer_handler
 
+event_file = json.load(open('../test_data/summarizer_event.json'))
+findingsFile = open('../test_data/findings-dt-sbom-keycloak.json')
 
 def setSummaryEventSbomName(sbom_name, event):
     for findings in event:

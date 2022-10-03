@@ -36,8 +36,7 @@ class SBOMUserPool(Construct):
                 email=True,
             ),
             custom_attributes={
-                "role_name": cognito.StringAttribute(min_len=5, max_len=15, mutable=False),
-                "team_id": cognito.StringAttribute(min_len=5, max_len=15, mutable=False),
+                "teams": cognito.StringAttribute(mutable=True),
             },
             self_sign_up_enabled=True,
             sign_in_aliases=cognito.SignInAliases(

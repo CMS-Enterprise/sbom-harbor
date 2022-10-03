@@ -1,7 +1,7 @@
 from cyclonedx.core_utils import (
     ICClient
 )
-from cyclonedx.core_utils.cyclonedx_util import (
+from cyclonedx.handlers.cyclonedx_util import (
     __get_all_s3_obj_data
 )
 

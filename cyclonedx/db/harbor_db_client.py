@@ -35,6 +35,7 @@ from cyclonedx.model.token import Token
 # Generic type bound to the HarborModel
 T = TypeVar("T", bound=HarborModel)
 
+
 class HarborDBClient(object):
 
     """
@@ -103,12 +104,11 @@ class HarborDBClient(object):
             for child_model_obj in child_model_objs:
                 func(child_model_obj, recurse=True)
 
-
     @staticmethod
     def __get_instance(
         item: dict,
         team_id: str,
-        children: dict[str, list[HarborModel]]=None
+        children: dict[str, list[HarborModel]] = None,
     ) -> T:
 
         """
@@ -133,11 +133,10 @@ class HarborDBClient(object):
             children=children,
         )
 
-
     def create(
         self: 'HarborDBClient',
         model: T,
-        recurse: bool=False
+        recurse: bool = False,
     ) -> T:
 
         """
@@ -163,7 +162,7 @@ class HarborDBClient(object):
                 func=self.create
             )
 
-        return model
+        return self.get(model=model, recurse=recurse)
 
     def update(
         self: 'HarborDBClient',
@@ -277,7 +276,6 @@ class HarborDBClient(object):
                             self.__load_children(instance, equals_clause, sort_key)
                             parent.add_child(instance)
 
-
                 except Exception as err:
                     err_msg = f"Error getting {type(parent.entity_key)}: {str(err)}"
                     print(err_msg)
@@ -286,7 +284,7 @@ class HarborDBClient(object):
     def get(
         self: 'HarborDBClient',
         model: T,
-        recurse: bool=False
+        recurse: bool = False,
     ) -> T:
 
         """
@@ -311,7 +309,7 @@ class HarborDBClient(object):
                 KeyConditionExpression=partition_key_equals & sort_key_equals,
             )
 
-            item = results["Items"][0]
+            item = results["Items"].pop()
             return HarborDBClient.__get_instance(
                 item, team_id=model.team_id,
                 children=model.get_children()

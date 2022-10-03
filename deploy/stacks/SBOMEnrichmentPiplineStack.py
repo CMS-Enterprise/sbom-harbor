@@ -90,20 +90,20 @@ class SBOMEnrichmentPiplineStack(Stack):
         parallel: Parallel = parallel.branch(dt_task)
 
         # Ion Channel Enrichment Source
-        ic_lambda = IonChannelInterfaceLambda(
-            self,
-            vpc=vpc,
-            s3_bucket=s3_bucket,
-            event_bus=event_bus,
-        ).get_lambda_function()
-
-        ic_task = tasks.LambdaInvoke(
-            self, "ENRICHMENT_IC_TASK",
-            lambda_function=ic_lambda,
-            input_path="$.detail",
-            result_path="$.detail.results",
-            output_path="$.detail",
-        )
+        # ic_lambda = IonChannelInterfaceLambda(
+        #     self,
+        #     vpc=vpc,
+        #     s3_bucket=s3_bucket,
+        #     event_bus=event_bus,
+        # ).get_lambda_function()
+        #
+        # ic_task = tasks.LambdaInvoke(
+        #     self, "ENRICHMENT_IC_TASK",
+        #     lambda_function=ic_lambda,
+        #     input_path="$.detail",
+        #     result_path="$.detail.results",
+        #     output_path="$.detail",
+        # )
 
         # Uncommenting this will turn Ion Channel Enrichment on.
         #parallel: Parallel = parallel.branch(ic_task)

@@ -10,7 +10,7 @@ from cyclonedx.constants import (
     SBOM_S3_KEY,
     EVENT_BUS_NAME
 )
-from cyclonedx.core_utils.cyclonedx_util import __get_records_from_event
+from cyclonedx.handlers.cyclonedx_util import __get_records_from_event
 
 
 def enrichment_ingress_handler(event: dict = None, context: dict = None):

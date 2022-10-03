@@ -17,7 +17,10 @@ from deploy.stacks import (
     SBOMUserManagement,
     SBOMWebStack,
 )
+from deploy.stacks.SBOMIngressApiStack import SBOMIngressApiStack
 from deploy.util import DynamoTableManager
+
+from tests.data.create_cognito_users import test_create_cognito_users
 
 
 def dodep() -> None:
@@ -54,6 +57,12 @@ def dodep() -> None:
         table_mgr=table_manager,
     )
 
+    # The Ingress stack set up the infrastructure to handle incoming SBOMs
+    ingress_api_stack = SBOMIngressApiStack(
+        app, vpc, env=env,
+        table_mgr=table_manager,
+    )
+
     # The Enrichment Stack sets up the infrastructure to enrich SBOMs
     SBOMEnrichmentPiplineStack(
         app, vpc,
@@ -63,6 +72,7 @@ def dodep() -> None:
 
     # The Web Stack has all the web oriented entities to manage the website
     web_stack = SBOMWebStack(app, env=env)
+    web_stack.add_dependency(ingress_api_stack)
     web_stack.add_dependency(ingress_stack)
 
     # Synth the CDK app
@@ -87,5 +97,5 @@ def setup_admin_user() -> None:
     This method creates the users table in the database.
     """
 
-    system("./tests/scripts/create.cognito.user.sh")
-    system("./tests/scripts/change.cognito.user.password.sh")
+    test_create_cognito_users()
+

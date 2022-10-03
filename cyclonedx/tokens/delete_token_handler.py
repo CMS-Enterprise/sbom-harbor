@@ -4,7 +4,7 @@ from cyclonedx.constants import (
     TEAM_TOKEN_TABLE_NAME,
 )
 from cyclonedx.core_utils.handler_commons import dynamodb_resource
-from cyclonedx.core_utils.cyclonedx_util import (
+from cyclonedx.handlers.cyclonedx_util import (
     __handle_delete_token_error,
     __token_response_obj,
 )

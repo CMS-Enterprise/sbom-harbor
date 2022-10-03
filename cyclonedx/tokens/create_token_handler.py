@@ -8,7 +8,7 @@ from dateutil.relativedelta import relativedelta
 from cyclonedx.constants import (
     TEAM_TOKEN_TABLE_NAME,
 )
-from cyclonedx.core_utils.cyclonedx_util import (
+from cyclonedx.handlers.cyclonedx_util import (
     __get_body_from_event,
     __token_response_obj,
 )

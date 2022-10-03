@@ -7,7 +7,7 @@ from cyclonedx.constants import (
     SBOM_BUCKET_NAME_KEY,
     SBOM_S3_KEY,
 )
-from cyclonedx.core_utils.cyclonedx_util import (
+from cyclonedx.handlers.cyclonedx_util import (
     __validate,
     __create_project,
     __upload_sbom,

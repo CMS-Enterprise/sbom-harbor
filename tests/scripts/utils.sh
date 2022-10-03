@@ -20,7 +20,7 @@ create_user() {
     --user-pool-id ${COGNITO_USER_POOL_ID} \
     --username "$1" \
     --desired-delivery-mediums EMAIL \
-    --user-attributes Name=email,Value="$1"
+    --user-attributes Name=email,Value="$1" Name=custom:teams,Value="abc123"
 }
 
 # Changes the password of a user in the user pool

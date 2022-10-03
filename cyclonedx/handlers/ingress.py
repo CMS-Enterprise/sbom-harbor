@@ -13,7 +13,7 @@ from cyclonedx.constants import (
     S3_META_CODEBASE_KEY,
     S3_META_TIMESTAMP_KEY
 )
-from cyclonedx.core_utils.cyclonedx_util import (
+from cyclonedx.handlers.cyclonedx_util import (
     __create_pristine_response_obj,
     __get_body_from_event,
 )

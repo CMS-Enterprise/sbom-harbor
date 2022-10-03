@@ -1,4 +1,4 @@
-from cyclonedx.core_utils.cyclonedx_util import (
+from cyclonedx.handlers.cyclonedx_util import (
     __get_team_by_team_id,
     __create_team_response
 )
