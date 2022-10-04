@@ -58,10 +58,5 @@
       "version": "detect"
     }
   },
-  "ignorePatterns": [
-    "ui/amplify/**",
-    "**/build/**",
-    "**/node_modules/**",
-    "ui/sbom/build"
-  ]
+  "ignorePatterns": ["**/build/**", "**/node_modules/**"]
 }

@@ -43,7 +43,7 @@ This project depends on Python version: `3.9.10` and Node.js version: `^18.0.0`.
     - Clone Repository: `git clone git@github.com:aquia-inc/cyclonedx-python.git`
     - Cd into repo: `cd cyclonedx-python`
     - Start Poetry shell: `poetry shell`. This creates your virtual environment where your deps can be installed.
-    - Install Python dependencies: `poetry install --ui`. Passing the `--ui` flag also installs the UI dependencies.
+    - Install Python dependencies: `poetry install`.
     - Install pre-commit hooks: `pre-commit install`
 
 
@@ -51,15 +51,14 @@ This project depends on Python version: `3.9.10` and Node.js version: `^18.0.0`.
 
 ##### `poetry run clean`
 
-Uses Poetry to remove unnecessary artifacts. If `--ui` flag is passed, also cleans the UI artifacts and build outputs.
+Uses Poetry to remove unnecessary artifacts.
 
 ##### `poetry run build`
 
-Uses Poetry to build the python project into a single artifact. If `--ui` flag is passed, this also builds the UI.
-
+Uses Poetry to build the python project into a single artifact.
 ##### `poetry run test`
 
-Runs Pytest unit tests located in the tests/ folder. If `--ui` flag is passed, also runs tests for the UI.
+Runs Pytest unit tests located in the tests/ folder.
 
 ##### `poetry run package`
 
@@ -70,7 +69,9 @@ Re-Packages the project and all dependencies into a zip file compatible with AWS
 Deploys the zip file to AWS Lambda using AWS CDK.
 
 
-## Developing UX/UI (Node.js, TypeScript, Yarn)
+## Developing UX/UI (Node.js, TypeScript, Yarn)]
+
+First, `cd ui` to enter the `ui/` directory.
 
 ##### `yarn install`
 

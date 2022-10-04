@@ -1,2 +1,2 @@
-/.yarn/releases/** binary
-/.yarn/plugins/** binary
+ui/.yarn/releases/** binary
+ui/.yarn/plugins/** binary

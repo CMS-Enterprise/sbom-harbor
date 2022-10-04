@@ -4,7 +4,6 @@ from shutil import rmtree
 from inspect import stack
 from optparse import OptionParser
 from os import system
-from sys import path
 
 parser = OptionParser("usage: %prog [options]")
 parser.add_option('--ui', dest="ui", help='ui flag', action="store_true")
@@ -26,7 +25,7 @@ def install_ui():
     Installs dependencies for the UI
     """
 
-    system("yarn prepare")
+    system("yarn --cwd ui/ prepare")
 
 
 def run():
@@ -45,8 +44,8 @@ def run_ui():
     Uses Webpack to build the UI code.
     """
 
-    system("yarn prepare")
-    system("yarn build")
+    system("yarn --cwd ui/")
+    system("yarn --cwd ui/ build")
 
 
 def lint():
@@ -65,7 +64,7 @@ def lint_ui():
     Lint the UI code with ESLint
     """
 
-    system("yarn lint:js")
+    system("yarn --cwd ui/ lint:js")
 
 
 def test():
@@ -84,7 +83,7 @@ def test_ui():
     Run Jest tests
     """
 
-    system("yarn test")
+    system("yarn --cwd ui/ test")
 
 
 def package():
@@ -120,7 +119,7 @@ def clean_ui():
     Removes build artifacts and temporary files from the UI.
     """
 
-    system("yarn clean")
+    system("yarn --cwd ui/ clean")
 
 
 def run_ui_if_enabled():

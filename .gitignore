@@ -31,9 +31,9 @@ tmp/
 .env
 .env.*
 
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
+ui/.yarn/*
+!ui/.yarn/patches
+!ui/.yarn/plugins
+!ui/.yarn/releases
+!ui/.yarn/sdks
+!ui/.yarn/versions

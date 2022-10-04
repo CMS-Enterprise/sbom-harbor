@@ -4,25 +4,25 @@ on:
     branches: [master]
   pull_request:
     types: [opened, reopened, synchronize]
+
+defaults:
+  run:
+    working-directory: ui
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      
+
       - uses: actions/checkout@v3
-     
-      - name: copy file
-        uses: canastro/copy-file-action@master
-        with:
-          source: "yarn.lock"
-          target: "./ui/sbom/yarn.lock" 
- 
+
       - name: Gen SBOM with Syft
         uses: anchore/sbom-action@v0
         with:
-          path: ./ui/sbom
+          path: ./
           artifact-name: sbom-harbor-frontend.json
           format: cyclonedx-json
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -31,8 +31,10 @@ jobs:
         with:
           node-version: '18.0'
           registry-url: 'https://registry.npmjs.org'
-          cache: 'yarn'
-      - run: yarn install --frozen-lockfile
+        #   cache: 'yarn'
+      - run: |
+            yarn set version 3.2.2
+            yarn config set -H enableImmutableInstalls false
+      - run: yarn install
       - run: yarn lint
       - run: yarn test
-      

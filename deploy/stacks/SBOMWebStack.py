@@ -27,7 +27,8 @@ from deploy.util.SBOMHarborCertificate import Cert as SBOMHarborCert
 class SBOMWebStack(Stack):
 
     __cwd = os.path.dirname(__file__)
-    __ui_loc = f"{__cwd}/../../ui/sbom/build"
+    # TODO: make the UI build output path configurable
+    __ui_loc = f"{__cwd}/../../ui/packages/sbom/build"
 
     def __get_cloudfront_distribution(
             self: constructs.Construct,

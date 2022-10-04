@@ -3,26 +3,26 @@ const { execSync } = require('child_process')
 
 process.env.API_URL =
   process.env.API_URL ||
-  execSync(`bash ${path.resolve(__dirname, '../../bin/get-api-url.sh')}`)
+  execSync(`bash ${path.resolve(__dirname, './bin/get-api-url.sh')}`)
     .toString()
     .trim() + '/api'
 
 process.env.CF_DOMAIN =
   process.env.CF_DOMAIN ||
-  execSync(`bash ${path.resolve(__dirname, '../../bin/get-cf-domain.sh')}`)
+  execSync(`bash ${path.resolve(__dirname, './bin/get-cf-domain.sh')}`)
     .toString()
     .trim()
 
 process.env.USER_POOL_ID =
   process.env.USER_POOL_ID ||
-  execSync(`bash ${path.resolve(__dirname, '../../bin/get-user-pool-id.sh')}`)
+  execSync(`bash ${path.resolve(__dirname, './bin/get-user-pool-id.sh')}`)
     .toString()
     .trim()
 
 process.env.USER_POOL_CLIENT_ID =
   process.env.USER_POOL_CLIENT_ID ||
   execSync(
-    `bash ${path.resolve(__dirname, '../../bin/get-user-pool-client-id.sh')}`
+    `bash ${path.resolve(__dirname, './bin/get-user-pool-client-id.sh')}`
   )
     .toString()
     .trim()

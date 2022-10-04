@@ -20,7 +20,7 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "types": ["node", "jest", "react", "react-dom"],
+    "types": ["node", "jest", "react", "react-dom"]
   },
   "include": ["src", "declaration.d.ts"],
   "exclude": ["node_modules"]
