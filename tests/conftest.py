@@ -13,7 +13,7 @@ from cyclonedx.constants import (
     HARBOR_TEAMS_TABLE_SORT_KEY
 )
 
-from cyclonedx.core_utils.sbom_ingress_handler import sbom_ingress_handler
+from cyclonedx.handlers.ingress import sbom_ingress_handler
 from cyclonedx.db.harbor_db_client import HarborDBClient
 
 # This file is where all pytest fixtures should be placed to make sure they are available for all tests to use
