@@ -6,6 +6,7 @@ from cyclonedx.model import (
     EntityType,
 )
 from cyclonedx.model.project import Project
+from cyclonedx.model.token import Token
 
 
 class Team(HarborModel):
@@ -91,11 +92,16 @@ class Team(HarborModel):
 
         self._name = name
 
-    @property
+    # Adding '@property' breaks the code in an odd way.
+    # This is a false positive:
+    #   https://github.com/PyCQA/pylint/issues/4023
+    # pylint: disable=W0236
     @HarborModel.entity_id.getter
     def entity_id(self):
 
-        """The Entity id of a Team is just the id of the Team itself"""
+        """
+        -> The Entity id of a Team is just the id of the Team itself
+        """
 
         return self.team_id
 
@@ -117,6 +123,29 @@ class Team(HarborModel):
                 codebases=project.codebases,
             )
             for project in projects
+        ]
+
+    @property
+    def tokens(self) -> list[Token]:
+
+        """
+        -> Return a list of Projects that are the children of this Team
+        """
+
+        children: dict[str, list[HarborModel]] = self.get_children()
+        tokens: list[HarborModel] = children["token"]
+
+        return [
+            Token(
+                team_id=self.team_id,
+                token_id=token.entity_id,
+                name=token.get_item().get(Token.Fields.NAME),
+                created=token.get_item().get(Token.Fields.CREATED),
+                expires=token.get_item().get(Token.Fields.EXPIRES),
+                enabled=token.get_item().get(Token.Fields.ENABLED),
+                token=token.get_item().get(Token.Fields.TOKEN),
+            )
+            for token in tokens
         ]
 
     def clear_child_type(self, entity_type: EntityType):

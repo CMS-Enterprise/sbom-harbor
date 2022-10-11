@@ -110,6 +110,7 @@ def test_add_test_team():
                     Token(
                         team_id=team_id,
                         token_id=token_id,
+                        name=f"{team_id}-{token_id}",
                         enabled=True,
                         created=created,
                         expires=expires,

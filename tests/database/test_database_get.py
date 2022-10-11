@@ -1,10 +1,13 @@
-
 """ Database and Model tests for Getting objects in the HarborTeamsTable """
 
 import uuid
 from decimal import Decimal
+from uuid import uuid4
+
+import boto3
 
 from cyclonedx.constants import (
+    HARBOR_TEAMS_TABLE_NAME,
     HARBOR_TEAMS_TABLE_PARTITION_KEY,
     HARBOR_TEAMS_TABLE_SORT_KEY,
 )
@@ -19,7 +22,11 @@ from cyclonedx.model.token import Token
 
 def test_get_team_only(test_dynamo_db_resource, test_harbor_teams_table):
 
-    team_id = 'dawn-patrol'
+    """
+    -> Team only Test
+    """
+
+    team_id = "dawn-patrol"
 
     # Put the Team
     test_harbor_teams_table.put_item(
@@ -31,21 +38,22 @@ def test_get_team_only(test_dynamo_db_resource, test_harbor_teams_table):
     )
 
     # Get the Team using the API
-    team: Team = HarborDBClient(test_dynamo_db_resource).get(
-        Team(
-            team_id=team_id
-        )
-    )
+    team: Team = HarborDBClient(test_dynamo_db_resource).get(Team(team_id=team_id))
 
     assert team.team_id == team_id
     assert team.entity_key == EntityType.TEAM.value
     assert team.name == team_id
 
+
 def test_get_project_only(test_dynamo_db_resource, test_harbor_teams_table):
 
-    team_id: str = 'dawn-patrol'
+    """
+    -> Project only Test
+    """
+
+    team_id: str = "dawn-patrol"
     project_id: str = str(uuid.uuid4())
-    project_name: str = 'my-neat-project'
+    project_name: str = "my-neat-project"
 
     pet = EntityType.PROJECT.value
     sort_key = "{}#{}".format(pet, project_id)
@@ -69,17 +77,21 @@ def test_get_project_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     assert filled_project.team_id == team_id
     assert filled_project.entity_key == sort_key
-    assert filled_project._name == project_name
+    assert filled_project.name == project_name
 
 
 def test_get_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
 
-    team_id: str = 'dawn-patrol'
+    """
+    -> Codebase only Test
+    """
+
+    team_id: str = "dawn-patrol"
     codebase_id: str = str(uuid.uuid4())
-    codebase_name: str = 'my-neat-project'
+    codebase_name: str = "my-neat-project"
     project_id: str = str(uuid.uuid4())
     language = "PYTHON"
-    build_tool  = "POETRY"
+    build_tool = "POETRY"
 
     cet = EntityType.CODEBASE.value
     sort_key = "{}#{}".format(cet, codebase_id)
@@ -111,7 +123,12 @@ def test_get_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
     assert filled_codebase.language == language
     assert filled_codebase.build_tool == build_tool
 
+
 def test_get_member_only(test_dynamo_db_resource, test_harbor_teams_table):
+
+    """
+    -> Member only Test
+    """
 
     team_id = str(uuid.uuid4())
     member_id = str(uuid.uuid4())
@@ -140,10 +157,14 @@ def test_get_member_only(test_dynamo_db_resource, test_harbor_teams_table):
     assert member.team_id == team_id
     assert member.entity_key == sort_key
     assert member.email == email
-    assert member.is_team_lead == True
+    assert member.is_team_lead
 
 
 def test_get_token_only(test_dynamo_db_resource, test_harbor_teams_table):
+
+    """
+    -> Token only Test
+    """
 
     team_id = str(uuid.uuid4())
     token_id = str(uuid.uuid4())
@@ -151,14 +172,16 @@ def test_get_token_only(test_dynamo_db_resource, test_harbor_teams_table):
     created = Decimal(507482179.234)
     expires = Decimal(507492179.234)
 
-    tet = EntityType.TOKEN.value
-    sort_key = "{}#{}".format(tet, token_id)
+    sort_key = "{}#{}".format(EntityType.TOKEN.value, token_id)
+
+    resource = boto3.resource("dynamodb")
 
     # Put the Item
-    test_harbor_teams_table.put_item(
+    resource.Table(HARBOR_TEAMS_TABLE_NAME).put_item(
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: sort_key,
+            Token.Fields.NAME: str(uuid4()),
             Token.Fields.CREATED: created,
             Token.Fields.EXPIRES: expires,
             Token.Fields.ENABLED: True,
@@ -166,7 +189,7 @@ def test_get_token_only(test_dynamo_db_resource, test_harbor_teams_table):
         }
     )
 
-    token: Token = HarborDBClient(test_dynamo_db_resource).get(
+    token: Token = HarborDBClient(resource).get(
         Token(
             team_id=team_id,
             token_id=token_id,
@@ -175,14 +198,19 @@ def test_get_token_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     assert token.team_id == team_id
     assert token.entity_key == sort_key
-    assert token.enabled == True
+    assert token.enabled
     assert token.created == created
     assert token.expires == expires
     assert token.token == token_val
 
+
 def test_get_team_recursively(test_dynamo_db_resource, test_harbor_teams_table):
 
-    team_id = 'dawn-patrol'
+    """
+    -> Get Team and all Children Test
+    """
+
+    team_id = "dawn-patrol"
 
     # Put the Team
     test_harbor_teams_table.put_item(
@@ -255,9 +283,7 @@ def test_get_team_recursively(test_dynamo_db_resource, test_harbor_teams_table):
 
     # Get the Team using the API
     team: Team = HarborDBClient(test_dynamo_db_resource).get(
-        Team(
-            team_id=team_id
-        ),
+        Team(team_id=team_id),
         recurse=True,
     )
 
@@ -274,10 +300,8 @@ def test_get_team_recursively(test_dynamo_db_resource, test_harbor_teams_table):
     child_project1 = child_projects[1]
 
     # Does not come back in the same order all the time.
-    if child_project0.get_item()['name'] == 'project-1':
-        tmp_project = child_project0
-        child_project0 = child_project1
-        child_project1 = tmp_project
+    if child_project0.get_item()["name"] == "project-1":
+        child_project0, child_project1 = child_project1, child_project0
 
     child_project0_item = child_project0.get_item()
     child_project1_item = child_project1.get_item()
@@ -289,10 +313,10 @@ def test_get_team_recursively(test_dynamo_db_resource, test_harbor_teams_table):
     assert child_project1_item[Project.Fields.NAME] == project1_name
     assert child_project1.has_children()
 
-    grandchild_codebase = child_project1.get_children()[EntityType.CODEBASE.value][0].get_item()
+    grandchild_codebase = child_project1.get_children()[EntityType.CODEBASE.value][
+        0
+    ].get_item()
     assert grandchild_codebase[CodeBase.Fields.NAME] == codebase_name
     assert grandchild_codebase[CodeBase.Fields.PARENT_ID] == project1_id
     assert grandchild_codebase[CodeBase.Fields.LANGUAGE] == language
     assert grandchild_codebase[CodeBase.Fields.BUILD_TOOL] == build_tool
-
-

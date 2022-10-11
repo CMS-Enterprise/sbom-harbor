@@ -5,7 +5,10 @@
 import uuid
 from json import dumps, loads
 
+import boto3
+
 from cyclonedx.constants import COGNITO_TEAM_DELIMITER
+from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.handlers.common import (
     _extract_id_from_path,
     _get_method,
@@ -15,7 +18,6 @@ from cyclonedx.handlers.common import (
     _to_projects,
     _update_members,
     _update_projects,
-    db_client,
 )
 from cyclonedx.model.team import Team
 
@@ -27,6 +29,8 @@ def teams_handler(event: dict, context: dict) -> dict:
     """
 
     _print_values(event, context)
+
+    db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
 
     # Dig the teams ids out of the response we put into the policy
     # that dictates if the user can even access the resource.
@@ -61,7 +65,7 @@ def teams_handler(event: dict, context: dict) -> dict:
     }
 
 
-def _do_get(event: dict) -> dict:
+def _do_get(event: dict, db_client: HarborDBClient) -> dict:
 
     team_id: str = _extract_id_from_path("team", event)
     team = db_client.get(
@@ -75,7 +79,7 @@ def _do_get(event: dict) -> dict:
     }
 
 
-def _do_post(event: dict) -> dict:
+def _do_post(event: dict, db_client: HarborDBClient) -> dict:
 
     request_body: dict = loads(event["body"])
     team_id: str = str(uuid.uuid4())
@@ -97,7 +101,7 @@ def _do_post(event: dict) -> dict:
     }
 
 
-def _do_put(event: dict) -> dict:
+def _do_put(event: dict, db_client: HarborDBClient) -> dict:
 
     """
     -> The behavior of this function is that the objets in the request_body
@@ -147,7 +151,7 @@ def _do_put(event: dict) -> dict:
     }
 
 
-def _do_delete(event: dict) -> dict:
+def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
 
     team_id: str = _extract_id_from_path("team", event)
 
@@ -178,18 +182,20 @@ def team_handler(event: dict, context: dict) -> dict:
     # CloudWatch if there is an issue.
     _print_values(event, context)
 
+    db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
+
     # Get the verb (method) of the request.  We will use it
     # to decide what type of operation we execute on the incoming data
     method: str = _get_method(event)
 
     result: dict = {}
     if method == "GET":
-        result = _do_get(event)
+        result = _do_get(event, db_client)
     elif method == "POST":
-        result = _do_post(event)
+        result = _do_post(event, db_client)
     elif method == "PUT":
-        result = _do_put(event)
+        result = _do_put(event, db_client)
     elif method == "DELETE":
-        result = _do_delete(event)
+        result = _do_delete(event, db_client)
 
     return result

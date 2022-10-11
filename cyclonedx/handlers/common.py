@@ -1,8 +1,13 @@
+"""
+-> Common Handler Functions
+"""
+
 import uuid
-from json import loads
+from json import dumps, loads
+import importlib.resources as pr
 
 import boto3
-import importlib.resources as pr
+
 import cyclonedx.schemas as schemas
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.model import EntityType, HarborModel
@@ -11,26 +16,19 @@ from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
 
-cognito_client = boto3.client('cognito-idp')
-dynamodb_resource = boto3.resource('dynamodb')
-db_client: HarborDBClient = HarborDBClient(dynamodb_resource)
-
-team_schema = loads(
-    pr.read_text(
-        schemas, "team.schema.json"
-    )
-)
+cognito_client = boto3.client("cognito-idp")
+team_schema = loads(pr.read_text(schemas, "team.schema.json"))
 
 
 def _print_values(event: dict, context: dict) -> None:
-    print(f"<EVENT event=|{event}| />")
+    print(f"<EVENT event=|{dumps(event, indent=2)}| />")
     print(f"<CONTEXT context=|{context}| />")
 
 
 def _get_method(event: dict) -> str:
-    request_context: dict = event['requestContext']
-    http: dict = request_context['http']
-    return http['method']
+    request_context: dict = event["requestContext"]
+    http: dict = request_context["http"]
+    return http["method"]
 
 
 def _extract_id_from_path(param_name: str, event: dict):
@@ -53,6 +51,16 @@ def _should_process_children(event: dict) -> bool:
         return False
 
 
+def get_db_client():
+
+    """
+    -> Get the Db Client.  This has to be done in a function
+    -> rather than in module space or Moto can't mock it.
+    """
+
+    return HarborDBClient(boto3.resource("dynamodb"))
+
+
 def _to_codebases(team_id: str, project_id: str, request_body: dict):
 
     try:
@@ -65,7 +73,8 @@ def _to_codebases(team_id: str, project_id: str, request_body: dict):
                 name=codebase["name"],
                 language=codebase["language"],
                 build_tool=codebase["buildTool"],
-            ) for codebase in codebases
+            )
+            for codebase in codebases
         ]
     except KeyError as ke:
         print(f"KeyError trying to create CodeBase: {ke}")
@@ -80,8 +89,9 @@ def _to_projects(team_id: str, request_body: dict):
             Project(
                 team_id=team_id,
                 project_id=project.get("id", str(uuid.uuid4())),
-                name=project["name"]
-            ) for project in projects
+                name=project["name"],
+            )
+            for project in projects
         ]
     except KeyError:
         return []
@@ -97,7 +107,8 @@ def _to_members(team_id: str, request_body: dict):
                 member_id=str(uuid.uuid4()),
                 email=member[Member.Fields.EMAIL],
                 is_team_lead=member[Member.Fields.IS_TEAM_LEAD],
-            ) for member in members
+            )
+            for member in members
         ]
     except KeyError:
         return []
@@ -105,7 +116,8 @@ def _to_members(team_id: str, request_body: dict):
 
 def _update_codebases(project: Project, request_body: dict):
 
-    child_key: str = 'codebases'
+    child_key: str = "codebases"
+    db_client: HarborDBClient = get_db_client()
 
     existing_children: dict[str, list[HarborModel]] = project.get_children()
     project.clear_codebases()
@@ -113,15 +125,27 @@ def _update_codebases(project: Project, request_body: dict):
     # Extract codebase dicts from the request body in the event
     codebase_dicts: list[dict] = request_body.get(child_key, [])
 
-    # For each project dict from the request body:
+    # For each codebase dict from the request body.
     for codebase_dict in codebase_dicts:
 
         # Find the object from DynamoDB in the list of children extracted from
         # -> the Team model object using the child ID from the dict in the request body
-        codebase_id: str = codebase_dict['id']
-        existing_codebases: list[HarborModel] = existing_children.get(EntityType.CODEBASE.value, [])
+        #
+        # Pylint complains about the variable 'codebase_id' being declared in a loop and
+        # being used in a closure (the lambda in the filter function).  The problem is that
+        # codebase_id is changing and Pylint is worried that the lambda is going to contain
+        # an old value because it's a closure.  In this case, we are using the value of the
+        # lambda immediately, before the next iteration of the loop and therefore the warning
+        # is a false positive.
+        # pylint: disable=W0640
+        codebase_id: str = codebase_dict["id"]
+        existing_codebases: list[HarborModel] = existing_children.get(
+            EntityType.CODEBASE.value, []
+        )
 
-        codebase_filter: filter = filter(lambda p: p.entity_id == codebase_id, existing_codebases)
+        codebase_filter: filter = filter(
+            lambda p: p.entity_id == codebase_id, existing_codebases
+        )
         codebases: list[HarborModel] = list(codebase_filter)
 
         # If no codebases match, then ignore it.
@@ -143,21 +167,23 @@ def _update_codebases(project: Project, request_body: dict):
                 codebase_id=codebase_id,
                 name=codebase_dict.get(CodeBase.Fields.NAME, original_name),
                 language=codebase_dict.get(CodeBase.Fields.LANGUAGE, original_language),
-                build_tool=codebase_dict.get(CodeBase.Fields.BUILD_TOOL, original_build_tool),
+                build_tool=codebase_dict.get(
+                    CodeBase.Fields.BUILD_TOOL, original_build_tool
+                ),
             )
 
             project.add_child(db_client.update(codebase))
 
     return project
 
+
 def _update_projects(team: Team, request_body: dict):
 
-    child_key: str = 'projects'
+    child_key: str = "projects"
+    db_client: HarborDBClient = get_db_client()
 
     existing_children: dict[str, list[HarborModel]] = team.get_children()
-    team.clear_child_type(
-        entity_type=EntityType.PROJECT
-    )
+    team.clear_child_type(entity_type=EntityType.PROJECT)
 
     # Extract project dicts from the request body in the event
     project_dicts: list[dict] = request_body.get(child_key, [])
@@ -167,10 +193,22 @@ def _update_projects(team: Team, request_body: dict):
 
         # Find the object from DynamoDB in the list of children extracted from
         # -> the Team model object using the child ID from the dict in the request body
-        project_id: str = project_dict['id']
-        existing_projects: list[HarborModel] = existing_children.get(EntityType.PROJECT.value, [])
+        #
+        # Pylint complains about the variable 'project_id' being declared in a loop and
+        # being used in a closure (the lambda in the filter function).  The problem is that
+        # project_id is changing and Pylint is worried that the lambda is going to contain
+        # an old value because it's a closure.  In this case, we are using the value of the
+        # lambda immediately, before the next iteration of the loop and therefore the warning
+        # is a false positive.
+        # pylint: disable=W0640
+        project_id: str = project_dict["id"]
+        existing_projects: list[HarborModel] = existing_children.get(
+            EntityType.PROJECT.value, []
+        )
 
-        project_filter: filter = filter(lambda p: p.entity_id == project_id, existing_projects)
+        project_filter: filter = filter(
+            lambda p: p.entity_id == project_id, existing_projects
+        )
         projects: list[HarborModel] = list(project_filter)
 
         # If no projects match, then ignore it.
@@ -194,26 +232,36 @@ def _update_projects(team: Team, request_body: dict):
 
     return team
 
+
 def _update_members(team: Team, request_body: dict):
 
-    child_key: str = 'members'
+    child_key: str = "members"
+    db_client: HarborDBClient = get_db_client()
 
     existing_children: dict[str, list[HarborModel]] = team.get_children()
-    team.clear_child_type(
-        entity_type=EntityType.MEMBER
-    )
+    team.clear_child_type(entity_type=EntityType.MEMBER)
 
     # Extract project dicts from the request body in the event
     member_dicts: list[dict] = request_body.get(child_key, [])
 
-    # For each project dict from the request body:
+    # For each member dict from the request body:
     for member_dict in member_dicts:
 
         # Find the object from DynamoDB in the list of children extracted from
         # -> the Team model object using the child ID from the dict in the request body
-        member_id: str = member_dict['id']
+        #
+        # Pylint complains about the variable 'member_id' being declared in a loop and
+        # being used in a closure (the lambda in the filter function).  The problem is that
+        # member_id is changing and Pylint is worried that the lambda is going to contain
+        # an old value because it's a closure.  In this case, we are using the value of the
+        # lambda immediately, before the next iteration of the loop and therefore the warning
+        # is a false positive.
+        # pylint: disable=W0640
+        member_id: str = member_dict["id"]
         existing_members: list[HarborModel] = existing_children.get(child_key, [])
-        member_filter: filter = filter(lambda p: p.entity_id == member_id, existing_members)
+        member_filter: filter = filter(
+            lambda p: p.entity_id == member_id, existing_members
+        )
         members: list[HarborModel] = list(member_filter)
 
         # If no members match, then ignore it.
@@ -231,7 +279,9 @@ def _update_members(team: Team, request_body: dict):
                 team_id=team.team_id,
                 member_id=member_id,
                 email=member_dict.get(Member.Fields.EMAIL, original_email),
-                is_team_lead=member_dict.get(Member.Fields.IS_TEAM_LEAD, original_is_lead),
+                is_team_lead=member_dict.get(
+                    Member.Fields.IS_TEAM_LEAD, original_is_lead
+                ),
             )
 
             team.add_child(db_client.update(member))

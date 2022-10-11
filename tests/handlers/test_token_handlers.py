@@ -1,8 +1,12 @@
 """
--> Test module for the project handlers
+-> Test for the token handlers
 """
+import datetime
 import uuid
-from json import dumps, loads
+from json import (
+    dumps,
+    loads,
+)
 
 import boto3
 import pytest
@@ -11,9 +15,9 @@ from moto import mock_dynamodb
 from tests.conftest import create_harbor_table
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.exceptions.database_exception import DatabaseError
-from cyclonedx.model.codebase import CodeBase
-from cyclonedx.model.team import Team
 
+from cyclonedx.model.team import Team
+from cyclonedx.model.token import Token
 
 # TODO I'm testing moving this here to see
 #  if the @mock_dynamodb annotation still works.
@@ -25,8 +29,8 @@ from cyclonedx.model.team import Team
 #  # pylint: disable=C0415
 #  over the imports inside the test function.
 from cyclonedx.handlers import (
-    projects_handler,
-    project_handler,
+    tokens_handler,
+    token_handler,
 )
 
 
@@ -34,7 +38,7 @@ from cyclonedx.handlers import (
 def test_flow():
 
     """
-    -> Test the creation, updating and deletion of a project.
+    -> Test the creation, updating and deletion of a token.
     """
 
     db_client: HarborDBClient = HarborDBClient(
@@ -52,82 +56,91 @@ def test_flow():
         ),
     )
 
+    token_name: str = str(uuid.uuid4())
+
     # Create
-    create_response: dict = create(team_id=team_id, handler=project_handler)
+    create_response: dict = create(
+        team_id=team_id,
+        name=token_name,
+        handler=token_handler,
+    )
     response_dict: dict = loads(create_response["body"])
 
-    project_id: str = list(response_dict.keys()).pop()
-    project_dict: dict = response_dict[project_id]
-    codebases_dict: dict = project_dict["codebases"]
-    codebase_ids: list = list(codebases_dict.keys())
-    assert len(codebase_ids) == 2
+    print(dumps(response_dict, indent=2))
+
+    token_id: str = list(response_dict.keys()).pop()
+    token_dict: dict = response_dict[token_id]
+    assert token_name == token_dict[Token.Fields.NAME]
+    assert token_dict[Token.Fields.ENABLED]
+    assert token_dict[Token.Fields.CREATED]
+    assert token_dict[Token.Fields.EXPIRES]
+    assert token_dict[Token.Fields.TOKEN]
 
     # Get Test 1
     get_response: dict = get(
         team_id=team_id,
-        project_id=project_id,
-        handler=project_handler,
+        token_id=token_id,
+        handler=token_handler,
     )
     response_dict = loads(get_response["body"])
-
-    project_id: str = list(response_dict.keys()).pop()
-    project_dict: dict = response_dict[project_id]
-    codebases_dict: dict = project_dict["codebases"]
-    codebase_ids: list = list(codebases_dict.keys())
-    assert len(codebase_ids) == 2
+    token_dict: dict = response_dict[token_id]
+    assert token_name == token_dict[Token.Fields.NAME]
+    assert token_dict[Token.Fields.ENABLED]
+    assert token_dict[Token.Fields.CREATED]
+    assert token_dict[Token.Fields.EXPIRES]
+    assert token_dict[Token.Fields.TOKEN]
 
     # Get Test 2
     get_response: dict = get_all(
         team_id=team_id,
-        handler=projects_handler,
+        handler=tokens_handler,
     )
     response_dict = loads(get_response["body"])
 
-    project_id: str = list(response_dict.keys()).pop()
-    project_dict: dict = response_dict[project_id]
-    codebases_dict: dict = project_dict["codebases"]
-    codebase_ids: list = list(codebases_dict.keys())
-    assert len(codebase_ids) == 2
+    token_id: str = list(response_dict.keys()).pop()
+    token_dict: dict = response_dict[token_id]
+    assert token_name == token_dict[Token.Fields.NAME]
+    assert token_dict[Token.Fields.ENABLED]
+    assert token_dict[Token.Fields.CREATED]
+    assert token_dict[Token.Fields.EXPIRES]
+    assert token_dict[Token.Fields.TOKEN]
 
     # Update
-    cb1_id: str = codebase_ids.pop()
-    cb2_id: str = codebase_ids.pop()
-    new_cb1_name: str = "New Codebase 1 name"
-    new_cb2_name: str = "New Codebase 2 name"
+    new_name: str = str(uuid.uuid4())
+    new_expires: float = datetime.datetime.now().timestamp()
 
     update(
         team_id=team_id,
-        project_id=project_id,
-        codebase1_id=cb1_id,
-        new_cb_name1=new_cb1_name,
-        codebase2_id=cb2_id,
-        new_cb_name2=new_cb2_name,
-        handler=project_handler,
+        token_id=token_id,
+        new_name=new_name,
+        expires=new_expires,
+        enabled=False,
+        handler=token_handler,
     )
 
-    test_cb: CodeBase = db_client.get(
-        CodeBase(
+    test_token: Token = db_client.get(
+        Token(
             team_id=team_id,
-            project_id=project_id,
-            codebase_id=cb1_id,
+            token_id=token_id,
         )
     )
 
-    assert test_cb.name == new_cb1_name
+    assert new_name == test_token.name
+    assert not test_token.enabled
 
     # Delete
     delete(
         team_id=team_id,
-        project_id=project_id,
-        handler=project_handler,
+        token_id=token_id,
+        handler=token_handler,
     )
 
     # Get Test (Should return nothing)
     try:
         get_response: dict = get(
             team_id=team_id,
-            project_id=project_id,
-            handler=project_handler,
+            token_id=token_id,
+            handler=token_handler,
         )
         print(get_response)
         pytest.fail()
@@ -136,10 +149,10 @@ def test_flow():
         print("All clear.  Database is clean")
 
 
-def create(team_id: str, handler):
+def create(team_id: str, name: str, handler):
 
     """
-    -> Test Creating a Project
+    -> Create a token
     """
 
     event: dict = {
@@ -154,19 +167,7 @@ def create(team_id: str, handler):
         },
         "body": dumps(
             {
-                "name": "Initial Project Name",
-                "codebases": [
-                    {
-                        "name": "Initial Frontend Name",
-                        "language": "JAVASCRIPT",
-                        "buildTool": "YARN",
-                    },
-                    {
-                        "name": "Initial Backend Name",
-                        "language": "PYTHON",
-                        "buildTool": "POETRY",
-                    },
-                ],
+                "name": name,
             }
         ),
     }
@@ -174,15 +175,15 @@ def create(team_id: str, handler):
     return handler(event, {})
 
 
-def get(team_id: str, project_id: str, handler):
+def get(team_id: str, token_id: str, handler):
 
     """
-    -> Test Getting a Project
+    -> Get a token
     """
 
     event: dict = {
         "pathParameters": {
-            "projects": project_id,
+            "token": token_id,
         },
         "requestContext": {
             "http": {
@@ -190,7 +191,6 @@ def get(team_id: str, project_id: str, handler):
             }
         },
         "queryStringParameters": {
-            "children": True,
             "teamId": team_id,
         },
     }
@@ -201,7 +201,7 @@ def get(team_id: str, project_id: str, handler):
 def get_all(team_id: str, handler):
 
     """
-    -> Test Getting all the Projects
+    -> Get all the tokens
     """
 
     event: dict = {
@@ -222,21 +222,19 @@ def get_all(team_id: str, handler):
 # pylint: disable=R0913
 def update(
     team_id: str,
-    project_id: str,
-    codebase1_id: str,
-    codebase2_id: str,
-    new_cb_name1: str,
-    new_cb_name2: str,
+    token_id: str,
+    new_name: str,
+    expires: float,
+    enabled: bool,
     handler,
 ):
-
     """
-    -> Test Updating a Project
+    -> Update a token's data
     """
 
     event: dict = {
         "pathParameters": {
-            "projects": project_id,
+            "token": token_id,
         },
         "requestContext": {
             "http": {
@@ -244,16 +242,13 @@ def update(
             }
         },
         "queryStringParameters": {
-            "children": True,
             "teamId": team_id,
         },
         "body": dumps(
             {
-                "name": "Updated Project Name",
-                "codebases": [
-                    {"id": codebase1_id, "name": new_cb_name1},
-                    {"id": codebase2_id, "name": new_cb_name2},
-                ],
+                "name": new_name,
+                "expires": expires,
+                "enabled": enabled,
             }
         ),
     }
@@ -261,15 +256,14 @@ def update(
     return handler(event, {})
 
 
-def delete(team_id: str, project_id: str, handler):
-
+def delete(team_id: str, token_id: str, handler):
     """
-    -> Test Deleting a Project
+    -> Delete a token
     """
 
     event: dict = {
         "pathParameters": {
-            "projects": project_id,
+            "token": token_id,
         },
         "requestContext": {
             "http": {
@@ -277,7 +271,6 @@ def delete(team_id: str, project_id: str, handler):
             }
         },
         "queryStringParameters": {
-            "children": True,
             "teamId": team_id,
         },
     }

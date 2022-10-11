@@ -1,11 +1,14 @@
 """
--> This module contains the handlers for CRUDing Projects
+-> This module contains the handlers for CRUDing Tokens
 """
-
+import datetime
 import uuid
+from decimal import Decimal
+
 from json import dumps, loads
 
 import boto3
+from dateutil.relativedelta import relativedelta
 
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.handlers.common import (
@@ -14,17 +17,15 @@ from cyclonedx.handlers.common import (
     _get_method,
     _print_values,
     _should_process_children,
-    _to_codebases,
-    _update_codebases,
 )
-from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
+from cyclonedx.model.token import Token
 
 
-def projects_handler(event: dict, context: dict) -> dict:
+def tokens_handler(event: dict, context: dict) -> dict:
 
     """
-    ->  "Projects" Handler. Handles requests to the /projects endpoint.
+    ->  "Tokens" Handler. Handles requests to the /tokens endpoint.
     """
 
     _print_values(event, context)
@@ -34,14 +35,20 @@ def projects_handler(event: dict, context: dict) -> dict:
     # Get the team id from the querystring
     team_id: str = _extract_team_id_from_qs(event)
 
-    # Use ProjectId Extract existing project from DynamoDB with children
+    # Use ProjectId Extract existing
+    # project from DynamoDB with children
     team: Team = db_client.get(
         model=Team(team_id=team_id),
         recurse=True,
     )
 
+    # fmt: off
     # Declare a response dictionary
-    response: dict = {project.entity_id: project.to_json() for project in team.projects}
+    response: dict = {
+        token.entity_id: token.to_json()
+        for token in team.tokens
+    }
+    # fmt: on
 
     return {
         "statusCode": 200,
@@ -53,73 +60,86 @@ def projects_handler(event: dict, context: dict) -> dict:
 def _do_get(event: dict, db_client: HarborDBClient) -> dict:
 
     # Get the project id from the path
-    project_id: str = _extract_id_from_path("projects", event)
+    token_id: str = _extract_id_from_path("token", event)
 
     # Get the team id from the querystring
     team_id: str = _extract_team_id_from_qs(event)
 
-    project = db_client.get(
-        model=Project(team_id=team_id, project_id=project_id),
+    token = db_client.get(
+        model=Token(
+            team_id=team_id,
+            token_id=token_id,
+        ),
         recurse=_should_process_children(event),
     )
 
     return {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "body": dumps({project_id: project.to_json()}),
+        "body": dumps({token_id: token.to_json()}),
     }
 
 
 def _do_post(event: dict, db_client: HarborDBClient) -> dict:
 
+    """
+    -> Handler that creates a token, puts it in
+    -> DynamoDB and returns it to the requester
+    """
+
     # Get the team id from the querystring
     team_id: str = _extract_team_id_from_qs(event)
 
     request_body: dict = loads(event["body"])
-    project_id: str = str(uuid.uuid4())
+    token_id: str = str(uuid.uuid4())
 
-    project: Project = db_client.create(
-        model=Project(
+    # Create a new token starting with "sbom-api",
+    # create a creation and expiration time
+    now = datetime.datetime.now()
+    later = now + relativedelta(years=1)
+
+    # Get the timestamps to put in the database
+    created = now.timestamp()
+    expires = later.timestamp()
+
+    token: Token = db_client.create(
+        model=Token(
             team_id=team_id,
-            project_id=project_id,
-            name=request_body[Project.Fields.NAME],
-            codebases=_to_codebases(
-                team_id=team_id, project_id=project_id, request_body=request_body
-            ),
+            token_id=token_id,
+            name=request_body[Token.Fields.NAME],
+            created=Decimal(created),
+            expires=Decimal(expires),
+            enabled=True,
+            token=f"sbom-api-{uuid.uuid4()}",
         ),
-        recurse=True,
     )
 
     return {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "body": dumps({project_id: project.to_json()}),
+        "body": dumps({token_id: token.to_json()}),
     }
 
 
 def _do_put(event: dict, db_client: HarborDBClient) -> dict:
 
     """
-    -> The behavior of this function is that the objets in the request_body
-    -> will be updated.  If a new object (project or member) comes in the request,
-    -> it will not be created.  If a child object noes not exist in the request_body
-    -> and exists in the database, the object will not be deleted.  Objects can only
-    -> be modified, never created or deleted.
+    -> The behavior of this function is that the objects in the request_body
+    -> will be updated.
     """
 
-    # Get the project id from the path
-    project_id: str = _extract_id_from_path("projects", event)
+    # Get the token id from the path
+    token_id: str = _extract_id_from_path("token", event)
 
     # Get the ProjectId from the Path Parameter
     team_id: str = _extract_team_id_from_qs(event)
 
     # Use ProjectId Extract existing project from DynamoDB with children
-    project: Project = db_client.get(
-        model=Project(
+    token: Token = db_client.get(
+        model=Token(
             team_id=team_id,
-            project_id=project_id,
+            token_id=token_id,
         ),
-        recurse=True,
     )
 
     # Extract the request body from the event
@@ -127,53 +147,50 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
 
     # Replace the name of the project if there is a 'name' key in the request body
     try:
-        project.name = request_body[Project.Fields.NAME]
+        token.name = request_body.get(Token.Fields.NAME)
+        token.enabled = request_body.get(Token.Fields.ENABLED)
     except KeyError:
         ...
 
-    project = _update_codebases(
-        project=project,
-        request_body=request_body,
-    )
-
-    project = db_client.update(
-        model=project,
+    token = db_client.update(
+        model=token,
         recurse=False,
     )
 
     return {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "body": dumps({project_id: project.to_json()}),
+        "body": dumps({token_id: token.to_json()}),
     }
 
 
 def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
 
     # Get the project id from the path
-    project_id: str = _extract_id_from_path("projects", event)
+    token_id: str = _extract_id_from_path("token", event)
 
     # Get the team id from the querystring
     team_id: str = _extract_team_id_from_qs(event)
 
-    project: Project = db_client.get(
-        model=Project(team_id=team_id, project_id=project_id),
-        recurse=True,
+    token: Token = db_client.get(
+        model=Token(
+            team_id=team_id,
+            token_id=token_id,
+        ),
     )
 
     db_client.delete(
-        model=project,
-        recurse=True,
+        model=token,
     )
 
     return {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "body": dumps({project_id: project.to_json()}),
+        "body": dumps({token_id: token.to_json()}),
     }
 
 
-def project_handler(event: dict, context: dict) -> dict:
+def token_handler(event: dict, context: dict) -> dict:
 
     """
     ->  "Project" Handler.  Handles requests to the /project endpoint.

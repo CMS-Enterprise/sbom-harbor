@@ -19,6 +19,7 @@ class Token(HarborModel):
 
         """Inner Class to hold the fields of a Token"""
 
+        NAME = "name"
         CREATED = "created"
         EXPIRES = "expires"
         ENABLED = "enabled"
@@ -37,6 +38,7 @@ class Token(HarborModel):
         return Token(
             team_id=entity_key.team_id,
             token_id=entity_key.entity_id,
+            name=item[Token.Fields.NAME],
             created=item[Token.Fields.CREATED],
             expires=item[Token.Fields.EXPIRES],
             enabled=item[Token.Fields.ENABLED],
@@ -48,6 +50,7 @@ class Token(HarborModel):
         self: "HarborModel",
         team_id: str,
         token_id: str,
+        name: str = "None",
         created: Decimal = None,
         expires: Decimal = None,
         enabled: bool = True,
@@ -64,10 +67,24 @@ class Token(HarborModel):
             ),
         )
 
+        self._name: str = name
         self._created: Decimal = created
         self._expires: Decimal = expires
         self._enabled: bool = enabled
         self._token: str = token
+
+    @property
+    def name(self) -> str:
+
+        """Define the property that holds when the token was created"""
+
+        return self._name
+
+    @name.setter
+    def name(self, name: str):
+        """Define the property that holds when the token was created"""
+
+        self._name = name
 
     @property
     def created(self) -> Decimal:
@@ -83,12 +100,30 @@ class Token(HarborModel):
 
         return self._expires
 
+    @expires.setter
+    def expires(self, expires: Decimal):
+
+        """
+        -> Setter for the Decimal 'expires' property
+        """
+
+        self._expires = expires
+
     @property
     def enabled(self) -> bool:
 
         """Define the property that tell us if the token is enabled"""
 
         return self._enabled
+
+    @enabled.setter
+    def enabled(self, enabled: bool):
+
+        """
+        -> Setter for the boolean 'enabled' property
+        """
+
+        self._enabled = enabled
 
     @property
     def token(self) -> str:
@@ -103,7 +138,11 @@ class Token(HarborModel):
 
         return {
             **super().get_item(),
-            **self.to_json(),
+            Token.Fields.NAME: self._name,
+            Token.Fields.CREATED: self.created,
+            Token.Fields.EXPIRES: self.expires,
+            Token.Fields.ENABLED: self.enabled,
+            Token.Fields.TOKEN: self.token,
         }
 
     def to_json(self):
@@ -114,6 +153,7 @@ class Token(HarborModel):
         """
 
         return {
+            Token.Fields.NAME: self._name,
             Token.Fields.CREATED: float(self.created),
             Token.Fields.EXPIRES: float(self.expires),
             Token.Fields.ENABLED: self.enabled,
