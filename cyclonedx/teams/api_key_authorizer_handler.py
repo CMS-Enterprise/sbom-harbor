@@ -5,11 +5,10 @@
 
 import datetime
 
+import boto3
+
 from cyclonedx.constants import (
     TEAM_TOKEN_TABLE_NAME,
-)
-from cyclonedx.handlers.common import (
-    dynamodb_resource,
 )
 
 
@@ -77,7 +76,7 @@ def api_key_authorizer_handler(event: dict, context: dict):
     team_id = path_params["team"]
 
     # Get our Team table from DynamoDB
-    team_token_table = dynamodb_resource.Table(TEAM_TOKEN_TABLE_NAME)
+    team_token_table = boto3.resource("dynamodb").Table(TEAM_TOKEN_TABLE_NAME)
 
     # Get the team from the table
     get_team_tokens_rsp = team_token_table.query(

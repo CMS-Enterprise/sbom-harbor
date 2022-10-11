@@ -68,7 +68,11 @@ class AuthorizerLambdaFactory:
 
             return self.lambda_func
 
-    def __init__(self: "AuthorizerLambdaFactory", scope: Construct, vpc: ec2.Vpc):
+    def __init__(
+        self: "AuthorizerLambdaFactory",
+        scope: Construct,
+        vpc: ec2.Vpc,
+    ):
 
         """Constructor"""
 
@@ -80,5 +84,7 @@ class AuthorizerLambdaFactory:
         """Create an AuthorizerLambda with the specified name"""
 
         return AuthorizerLambdaFactory.SBOMJwtAuthorizerLambda(
-            self.scope, vpc=self.vpc, name=f"{lambda_name}_Authorizer"
+            self.scope,
+            vpc=self.vpc,
+            name=f"{lambda_name}_Authorizer",
         )

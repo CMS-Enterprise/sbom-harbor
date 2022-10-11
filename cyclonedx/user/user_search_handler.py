@@ -1,11 +1,13 @@
-
+"""
+-> Module for User Search
+"""
 from json import dumps
 from os import environ
 
 from cyclonedx.constants import (
     USER_POOL_NAME_KEY,
 )
-from cyclonedx.core_utils.handler_commons import cognito_client
+from cyclonedx.handlers.common import cognito_client
 from cyclonedx.handlers.cyclonedx_util import (
     __create_user_search_response_obj,
     __get_query_string_params_from_event,
@@ -14,17 +16,21 @@ from cyclonedx.handlers.cyclonedx_util import (
 
 def user_search_handler(event: dict = None, context: dict = None):
 
+    """
+    -> Handler for User Search
+    """
+
     query_params = __get_query_string_params_from_event(event)
 
     filter_str = query_params["filter"]
-    user_filter = f"email ^= \"{filter_str}\""
+    user_filter = f'email ^= "{filter_str}"'
 
     response = cognito_client.list_users(
         UserPoolId=environ.get(USER_POOL_NAME_KEY),
         AttributesToGet=[
-            'email',
+            "email",
         ],
-        Limit=60, # Max is 60
+        Limit=60,  # Max is 60
         Filter=user_filter,
     )
 

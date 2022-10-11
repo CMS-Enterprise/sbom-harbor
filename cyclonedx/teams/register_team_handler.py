@@ -1,3 +1,7 @@
+"""
+-> Module for Registering Teams
+"""
+import boto3
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 
@@ -6,10 +10,7 @@ from cyclonedx.constants import (
     TEAM_TOKEN_TABLE_NAME,
     TEAM_TABLE_NAME,
 )
-from cyclonedx.handlers.common import (
-    team_schema,
-    dynamodb_resource
-)
+from cyclonedx.handlers.common import team_schema
 from cyclonedx.handlers.cyclonedx_util import (
     __create_team_response,
     __get_body_from_event,
@@ -18,15 +19,33 @@ from cyclonedx.handlers.cyclonedx_util import (
 
 def register_team_handler(event: dict = None, context: dict = None):
 
+    """
+    -> Register Team Handler
+    """
+
     team_json: dict = __get_body_from_event(event)
 
     try:
-        validate(
-            instance=team_json,
-            schema=team_schema
-        )
+        validate(instance=team_json, schema=team_schema)
 
         team_id = team_json["Id"]
+
+        dynamodb_resource = boto3.resource("dynamodb")
+
+        def update_table(
+            key: str,
+            update_team_json: dict,
+            update_team_id: str,
+            table: dynamodb_resource.Table,
+        ):
+            items = update_team_json[key]
+            for item in items:
+                item.update(
+                    {
+                        "TeamId": update_team_id,
+                    }
+                )
+                table.put_item(Item=item)
 
         # Add the tokens to the token table if there are tokens.
         token_table = dynamodb_resource.Table(TEAM_TOKEN_TABLE_NAME)
@@ -44,22 +63,4 @@ def register_team_handler(event: dict = None, context: dict = None):
         return __create_team_response(200, "Team Created")
 
     except ValidationError as err:
-        return __create_team_response(
-            500, f"Validation Error: {err}")
-
-
-def update_table(
-        key: str,
-        team_json: dict,
-        team_id: str,
-        table: dynamodb_resource.Table,
-):
-    items = team_json[key]
-    for item in items:
-        item.update({
-            "TeamId": team_id,
-        })
-        table.put_item(
-            Item=item
-        )
-
+        return __create_team_response(500, f"Validation Error: {err}")

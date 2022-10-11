@@ -1,8 +1,9 @@
-from cyclonedx.core_utils import (
-    ICClient
-)
+"""
+-> Ion Channel Interface Handler
+"""
 from cyclonedx.handlers.cyclonedx_util import (
-    __get_all_s3_obj_data
+    __get_all_s3_obj_data,
+    ICClient,
 )
 
 
@@ -15,10 +16,10 @@ def ic_interface_handler(event: dict = None, context: dict = None):
     """
 
     all_data = __get_all_s3_obj_data(event)
-    sbom_str_file = all_data['data']
-    team = all_data['team']
-    project = all_data['project']
-    codebase = all_data['codebase']
+    sbom_str_file = all_data["data"]
+    team = all_data["team"]
+    project = all_data["project"]
+    codebase = all_data["codebase"]
 
     # Here is where the SBOM name, or the Ion Channel Team Name
     # is created.

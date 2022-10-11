@@ -7,16 +7,20 @@ from aws_cdk import (
     aws_apigatewayv2_alpha as apigwv2a,
     aws_ec2 as ec2,
     aws_lambda as lambda_,
+    aws_cognito as cognito,
     Duration,
     Stack,
 )
 from aws_cdk.aws_apigatewayv2_alpha import (
     CorsHttpMethod,
     CorsPreflightOptions,
+    HttpNoneAuthorizer,
 )
 from aws_cdk.aws_apigatewayv2_authorizers_alpha import HttpLambdaAuthorizer
 from aws_cdk.aws_apigatewayv2_integrations_alpha import HttpLambdaIntegration
 from constructs import Construct
+
+from deploy.user import SBOMLoginLambda
 from deploy.util import create_asset
 from deploy.constants import (
     AUTHORIZATION_HEADER,
@@ -30,7 +34,7 @@ from deploy.util import (
     DynamoTableManager,
 )
 
-INGRESS_API_STACK_ID = "SBOMApi-Ingress-Api"
+INGRESS_API_STACK_ID = "SBOM-Management-Api"
 
 
 class LambdaFactory:
@@ -112,21 +116,36 @@ class SBOMIngressApiStack(Stack):
 
     __cwd = path.dirname(__file__)
 
+    # pylint: disable=R0913
     def __init__(
         self,
         scope: Construct,
         vpc: ec2.Vpc,
         table_mgr: DynamoTableManager,
+        user_pool: cognito.UserPool,
+        user_pool_client: cognito.UserPoolClient,
         **kwargs,
     ) -> None:
 
         # Run the constructor of the Stack superclass.
         super().__init__(scope, INGRESS_API_STACK_ID, **kwargs)
 
+        authorizer_factory = AuthorizerLambdaFactory(
+            self,
+            vpc=vpc,
+        )
+
         self.api = apigwv2a.HttpApi(
             self,
-            id="SBOMIngressApi",
-            description="SBOM Ingress API (Experimental)",
+            id="SBOMManagementApi",
+            description="SBOM Management API (Experimental)",
+            default_authorizer=HttpLambdaAuthorizer(
+                "Teams_HttpLambdaAuthorizer",
+                authorizer_name="Teams_HttpLambdaAuthorizer",
+                handler=authorizer_factory.create(
+                    "SBOMAPIAuthorizer"
+                ).get_lambda_function(),
+            ),
             cors_preflight=CorsPreflightOptions(
                 allow_origins=["*"],
                 allow_headers=[
@@ -147,11 +166,6 @@ class SBOMIngressApiStack(Stack):
             ),
         )
 
-        authorizer_factory = AuthorizerLambdaFactory(
-            self,
-            vpc=vpc,
-        )
-
         lambda_factory = LambdaFactory(
             self,
             vpc=vpc,
@@ -159,24 +173,26 @@ class SBOMIngressApiStack(Stack):
         )
 
         self.__add_team_routes(
-            authorizer_factory=authorizer_factory,
             lambda_factory=lambda_factory,
         )
 
         self.__add_project_routes(
-            authorizer_factory=authorizer_factory,
+            lambda_factory=lambda_factory,
+        )
+
+        self.__add_codebase_routes(
             lambda_factory=lambda_factory,
         )
 
         self.__add_token_routes(
-            authorizer_factory=authorizer_factory,
             lambda_factory=lambda_factory,
         )
+
+        self.__add_login_route(user_pool_client, user_pool, vpc)
 
     def __add_team_routes(
         self: "SBOMIngressApiStack",
         lambda_factory: LambdaFactory,
-        authorizer_factory: AuthorizerLambdaFactory,
     ):
 
         self.api.add_routes(
@@ -188,11 +204,6 @@ class SBOMIngressApiStack(Stack):
                     lambda_name="Teams",
                     func="cyclonedx.handlers.teams.teams_handler",
                 ).get_lambda_function(),
-            ),
-            authorizer=HttpLambdaAuthorizer(
-                "Teams_HttpLambdaAuthorizer",
-                authorizer_name="Teams_HttpLambdaAuthorizer",
-                handler=authorizer_factory.create("Teams").get_lambda_function(),
             ),
         )
 
@@ -210,11 +221,6 @@ class SBOMIngressApiStack(Stack):
                     func="cyclonedx.handlers.teams.team_handler",
                 ).get_lambda_function(),
             ),
-            authorizer=HttpLambdaAuthorizer(
-                "Team_HttpLambdaAuthorizer",
-                authorizer_name="Team_HttpLambdaAuthorizer",
-                handler=authorizer_factory.create("Team").get_lambda_function(),
-            ),
         )
 
         self.api.add_routes(
@@ -229,17 +235,11 @@ class SBOMIngressApiStack(Stack):
                     func="cyclonedx.handlers.teams.team_handler",
                 ).get_lambda_function(),
             ),
-            authorizer=HttpLambdaAuthorizer(
-                "Team_HttpLambdaAuthorizer_POST",
-                authorizer_name="Team_HttpLambdaAuthorizer_POST",
-                handler=authorizer_factory.create("Team_POST").get_lambda_function(),
-            ),
         )
 
     def __add_project_routes(
         self: "SBOMIngressApiStack",
         lambda_factory: LambdaFactory,
-        authorizer_factory: AuthorizerLambdaFactory,
     ):
 
         self.api.add_routes(
@@ -251,11 +251,6 @@ class SBOMIngressApiStack(Stack):
                     lambda_name="Projects",
                     func="cyclonedx.handlers.projects.projects_handler",
                 ).get_lambda_function(),
-            ),
-            authorizer=HttpLambdaAuthorizer(
-                "Projects_HttpLambdaAuthorizer",
-                authorizer_name="Projects_HttpLambdaAuthorizer",
-                handler=authorizer_factory.create("Projects").get_lambda_function(),
             ),
         )
 
@@ -273,11 +268,6 @@ class SBOMIngressApiStack(Stack):
                     func="cyclonedx.handlers.projects.project_handler",
                 ).get_lambda_function(),
             ),
-            authorizer=HttpLambdaAuthorizer(
-                "Project_HttpLambdaAuthorizer",
-                authorizer_name="Project_HttpLambdaAuthorizer",
-                handler=authorizer_factory.create("Project").get_lambda_function(),
-            ),
         )
 
         self.api.add_routes(
@@ -292,17 +282,58 @@ class SBOMIngressApiStack(Stack):
                     func="cyclonedx.handlers.projects.project_handler",
                 ).get_lambda_function(),
             ),
-            authorizer=HttpLambdaAuthorizer(
-                "Project_HttpLambdaAuthorizer_POST",
-                authorizer_name="Project_HttpLambdaAuthorizer_POST",
-                handler=authorizer_factory.create("Project_POST").get_lambda_function(),
+        )
+
+    def __add_codebase_routes(
+        self: "SBOMIngressApiStack",
+        lambda_factory: LambdaFactory,
+    ):
+
+        self.api.add_routes(
+            path="/api/v1/codebases",
+            methods=[apigwv2a.HttpMethod.GET],
+            integration=HttpLambdaIntegration(
+                "Codebases_HttpLambdaIntegration",
+                handler=lambda_factory.create(
+                    lambda_name="Codebases",
+                    func="cyclonedx.handlers.codebases.codebases_handler",
+                ).get_lambda_function(),
+            ),
+        )
+
+        self.api.add_routes(
+            path="/api/v1/codebase/{codebase}",
+            methods=[
+                apigwv2a.HttpMethod.GET,
+                apigwv2a.HttpMethod.PUT,
+                apigwv2a.HttpMethod.DELETE,
+            ],
+            integration=HttpLambdaIntegration(
+                "Codebase_HttpLambdaIntegration",
+                handler=lambda_factory.create(
+                    lambda_name="Codebase",
+                    func="cyclonedx.handlers.codebases.codebase_handler",
+                ).get_lambda_function(),
+            ),
+        )
+
+        self.api.add_routes(
+            path="/api/v1/codebase",
+            methods=[
+                apigwv2a.HttpMethod.POST,
+            ],
+            integration=HttpLambdaIntegration(
+                "Codebase_HttpLambdaIntegration_POST",
+                handler=lambda_factory.create(
+                    lambda_name="Codebase_POST",
+                    func="cyclonedx.handlers.codebases.codebase_handler",
+                ).get_lambda_function(),
             ),
         )
 
     def __add_token_routes(
         self: "SBOMIngressApiStack",
         lambda_factory: LambdaFactory,
-        authorizer_factory: AuthorizerLambdaFactory,
     ):
 
         self.api.add_routes(
@@ -312,13 +343,8 @@ class SBOMIngressApiStack(Stack):
                 "Tokens_HttpLambdaIntegration",
                 handler=lambda_factory.create(
                     lambda_name="Tokens",
-                    func="cyclonedx.handlers.projects.tokens_handler",
+                    func="cyclonedx.handlers.tokens.tokens_handler",
                 ).get_lambda_function(),
-            ),
-            authorizer=HttpLambdaAuthorizer(
-                "Tokens_HttpLambdaAuthorizer",
-                authorizer_name="Tokens_HttpLambdaAuthorizer",
-                handler=authorizer_factory.create("Tokens").get_lambda_function(),
             ),
         )
 
@@ -333,13 +359,8 @@ class SBOMIngressApiStack(Stack):
                 "Token_HttpLambdaIntegration",
                 handler=lambda_factory.create(
                     lambda_name="Token",
-                    func="cyclonedx.handlers.projects.token_handler",
+                    func="cyclonedx.handlers.tokens.token_handler",
                 ).get_lambda_function(),
-            ),
-            authorizer=HttpLambdaAuthorizer(
-                "Token_HttpLambdaAuthorizer",
-                authorizer_name="Token_HttpLambdaAuthorizer",
-                handler=authorizer_factory.create("Token").get_lambda_function(),
             ),
         )
 
@@ -352,12 +373,34 @@ class SBOMIngressApiStack(Stack):
                 "Token_HttpLambdaIntegration_POST",
                 handler=lambda_factory.create(
                     lambda_name="Token_POST",
-                    func="cyclonedx.handlers.projects.token_handler",
+                    func="cyclonedx.handlers.tokens.token_handler",
                 ).get_lambda_function(),
             ),
-            authorizer=HttpLambdaAuthorizer(
-                "Token_HttpLambdaAuthorizer_POST",
-                authorizer_name="Token_HttpLambdaAuthorizer_POST",
-                handler=authorizer_factory.create("Token_POST").get_lambda_function(),
+        )
+
+    def __add_login_route(
+        self,
+        user_pool_client: cognito.UserPoolClient,
+        user_pool: cognito.UserPool,
+        vpc: ec2.Vpc,
+    ):
+
+        """Adds the /api/login endpoint for getting a JWT and logging in"""
+
+        client_id = user_pool_client.user_pool_client_id
+        user_pool_id = user_pool.user_pool_id
+
+        self.api.add_routes(
+            path="/api/login",
+            authorizer=HttpNoneAuthorizer(),
+            methods=[apigwv2a.HttpMethod.POST],
+            integration=HttpLambdaIntegration(
+                "LOGIN_HttpLambdaIntegration_ID",
+                handler=SBOMLoginLambda(
+                    self,
+                    vpc=vpc,
+                    user_pool_client_id=client_id,
+                    user_pool_id=user_pool_id,
+                ).get_lambda_function(),
             ),
         )

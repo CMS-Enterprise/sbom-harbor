@@ -51,7 +51,9 @@ def dodep() -> None:
 
     # The Ingress stack set up the infrastructure to handle incoming SBOMs
     ingress_stack = SBOMIngressPiplineStack(
-        app, vpc, env=env,
+        app,
+        vpc,
+        env=env,
         user_pool=user_pool,
         user_pool_client=user_pool_client,
         table_mgr=table_manager,
@@ -59,13 +61,18 @@ def dodep() -> None:
 
     # The Ingress stack set up the infrastructure to handle incoming SBOMs
     ingress_api_stack = SBOMIngressApiStack(
-        app, vpc, env=env,
+        app,
+        vpc,
+        env=env,
         table_mgr=table_manager,
+        user_pool=user_pool,
+        user_pool_client=user_pool_client,
     )
 
     # The Enrichment Stack sets up the infrastructure to enrich SBOMs
     SBOMEnrichmentPiplineStack(
-        app, vpc,
+        app,
+        vpc,
         env=env,
         event_bus=event_bus,
     )
@@ -98,4 +105,3 @@ def setup_admin_user() -> None:
     """
 
     test_create_cognito_users()
-
