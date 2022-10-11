@@ -3,6 +3,7 @@
 """
 
 import importlib.resources as pr
+import fnmatch
 from json import loads
 from typing import Callable
 from cyclonedx.enrichment.dependency_track import summarizer_handler
@@ -53,14 +54,11 @@ def test_summarizer_has_results(
         list_of_files.append(bucket_objects.key)
 
     # Verify the new report file is in the bucket
-    # TODO update these once we know how to get them properly
-    company_name = "Company_Name(missing)"
-    fisma_id = "fisma_id(missing)"
-    submit_date = "submit_date(missing)"
-    expected_file_name = (
-        f"harbor-{sbom_name}-report-{company_name}-{fisma_id}-{submit_date}"
-    )
-    assert expected_file_name in list_of_files
+    project = "TestProject"
+    fisma = "unknown"
+
+    flattened_file_pattern = f"harbor-data-summary-{project}-{fisma}-*"
+    assert len(fnmatch.filter(list_of_files, flattened_file_pattern)) >= 1
 
     # TODO delete the following or move it to another file, this only
     #  exists as an easy way to debug output

@@ -10,10 +10,12 @@ import boto3
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.handlers.common import (
     _extract_id_from_path,
+    _extract_project_id_from_qs,
     _extract_team_id_from_qs,
     _get_method,
     _print_values,
     _should_process_children,
+    update_codebase_data,
 )
 from cyclonedx.model.team import Team
 from cyclonedx.model.codebase import CodeBase
@@ -32,8 +34,8 @@ def codebases_handler(event: dict, context: dict) -> dict:
     # Get the team id from the querystring
     team_id: str = _extract_team_id_from_qs(event)
 
-    # Use ProjectId Extract existing
-    # project from DynamoDB with children
+    # Use CodeBaseId Extract existing
+    # codebase from DynamoDB with children
     team: Team = db_client.get(
         model=Team(team_id=team_id),
         recurse=True,
@@ -41,9 +43,20 @@ def codebases_handler(event: dict, context: dict) -> dict:
 
     # fmt: off
     # Declare a response dictionary
+    codebase_lists: list[list[CodeBase]] = [
+        project.codebases
+        for project in team.projects
+    ]
+    codebases: list[CodeBase] = [
+        codebase
+        for codebase_list in
+            codebase_lists
+        for codebase in
+            codebase_list
+    ]
     response: dict = {
         codebase.entity_id: codebase.to_json()
-        for codebase in team.codebases
+        for codebase in codebases
     }
     # fmt: on
 
@@ -56,7 +69,7 @@ def codebases_handler(event: dict, context: dict) -> dict:
 
 def _do_get(event: dict, db_client: HarborDBClient) -> dict:
 
-    # Get the project id from the path
+    # Get the codebase id from the path
     codebase_id: str = _extract_id_from_path("codebase", event)
 
     # Get the team id from the querystring
@@ -86,6 +99,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
 
     # Get the team id from the querystring
     team_id: str = _extract_team_id_from_qs(event)
+    project_id: str = _extract_project_id_from_qs(event)
 
     request_body: dict = loads(event["body"])
     codebase_id: str = str(uuid.uuid4())
@@ -93,8 +107,11 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
     codebase: CodeBase = db_client.create(
         model=CodeBase(
             team_id=team_id,
+            project_id=project_id,
             codebase_id=codebase_id,
             name=request_body[CodeBase.Fields.NAME],
+            language=request_body[CodeBase.Fields.LANGUAGE],
+            build_tool=request_body[CodeBase.Fields.BUILD_TOOL],
         ),
     )
 
@@ -112,13 +129,19 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
     -> will be updated.
     """
 
+    # Get the team id from the query string
+    team_id: str = _extract_team_id_from_qs(event)
+
+    # Get the team id from the query string
+    project_id: str = _extract_project_id_from_qs(event)
+
     # Get the codebase id from the path
     codebase_id: str = _extract_id_from_path("codebase", event)
 
-    # Get the ProjectId from the Path Parameter
-    team_id: str = _extract_team_id_from_qs(event)
+    # Extract the request body from the event
+    request_body: dict = loads(event["body"])
 
-    # Use ProjectId Extract existing project from DynamoDB with children
+    # Use CodeBaseId Extract existing codebase from DynamoDB with children
     codebase: CodeBase = db_client.get(
         model=CodeBase(
             team_id=team_id,
@@ -126,7 +149,15 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
         ),
     )
 
-    codebase = db_client.update(
+    codebase: CodeBase = update_codebase_data(
+        team_id=team_id,
+        project_id=project_id,
+        codebase_id=codebase_id,
+        codebase_item=codebase.get_item(),
+        codebase_dict=request_body,
+    )
+
+    codebase: CodeBase = db_client.update(
         model=codebase,
         recurse=False,
     )
@@ -140,7 +171,7 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
 
 def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
 
-    # Get the project id from the path
+    # Get the codebase id from the path
     codebase_id: str = _extract_id_from_path("codebase", event)
 
     # Get the team id from the querystring
@@ -167,7 +198,7 @@ def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
 def codebase_handler(event: dict, context: dict) -> dict:
 
     """
-    ->  "Project" Handler.  Handles requests to the /project endpoint.
+    ->  "CodeBase" Handler.  Handles requests to the /codebase endpoint.
     """
 
     # Print the incoming values, so we can see them in

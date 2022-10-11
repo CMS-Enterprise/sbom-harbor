@@ -43,6 +43,12 @@ def _extract_team_id_from_qs(event: dict):
     return team_id
 
 
+def _extract_project_id_from_qs(event: dict):
+    path_params: dict = event["queryStringParameters"]
+    team_id: str = path_params["projectId"]
+    return team_id
+
+
 def _should_process_children(event: dict) -> bool:
     try:
         query_params: dict = event["queryStringParameters"]
@@ -151,30 +157,54 @@ def _update_codebases(project: Project, request_body: dict):
         # If no codebases match, then ignore it.
         if codebases:
 
-            # Otherwise, there will only be one matching codebase
-            codebase_item: dict = codebases.pop().get_item()
-
-            original_name: str = codebase_item.get(CodeBase.Fields.NAME)
-            original_language: str = codebase_item.get(CodeBase.Fields.LANGUAGE)
-            original_build_tool: str = codebase_item.get(CodeBase.Fields.BUILD_TOOL)
-
-            # replace only the data in the existing object with the
-            # new data from the request body ignoring children
-            # Update that object in DynamoDB
-            codebase: CodeBase = CodeBase(
+            # Update the data in the object
+            codebase: CodeBase = update_codebase_data(
                 team_id=project.team_id,
                 project_id=project.entity_id,
                 codebase_id=codebase_id,
-                name=codebase_dict.get(CodeBase.Fields.NAME, original_name),
-                language=codebase_dict.get(CodeBase.Fields.LANGUAGE, original_language),
-                build_tool=codebase_dict.get(
-                    CodeBase.Fields.BUILD_TOOL, original_build_tool
-                ),
+                codebase_dict=codebase_dict,
+                codebase_item=codebases.pop().get_item(),
             )
 
-            project.add_child(db_client.update(codebase))
+            # Update the database
+            child: CodeBase = db_client.update(codebase)
+
+            # Add the codebase as a child of the project
+            project.add_child(child)
 
     return project
+
+
+def update_codebase_data(
+    team_id: str,
+    project_id: str,
+    codebase_id: str,
+    codebase_dict: dict,
+    codebase_item: dict,
+):
+
+    """
+    -> Update a Codebase
+    """
+
+    original_name: str = codebase_item.get(CodeBase.Fields.NAME)
+    original_language: str = codebase_item.get(CodeBase.Fields.LANGUAGE)
+    original_build_tool: str = codebase_item.get(CodeBase.Fields.BUILD_TOOL)
+
+    # replace only the data in the existing object with the
+    # new data from the request body ignoring children
+    # Update that object in DynamoDB
+    return CodeBase(
+        team_id=team_id,
+        project_id=project_id,
+        codebase_id=codebase_id,
+        name=codebase_dict.get(CodeBase.Fields.NAME, original_name),
+        language=codebase_dict.get(CodeBase.Fields.LANGUAGE, original_language),
+        build_tool=codebase_dict.get(
+            CodeBase.Fields.BUILD_TOOL,
+            original_build_tool,
+        ),
+    )
 
 
 def _update_projects(team: Team, request_body: dict):
