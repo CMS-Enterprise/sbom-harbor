@@ -10,13 +10,11 @@ from aws_cdk import (
     aws_ec2 as ec2,
     aws_cognito as cognito,
     aws_s3 as s3,
-    aws_lambda as lambda_,
     Stack,
 )
 from aws_cdk.aws_apigatewayv2_alpha import (
     CorsHttpMethod,
     CorsPreflightOptions,
-    HttpNoneAuthorizer,
 )
 from aws_cdk.aws_apigatewayv2_authorizers_alpha import HttpLambdaAuthorizer
 from aws_cdk.aws_apigatewayv2_integrations_alpha import HttpLambdaIntegration
@@ -44,20 +42,13 @@ from deploy.teams import (
     SBOMRegisterTeamLambda,
     SBOMUpdateTeamLambda,
     SBOMGetTeamsForUserIdLambda,
-    SBOMUploadAPIKeyAuthorizerLambda
+    SBOMUploadAPIKeyAuthorizerLambda,
 )
-from deploy.tokens import (
-    SBOMCreateTokenLambda,
-    SBOMDeleteTokenLambda
-)
+from deploy.tokens import SBOMCreateTokenLambda, SBOMDeleteTokenLambda
 from deploy.user import (
     SBOMUserSearchLambda,
-    SBOMLoginLambda
 )
-from deploy.util import (
-    DynamoTableManager,
-    SbomIngressLambda
-)
+from deploy.util import DynamoTableManager, SbomIngressLambda
 
 
 class SBOMIngressPiplineStack(Stack):
@@ -66,6 +57,7 @@ class SBOMIngressPiplineStack(Stack):
 
     __cwd = path.dirname(__file__)
 
+    # pylint: disable=R0913
     def __init__(
         self,
         scope: Construct,
@@ -80,15 +72,16 @@ class SBOMIngressPiplineStack(Stack):
         super().__init__(scope, INGRESS_STACK_ID, **kwargs)
 
         self.api = apigwv2a.HttpApi(
-            self, id="SBOMApi",
+            self,
+            id="SBOMApi",
             description="SBOM API (ACTUAL)",
             cors_preflight=CorsPreflightOptions(
                 allow_origins=["*"],
                 allow_headers=[
                     AUTHORIZATION_HEADER,
-                    'X-Api-Key',
-                    'Content-Type',
-                    'X-Amz-Date',
+                    "X-Api-Key",
+                    "Content-Type",
+                    "X-Amz-Date",
                 ],
                 allow_methods=[
                     CorsHttpMethod.GET,
@@ -98,7 +91,7 @@ class SBOMIngressPiplineStack(Stack):
                     CorsHttpMethod.DELETE,
                     CorsHttpMethod.OPTIONS,
                     CorsHttpMethod.PATCH,
-                ]
+                ],
             ),
         )
 
@@ -109,16 +102,19 @@ class SBOMIngressPiplineStack(Stack):
 
         self.__enable_logging(self.api, False)
         self.__generate_apigw_url_output()
-        self.__add_login_route(user_pool_client, user_pool, vpc)
-        self.__add_user_search_route(user_pool_client, user_pool, vpc, authorizer_factory)
+        self.__add_user_search_route(
+            user_pool_client, user_pool, vpc, authorizer_factory
+        )
         self.__add_team_routes(vpc, table_mgr, authorizer_factory)
         self.__add_token_routes(vpc, table_mgr, authorizer_factory)
         self.__add_sbom_upload_route(vpc, table_mgr)
 
     def __add_user_search_route(
-            self, user_pool_client: cognito.UserPoolClient,
-            user_pool: cognito.UserPool, vpc: ec2.Vpc,
-            authorizer_factory: AuthorizerLambdaFactory,
+        self,
+        user_pool_client: cognito.UserPoolClient,
+        user_pool: cognito.UserPool,
+        vpc: ec2.Vpc,
+        authorizer_factory: AuthorizerLambdaFactory,
     ):
 
         self.api.add_routes(
@@ -127,50 +123,24 @@ class SBOMIngressPiplineStack(Stack):
             integration=HttpLambdaIntegration(
                 "USER_SEARCH_HttpLambdaIntegration_ID",
                 handler=SBOMUserSearchLambda(
-                    self, vpc=vpc,
+                    self,
+                    vpc=vpc,
                     user_pool_client=user_pool_client,
-                    user_pool=user_pool
+                    user_pool=user_pool,
                 ).get_lambda_function(),
             ),
             authorizer=HttpLambdaAuthorizer(
                 "UserSearch_HttpJwtAuthorizer_ID",
                 authorizer_name="UserSearchHttpJwtAuthorizer",
-                handler=authorizer_factory.create(
-                    USER_SEARCH_LN
-                ).get_lambda_function()
-            )
-        )
-
-    def __add_login_route(
-            self,
-            user_pool_client: cognito.UserPoolClient,
-            user_pool: cognito.UserPool,
-            vpc: ec2.Vpc
-    ):
-
-        """ Adds the /api/login endpoint for getting a JWT and logging in """
-
-        client_id = user_pool_client.user_pool_client_id
-        user_pool_id = user_pool.user_pool_id
-
-        self.api.add_routes(
-            path="/api/login",
-            authorizer=HttpNoneAuthorizer(),
-            methods=[apigwv2a.HttpMethod.POST],
-            integration=HttpLambdaIntegration(
-                "LOGIN_HttpLambdaIntegration_ID",
-                handler=SBOMLoginLambda(
-                    self, vpc=vpc,
-                    user_pool_client_id=client_id,
-                    user_pool_id=user_pool_id,
-                ).get_lambda_function(),
-            )
+                handler=authorizer_factory.create(USER_SEARCH_LN).get_lambda_function(),
+            ),
         )
 
     def __add_team_routes(
-            self, vpc: ec2.Vpc,
-            dynamo_table_mgr: DynamoTableManager,
-            authorizer_factory: AuthorizerLambdaFactory
+        self,
+        vpc: ec2.Vpc,
+        dynamo_table_mgr: DynamoTableManager,
+        authorizer_factory: AuthorizerLambdaFactory,
     ):
 
         self.api.add_routes(
@@ -179,17 +149,16 @@ class SBOMIngressPiplineStack(Stack):
             integration=HttpLambdaIntegration(
                 "GET_TEAM_HttpLambdaIntegration_ID",
                 handler=SBOMGetTeamLambda(
-                    self, vpc=vpc,
+                    self,
+                    vpc=vpc,
                     table_mgr=dynamo_table_mgr,
                 ).get_lambda_function(),
             ),
             authorizer=HttpLambdaAuthorizer(
                 "GetTeam_HttpJwtAuthorizer_ID",
                 authorizer_name="GetTeamHttpJwtAuthorizer",
-                handler=authorizer_factory.create(
-                    GET_TEAM_LN
-                ).get_lambda_function()
-            )
+                handler=authorizer_factory.create(GET_TEAM_LN).get_lambda_function(),
+            ),
         )
 
         self.api.add_routes(
@@ -198,7 +167,8 @@ class SBOMIngressPiplineStack(Stack):
             integration=HttpLambdaIntegration(
                 "REGISTER_TEAM_HttpLambdaIntegration_ID",
                 handler=SBOMRegisterTeamLambda(
-                    self, vpc=vpc,
+                    self,
+                    vpc=vpc,
                     table_mgr=dynamo_table_mgr,
                 ).get_lambda_function(),
             ),
@@ -207,8 +177,8 @@ class SBOMIngressPiplineStack(Stack):
                 authorizer_name="RegisterTeamHttpJwtAuthorizer",
                 handler=authorizer_factory.create(
                     REGISTER_TEAM_LN
-                ).get_lambda_function()
-            )
+                ).get_lambda_function(),
+            ),
         )
 
         self.api.add_routes(
@@ -217,17 +187,16 @@ class SBOMIngressPiplineStack(Stack):
             integration=HttpLambdaIntegration(
                 "UPDATE_TEAM_HttpLambdaIntegration_ID",
                 handler=SBOMUpdateTeamLambda(
-                    self, vpc=vpc,
+                    self,
+                    vpc=vpc,
                     table_mgr=dynamo_table_mgr,
                 ).get_lambda_function(),
             ),
             authorizer=HttpLambdaAuthorizer(
                 "UpdateTeam_HttpJwtAuthorizer_ID",
                 authorizer_name="UpdateTeamHttpJwtAuthorizer",
-                handler=authorizer_factory.create(
-                    UPDATE_TEAM_LN
-                ).get_lambda_function()
-            )
+                handler=authorizer_factory.create(UPDATE_TEAM_LN).get_lambda_function(),
+            ),
         )
 
         self.api.add_routes(
@@ -236,7 +205,8 @@ class SBOMIngressPiplineStack(Stack):
             integration=HttpLambdaIntegration(
                 "GET_TEAMS_FOR_ID_HttpLambdaIntegration_ID",
                 handler=SBOMGetTeamsForUserIdLambda(
-                    self, vpc=vpc,
+                    self,
+                    vpc=vpc,
                     table_mgr=dynamo_table_mgr,
                 ).get_lambda_function(),
             ),
@@ -245,17 +215,18 @@ class SBOMIngressPiplineStack(Stack):
                 authorizer_name="GetTeamsForIdHttpJwtAuthorizer",
                 handler=authorizer_factory.create(
                     GET_TEAMS_FOR_ID_LN
-                ).get_lambda_function()
-            )
+                ).get_lambda_function(),
+            ),
         )
 
     def __add_token_routes(
-        self, vpc: ec2.Vpc,
+        self,
+        vpc: ec2.Vpc,
         dynamo_table_mgr: DynamoTableManager,
         authorizer_factory: AuthorizerLambdaFactory,
     ):
 
-        """ Adds the create and delete token lambdas """
+        """Adds the create and delete token lambdas"""
 
         self.api.add_routes(
             path="/api/{team}/token",
@@ -271,8 +242,8 @@ class SBOMIngressPiplineStack(Stack):
                 authorizer_name="CreateTokenHttpJwtAuthorizer",
                 handler=authorizer_factory.create(
                     CREATE_TOKEN_LN
-                ).get_lambda_function()
-            )
+                ).get_lambda_function(),
+            ),
         )
 
         self.api.add_routes(
@@ -289,16 +260,17 @@ class SBOMIngressPiplineStack(Stack):
                 authorizer_name="DeleteTokenHttpJwtAuthorizer",
                 handler=authorizer_factory.create(
                     DELETE_TOKEN_LN
-                ).get_lambda_function()
-            )
+                ).get_lambda_function(),
+            ),
         )
 
     def __add_sbom_upload_route(
-            self, vpc: ec2.Vpc,
-            dynamo_table_mgr: DynamoTableManager,
+        self,
+        vpc: ec2.Vpc,
+        dynamo_table_mgr: DynamoTableManager,
     ):
 
-        """ Adds the /api/sbom route """
+        """Adds the /api/sbom route"""
 
         self.api.add_routes(
             path="/api/{team}/{project}/{codebase}/sbom",
@@ -308,24 +280,26 @@ class SBOMIngressPiplineStack(Stack):
                 authorizer_name="UPLOAD_SBOM_HttpLambdaAuthorizer",
                 handler=SBOMUploadAPIKeyAuthorizerLambda(
                     self, vpc=vpc, table_mgr=dynamo_table_mgr
-                ).get_lambda_function()
+                ).get_lambda_function(),
             ),
             integration=HttpLambdaIntegration(
                 "UPLOAD_SBOM_HttpLambdaIntegration_ID",
                 handler=SbomIngressLambda(
-                    self, vpc=vpc,
+                    self,
+                    vpc=vpc,
                     s3_bucket=s3.Bucket.from_bucket_name(
-                        self, id=S3_BUCKET_ID,
+                        self,
+                        id=S3_BUCKET_ID,
                         bucket_name=S3_BUCKET_NAME,
                     ),
                 ).get_lambda_function(),
-            )
+            ),
         )
 
     def __generate_apigw_url_output(self):
 
-        """ Create an output with the URL of this
-        API so Cloudfront can forward the requests """
+        """Create an output with the URL of this
+        API so Cloudfront can forward the requests"""
 
         CfnOutput(
             self,
@@ -339,13 +313,14 @@ class SBOMIngressPiplineStack(Stack):
     @staticmethod
     def __enable_logging(api: apigwv2a.HttpApi, enabled):
 
-        """ Enables logging if necessary """
+        """Enables logging if necessary"""
 
         if enabled:
 
             stage: apigwv2.CfnStage = api.default_stage.node.default_child
             log_group = logs.LogGroup(
-                api, 'AccessLogs',
+                api,
+                "AccessLogs",
                 log_group_name="APIGWAccessLogs",
                 retention=RetentionDays.ONE_DAY,
             )

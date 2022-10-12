@@ -39,7 +39,7 @@ try:
     USER = "sbomadmin@aquia.io"
     PASS = "L0g1nTe5tP@55!"
 
-    LOGIN_URL = f"{URL}/api/login"
+    LOGIN_URL = f"{URL}/api/v1/login"
     TEAM_URL = f"{URL}/api/team"
 
     team = "abc123"
@@ -67,7 +67,7 @@ def __get_token_url(team_name: str, token=None):
 
 def __login():
 
-    login_url = "https://dvu7djeqv2.execute-api.us-east-1.amazonaws.com/api/login"
+    login_url = "https://khqpamwf2b.execute-api.us-east-1.amazonaws.com/api/v1/login"
     user = "sbomadmin@aquia.io"
     password = "L0g1nTe5tP@55!"
 
@@ -89,7 +89,7 @@ def test_get_teams():
 
     jwt = __login()
 
-    url = "https://b5jpfzyp5l.execute-api.us-east-1.amazonaws.com/api/v1/teams"
+    url = "https://khqpamwf2b.execute-api.us-east-1.amazonaws.com/api/v1/teams"
 
     print(f"Sending To: GET:{url}")
     teams_rsp = requests.get(url, headers={"Authorization": jwt})

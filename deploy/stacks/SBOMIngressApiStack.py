@@ -19,7 +19,6 @@ from aws_cdk.aws_apigatewayv2_alpha import (
 from aws_cdk.aws_apigatewayv2_authorizers_alpha import HttpLambdaAuthorizer
 from aws_cdk.aws_apigatewayv2_integrations_alpha import HttpLambdaIntegration
 from constructs import Construct
-
 from deploy.user import SBOMLoginLambda
 from deploy.util import create_asset
 from deploy.constants import (
@@ -385,13 +384,13 @@ class SBOMIngressApiStack(Stack):
         vpc: ec2.Vpc,
     ):
 
-        """Adds the /api/login endpoint for getting a JWT and logging in"""
+        """Adds the /api/v1/login endpoint for getting a JWT and logging in"""
 
         client_id = user_pool_client.user_pool_client_id
         user_pool_id = user_pool.user_pool_id
 
         self.api.add_routes(
-            path="/api/login",
+            path="/api/v1/login",
             authorizer=HttpNoneAuthorizer(),
             methods=[apigwv2a.HttpMethod.POST],
             integration=HttpLambdaIntegration(
@@ -401,6 +400,7 @@ class SBOMIngressApiStack(Stack):
                     vpc=vpc,
                     user_pool_client_id=client_id,
                     user_pool_id=user_pool_id,
+                    function_name="SBOMLoginLambda-v1"
                 ).get_lambda_function(),
             ),
         )
