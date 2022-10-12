@@ -187,7 +187,15 @@ class SBOMIngressApiStack(Stack):
             lambda_factory=lambda_factory,
         )
 
-        self.__add_login_route(user_pool_client, user_pool, vpc)
+        self.__add_member_routes(
+            lambda_factory=lambda_factory,
+        )
+
+        self.__add_login_route(
+            user_pool_client=user_pool_client,
+            user_pool=user_pool,
+            vpc=vpc,
+        )
 
     def __add_team_routes(
         self: "SBOMIngressApiStack",
@@ -377,6 +385,53 @@ class SBOMIngressApiStack(Stack):
             ),
         )
 
+    def __add_member_routes(
+        self: "SBOMIngressApiStack",
+        lambda_factory: LambdaFactory,
+    ):
+
+        self.api.add_routes(
+            path="/api/v1/members",
+            methods=[apigwv2a.HttpMethod.GET],
+            integration=HttpLambdaIntegration(
+                "Members_HttpLambdaIntegration",
+                handler=lambda_factory.create(
+                    lambda_name="Members",
+                    func="cyclonedx.handlers.members.members_handler",
+                ).get_lambda_function(),
+            ),
+        )
+
+        self.api.add_routes(
+            path="/api/v1/member/{member}",
+            methods=[
+                apigwv2a.HttpMethod.GET,
+                apigwv2a.HttpMethod.PUT,
+                apigwv2a.HttpMethod.DELETE,
+            ],
+            integration=HttpLambdaIntegration(
+                "Member_HttpLambdaIntegration",
+                handler=lambda_factory.create(
+                    lambda_name="Member",
+                    func="cyclonedx.handlers.members.member_handler",
+                ).get_lambda_function(),
+            ),
+        )
+
+        self.api.add_routes(
+            path="/api/v1/member",
+            methods=[
+                apigwv2a.HttpMethod.POST,
+            ],
+            integration=HttpLambdaIntegration(
+                "Member_HttpLambdaIntegration_POST",
+                handler=lambda_factory.create(
+                    lambda_name="Member_POST",
+                    func="cyclonedx.handlers.members.member_handler",
+                ).get_lambda_function(),
+            ),
+        )
+
     def __add_login_route(
         self,
         user_pool_client: cognito.UserPoolClient,
@@ -400,7 +455,7 @@ class SBOMIngressApiStack(Stack):
                     vpc=vpc,
                     user_pool_client_id=client_id,
                     user_pool_id=user_pool_id,
-                    function_name="SBOMLoginLambda-v1"
+                    function_name="SBOMLoginLambda-v1",
                 ).get_lambda_function(),
             ),
         )
