@@ -54,6 +54,7 @@ def test_get_project_only(test_dynamo_db_resource, test_harbor_teams_table):
     team_id: str = "dawn-patrol"
     project_id: str = str(uuid.uuid4())
     project_name: str = "my-neat-project"
+    project_fisma: str = "test-fisma"
 
     pet = EntityType.PROJECT.value
     sort_key = "{}#{}".format(pet, project_id)
@@ -64,6 +65,7 @@ def test_get_project_only(test_dynamo_db_resource, test_harbor_teams_table):
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: sort_key,
             Project.Fields.NAME: project_name,
+            Project.Fields.FISMA: project_fisma,
         }
     )
 
@@ -224,6 +226,7 @@ def test_get_team_recursively(test_dynamo_db_resource, test_harbor_teams_table):
     project0_id = str(uuid.uuid4())
     project0_entity_key = "{}#{}".format(EntityType.PROJECT.value, project0_id)
     project0_name = "project-0"
+    project0_fisma = "fisma-0"
 
     # Put the first Project
     test_harbor_teams_table.put_item(
@@ -232,12 +235,14 @@ def test_get_team_recursively(test_dynamo_db_resource, test_harbor_teams_table):
             HARBOR_TEAMS_TABLE_SORT_KEY: project0_entity_key,
             Project.Fields.NAME: project0_name,
             Project.Fields.PARENT_ID: team_id,
+            Project.Fields.FISMA: project0_fisma,
         }
     )
 
     project1_id = str(uuid.uuid4())
     project1_entity_key = "{}#{}".format(EntityType.PROJECT.value, project1_id)
     project1_name = "project-1"
+    project1_fisma = "fisma-1"
 
     # Put the second Project
     test_harbor_teams_table.put_item(
@@ -246,6 +251,7 @@ def test_get_team_recursively(test_dynamo_db_resource, test_harbor_teams_table):
             HARBOR_TEAMS_TABLE_SORT_KEY: project1_entity_key,
             Project.Fields.NAME: project1_name,
             Project.Fields.PARENT_ID: team_id,
+            Project.Fields.FISMA: project1_fisma,
         }
     )
 
@@ -270,6 +276,7 @@ def test_get_team_recursively(test_dynamo_db_resource, test_harbor_teams_table):
     project2_id = str(uuid.uuid4())
     project2_entity_key = "{}#{}".format(EntityType.PROJECT.value, project2_id)
     project2_name = "project-2"
+    project2_fisma = "fisma-2"
 
     # Put the third, unrelated Project
     test_harbor_teams_table.put_item(
@@ -278,6 +285,7 @@ def test_get_team_recursively(test_dynamo_db_resource, test_harbor_teams_table):
             HARBOR_TEAMS_TABLE_SORT_KEY: project2_entity_key,
             Project.Fields.NAME: project2_name,
             Project.Fields.PARENT_ID: "Different-Parent",
+            Project.Fields.FISMA: project2_fisma,
         }
     )
 
@@ -308,9 +316,11 @@ def test_get_team_recursively(test_dynamo_db_resource, test_harbor_teams_table):
 
     assert child_project0.entity_id == project0_id
     assert child_project0_item[Project.Fields.NAME] == project0_name
+    assert child_project0_item[Project.Fields.FISMA] == project0_fisma
 
     assert child_project1.entity_id == project1_id
     assert child_project1_item[Project.Fields.NAME] == project1_name
+    assert child_project1_item[Project.Fields.FISMA] == project1_fisma
     assert child_project1.has_children()
 
     grandchild_codebase = child_project1.get_children()[EntityType.CODEBASE.value][

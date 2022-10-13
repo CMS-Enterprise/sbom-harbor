@@ -48,12 +48,14 @@ def test_create_project_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
+    fisma_id = str(uuid.uuid4())
 
     HarborDBClient(test_dynamo_db_resource).create(
         Project(
             team_id=team_id,
             project_id=project_id,
             name=project_id,
+            fisma=fisma_id,
         )
     )
 
@@ -178,16 +180,19 @@ def test_create_team_with_project(test_dynamo_db_resource, test_harbor_teams_tab
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
+    fisma_id = str(uuid.uuid4())
 
     HarborDBClient(test_dynamo_db_resource).create(
         Team(
             team_id=team_id,
             name=team_id,
+
             projects=[
                 Project(
                     team_id=team_id,
                     project_id=project_id,
                     name=project_id,
+                    fisma=fisma_id,
                 )
             ]
         ),
@@ -228,6 +233,7 @@ def test_create_team_with_a_child_of_each_type(test_dynamo_db_resource, test_har
     codebase_id = str(uuid.uuid4())
     member_id = str(uuid.uuid4())
     token_id = str(uuid.uuid4())
+    fisma_id = str(uuid.uuid4())
 
     language = "JAVASCRIPT"
     build_tool = "YARN"
@@ -245,6 +251,7 @@ def test_create_team_with_a_child_of_each_type(test_dynamo_db_resource, test_har
                     team_id=team_id,
                     project_id=project_id,
                     name=project_id,
+                    fisma=fisma_id,
                     codebases=[
                         CodeBase(
                             team_id=team_id,

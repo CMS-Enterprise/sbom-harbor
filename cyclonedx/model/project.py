@@ -21,6 +21,7 @@ class Project(HarborModel):
 
         # The Name of the Project
         NAME = "name"
+        FISMA = "fisma"
 
     @classmethod
     def to_instance(
@@ -37,6 +38,7 @@ class Project(HarborModel):
             team_id=entity_key.team_id,
             project_id=entity_key.entity_id,
             name=item[Project.Fields.NAME],
+            fisma=item[Project.Fields.FISMA],
             codebases=children.get(EntityType.CODEBASE.value, []),
         )
 
@@ -45,6 +47,7 @@ class Project(HarborModel):
         team_id: str,
         project_id: str,
         name: str = "",
+        fisma: str = "",
         codebases: list[HarborModel] = None,
     ):
 
@@ -59,8 +62,8 @@ class Project(HarborModel):
             child_types=[EntityType.CODEBASE],
         )
 
-        # The name is the only Project Field for now
         self._name: str = name
+        self._fisma: str = fisma
 
         # Initialize the children
         self._children: dict[str, list[HarborModel]] = {
@@ -80,6 +83,20 @@ class Project(HarborModel):
         """Set the name property"""
 
         self._name = name
+
+    @property
+    def fisma(self) -> str:
+
+        """Define the fisma property"""
+
+        return self._fisma
+
+    @fisma.setter
+    def fisma(self, fisma) -> None:
+
+        """Set the fisma property"""
+
+        self._fisma = fisma
 
     @property
     def codebases(self) -> list[CodeBase]:
@@ -117,6 +134,7 @@ class Project(HarborModel):
         return {
             **super().get_item(),
             Project.Fields.NAME: self._name,
+            Project.Fields.FISMA: self._fisma,
         }
 
     def to_json(self):
@@ -128,5 +146,6 @@ class Project(HarborModel):
 
         return {
             Project.Fields.NAME: self._name,
+            Project.Fields.FISMA: self._fisma,
             "codebases": ret_codebases,
         }
