@@ -1,3 +1,6 @@
+/**
+ * Craco config that overrides the default webpack config.
+ */
 const path = require('path')
 const { DefinePlugin } = require('webpack')
 
