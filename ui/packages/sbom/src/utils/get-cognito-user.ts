@@ -4,7 +4,7 @@ import {
   CognitoIdToken,
   CognitoUserSession,
 } from 'amazon-cognito-identity-js'
-import { CognitoUserInfo } from '@/utils/types'
+import { CognitoUserInfo } from '@/types'
 
 type UserDataType = {
   user: CognitoUser

@@ -1,10 +1,12 @@
 /**
+ * Custom implementation of MuiChip.
  * @module @cyclonedx/ui/sbom/components/mui/chip
  */
 import * as React from 'react'
-import MuiChip from '@mui/material/Chip'
+import MuiChip, { ChipProps } from '@mui/material/Chip'
 import useBgColor, { UseBgColorType } from '@/hooks/useBgColor'
-import { CustomChipProps } from './types'
+
+type CustomChipProps = ChipProps & { skin?: 'light' }
 
 const Chip = (props: CustomChipProps) => {
   const { sx, skin, color } = props

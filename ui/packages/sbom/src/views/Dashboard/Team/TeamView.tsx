@@ -12,7 +12,7 @@ import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
 import { useData } from '@/hooks/useData'
 import TeamMembersTable, { TableBodyRowType } from './TeamMembersTable'
-import { Project } from '@/utils/types'
+import { Project } from '@/types'
 import TeamViewProjectCard from './TeamViewProjectCard'
 
 const TeamView = () => {

@@ -6,7 +6,7 @@
  */
 import { Auth } from '@aws-amplify/auth'
 import { USER_API_URL } from '@/utils/constants'
-import { CognitoUserInfo, Team } from '@/utils/types'
+import { CognitoUserInfo, Team } from '@/types'
 
 /**
  * Gets all teams for the current authenticated user.

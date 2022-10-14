@@ -11,7 +11,7 @@ import InputLabel from '@mui/material/InputLabel'
 import Typography from '@mui/material/Typography'
 import AddCircleIcon from '@mui/icons-material/AddCircleOutline'
 import TeamMemberReadOnlyField from '@/views/Dashboard/Team/components/TeamMemberReadOnlyField'
-import { TeamMember } from '@/utils/types'
+import { TeamMember } from '@/types'
 
 type TeamMembersSectionProps = {
   members?: TeamMember[]

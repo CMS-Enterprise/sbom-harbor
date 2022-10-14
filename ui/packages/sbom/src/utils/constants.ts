@@ -1,7 +1,7 @@
 /**
  * @module @cyclonedx/ui/sbom/utils/constants
  */
-import { AppConfig } from './types'
+import { AppConfig } from '@/types'
 
 // (craco) config. See {ui/sbom/src/utils/prebuild.js} for the implementation.
 export const ENV_CONFIG = JSON.parse(JSON.stringify(process.env.CONFIG))

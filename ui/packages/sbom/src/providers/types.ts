@@ -3,7 +3,7 @@
  * @module @cyclone-dx/sbom/ui/AuthContext/types
  */
 import { CognitoIdToken, CognitoUser } from 'amazon-cognito-identity-js'
-import { CognitoUserInfo } from '@/utils/types'
+import { CognitoUserInfo } from '@/types'
 
 export type ErrCallbackType = (err: Error) => void
 

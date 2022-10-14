@@ -3,7 +3,7 @@ import Card from '@mui/material/Card'
 import Button from '@mui/material/Button'
 import CardContent from '@mui/material/CardContent'
 import PlusOutline from 'mdi-material-ui/PlusOutline'
-import CustomAvatar from '@/components/mui/avatar'
+import CustomAvatar from '@/components/mui/Avatar'
 
 const TeamViewProjectCreationCard = ({ onClick }: { onClick: () => void }) => {
   return (

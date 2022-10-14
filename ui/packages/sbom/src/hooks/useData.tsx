@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { AppState, Team } from '@/utils/types'
+import { AppState, Team } from '@/types'
 
 const INITIAL_STATE = {
   teams: [],

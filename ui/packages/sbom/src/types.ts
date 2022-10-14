@@ -1,3 +1,6 @@
+/**
+ * @module @cyclone-dx/ui/sbom/utils/types
+ */
 import { CognitoUser } from '@aws-amplify/auth'
 
 export type AppConfig = {
@@ -82,3 +85,21 @@ export enum BuildTool {
   VISUAL_STUDIO_BUILD_TOOLS = 'VISUAL_STUDIO_BUILD_TOOLS',
   OTHER = 'OTHER',
 }
+
+export type UserTableRowType = {
+  email: string
+  isTeamLead: boolean
+  avatarSrc?: string
+  id?: number
+  name?: string
+  role?: 'admin' | 'member'
+  username?: string
+}
+
+export type ThemeColor =
+  | 'primary'
+  | 'secondary'
+  | 'error'
+  | 'warning'
+  | 'info'
+  | 'success'

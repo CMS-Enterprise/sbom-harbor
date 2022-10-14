@@ -18,7 +18,7 @@ import AccountOutline from 'mdi-material-ui/AccountOutline'
 
 // ** App Imports
 import { getInitials } from '@/utils/get-initials'
-import Avatar from '@/components/mui/avatar'
+import Avatar from '@/components/mui/Avatar'
 
 export interface TableBodyRowType {
   // ** required properties

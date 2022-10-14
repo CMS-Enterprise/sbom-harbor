@@ -6,7 +6,7 @@ import IconButton from '@mui/material/IconButton'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
 import DotsVertical from 'mdi-material-ui/DotsVertical'
-import { Codebase, Project } from '@/utils/types'
+import { Codebase, Project } from '@/types'
 
 const TeamViewProjectCard = ({ project }: { project: Project }) => {
   return (

@@ -26,7 +26,7 @@ import UserSearchInput from '@/components/UserAutocomplete'
 import { useAlert } from '@/hooks/useAlert'
 import { useData } from '@/hooks/useData'
 import { TEAMS_API_URL } from '@/utils/constants'
-import { CognitoUserInfo, Project, TeamMember } from '@/utils/types'
+import { CognitoUserInfo, Project, TeamMember } from '@/types'
 
 // ** Local Imports
 import TeamViewProjectCreationCard from './TeamViewProjectCreationCard'

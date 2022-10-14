@@ -13,7 +13,7 @@ import FormControl from '@mui/material/FormControl'
 import Select from '@mui/material/Select'
 import InputLabel from '@mui/material/InputLabel'
 import DotsVertical from 'mdi-material-ui/DotsVertical'
-import { Codebase, CodebaseLanguage, BuildTool, Project } from '@/utils/types'
+import { Codebase, CodebaseLanguage, BuildTool, Project } from '@/types'
 
 const LANGUAGES = [...Object.keys(CodebaseLanguage)]
 const BUILD_TOOLS = [...Object.keys(BuildTool)]

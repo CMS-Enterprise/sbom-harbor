@@ -9,7 +9,7 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
-import { Team } from '@/utils/types'
+import { Team } from '@/types'
 
 const DashboardTeamCard = ({ team }: { team: Team }) => {
   if (team) {

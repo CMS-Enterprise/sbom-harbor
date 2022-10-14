@@ -29,7 +29,7 @@ import RemoveCircleIcon from '@mui/icons-material/RemoveCircleOutline'
 import { useAlert } from '@/hooks/useAlert'
 import { useData } from '@/hooks/useData'
 import { TEAMS_API_URL } from '@/utils/constants'
-import { CognitoUserInfo, TeamMember } from '@/utils/types'
+import { CognitoUserInfo, TeamMember } from '@/types'
 import UserSearchInput from '@/components/UserAutocomplete'
 import TeamMembersTable, { TableBodyRowType } from './TeamMembersTable'
 

@@ -20,7 +20,7 @@ import authConfig from '@/configs/auth'
 import { useData } from '@/hooks/useData'
 import { CONFIG } from '@/utils/constants'
 import { getUserData } from '@/utils/get-cognito-user'
-import { CognitoUserInfo, Team } from '@/utils/types'
+import { CognitoUserInfo, Team } from '@/types'
 import {
   AuthProviderProps,
   AuthValuesType,
