@@ -12,8 +12,8 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
 
+    steps:
       - uses: actions/checkout@v3
 
       - name: Gen SBOM with Syft
@@ -27,14 +27,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/setup-node@v3
         with:
-          node-version: '18.0'
-          registry-url: 'https://registry.npmjs.org'
-        #   cache: 'yarn'
-      - run: |
-            yarn set version 3.2.2
-            yarn config set -H enableImmutableInstalls false
-      - run: yarn install
+          node-version: "18.0.0"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Debug
+        run: |
+          echo "node --version: $(node --version)"
+          echo "npm --version: $(npm --version)"
+          echo "yarn --version: $(yarn --version)"
+
+      - name: cache .yarn/
+        id: cache-yarn-cache
+        uses: actions/cache@v3
+        with:
+          path: .yarn/
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+
+      - name: cache node_modules/
+        uses: actions/cache@v3
+        id: cache-node-modules
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/yarn.lock') }}
+
+      - name: Run yarn install
+        run: CI=true yarn install
+
       - run: yarn lint
+
       - run: yarn test

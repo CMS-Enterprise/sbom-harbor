@@ -11,18 +11,18 @@
     "clean": "rm -rf node_modules ui/**/{build,node_modules}",
     "fix": "run-p 'lint:js --fix' 'lint:other --write'",
     "lint": "run-p 'lint:js' 'lint:other'",
-    "lint:js": "eslint  \"**/*.{ts,tsx,js,jsx}\" -c .eslintrc.json --no-eslintrc --ignore-path ../.gitignore --cache --cache-location ./node_modules/.cache/eslint --color",
+    "lint:js": "eslint  \"**/*.{ts,tsx,js,jsx}\" -c .eslintrc.json --no-eslintrc --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint --color",
     "lint:other": "prettier --check '**/*.{json,md,yaml,yml}' --ignore-path .gitignore --ignore-path .prettierignore",
     "test": "yarn workspace @cyclonedx/ui-sbom run test",
     "analyze": "yarn workspace @cyclonedx/ui-sbom run analyze",
     "semantic-release": "semantic-release"
   },
   "type": "module",
-  "packageManager": "yarn@3.2.2",
+  "packageManager": "yarn@3.2.4",
   "engines": {
     "node": "18.0.0",
-    "npm": ">=8.7.0",
-    "yarn": "3.2.2"
+    "npm": "^8.19.0",
+    "yarn": "3.2.4"
   },
   "workspaces": [
     "packages/*"
@@ -35,19 +35,19 @@
     "**/{json,md,yaml,yml}": "yarn lint:other"
   },
   "devDependencies": {
-    "@types/jest": "29.1.1",
-    "@types/node": "18.8.0",
+    "@types/jest": "29.1.2",
+    "@types/node": "18.8.5",
     "@types/react": "18.0.21",
     "@types/react-dom": "18.0.6",
-    "@typescript-eslint/eslint-plugin": "5.39.0",
-    "@typescript-eslint/parser": "5.39.0",
-    "eslint": "8.24.0",
+    "@typescript-eslint/eslint-plugin": "5.40.0",
+    "@typescript-eslint/parser": "5.40.0",
+    "eslint": "8.25.0",
     "eslint-config-prettier": "8.5.0",
     "eslint-plugin-import": "2.26.0",
-    "eslint-plugin-jest": "27.0.4",
+    "eslint-plugin-jest": "27.1.1",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-prettier": "4.2.1",
-    "eslint-plugin-react": "7.31.8",
+    "eslint-plugin-react": "7.31.10",
     "eslint-plugin-react-hooks": "4.6.0",
     "husky": "8.0.1",
     "lint-staged": "13.0.3",
