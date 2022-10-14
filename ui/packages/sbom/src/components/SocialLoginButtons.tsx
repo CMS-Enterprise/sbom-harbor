@@ -1,12 +1,13 @@
 /**
- * A horizontal list of social login buttons.
+ * A component that renders a horizontal list of social login buttons.
  * @module @cyclonedx/ui/sbom/components/SocialLoginButtons
+ * @see {@link @cyclonedx/ui/sbom/components/Header} for usage.
  */
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import Google from 'mdi-material-ui/Google'
 import Box from '@mui/material/Box'
 import Grid from '@mui/material/Grid'
+import Google from 'mdi-material-ui/Google'
 
 const SocialLoginButtons = (): JSX.Element => (
   <Box

@@ -1,6 +1,6 @@
 /**
- * @module @cyclonedx/ui/sbom/components/Footer
  * Sticky footer component.
+ * @module @cyclonedx/ui/sbom/components/Footer
  */
 import * as React from 'react'
 import Box from '@mui/material/Box'

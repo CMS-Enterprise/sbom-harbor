@@ -1,3 +1,6 @@
+/**
+ * @module @cyclonedx/ui/sbom/components/AppDrawer
+ */
 import { styled } from '@mui/material/styles'
 import MuiDrawer from '@mui/material/Drawer'
 import { MuiDrawerWidth } from '@/utils/theme'

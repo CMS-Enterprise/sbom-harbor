@@ -1,6 +1,6 @@
 /**
  * Helper function that returns a formatted date range string.
- * @module @cyclone-dx/ui/sbom/utils/get-initials
+ * @module @cyclone-dx/ui/sbom/utils/get-daterange
  */
 import { format, addDays, differenceInDays } from 'date-fns'
 

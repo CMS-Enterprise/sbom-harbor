@@ -1,5 +1,15 @@
+/**
+ * Component that renders a text input with autocomplete
+ *  for searching for users by their email address.
+ * @module @cyclonedx/ui/sbom/components/UserAutocomplete
+ */
 import * as React from 'react'
-import { Control, Controller, FieldValues } from 'react-hook-form'
+import {
+  Control,
+  Controller,
+  ControllerRenderProps,
+  FieldValues,
+} from 'react-hook-form'
 import throttle from 'lodash/throttle'
 import Autocomplete from '@mui/material/Autocomplete'
 import TextField from '@mui/material/TextField'
@@ -15,7 +25,7 @@ const UserSearchInput = ({
   control: Control<FieldValues, object>
   name: string
   [key: string]: unknown
-}) => {
+}): JSX.Element => {
   const [inputValue, setInputValue] = React.useState('')
   const [value, setValue] = React.useState<string | null>(null)
   const [options, setOptions] = React.useState<Array<string>>([])
@@ -54,7 +64,11 @@ const UserSearchInput = ({
     <Controller
       name={name}
       control={control}
-      render={({ field }: any) => (
+      render={({
+        field,
+      }: {
+        field: ControllerRenderProps<FieldValues, string>
+      }) => (
         <Autocomplete
           {...field}
           id="user-search"

@@ -1,6 +1,6 @@
 /**
  * Material UI theme object at the root of the application.
- * @module @cyclonedx/ui/sbom/theme
+ * @module @cyclonedx/ui/sbom/utils/theme
  * @see {@link @cyclonedx/ui/sbom/index} for where this is imported.
  * @see https://material-ui.com/customization/themes/ for documentation.
  */

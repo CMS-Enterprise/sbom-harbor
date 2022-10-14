@@ -1,5 +1,8 @@
 /**
- * @module @cyclonedx/ui/sbom/components/Header
+ * A component used in the app header that renders either a login
+ * or logout button depending on the user's authentication status.
+ * @module @cyclonedx/ui/sbom/components/HeaderAuthButton
+ * @exports HeaderAuthButton
  */
 import * as React from 'react'
 import { Link as RouterLink } from 'react-router-dom'
@@ -8,13 +11,14 @@ import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import { useAuth } from '@/hooks/useAuth'
 
-const ButtonBox = styled(Box)({
-  ml: 1,
-  mr: 1,
-  pl: 1,
-  pr: 1,
-})
+// ** Styled Components
+const ButtonBox = styled(Box)({ mr: 1, ml: 1, pr: 1, pl: 1 })
+const ButtonContainerBox = styled(Box)({ mr: 2, ml: 2, pr: 2, pl: 2 })
 
+/**
+ * Internal component for a login button to be rendered HeaderAuthButton.
+ * @returns {JSX.Element} Button that navigates to login view on click.
+ */
 const LoginButton = (): JSX.Element => (
   <ButtonBox>
     <Button component={RouterLink} to="/login" color="inherit">
@@ -23,6 +27,10 @@ const LoginButton = (): JSX.Element => (
   </ButtonBox>
 )
 
+/**
+ * Internal component for a logout button to be rendered by HeaderAuthButton.
+ * @returns {JSX.Element} Button that navigates to the logout route on click.
+ */
 const LogoutButton = (): JSX.Element => {
   return (
     <ButtonBox>
@@ -33,31 +41,34 @@ const LogoutButton = (): JSX.Element => {
   )
 }
 
-const sx = { ml: 2, mr: 2, pl: 2, pr: 2 }
-
-const AuthButton = (): JSX.Element => {
+/**
+ * A component that conditionally renders a login or a logout button based on
+ * the auth state. If auth state is not yet known, renders an empty container.
+ * @returns {JSX.Element} Component containing a login or logout button.
+ */
+const HeaderAuthButton = (): JSX.Element => {
   const { user } = useAuth()
 
   // AuthContext.initAuth hasn't resolved yet, so don't render anything
   if (user === null) {
-    return <Box sx={sx} />
+    return <ButtonContainerBox />
   }
 
   // session is defined, so render logout button
   if (user && user.jwt) {
     return (
-      <Box sx={sx}>
+      <ButtonContainerBox>
         <LogoutButton />
-      </Box>
+      </ButtonContainerBox>
     )
   }
 
   // session doesn't exist, so render login button
   return (
-    <Box sx={sx}>
+    <ButtonContainerBox>
       <LoginButton />
-    </Box>
+    </ButtonContainerBox>
   )
 }
 
-export default AuthButton
+export default HeaderAuthButton

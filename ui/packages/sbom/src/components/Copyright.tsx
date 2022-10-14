@@ -1,6 +1,6 @@
 /**
- * @module @cyclonedx/ui/sbom/components/Copyright
  * Copyright component used in the footer.
+ * @module @cyclonedx/ui/sbom/components/Copyright
  */
 import * as React from 'react'
 import Link from '@mui/material/Link'

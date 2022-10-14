@@ -1,3 +1,7 @@
+/**
+ * Helper function that reports web vitals for analytics.
+ * @module @cyclone-dx/ui/sbom/utils/reportWebVitals
+ */
 import { ReportHandler } from 'web-vitals'
 
 const reportWebVitals = (onPerfEntry?: ReportHandler) => {

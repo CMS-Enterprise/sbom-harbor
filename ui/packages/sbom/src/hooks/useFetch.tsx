@@ -1,3 +1,6 @@
+/**
+ * @module @cyclonedx/ui/sbom/hooks/useFetch
+ */
 import * as React from 'react'
 
 const useFetch = (

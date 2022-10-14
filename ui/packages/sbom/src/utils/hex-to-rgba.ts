@@ -1,7 +1,9 @@
 /**
  * Returns Hex color to RGBA color
+ * @module @cyclonedx/ui-sbom/utils/hex-to-rgba
  * @param {string} hexCode - The hex color
  * @param {number} opacity - The alpha value
+ * @returns {string} The RGBA color string
  */
 export const hexToRGBA = (hexCode: string, opacity: number) => {
   let hex = hexCode.replace('#', '')
