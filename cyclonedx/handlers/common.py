@@ -25,31 +25,55 @@ def _print_values(event: dict, context: dict) -> None:
     print(f"<CONTEXT context=|{context}| />")
 
 
+def _get_request_body_as_dict(event: dict) -> dict:
+    try:
+        return loads(event["body"])
+    except KeyError as ke:
+        raise ValueError("Body missing from Request!") from ke
+
+
 def _get_method(event: dict) -> str:
-    request_context: dict = event["requestContext"]
-    http: dict = request_context["http"]
-    return http["method"]
+
+    try:
+        request_context: dict = event["requestContext"]
+        http: dict = request_context["http"]
+        return http["method"]
+    except KeyError as ke:
+        raise ValueError("Event Method (Verb) Parameter") from ke
 
 
 def _extract_id_from_path(param_name: str, event: dict):
-    path_params: dict = event["pathParameters"]
-    team_id: str = path_params[param_name]
-    return team_id
+
+    try:
+        path_params: dict = event["pathParameters"]
+        param: str = path_params[param_name]
+        return param
+    except KeyError as ke:
+        raise ValueError(f"Event Missing Parameter: {param_name}") from ke
 
 
 def _extract_team_id_from_qs(event: dict):
-    path_params: dict = event["queryStringParameters"]
-    team_id: str = path_params["teamId"]
-    return team_id
+
+    try:
+        path_params: dict = event["queryStringParameters"]
+        team_id: str = path_params["teamId"]
+        return team_id
+    except KeyError as ke:
+        raise ValueError(f"Missing Team ID: {ke}") from ke
 
 
 def _extract_project_id_from_qs(event: dict):
-    path_params: dict = event["queryStringParameters"]
-    team_id: str = path_params["projectId"]
-    return team_id
+
+    try:
+        path_params: dict = event["queryStringParameters"]
+        project_id: str = path_params["projectId"]
+        return project_id
+    except KeyError as ke:
+        raise ValueError(f"Missing Project ID: {ke}") from ke
 
 
 def _should_process_children(event: dict) -> bool:
+
     try:
         query_params: dict = event["queryStringParameters"]
         return query_params["children"]

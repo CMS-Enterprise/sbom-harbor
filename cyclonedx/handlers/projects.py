@@ -3,15 +3,17 @@
 """
 
 import uuid
-from json import dumps, loads
+from json import dumps
 
 import boto3
 
 from cyclonedx.db.harbor_db_client import HarborDBClient
+from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.handlers.common import (
     _extract_id_from_path,
     _extract_team_id_from_qs,
     _get_method,
+    _get_request_body_as_dict,
     _print_values,
     _should_process_children,
     _to_codebases,
@@ -75,7 +77,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
     # Get the team id from the querystring
     team_id: str = _extract_team_id_from_qs(event)
 
-    request_body: dict = loads(event["body"])
+    request_body: dict = _get_request_body_as_dict(event)
     project_id: str = str(uuid.uuid4())
 
     project: Project = db_client.create(
@@ -123,7 +125,7 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
     )
 
     # Extract the request body from the event
-    request_body: dict = loads(event["body"])
+    request_body: dict = _get_request_body_as_dict(event)
 
     # Replace the name of the project if there is a 'name' key in the request body
     try:
@@ -189,14 +191,26 @@ def project_handler(event: dict, context: dict) -> dict:
     # to decide what type of operation we execute on the incoming data
     method: str = _get_method(event)
 
-    result: dict = {}
-    if method == "GET":
-        result = _do_get(event, db_client)
-    elif method == "POST":
-        result = _do_post(event, db_client)
-    elif method == "PUT":
-        result = _do_put(event, db_client)
-    elif method == "DELETE":
-        result = _do_delete(event, db_client)
-
-    return result
+    try:
+        result: dict = {}
+        if method == "GET":
+            result = _do_get(event, db_client)
+        elif method == "POST":
+            result = _do_post(event, db_client)
+        elif method == "PUT":
+            result = _do_put(event, db_client)
+        elif method == "DELETE":
+            result = _do_delete(event, db_client)
+        return result
+    except ValueError as ve:
+        return {
+            "statusCode": 400,
+            "isBase64Encoded": False,
+            "body": dumps({"error": str(ve)}),
+        }
+    except DatabaseError as de:
+        return {
+            "statusCode": 400,
+            "isBase64Encoded": False,
+            "body": dumps({"error": str(de)}),
+        }

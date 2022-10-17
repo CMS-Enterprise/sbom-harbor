@@ -11,6 +11,7 @@ import boto3
 from dateutil.relativedelta import relativedelta
 
 from cyclonedx.db.harbor_db_client import HarborDBClient
+from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.handlers.common import (
     _extract_id_from_path,
     _extract_team_id_from_qs,
@@ -206,14 +207,26 @@ def token_handler(event: dict, context: dict) -> dict:
     # to decide what type of operation we execute on the incoming data
     method: str = _get_method(event)
 
-    result: dict = {}
-    if method == "GET":
-        result = _do_get(event, db_client)
-    elif method == "POST":
-        result = _do_post(event, db_client)
-    elif method == "PUT":
-        result = _do_put(event, db_client)
-    elif method == "DELETE":
-        result = _do_delete(event, db_client)
-
-    return result
+    try:
+        result: dict = {}
+        if method == "GET":
+            result = _do_get(event, db_client)
+        elif method == "POST":
+            result = _do_post(event, db_client)
+        elif method == "PUT":
+            result = _do_put(event, db_client)
+        elif method == "DELETE":
+            result = _do_delete(event, db_client)
+        return result
+    except ValueError as ve:
+        return {
+            "statusCode": 400,
+            "isBase64Encoded": False,
+            "body": dumps({"error": str(ve)}),
+        }
+    except DatabaseError as de:
+        return {
+            "statusCode": 400,
+            "isBase64Encoded": False,
+            "body": dumps({"error": str(de)}),
+        }

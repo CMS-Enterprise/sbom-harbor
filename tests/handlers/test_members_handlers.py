@@ -1,7 +1,6 @@
 """
--> Test for the token handlers
+-> Test for the member handlers
 """
-import datetime
 import uuid
 from json import (
     dumps,
@@ -11,11 +10,9 @@ from json import (
 import boto3
 from moto import mock_dynamodb
 
-from tests.conftest import create_harbor_table
 from cyclonedx.db.harbor_db_client import HarborDBClient
-
 from cyclonedx.model.team import Team
-from cyclonedx.model.token import Token
+from cyclonedx.model.member import Member
 
 # TODO I'm testing moving this here to see
 #  if the @mock_dynamodb annotation still works.
@@ -27,16 +24,18 @@ from cyclonedx.model.token import Token
 #  # pylint: disable=C0415
 #  over the imports inside the test function.
 from cyclonedx.handlers import (
-    tokens_handler,
-    token_handler,
+    members_handler,
+    member_handler,
 )
+
+from tests.conftest import create_harbor_table
 
 
 @mock_dynamodb
 def test_flow():
 
     """
-    -> Test the creation, updating and deletion of a token.
+    -> Test the creation, updating and deletion of a member.
     """
 
     db_client: HarborDBClient = HarborDBClient(
@@ -46,6 +45,7 @@ def test_flow():
     create_harbor_table(boto3.resource("dynamodb"))
 
     team_id: str = str(uuid.uuid4())
+    email: str = "test@email.net"
 
     db_client.create(
         Team(
@@ -54,90 +54,78 @@ def test_flow():
         ),
     )
 
-    token_name: str = str(uuid.uuid4())
-
     # Create
     create_response: dict = create(
         team_id=team_id,
-        name=token_name,
-        handler=token_handler,
+        email=email,
+        is_team_lead=True,
+        handler=member_handler,
     )
     response_dict: dict = loads(create_response["body"])
 
     print(dumps(response_dict, indent=2))
 
-    token_id: str = list(response_dict.keys()).pop()
-    token_dict: dict = response_dict[token_id]
-    assert token_name == token_dict[Token.Fields.NAME]
-    assert token_dict[Token.Fields.ENABLED]
-    assert token_dict[Token.Fields.CREATED]
-    assert token_dict[Token.Fields.EXPIRES]
-    assert token_dict[Token.Fields.TOKEN]
+    member_id: str = list(response_dict.keys()).pop()
+    member_dict: dict = response_dict[member_id]
+    assert email == member_dict[Member.Fields.EMAIL]
+    assert member_dict[Member.Fields.IS_TEAM_LEAD]
 
     # Get Test 1
     get_response: dict = get(
         team_id=team_id,
-        token_id=token_id,
-        handler=token_handler,
+        member_id=member_id,
+        handler=member_handler,
     )
     response_dict = loads(get_response["body"])
-    token_dict: dict = response_dict[token_id]
-    assert token_name == token_dict[Token.Fields.NAME]
-    assert token_dict[Token.Fields.ENABLED]
-    assert token_dict[Token.Fields.CREATED]
-    assert token_dict[Token.Fields.EXPIRES]
-    assert token_dict[Token.Fields.TOKEN]
+    member_dict: dict = response_dict[member_id]
+    assert email == member_dict[Member.Fields.EMAIL]
+    assert member_dict[Member.Fields.IS_TEAM_LEAD]
 
     # Get Test 2
     get_response: dict = get_all(
         team_id=team_id,
-        handler=tokens_handler,
+        handler=members_handler,
     )
     response_dict = loads(get_response["body"])
 
-    token_id: str = list(response_dict.keys()).pop()
-    token_dict: dict = response_dict[token_id]
-    assert token_name == token_dict[Token.Fields.NAME]
-    assert token_dict[Token.Fields.ENABLED]
-    assert token_dict[Token.Fields.CREATED]
-    assert token_dict[Token.Fields.EXPIRES]
-    assert token_dict[Token.Fields.TOKEN]
+    member_id: str = list(response_dict.keys()).pop()
+    member_dict: dict = response_dict[member_id]
+    assert email == member_dict[Member.Fields.EMAIL]
+    assert member_dict[Member.Fields.IS_TEAM_LEAD]
 
     # Update
-    new_name: str = str(uuid.uuid4())
-    new_expires: float = datetime.datetime.now().timestamp()
+    new_email: str = "new@email.org"
 
     update(
         team_id=team_id,
-        token_id=token_id,
-        new_name=new_name,
-        expires=new_expires,
-        enabled=False,
-        handler=token_handler,
+        member_id=member_id,
+        new_email=new_email,
+        new_is_team_lead=False,
+        handler=member_handler,
     )
 
-    test_token: Token = db_client.get(
-        Token(
+    test_member: Member = db_client.get(
+        Member(
             team_id=team_id,
-            token_id=token_id,
+            member_id=member_id,
         )
     )
 
-    assert new_name == test_token.name
-    assert not test_token.enabled
+    assert new_email == test_member.email
+    assert not test_member.is_team_lead
 
     # Delete
     delete(
         team_id=team_id,
-        token_id=token_id,
-        handler=token_handler,
+        member_id=member_id,
+        handler=member_handler,
     )
 
     # Get Test (Should return nothing)
     get_response: dict = get(
         team_id=team_id,
-        token_id=token_id,
-        handler=token_handler,
+        member_id=member_id,
+        handler=member_handler,
     )
     assert get_response["statusCode"] == 400
     db_client.delete(Team(team_id=team_id))
@@ -170,14 +158,20 @@ def test_no_team_id():
             ),
         }
 
-        response: dict = token_handler(event, {})
+        response: dict = member_handler(event, {})
         assert response["statusCode"] == 400
 
 
-def create(team_id: str, name: str, handler):
+# pylint: disable=R0913
+def create(
+    team_id: str,
+    email: str,
+    is_team_lead: bool,
+    handler,
+):
 
     """
-    -> Create a token
+    -> Create a member
     """
 
     event: dict = {
@@ -192,7 +186,8 @@ def create(team_id: str, name: str, handler):
         },
         "body": dumps(
             {
-                "name": name,
+                Member.Fields.EMAIL: email,
+                Member.Fields.IS_TEAM_LEAD: is_team_lead,
             }
         ),
     }
@@ -200,15 +195,15 @@ def create(team_id: str, name: str, handler):
     return handler(event, {})
 
 
-def get(team_id: str, token_id: str, handler):
+def get(team_id: str, member_id: str, handler):
 
     """
-    -> Get a token
+    -> Get a member
     """
 
     event: dict = {
         "pathParameters": {
-            "token": token_id,
+            "member": member_id,
         },
         "requestContext": {
             "http": {
@@ -226,7 +221,7 @@ def get(team_id: str, token_id: str, handler):
 def get_all(team_id: str, handler):
 
     """
-    -> Get all the tokens
+    -> Get all the members
     """
 
     event: dict = {
@@ -247,19 +242,18 @@ def get_all(team_id: str, handler):
 # pylint: disable=R0913
 def update(
     team_id: str,
-    token_id: str,
-    new_name: str,
-    expires: float,
-    enabled: bool,
+    member_id: str,
+    new_email: str,
+    new_is_team_lead: bool,
     handler,
 ):
     """
-    -> Update a token's data
+    -> Update a member's data
     """
 
     event: dict = {
         "pathParameters": {
-            "token": token_id,
+            "member": member_id,
         },
         "requestContext": {
             "http": {
@@ -271,9 +265,8 @@ def update(
         },
         "body": dumps(
             {
-                "name": new_name,
-                "expires": expires,
-                "enabled": enabled,
+                Member.Fields.EMAIL: new_email,
+                Member.Fields.IS_TEAM_LEAD: new_is_team_lead,
             }
         ),
     }
@@ -281,14 +274,15 @@ def update(
     return handler(event, {})
 
 
-def delete(team_id: str, token_id: str, handler):
+def delete(team_id: str, member_id: str, handler):
+
     """
-    -> Delete a token
+    -> Delete a member
     """
 
     event: dict = {
         "pathParameters": {
-            "token": token_id,
+            "member": member_id,
         },
         "requestContext": {
             "http": {

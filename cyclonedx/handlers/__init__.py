@@ -22,3 +22,8 @@ from .codebases import (
     codebases_handler,
     codebase_handler,
 )
+
+from .members import (
+    members_handler,
+    member_handler,
+)

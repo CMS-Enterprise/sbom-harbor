@@ -5,6 +5,7 @@ from cyclonedx.model import (
     EntityKey,
     EntityType,
 )
+from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.token import Token
 
@@ -119,7 +120,7 @@ class Team(HarborModel):
             Project(
                 team_id=self.team_id,
                 project_id=project.entity_id,
-                name=project.get_item().get("name"),
+                name=project.get_item().get(Project.Fields.NAME),
                 codebases=project.codebases,
             )
             for project in projects
@@ -146,6 +147,26 @@ class Team(HarborModel):
                 token=token.get_item().get(Token.Fields.TOKEN),
             )
             for token in tokens
+        ]
+
+    @property
+    def members(self) -> list[Member]:
+
+        """
+        -> Return a list of Members that are the children of this Team
+        """
+
+        children: dict[str, list[HarborModel]] = self.get_children()
+        members: list[HarborModel] = children["member"]
+
+        return [
+            Member(
+                team_id=self.team_id,
+                member_id=member.entity_id,
+                email=member.get_item().get(Member.Fields.EMAIL),
+                is_team_lead=member.get_item().get(Member.Fields.IS_TEAM_LEAD),
+            )
+            for member in members
         ]
 
     def clear_child_type(self, entity_type: EntityType):

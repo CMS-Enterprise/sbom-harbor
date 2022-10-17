@@ -8,7 +8,6 @@ from json import (
 )
 
 import boto3
-import pytest
 from moto import mock_dynamodb
 
 # TODO I'm testing moving this here to see
@@ -25,7 +24,6 @@ from cyclonedx.handlers import (
     team_handler,
 )
 
-from cyclonedx.exceptions.database_exception import DatabaseError
 from tests.conftest import create_harbor_table
 
 project_id1 = str(uuid.uuid4())
@@ -77,12 +75,8 @@ def test_flow():
     delete(team_id, team_handler)
 
     # Get Test (Should return nothing)
-    try:
-        get_response: dict = get(team_id, team_handler)
-        print(get_response)
-        pytest.fail()
-    except DatabaseError:
-        print("All clear.  Database is clean")
+    get_response: dict = get(team_id, team_handler)
+    assert get_response["statusCode"] == 400
 
 
 def create(handler):

@@ -5,12 +5,10 @@ import uuid
 from json import dumps, loads
 
 import boto3
-import pytest
 from moto import mock_dynamodb
 
 from tests.conftest import create_harbor_table
 from cyclonedx.db.harbor_db_client import HarborDBClient
-from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.team import Team
 
@@ -123,17 +121,45 @@ def test_flow():
     )
 
     # Get Test (Should return nothing)
-    try:
-        get_response: dict = get(
-            team_id=team_id,
-            project_id=project_id,
-            handler=project_handler,
-        )
-        print(get_response)
-        pytest.fail()
-    except DatabaseError:
-        db_client.delete(Team(team_id=team_id))
-        print("All clear.  Database is clean")
+    get_response: dict = get(
+        team_id=team_id,
+        project_id=project_id,
+        handler=project_handler,
+    )
+    print(get_response)
+    assert get_response["statusCode"] == 400
+    db_client.delete(Team(team_id=team_id))
+
+
+@mock_dynamodb
+def test_no_team_id():
+
+    """
+    -> Attempt to create a member; Negative flow, no team id
+    """
+
+    for method in "GET", "PUT", "POST", "DELETE":
+        event: dict = {
+            "requestContext": {
+                "http": {
+                    "method": method,
+                }
+            },
+            "queryStringParameters": {
+                "children": True,
+                "projectId": "TEST",
+            },
+            "body": dumps(
+                {
+                    "name": "TEST",
+                    "language": "TEST",
+                    "buildTool": "TEST",
+                }
+            ),
+        }
+
+        response: dict = project_handler(event, {})
+        assert response["statusCode"] == 400
 
 
 def create(team_id: str, handler):

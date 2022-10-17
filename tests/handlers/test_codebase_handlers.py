@@ -8,12 +8,10 @@ from json import (
 )
 
 import boto3
-import pytest
 from moto import mock_dynamodb
 
 from cyclonedx.model.project import Project
 from cyclonedx.db.harbor_db_client import HarborDBClient
-from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.model.team import Team
 from cyclonedx.model.codebase import CodeBase
 
@@ -149,18 +147,77 @@ def test_flow():
         handler=codebase_handler,
     )
 
-    # Get Test (Should return nothing)
-    try:
-        get_response: dict = get(
-            team_id=team_id,
-            codebase_id=codebase_id,
-            handler=codebase_handler,
-        )
-        print(get_response)
-        pytest.fail()
-    except DatabaseError:
-        db_client.delete(Team(team_id=team_id))
-        print("All clear.  Database is clean")
+    # Get Test, expect 400 because the codebase is not there.
+    get_response: dict = get(
+        team_id=team_id,
+        codebase_id=codebase_id,
+        handler=codebase_handler,
+    )
+    assert get_response["statusCode"] == 400
+    db_client.delete(Team(team_id=team_id))
+
+
+@mock_dynamodb
+def test_no_team_id():
+
+    """
+    -> Attempt to create a codebase; Negative flow, no team id
+    """
+
+    for method in "GET", "PUT", "POST", "DELETE":
+        event: dict = {
+            "requestContext": {
+                "http": {
+                    "method": method,
+                }
+            },
+            "queryStringParameters": {
+                "children": True,
+                "projectId": "TEST",
+            },
+            "body": dumps(
+                {
+                    "name": "TEST",
+                    "language": "TEST",
+                    "buildTool": "TEST",
+                }
+            ),
+        }
+
+        response: dict = codebase_handler(event, {})
+        assert response["statusCode"] == 400
+
+
+# pylint: disable=R0913
+@mock_dynamodb
+def test_no_project_id():
+
+    """
+    -> Create a codebase
+    """
+
+    for method in "GET", "PUT", "POST", "DELETE":
+        event: dict = {
+            "requestContext": {
+                "http": {
+                    "method": method,
+                }
+            },
+            "queryStringParameters": {
+                "teamId": "TEST",
+                "children": True,
+            },
+            "body": dumps(
+                {
+                    "name": "TEST",
+                    "language": "TEST",
+                    "buildTool": "TEST",
+                }
+            ),
+        }
+
+    response: dict = codebase_handler(event, {})
+    assert response["statusCode"] == 400
 
 
 # pylint: disable=R0913
