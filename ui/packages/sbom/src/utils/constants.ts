@@ -1,17 +1,24 @@
 /**
  * @module @cyclonedx/ui/sbom/utils/constants
+ * @exports CONFIG
+ * @exports storageTokenKeyName
  */
 import { AppConfig } from '@/types'
 
-// (craco) config. See {ui/sbom/src/utils/prebuild.js} for the implementation.
-export const ENV_CONFIG = JSON.parse(JSON.stringify(process.env.CONFIG))
+// parse `CONFIG` from environment variables
+const envConfig = JSON.parse(JSON.stringify(process.env.CONFIG))
 
-export const TEAMS_API_URL = `${ENV_CONFIG.API_URL}/team`
-export const USER_API_URL = `${ENV_CONFIG.API_URL}/user`
-
-// initialize the global app config object
+/**
+ * Set global configuration for the application provided by webpack (craco) at build time.
+ * @see {@link @cyclonedx-python/ui/packages/sbom/src/utils/prebuild.js} for implementation.
+ */
 export const CONFIG = {
-  ...ENV_CONFIG,
-  TEAMS_API_URL,
-  USER_API_URL,
+  ...envConfig,
+  TEAMS_API_URL: `${envConfig.API_URL}/team`,
+  USER_API_URL: `${envConfig.API_URL}/user`,
 } as AppConfig
+
+/**
+ * @constant {string} storageTokenKeyName The key for the access token in local storage.
+ */
+export const storageTokenKeyName = 'accessToken'

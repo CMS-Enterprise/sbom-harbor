@@ -1,17 +1,21 @@
 /**
  * A component for rendering a team as a card in the dashboard with
- *  the team's name. It can be clicked to navigate to the team view.
+ * the team's name. It can be clicked to navigate to the team view.
  * @module @cyclonedx/ui/sbom/views/Dashboard/Team/DashboardTeamCard
  */
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
+import Typography from '@mui/material/Typography'
 import { Team } from '@/types'
 
-const DashboardTeamCard = ({ team }: { team: Team }) => {
+type InputProps = {
+  team?: Team
+}
+
+const DashboardTeamCard = ({ team }: InputProps): JSX.Element => {
   if (team) {
     return (
       <Card sx={{ position: 'relative' }}>

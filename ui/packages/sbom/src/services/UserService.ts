@@ -5,8 +5,10 @@
  *
  */
 import { Auth } from '@aws-amplify/auth'
-import { USER_API_URL } from '@/utils/constants'
-import { CognitoUserInfo, Team } from '@/types'
+import { CONFIG } from '@/utils/constants'
+import { Team } from '@/types'
+
+// XXX: move this functionality into an auth reducer
 
 /**
  * Gets all teams for the current authenticated user.
@@ -16,13 +18,10 @@ import { CognitoUserInfo, Team } from '@/types'
 export const getTeams = async (
   abortController?: AbortController
 ): Promise<Team[]> => {
-  const [user, token]: [CognitoUserInfo, string] = await Promise.all([
-    Auth.currentUserInfo(),
-    Auth.currentSession().then((session) => session.getIdToken().getJwtToken()),
-  ])
+  const session = await Auth.currentSession()
+  const token = session.getIdToken().getJwtToken()
 
-  // FIXME: "@" character is not allowed in valid URLs, so we need to encode it
-  const url = `${USER_API_URL}/teams?user_id=${user.attributes.email}`
+  const url = `${CONFIG.USER_API_URL}/teams`
   /**
    * @example
    * const url = new URL(USER_API_URL)

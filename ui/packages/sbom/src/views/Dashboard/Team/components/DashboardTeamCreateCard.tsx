@@ -5,21 +5,16 @@
 import * as React from 'react'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
+import { CenteredCardContent } from '@/components/mui/CardContent'
 
-const DashboardTeamCreationCard = ({ onClick }: { onClick: () => void }) => {
+type InputProps = {
+  onClick: React.MouseEventHandler<HTMLButtonElement>
+}
+
+const DashboardTeamCreationCard = ({ onClick }: InputProps) => {
   return (
     <Card sx={{ height: '168px' }}>
-      <CardContent
-        sx={{
-          display: 'flex',
-          textAlign: 'center',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'column',
-          height: '100%',
-        }}
-      >
+      <CenteredCardContent>
         <Button
           variant="outlined"
           sx={{ p: (theme) => theme.spacing(1.75, 5.5) }}
@@ -27,7 +22,7 @@ const DashboardTeamCreationCard = ({ onClick }: { onClick: () => void }) => {
         >
           Create new Team
         </Button>
-      </CardContent>
+      </CenteredCardContent>
     </Card>
   )
 }

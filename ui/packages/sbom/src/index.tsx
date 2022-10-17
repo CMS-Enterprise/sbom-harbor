@@ -4,7 +4,7 @@
  */
 import * as React from 'react'
 import * as ReactDOMClient from 'react-dom/client'
-import { HashRouter as Router } from 'react-router-dom'
+import { BrowserRouter } from 'react-router-dom'
 
 // ** AWS Imports
 import { Auth } from '@aws-amplify/auth'
@@ -36,9 +36,9 @@ import reportWebVitals from '@/utils/reportWebVitals'
   const root = ReactDOMClient.createRoot(rootElement)
   root.render(
     <React.StrictMode>
-      <Router>
+      <BrowserRouter>
         <Main />
-      </Router>
+      </BrowserRouter>
     </React.StrictMode>
   )
 

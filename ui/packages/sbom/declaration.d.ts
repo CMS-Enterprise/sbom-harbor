@@ -1,5 +1,5 @@
 /**
- * @module @cyclonedx/ui/sbom/types
+ * Global type declarations
  */
 
 // Image module declarations

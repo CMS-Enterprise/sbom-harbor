@@ -1,3 +1,6 @@
+/**
+ * @module @cyclonedx/ui/sbom/views/Dashboard/Team/TeamViewProjectCreateCard
+ */
 import * as React from 'react'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -30,7 +33,9 @@ const defaultCodebase: Codebase = {
   buildTool: '',
 }
 
-const TeamViewProjectCreateCard = ({ project }: { project: Project }) => {
+type InputProps = { project: Project }
+
+const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
   // reducer for the form state
   const [formInput, setFormInput] = React.useReducer(
     (state: Project, newState: Project) => ({ ...state, ...newState }),
@@ -40,12 +45,13 @@ const TeamViewProjectCreateCard = ({ project }: { project: Project }) => {
     }
   )
 
+  // reducer for the codebase state
   const [newCodebase, setNewCodebase] = React.useReducer(
     (state: Codebase, newState: Codebase) => ({ ...state, ...newState }),
     defaultCodebase
   )
 
-  // function that handlers change events on form inputs
+  // function that handles change events on form inputs.
   const handleInput = (
     evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -57,7 +63,7 @@ const TeamViewProjectCreateCard = ({ project }: { project: Project }) => {
     })
   }
 
-  // function that handlers change events on form inputs
+  // function that handles change events on form inputs for codebases.
   const handleInputCodebase = (
     evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -65,6 +71,7 @@ const TeamViewProjectCreateCard = ({ project }: { project: Project }) => {
     setNewCodebase({ ...newCodebase, [name]: value })
   }
 
+  // function that handles adding a new codebase to the project.
   const handleAddCodebase = () => {
     // @ts-ignore
     const codebases = [...formInput.codebases, { ...defaultCodebase }]

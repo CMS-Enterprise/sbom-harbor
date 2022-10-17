@@ -1,6 +1,6 @@
 /**
- * Types used in the AuthContext and AuthProvider.
- * @module @cyclone-dx/sbom/ui/AuthContext/types
+ * Types used in custom hooks.
+ * @module @cyclone-dx/sbom/ui/hooks/types
  */
 import { CognitoIdToken, CognitoUser } from 'amazon-cognito-identity-js'
 import { CognitoUserInfo } from '@/types'

@@ -20,10 +20,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import MenuIcon from '@mui/icons-material/Menu'
 
 // ** App Imports
-import { useAlert, AlertMessage } from '@/hooks/useAlert'
-import { useAuth } from '@/hooks/useAuth'
-import { useData } from '@/hooks/useData'
-import { getTeams } from '@/services/UserService'
+import AlertMessage from '@/components/AlertMessage'
 import AppBar from '@/components/AppBar'
 import AppDrawer from '@/components/AppDrawer'
 import AuthButton from '@/components/HeaderAuthButton'
@@ -40,49 +37,7 @@ const App = (): JSX.Element => {
   const [drawerOpen, setDrawerOpen] = React.useState(true)
   const toggleDrawer = () => setDrawerOpen(!drawerOpen)
 
-  // ** Hooks
-  const { setAlert } = useAlert()
-  const { user } = useAuth()
-  const { data, setTeams } = useData()
-
-  /**
-   * Fetches the current users teams user whenever the current user changes.
-   * @returns {() => AbortController.abort()} A function that cancels the request.
-   */
-  React.useEffect(() => {
-    const abortController = new AbortController()
-
-    /**
-     * Fetches the current users teams user.
-     * @async
-     * @function fetchData
-     * @returns {Promise<void>} The promise that resolves when the teams are fetched.
-     * @throws {Error} If the teams could not be fetched.
-     * @throws {AbortError} If the request was aborted.
-     */
-    const fetchTeamsData = async () => {
-      if (!user || data.teams?.length) {
-        console.debug('fetchTeamsData: user or data.teams is null')
-        return
-      }
-      try {
-        const teams = await getTeams(abortController)
-        setTeams(teams || [])
-      } catch (error) {
-        console.error(error)
-        setAlert({
-          message: 'Error fetching teams',
-          severity: 'error',
-        })
-      }
-    }
-
-    // call `fetchTeamsData` on mount and when the user changes.
-    fetchTeamsData()
-
-    // cleanup the abort controller when the component unmounts.
-    return () => abortController.abort()
-  }, [user])
+  // XXX: replace teams fetching effect with a useData hook
 
   return (
     <Box

@@ -1,26 +1,18 @@
 /**
- * The AuthContext is used to provide (1) the current user data to components
- *  that need it, (2) methods for handling logging the user in and out, and (3)
- *  methods for dispatching updates to the user data state in the AuthContext.
- * @module @cyclonedx/ui-sbom/context/AuthContext
+ * Custom React Hook to use the AuthContext in a functional component
+ *  in order to access the AuthContext's state and dispatch functions.
+ * @module @cyclonedx/ui-sbom/hooks/useAuth
+ * @exports AuthContext
+ * @exports AuthProvider
+ * @exports useAuth
  */
-// TODO: refactor to use fetch instead of axios
-import axios from 'axios'
-
-// ** React Imports
 import * as React from 'react'
 import { useMatch, useNavigate } from 'react-router-dom'
-
-// ** AWS Imports
 import { Auth } from '@aws-amplify/auth'
 import { CognitoIdToken, CognitoUser } from 'amazon-cognito-identity-js'
-
-// ** App Imports
-import authConfig from '@/configs/auth'
-import { useData } from '@/hooks/useData'
-import { CONFIG } from '@/utils/constants'
+import { storageTokenKeyName } from '@/utils/constants'
 import { getUserData } from '@/utils/get-cognito-user'
-import { CognitoUserInfo, Team } from '@/types'
+import { CognitoUserInfo } from '@/types'
 import {
   AuthProviderProps,
   AuthValuesType,
@@ -29,10 +21,9 @@ import {
   UserDataState,
 } from './types'
 
-/** @constant {string} MY_TEAMS_ENDPOINT The API endpoint for fetching teams */
-const MY_TEAMS_ENDPOINT = `${CONFIG.API_URL}/${authConfig.myTeamsEndpoint}`
-
-/** @type {AuthValuesType} The initial values provided by AuthContext. */
+/**
+ * @type {AuthValuesType} The initial values provided by AuthContext.
+ */
 const defaultProvider: AuthValuesType = {
   user: null,
   loading: true,
@@ -44,8 +35,16 @@ const defaultProvider: AuthValuesType = {
   setInitialized: () => Boolean,
 }
 
-/** @default {AuthValuesType=defaultProvider} The initial AuthContext */
-const AuthContext = React.createContext(defaultProvider)
+/**
+ * @default {AuthValuesType=defaultProvider} The initial AuthContext
+ */
+export const AuthContext = React.createContext(defaultProvider)
+
+/**
+ * The custom hook to use the AuthContext in a functional component.
+ * @returns {AuthValuesType} Hook that returns the current AuthContext value.
+ */
+export const useAuth = () => React.useContext(AuthContext)
 
 /**
  * The AuthContextProvider is used to provide user data to components.
@@ -53,7 +52,7 @@ const AuthContext = React.createContext(defaultProvider)
  * @param {React.ReactNode} props.children The children nodes being rendered.
  * @returns {JSX.Element} The rendered provider that wraps the children nodes.
  */
-const AuthProvider = ({ children }: AuthProviderProps) => {
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   // state
   const [user, setUser] = React.useState<UserDataState>(defaultProvider.user)
   const [loading, setLoading] = React.useState<boolean>(defaultProvider.loading)
@@ -62,23 +61,20 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   )
 
   // hooks
-  const { setTeams } = useData()
   const navigate = useNavigate()
   const matchProtectedRoute = useMatch('/app/*')
 
   /**
-   * Initializes the AuthContext by checking for a user session and setting the
-   *  user state accordingly. If a valid user session exists, this fetches the
-   *  user's teams and sets the user.teams state accordingly. If no valid user
-   *  session exists, this sets the user state to null and clears local storage.
-   * This effect executes before child components render, and never again after.
+   * Initializes the AuthContext by checking for a user session and setting
+   *  the user state accordingly. If no valid user session exists, it sets
+   *  the user state to null and clears local storage.
    */
+  /* eslint-disable react-hooks/exhaustive-deps */
   React.useEffect(() => {
     /**
-     * Async function to initialize the AuthContext and fetch the user's data.
-     * @returns {Promise<void>} A promise that resolves when the user's teams
-     *  data has been fetched, or rejects if no valid session exists, or if
-     *  an error occurs when making the API call to fetch the user data.
+     * Async function to check the validity of the user session and set user state.
+     * @returns {Promise<void>} A promise that resolves when the user's sesson
+     *  is resolved to a valid session, or rejects if no valid session exists.
      */
     const initAuth = async (): Promise<void> => {
       try {
@@ -87,22 +83,16 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         // get the current user's data and id token from Cognito.
         const { user: cognitoUser, userInfo, idToken } = await getUserData()
 
-        // get users teams data from the API before rendering the app.
-        const response = await axios.get(
-          `${MY_TEAMS_ENDPOINT}?user_id=${userInfo.attributes.email}`,
-          { headers: { Authorization: idToken.getJwtToken() } }
-        )
-
-        // set user and teams data in the context provider.
+        // set user data in the context provider.
         setUser({
           cognitoUser,
           userInfo,
           id: userInfo.id,
+          username: cognitoUser.getUsername(),
           email: userInfo.attributes.email,
           idToken,
           jwt: idToken.getJwtToken(),
         })
-        setTeams((response.data || []) as Team[])
 
         // set the loading state to false to indicate the data is fetched.
         setLoading(false)
@@ -115,6 +105,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
           navigate('/app')
         }
       } catch (error) {
+        console.warn(error)
         // set the loading flag in the context provider to `false`.
         setLoading(false)
         // if there is no valid session, clear any user data in
@@ -132,7 +123,8 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     }
     // execute the async function to initialize the AuthContext.
     initAuth()
-  }, [])
+  }, [matchProtectedRoute])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   /**
    * Function to handle logging the user in with the provided credentials.
@@ -173,30 +165,23 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         jwt: idToken.getJwtToken(),
       })
 
-      // set the user data in local storage.
-      await localStorage.setItem('userData', JSON.stringify(user))
-
-      // fetch users teams data from the API before rendering the app.
-      const requestUrl = `${MY_TEAMS_ENDPOINT}?user_id=${userInfo.attributes.email}`
-      const response = await axios.get(requestUrl, {
-        headers: { Authorization: idToken.getJwtToken() },
-      })
-
-      // dispatch update to the teams data state in the Data Provider
-      setTeams((response.data || []) as Team[])
-
       // set the loading state to false to indicate the data is fetched.
       setLoading(false)
 
       // navigate to the main app that the user is trying to access.
       navigate('/app')
     } catch (error) {
+      // TODO: show error message to user if there is an error.
+      console.warn(error)
       // set the loading state to false since the login failed.
       setLoading(false)
       // call the error callback if it was provided.
-      if (errorCallback) errorCallback(error as Error)
-      // TODO: show error message to user if there is an error.
-      console.error(error)
+      if (errorCallback) {
+        errorCallback(error as Error)
+      }
+    } finally {
+      // set the user data in local storage.
+      await localStorage.setItem('userData', JSON.stringify(user))
     }
   }
 
@@ -215,7 +200,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(null)
       // clear the user data in local storage.
       localStorage.removeItem('userData')
-      localStorage.removeItem(authConfig.storageTokenKeyName)
+      localStorage.removeItem(storageTokenKeyName)
       localStorage.removeItem('refreshToken')
       localStorage.removeItem('accessToken')
       // set the loading flag in the context provider back to `false`.
@@ -224,7 +209,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       navigate('/login')
     } catch (error) {
       // TODO: show error message to user if there is an error.
-      console.error(error)
+      console.warn(error)
     }
   }
 
@@ -242,5 +227,3 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
 
   return <AuthContext.Provider value={values}>{children}</AuthContext.Provider>
 }
-
-export { AuthContext, AuthProvider }

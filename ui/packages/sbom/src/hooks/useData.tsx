@@ -1,3 +1,6 @@
+/**
+ * @module @cyclonedx/ui/sbom/hooks/useData
+ */
 import * as React from 'react'
 import { AppState, Team } from '@/types'
 
@@ -24,6 +27,7 @@ export const DataProvider = ({
   children: JSX.Element
   initialState?: AppState
 }) => {
+  // XXX: make this into a reducer
   const [data, dispatchSetData] = React.useState<AppState>(initialState)
 
   const setData = (values: AppState) => {

@@ -10,8 +10,8 @@ import Box from '@mui/material/Box'
 import Container from '@mui/material/Container'
 import Grid from '@mui/material/Grid'
 import { useData } from '@/hooks/useData'
-import DashboardTeamCard from '@/views/Dashboard/Team/DashboardTeamCard'
-import DashboardTeamCreationCard from '@/views/Dashboard/Team/DashboardTeamCreateCard'
+import DashboardTeamCard from '@/views/Dashboard/Team/components/DashboardTeamCard'
+import DashboardTeamCreationCard from './Team/components/DashboardTeamCreateCard'
 
 const DashboardContainer = (): JSX.Element => {
   const {
@@ -19,6 +19,8 @@ const DashboardContainer = (): JSX.Element => {
   } = useData()
   const navigate = useNavigate()
   const navigateToCreateTeam = () => navigate('team/new')
+
+  // XXX: add teams data reducer here to fetch teams data
 
   return (
     <Box sx={{ display: 'flex' }} data-testid="Dashboard">
@@ -35,6 +37,7 @@ const DashboardContainer = (): JSX.Element => {
               <DashboardTeamCreationCard onClick={navigateToCreateTeam} />
             </Grid>
             {teams &&
+              teams.length &&
               teams.map((team) => (
                 <Grid item xs={12} md={4} key={team.Id}>
                   <DashboardTeamCard team={team} />

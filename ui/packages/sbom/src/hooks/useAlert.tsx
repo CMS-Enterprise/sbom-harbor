@@ -1,9 +1,8 @@
+/**
+ * @module @cyclonedx/ui/sbom/hooks/useAlert
+ */
 import * as React from 'react'
-import Alert, { AlertColor } from '@mui/material/Alert'
-import Box from '@mui/material/Box'
-import CloseIcon from '@mui/icons-material/Close'
-import Collapse from '@mui/material/Collapse'
-import IconButton from '@mui/material/IconButton'
+import { AlertColor } from '@mui/material/Alert'
 
 const DEFAULT_TIMEOUT = 3000
 
@@ -88,48 +87,6 @@ export const AlertProvider = ({
   )
 }
 
-export const AlertMessage = (): JSX.Element => {
-  const { state, clearAlert } = React.useContext(AlertContext)
-
-  return (
-    <>
-      <Box
-        sx={{
-          zIndex: 10000,
-          width: '100%',
-          maxWidth: '500px',
-          right: '-1%',
-          top: '1%',
-          position: 'fixed',
-        }}
-      >
-        <Collapse in={state.isVisible}>
-          <Alert
-            severity={state.severity}
-            action={
-              <IconButton
-                aria-label="close"
-                color="inherit"
-                size="small"
-                onClick={clearAlert}
-              >
-                <CloseIcon fontSize="inherit" />
-              </IconButton>
-            }
-            sx={{
-              transform: 'translateY(20px)',
-              minWidth: '50%',
-              maxWidth: '80%',
-              margin: 'auto',
-            }}
-            elevation={24}
-          >
-            {state.message}
-          </Alert>
-        </Collapse>
-      </Box>
-    </>
-  )
-}
-
 export const useAlert = () => React.useContext(AlertContext)
+
+export default useAlert

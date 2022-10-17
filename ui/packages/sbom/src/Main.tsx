@@ -10,9 +10,8 @@ import { ThemeProvider } from '@mui/material/styles'
 
 import Routes from '@/Routes'
 import { AlertProvider } from '@/hooks/useAlert'
-import { AuthProvider } from '@/providers/AuthProvider'
+import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import { DataProvider } from '@/hooks/useData'
-import { useAuth } from '@/hooks/useAuth'
 import theme from '@/utils/theme'
 
 /**

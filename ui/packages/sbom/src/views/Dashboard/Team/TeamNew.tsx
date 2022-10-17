@@ -5,188 +5,34 @@
  */
 import * as React from 'react'
 import { useForm } from 'react-hook-form'
-import { Auth } from '@aws-amplify/auth'
-
-// ** MUI Components
 import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
 import Container from '@mui/material/Container'
-import FormControl from '@mui/material/FormControl'
 import Grid from '@mui/material/Grid'
-import IconButton from '@mui/material/IconButton'
-import Input from '@mui/material/Input'
-import InputAdornment from '@mui/material/InputAdornment'
-import InputLabel from '@mui/material/InputLabel'
 import Paper from '@mui/material/Paper'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-
-// ** Icon Components
-import AddCircleIcon from '@mui/icons-material/AddCircleOutline'
-import RemoveCircleIcon from '@mui/icons-material/RemoveCircleOutline'
-
-// ** App Components
+import SubmitButton from '@/components/forms/SubmitButton'
+import UserAutocomplete from '@/components/UserAutocomplete'
 import { useAlert } from '@/hooks/useAlert'
 import { useData } from '@/hooks/useData'
-import { TEAMS_API_URL } from '@/utils/constants'
-import { CognitoUserInfo, TeamMember } from '@/types'
-import UserSearchInput from '@/components/UserAutocomplete'
-import TeamMembersTable, { TableBodyRowType } from './TeamMembersTable'
-
-type FormState = {
-  Id?: string
-  newAdminEmail?: string
-  newMemberEmail?: string
-  members?: TeamMember[]
-}
-
-const defaultFormState = {
-  Id: '',
-  newAdminEmail: '',
-  newMemberEmail: '',
-  members: [],
-}
-
-const TeamMemberReadOnly = ({
-  index,
-  email,
-  handleRemove,
-}: {
-  index: number
-  email: string
-  handleRemove: (event: React.MouseEvent<HTMLButtonElement>) => void
-}) => (
-  <Input
-    id={`member-${index}`}
-    name={`member-${index}`}
-    disabled
-    readOnly
-    fullWidth
-    value={email}
-    sx={(theme) => ({
-      '& .Mui-disabled': {
-        color:
-          theme.palette.mode === 'dark'
-            ? 'white !important'
-            : 'black !important',
-        WebkitTextFillColor:
-          theme.palette.mode === 'dark'
-            ? 'rgba(255, 255, 255, 1) !important'
-            : 'rgba(0, 0, 0, 1) !important',
-      },
-    })}
-    endAdornment={
-      <InputAdornment position="end" sx={{ pr: 1 }}>
-        <IconButton
-          aria-label="remove"
-          data-value={email}
-          onClick={handleRemove}
-          onMouseDown={handleRemove}
-          edge="end"
-        >
-          <RemoveCircleIcon />
-        </IconButton>
-      </InputAdornment>
-    }
-  />
-)
-
-const TeamMembersSection = ({
-  members = [],
-  newEmail = '',
-  title,
-  name,
-  handleAdd,
-  handleRemove,
-  handleChange,
-}: {
-  members?: TeamMember[]
-  newEmail?: string
-  title: string
-  name: string
-  handleAdd: () => void
-  handleRemove: (event: React.MouseEvent<HTMLButtonElement>) => void
-  handleChange: (event: React.ChangeEvent<HTMLInputElement>) => void
-}): JSX.Element => {
-  /**
-   * Wrapper for the handleAdd function that accepts a keyboard event argument
-   *  to prevent the event from bubbling up to the form and causing the form to
-   *  submit if the enter key is pressed. Instead, when the enter key is pressed,
-   *  this adds the new email to the list of member emails in the team edit form.
-   * @param {KeyboardEvent} event keyboard event to check if enter key was pressed.
-   */
-  const handleAddWrapper = (
-    event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    if (event.key === 'Enter') {
-      event?.preventDefault()
-      handleAdd()
-    }
-  }
-
-  return (
-    <>
-      <Typography
-        sx={{ textTransform: 'capitalize' }}
-        gutterBottom
-        variant="h5"
-      >
-        {title}:
-      </Typography>
-      <Grid container spacing={1} sx={{ mb: 3 }}>
-        {members.map(({ email }, index) => (
-          <Grid item xs={12} key={index}>
-            <FormControl fullWidth variant="standard" disabled margin="none">
-              <TeamMemberReadOnly
-                index={index}
-                email={email}
-                handleRemove={handleRemove}
-              />
-            </FormControl>
-          </Grid>
-        ))}
-        <Grid item xs={12}>
-          <FormControl fullWidth variant="standard" size="small">
-            <InputLabel htmlFor={`${name}`}>
-              <Typography sx={{ textTransform: 'capitalize' }}>
-                Add email
-              </Typography>
-            </InputLabel>
-            <Input
-              autoComplete="off"
-              margin="none"
-              id={`${name}`}
-              name={`${name}`}
-              required
-              fullWidth
-              onChange={handleChange}
-              value={newEmail}
-              onKeyDown={handleAddWrapper}
-              endAdornment={
-                <InputAdornment position="end" sx={{ pr: 1 }}>
-                  <IconButton
-                    aria-label="add"
-                    data-value={newEmail}
-                    onClick={handleAdd}
-                    onMouseDown={handleAdd}
-                    edge="end"
-                  >
-                    <AddCircleIcon />
-                  </IconButton>
-                </InputAdornment>
-              }
-            />
-          </FormControl>
-        </Grid>
-      </Grid>
-    </>
-  )
-}
+import { CONFIG } from '@/utils/constants'
+import { TeamMember, UserTableRowType } from '@/types'
+import getUserData from '@/utils/get-cognito-user'
+import TeamMembersSection from './components/TeamMembersSection'
+import TeamMembersTable from './components/TeamMembersTable'
+import { defaultFormState } from './constants'
+import { FormState } from './types'
 
 const TeamForm = () => {
+  // hook for using alert toasts
   const { setAlert } = useAlert()
+
+  // local form state to set while submitting the form
+  const [submitting, setSubmitting] = React.useState(false)
+
+  // hook to get team data from the data context
   const {
-    data: { teams },
+    data: { teams = [] },
     setTeams,
   } = useData()
 
@@ -204,13 +50,17 @@ const TeamForm = () => {
 
   // function that handlers change events on form inputs
   const handleInput = (
-    evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { name, value } = evt.currentTarget
+    const { name, value } = event.currentTarget
     setFormInput({ [name]: value })
   }
 
-  // function that handles removing a team member from the form state
+  /**
+   * Handler for removing a team member from the form state.
+   * @param {React.MouseEvent<HTMLButtonElement>} event The event triggered
+   *  by clicking the remove button next to a team member email line.
+   */
   const handleRemoveTeamMember = (
     event: React.MouseEvent<HTMLButtonElement>
   ) => {
@@ -219,58 +69,61 @@ const TeamForm = () => {
     setFormInput({ members })
   }
 
-  // TODO: dedupe these handleAdd functions
-  const handleAddTeamAdmin = () => {
-    const { newAdminEmail: email, members = [] } = formInput
-    if (!email) return
+  /**
+   * Generic handler for adding a new team member or admin to the form state.
+   * @param {boolean} admin Whether the user being added is an admin or not.
+   */
+  const handleAddMember = (admin: boolean) => {
+    // get the email of the user to add, either as an admin or a member.
+    const email = admin ? formInput.newAdminEmail : formInput.newMemberEmail
+    // return early if there is no email defined in the form state.
+    if (!email) {
+      return
+    }
+    // get the list of members already in the form state.
+    const { members = [] } = formInput
+    // update the form state with the new member and clear the email input,
     setFormInput({
-      // update the members array with the new admin
       members: [
-        // filter existing members to ensure new user is not added twice
+        // filter existing members to ensure new user is not added twice,
         ...members.filter((m) => m.email !== email),
-        // and combine that list with the new user object
-        { email, isTeamLead: true },
+        { email, isTeamLead: admin },
       ],
-      // clear the new admin email field
-      newAdminEmail: '',
+      // clear the email input for the field for the right type of user.
+      ...(admin ? { newAdminEmail: '' } : { newMemberEmail: '' }),
     })
   }
 
-  // TODO: dedupe these handleAdd functions
-  const handleAddTeamMember = () => {
-    const { newMemberEmail: email, members = [] } = formInput
-    if (!email) return
-    setFormInput({
-      // update the members array with the new member
-      members: [
-        // filter existing members to ensure new user is not added twice
-        ...members.filter((m) => m.email !== email),
-        // and combine that list with the new user object
-        { email, isTeamLead: false },
-      ],
-      // clear the new member email field
-      newMemberEmail: '',
-    })
-  }
+  /**
+   * Handler for adding a new team admin member to the form state.
+   * @requires TeamForm#handleAddMember
+   */
+  const handleAddTeamAdmin = () => handleAddMember(true)
 
+  /**
+   * Handler for adding a new team regular member to the form state.
+   * @requires TeamForm#handleAddMember
+   */
+  const handleAddTeamMember = () => handleAddMember(false)
+
+  /**
+   * Handler for submitting the form to update a team.
+   * @param {React.FormEvent<HTMLFormElement>} event Form submit event.
+   * @returns {Promise<void>} Promise that resolves to void when the submit
+   * request completes, or resolves to an abort signal if the request fails.
+   */
   const handleSubmitForm = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const abortController = new AbortController()
 
     try {
-      // get the user's info and token from Amplify Auth
-      const [cognitoUser, token]: [CognitoUserInfo, string] = await Promise.all(
-        [
-          Auth.currentUserInfo(),
-          Auth.currentSession().then((session) =>
-            session.getIdToken().getJwtToken()
-          ),
-        ]
-      )
+      setSubmitting(true)
 
+      // get the user's JWT token and email from Amplify Auth
       const {
-        attributes: { email },
-      } = cognitoUser
+        jwtToken: token,
+        userInfo: { attributes: { email = '' } = {} } = {},
+      } = await getUserData()
 
       // get the team id and the final list of members from the form
       // TODO: create a new team id
@@ -286,7 +139,7 @@ const TeamForm = () => {
       const newTeamData = { Id, members, projects: [], codebases: [] }
 
       // fetch the user's team from the Teams API endpoint
-      const response = await fetch(`${TEAMS_API_URL}`, {
+      const response = await fetch(`${CONFIG.TEAMS_API_URL}`, {
         method: 'PUT',
         signal: abortController.signal,
         headers: { Authorization: `Bearer ${token}` },
@@ -304,11 +157,13 @@ const TeamForm = () => {
         message: 'Team updated successfully',
         severity: 'success',
       })
+      setSubmitting(false)
     } catch (error) {
       setAlert({
         message: 'Something went wrong, unable to update team!',
         severity: 'error',
       })
+      setSubmitting(false)
       console.error(error)
     }
 
@@ -377,7 +232,7 @@ const TeamForm = () => {
               />
             </Grid>
             <Grid item xs={6}>
-              <UserSearchInput
+              <UserAutocomplete
                 label="Add new User"
                 name="newUserSearch"
                 control={control}
@@ -387,14 +242,12 @@ const TeamForm = () => {
           <Grid container spacing={6} className="match-height">
             <Grid item xs={12} md={12}>
               <TeamMembersTable
-                members={(formInput?.members || []) as TableBodyRowType[]}
+                members={(formInput?.members || []) as UserTableRowType[]}
               />
             </Grid>
           </Grid>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button type="submit" sx={{ mt: 3, ml: 1 }} variant="contained">
-              Save
-            </Button>
+            <SubmitButton disabled={submitting} />
           </Box>
         </Box>
       </Paper>

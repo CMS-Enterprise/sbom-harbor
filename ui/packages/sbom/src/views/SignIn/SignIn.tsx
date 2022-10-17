@@ -83,7 +83,7 @@ const LoginPage = () => {
     } catch (error) {
       // TODO: show error message to the user
       auth.setLoading(false)
-      console.error(error)
+      console.warn(error)
     }
   }
 
