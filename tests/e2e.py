@@ -56,6 +56,9 @@ except KeyError:
     ...
 
 
+cfd: str = "dhcig4acx4lh0"
+
+
 def __get_token_url(team_name: str, token=None):
     url = f"{URL}/api/{team_name}/token"
 
@@ -67,7 +70,7 @@ def __get_token_url(team_name: str, token=None):
 
 def __login():
 
-    login_url = "https://khqpamwf2b.execute-api.us-east-1.amazonaws.com/api/v1/login"
+    login_url = f"https://{cfd}.cloudfront.net/api/v1/login"
     user = "sbomadmin@aquia.io"
     password = "L0g1nTe5tP@55!"
 
@@ -89,7 +92,7 @@ def test_get_teams():
 
     jwt = __login()
 
-    url = "https://khqpamwf2b.execute-api.us-east-1.amazonaws.com/api/v1/teams"
+    url = f"https://{cfd}.cloudfront.net/api/v1/teams"
 
     print(f"Sending To: GET:{url}")
     teams_rsp = requests.get(url, headers={"Authorization": jwt})
@@ -121,10 +124,15 @@ def test_get_teams_with_children():
 
     jwt = __login()
 
-    url = "https://b5jpfzyp5l.execute-api.us-east-1.amazonaws.com/api/v1/teams?children=true"
+    url = f"https://{cfd}.cloudfront.net/api/v1/teams?children=true"
 
     print(f"Sending To: GET:{url}")
-    teams_rsp = requests.get(url, headers={"Authorization": jwt})
+    teams_rsp = requests.get(
+        url,
+        headers={
+            "Authorization": jwt,
+        },
+    )
 
     try:
 
@@ -155,9 +163,7 @@ def test_get_team():
 
     team_id: str = "18f863b5-0d3d-43cf-87e3-33a6a7d5842d"
 
-    url = (
-        f"https://dvu7djeqv2.execute-api.us-east-1.amazonaws.com/api/v1/team/{team_id}"
-    )
+    url = f"https://{cfd}.cloudfront.net/api/v1/team/{team_id}"
 
     print(f"Sending To: GET:{url}")
     team_rsp = requests.get(url, headers={"Authorization": jwt})
@@ -178,8 +184,7 @@ def test_get_team_with_children():
 
     team_id: str = "18f863b5-0d3d-43cf-87e3-33a6a7d5842d"
 
-    apigw_url: str = "https://dvu7djeqv2.execute-api.us-east-1.amazonaws.com"
-    url = f"{apigw_url}/api/v1/team/{team_id}?children=true"
+    url = f"https://{cfd}.cloudfront.net/api/v1/team/{team_id}?children=true"
 
     print(f"Sending To: GET:{url}")
     team_rsp = requests.get(url, headers={"Authorization": jwt})

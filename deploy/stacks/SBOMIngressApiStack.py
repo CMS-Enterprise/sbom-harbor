@@ -4,10 +4,14 @@ from os import path
 
 
 from aws_cdk import (
+    CfnOutput,
     aws_apigatewayv2_alpha as apigwv2a,
+    aws_apigatewayv2 as apigwv2,
     aws_ec2 as ec2,
+    aws_logs as logs,
     aws_lambda as lambda_,
     aws_cognito as cognito,
+    aws_s3 as s3,
     Duration,
     Stack,
 )
@@ -18,16 +22,22 @@ from aws_cdk.aws_apigatewayv2_alpha import (
 )
 from aws_cdk.aws_apigatewayv2_authorizers_alpha import HttpLambdaAuthorizer
 from aws_cdk.aws_apigatewayv2_integrations_alpha import HttpLambdaIntegration
+from aws_cdk.aws_logs import RetentionDays
 from constructs import Construct
-from deploy.user import SBOMLoginLambda
-from deploy.util import create_asset
+from deploy.user import SBOMLoginLambda, SBOMUserSearchLambda
+from deploy.util import SbomIngressLambda, create_asset
 from deploy.constants import (
+    API_GW_ID_EXPORT_NAME,
+    API_GW_URL_EXPORT_ID,
     AUTHORIZATION_HEADER,
     PRIVATE,
+    S3_BUCKET_ID,
+    S3_BUCKET_NAME,
     SBOM_API_PYTHON_RUNTIME,
 )
 from deploy.teams import (
     AuthorizerLambdaFactory,
+    SBOMUploadAPIKeyAuthorizerLambda,
 )
 from deploy.util import (
     DynamoTableManager,
@@ -115,6 +125,28 @@ class SBOMIngressApiStack(Stack):
 
     __cwd = path.dirname(__file__)
 
+    @staticmethod
+    def __enable_logging(api: apigwv2a.HttpApi, enabled):
+
+        """
+        -> Enables logging if necessary
+        """
+
+        if enabled:
+
+            stage: apigwv2.CfnStage = api.default_stage.node.default_child
+            log_group = logs.LogGroup(
+                api,
+                "AccessLogs",
+                log_group_name="APIGWAccessLogs",
+                retention=RetentionDays.ONE_DAY,
+            )
+
+            stage.access_log_settings = apigwv2.CfnStage.AccessLogSettingsProperty(
+                destination_arn=log_group.log_group_arn,
+                format="$context.requestId $context.error.messageString $context.integration.error",
+            )
+
     # pylint: disable=R0913
     def __init__(
         self,
@@ -195,6 +227,34 @@ class SBOMIngressApiStack(Stack):
             user_pool_client=user_pool_client,
             user_pool=user_pool,
             vpc=vpc,
+        )
+
+        self.__add_user_search_route(
+            user_pool=user_pool,
+            user_pool_client=user_pool_client,
+            vpc=vpc,
+        )
+
+        self.__add_sbom_upload_route(
+            vpc=vpc,
+            dynamo_table_mgr=table_mgr,
+        )
+
+        self.__generate_apigw_url_output()
+
+    def __generate_apigw_url_output(self):
+
+        """
+        -> Create an output with the URL of this
+        -> API so Cloudfront can forward the requests
+        """
+
+        CfnOutput(
+            self,
+            API_GW_URL_EXPORT_ID,
+            value=f"{self.api.http_api_id}.execute-api.us-east-1.amazonaws.com",
+            export_name=API_GW_ID_EXPORT_NAME,
+            description="URL Of the API Gateway",
         )
 
     def __add_team_routes(
@@ -456,6 +516,63 @@ class SBOMIngressApiStack(Stack):
                     user_pool_client_id=client_id,
                     user_pool_id=user_pool_id,
                     function_name="SBOMLoginLambda-v1",
+                ).get_lambda_function(),
+            ),
+        )
+
+    def __add_user_search_route(
+        self: "SBOMIngressApiStack",
+        user_pool_client: cognito.UserPoolClient,
+        user_pool: cognito.UserPool,
+        vpc: ec2.Vpc,
+    ):
+
+        self.api.add_routes(
+            path="/api/v1/user/search",
+            methods=[apigwv2a.HttpMethod.GET],
+            integration=HttpLambdaIntegration(
+                "USER_SEARCH_HttpLambdaIntegration_ID",
+                handler=SBOMUserSearchLambda(
+                    self,
+                    vpc=vpc,
+                    user_pool_client=user_pool_client,
+                    user_pool=user_pool,
+                ).get_lambda_function(),
+            ),
+        )
+
+    def __add_sbom_upload_route(
+        self,
+        vpc: ec2.Vpc,
+        dynamo_table_mgr: DynamoTableManager,
+    ):
+
+        """
+        -> Adds the /api/v1/sbom route
+        """
+
+        self.api.add_routes(
+            path="/api/v1/{team}/{project}/{codebase}/sbom",
+            methods=[apigwv2a.HttpMethod.POST],
+            authorizer=HttpLambdaAuthorizer(
+                "UPLOAD_SBOM_HttpLambdaAuthorizer_ID",
+                authorizer_name="UPLOAD_SBOM_HttpLambdaAuthorizer",
+                handler=SBOMUploadAPIKeyAuthorizerLambda(
+                    self,
+                    vpc=vpc,
+                    table_mgr=dynamo_table_mgr,
+                ).get_lambda_function(),
+            ),
+            integration=HttpLambdaIntegration(
+                "UPLOAD_SBOM_HttpLambdaIntegration_ID",
+                handler=SbomIngressLambda(
+                    self,
+                    vpc=vpc,
+                    s3_bucket=s3.Bucket.from_bucket_name(
+                        self,
+                        id=S3_BUCKET_ID,
+                        bucket_name=S3_BUCKET_NAME,
+                    ),
                 ).get_lambda_function(),
             ),
         )

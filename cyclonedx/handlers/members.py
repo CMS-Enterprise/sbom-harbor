@@ -92,7 +92,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
     request_body: dict = _get_request_body_as_dict(event)
 
     # Generate a new member id
-    member_id: str = str(uuid.uuid4())
+    member_id: str = str(uuid4())
 
     member: Member = db_client.create(
         model=Member(

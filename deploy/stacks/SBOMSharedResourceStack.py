@@ -1,4 +1,3 @@
-
 """This Stack is used to set up shared resources
 that the other stacks use when deploying the application"""
 
@@ -9,7 +8,6 @@ from aws_cdk import (
     aws_ec2 as ec2,
     aws_events as eventbridge,
     aws_dynamodb as dynamodb,
-    aws_lambda as lambda_,
     RemovalPolicy,
     Stack,
 )
@@ -17,11 +15,6 @@ from deploy.constants import (
     S3_BUCKET_ID,
     S3_BUCKET_NAME,
     SHARED_RESOURCE_STACK_ID,
-)
-from deploy.constructs import (
-    SBOMTeamTokenTable,
-    SBOMTeamTable,
-    SBOMTeamMemberTable
 )
 from deploy.constructs.harbor_teams_table import HarborTeamsTable
 from deploy.util import SBOMApiVpc
@@ -60,21 +53,16 @@ class SBOMSharedResourceStack(Stack):
         )
 
         self.event_bus = eventbridge.EventBus(
-            self, EVENT_BUS_NAME,
+            self,
+            EVENT_BUS_NAME,
             event_bus_name=EVENT_BUS_NAME,
         )
 
         __cwd = path.dirname(__file__)
 
-        team_table: dynamodb.Table = SBOMTeamTable(self).get_construct()
-        team_member_table: dynamodb.Table = SBOMTeamMemberTable(self).get_construct()
-        team_token_table: dynamodb.Table = SBOMTeamTokenTable(self).get_construct()
         harbor_teams_table: dynamodb.Table = HarborTeamsTable(self).get_construct()
 
         self.table_manager = DynamoTableManager(
-            team_table,
-            team_member_table,
-            team_token_table,
             harbor_teams_table,
         )
 

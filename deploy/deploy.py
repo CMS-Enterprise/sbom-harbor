@@ -12,7 +12,6 @@ from deploy.constants import (
 )
 from deploy.stacks import (
     SBOMEnrichmentPiplineStack,
-    SBOMIngressPiplineStack,
     SBOMSharedResourceStack,
     SBOMUserManagement,
     SBOMWebStack,
@@ -50,16 +49,6 @@ def dodep() -> None:
     user_pool_client: cognito.UserPoolClient = user_management.get_user_pool_client()
 
     # The Ingress stack set up the infrastructure to handle incoming SBOMs
-    ingress_stack = SBOMIngressPiplineStack(
-        app,
-        vpc,
-        env=env,
-        user_pool=user_pool,
-        user_pool_client=user_pool_client,
-        table_mgr=table_manager,
-    )
-
-    # The Ingress stack set up the infrastructure to handle incoming SBOMs
     ingress_api_stack = SBOMIngressApiStack(
         app,
         vpc,
@@ -80,7 +69,6 @@ def dodep() -> None:
     # The Web Stack has all the web oriented entities to manage the website
     web_stack = SBOMWebStack(app, env=env)
     web_stack.add_dependency(ingress_api_stack)
-    web_stack.add_dependency(ingress_stack)
 
     # Synth the CDK app
     app.synth()
