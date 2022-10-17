@@ -55,7 +55,7 @@ const HeaderAuthButton = (): JSX.Element => {
   }
 
   // session is defined, so render logout button
-  if (user && user.jwt) {
+  if (user && user.jwtToken) {
     return (
       <ButtonContainerBox>
         <LogoutButton />

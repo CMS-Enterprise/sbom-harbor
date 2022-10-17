@@ -9,14 +9,14 @@ import IconButton from '@mui/material/IconButton'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
 import DotsVertical from 'mdi-material-ui/DotsVertical'
-import { Codebase, Project } from '@/types'
+import { Project } from '@/types'
 
 type InputProps = { project: Project }
 
 const TeamViewProjectCard = ({ project }: InputProps): JSX.Element => (
   <Card>
     <CardHeader
-      title={project.projectName}
+      title={project.name}
       titleTypographyProps={{
         sx: {
           lineHeight: '2rem !important',
@@ -34,24 +34,21 @@ const TeamViewProjectCard = ({ project }: InputProps): JSX.Element => (
       }
     >
       <Typography component="h5" variant="caption" sx={{ mb: 5 }}>
-        {project.projectName}
+        {project.name}
       </Typography>
     </CardHeader>
     <CardContent>
       <Typography component="p" variant="caption" sx={{ mb: 5 }}>
-        {project?.codebases?.length || 0} Codebases
+        <>{project?.codebases?.length || 0} Codebases</>
       </Typography>
-      {project?.codebases?.map((item: Codebase, index: number) => {
+      {Object.entries(project.codebases).map(([key, item], index, array) => {
         return (
           <Box
-            key={`${item.codebaseName}-${index}`}
+            key={key}
             sx={{
               display: 'flex',
               alignItems: 'center',
-              mb:
-                index !== (project?.codebases?.length || 0) - 1
-                  ? 5.75
-                  : undefined,
+              mb: index !== (array.length || 0) - 1 ? 5.75 : undefined,
             }}
           >
             <Box
@@ -68,7 +65,7 @@ const TeamViewProjectCard = ({ project }: InputProps): JSX.Element => (
                   variant="body2"
                   sx={{ fontWeight: 600, color: 'text.primary' }}
                 >
-                  {item.codebaseName}
+                  {item.name}
                 </Typography>
                 <Typography variant="caption">{item.language}</Typography>
               </Box>

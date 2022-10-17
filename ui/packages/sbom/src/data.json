@@ -1,4 +1,86 @@
 {
   "company": "Aquia, Inc.",
-  "logo": "https://static.wixstatic.com/media/35190b_00339f27b4bc4de0a5c424db8889557e~mv2.png/v1/fill/w_80,h_80,al_c,usm_0.66_1.00_0.01,enc_auto/Copy%20of%20Copy%20of%20avatar%20(1).png"
+  "logo": "https://static.wixstatic.com/media/35190b_00339f27b4bc4de0a5c424db8889557e~mv2.png/v1/fill/w_80,h_80,al_c,usm_0.66_1.00_0.01,enc_auto/Copy%20of%20Copy%20of%20avatar%20(1).png",
+  "devData": {
+    "teams": {
+      "dawn-patrol": {
+        "name": "dawn-patrol",
+        "projects": {
+          "test-project-id": {
+            "name": "Test Project Name",
+            "fisma": "",
+            "codebases": {
+              "back-end": {
+                "name": "Back End",
+                "language": "TYPESCRIPT",
+                "buildTool": "YARN"
+              },
+              "d1aab0a8-6ff0-4658-9f77-2ede22105920": {
+                "name": "Rustic Wooden Pants",
+                "language": "JAVASCRIPT",
+                "buildTool": "NPM"
+              }
+            }
+          }
+        },
+        "members": {
+          "keyser-soze": {
+            "email": "keyser.soze@aquia.io",
+            "isTeamLead": true
+          }
+        },
+        "tokens": {
+          "working-token": {
+            "name": "dawn-patrol-working-token",
+            "created": 1665735968.638725,
+            "expires": 1674379568.638725,
+            "enabled": true,
+            "token": "9bc40c3b-391f-487f-9ced-5da08af1481e"
+          }
+        }
+      },
+      "dusk-patrol": {
+        "name": "dusk-patrol",
+        "projects": {
+          "test-project-id": {
+            "name": "Test Project Name",
+            "fisma": "",
+            "codebases": {
+              "back-end": {
+                "name": "Back End",
+                "language": "TYPESCRIPT",
+                "buildTool": "YARN"
+              }
+            }
+          }
+        },
+        "members": {
+          "keyser-soze": {
+            "email": "keyser.soze@aquia.io",
+            "isTeamLead": true
+          }
+        },
+        "tokens": {
+          "working-token": {
+            "name": "dusk-patrol-working-token",
+            "created": 1665735968.638725,
+            "expires": 1674379568.638725,
+            "enabled": true,
+            "token": "9bc40c3b-391f-487f-9ced-5da08af1481e"
+          }
+        }
+      },
+      "7bea84d2-ac9e-4b27-9269-8d41b75dc7f9": {
+        "name": "dawn-patrol-2",
+        "projects": {},
+        "members": {
+          "2de01494-bbb9-455d-a220-c46ab31dd669": {
+            "email": "sbomadmin@aquia.io",
+            "isTeamLead": true
+          }
+        },
+        "tokens": {}
+      }
+    }
+  }
 }

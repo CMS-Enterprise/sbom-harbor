@@ -9,17 +9,16 @@
 import * as React from 'react'
 import { useMatch, useNavigate } from 'react-router-dom'
 import { Auth } from '@aws-amplify/auth'
-import { CognitoIdToken, CognitoUser } from 'amazon-cognito-identity-js'
-import { storageTokenKeyName } from '@/utils/constants'
 import { getUserData } from '@/utils/get-cognito-user'
-import { CognitoUserInfo } from '@/types'
-import {
-  AuthProviderProps,
-  AuthValuesType,
-  ErrCallbackType,
-  LoginParams,
-  UserDataState,
-} from './types'
+import { UserDataType } from '@/types'
+import { AuthValuesType, LoginParams } from './types'
+import useAlert from '@/hooks/useAlert'
+
+type UserDataState = UserDataType | null
+
+type AuthProviderProps = {
+  children: React.ReactNode
+}
 
 /**
  * @type {AuthValuesType} The initial values provided by AuthContext.
@@ -27,12 +26,11 @@ import {
 const defaultProvider: AuthValuesType = {
   user: null,
   loading: true,
+  updateUser: () => null,
   setUser: () => null,
   setLoading: () => Boolean,
-  initialized: false,
   login: () => Promise.resolve(),
   logout: () => Promise.resolve(),
-  setInitialized: () => Boolean,
 }
 
 /**
@@ -53,16 +51,56 @@ export const useAuth = () => React.useContext(AuthContext)
  * @returns {JSX.Element} The rendered provider that wraps the children nodes.
  */
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  // state
-  const [user, setUser] = React.useState<UserDataState>(defaultProvider.user)
+  const [user, setUser]: [UserDataState, React.Dispatch<UserDataState>] =
+    React.useState<UserDataState>(defaultProvider.user)
   const [loading, setLoading] = React.useState<boolean>(defaultProvider.loading)
-  const [initialized, setInitialized] = React.useState<boolean>(
-    defaultProvider.initialized
-  )
 
-  // hooks
+  const { setAlert } = useAlert()
   const navigate = useNavigate()
   const matchProtectedRoute = useMatch('/app/*')
+
+  const updateUser = React.useCallback(async () => {
+    try {
+      const { userInfo, ...rest } = await getUserData()
+      const { id, attributes, attributes: { email } = {}, username } = userInfo
+      const nextData = { ...rest, userInfo, attributes, id, email, username }
+      setUser(nextData)
+      console.debug('User data updated.', nextData)
+    } catch (error) {
+      setUser(null)
+      // we still throw the error to make sure this causes an error in the initAuth handler
+      throw error
+    }
+  }, [setUser])
+
+  /**
+   * Async function to check the validity of the user session and set user state.
+   * @returns {Promise<void>} A promise that resolves when the user's sesson
+   *  is resolved to a valid session, or rejects if no valid session exists.
+   */
+  /* eslint-disable react-hooks/exhaustive-deps */
+  const initAuth = React.useCallback(async (): Promise<void> => {
+    try {
+      setLoading(true)
+      await updateUser()
+      setLoading(false)
+      // if the user has navigated to a non-protected route
+      // outside of the app, redirect them back to the app.
+      if (!matchProtectedRoute) {
+        navigate('/app')
+      }
+    } catch (error) {
+      console.warn('initAuth:', error)
+      setUser(null)
+      setLoading(false)
+      // if the unauthenticated user is trying to navigate to a
+      // protected app routue, redirect them to the login page.
+      if (matchProtectedRoute) {
+        navigate('/login')
+      }
+    }
+  }, [matchProtectedRoute])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   /**
    * Initializes the AuthContext by checking for a user session and setting
@@ -71,57 +109,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
    */
   /* eslint-disable react-hooks/exhaustive-deps */
   React.useEffect(() => {
-    /**
-     * Async function to check the validity of the user session and set user state.
-     * @returns {Promise<void>} A promise that resolves when the user's sesson
-     *  is resolved to a valid session, or rejects if no valid session exists.
-     */
-    const initAuth = async (): Promise<void> => {
-      try {
-        setLoading(true)
-
-        // get the current user's data and id token from Cognito.
-        const { user: cognitoUser, userInfo, idToken } = await getUserData()
-
-        // set user data in the context provider.
-        setUser({
-          cognitoUser,
-          userInfo,
-          id: userInfo.id,
-          username: cognitoUser.getUsername(),
-          email: userInfo.attributes.email,
-          idToken,
-          jwt: idToken.getJwtToken(),
-        })
-
-        // set the loading state to false to indicate the data is fetched.
-        setLoading(false)
-        // set initialized to true to prevent this effect from running again.
-        setInitialized(true)
-
-        // if the user has navigated to a non-protected route
-        // outside of the app, redirect them back to the app.
-        if (!matchProtectedRoute) {
-          navigate('/app')
-        }
-      } catch (error) {
-        console.warn(error)
-        // set the loading flag in the context provider to `false`.
-        setLoading(false)
-        // if there is no valid session, clear any user data in
-        // the auth context and remove any localStorage items.
-        setUser(null)
-        localStorage.removeItem('userData')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('accessToken')
-        // if the unauthenticated user is trying to navigate to a
-        // protected app routue, redirect them to the login page.
-        if (matchProtectedRoute) {
-          navigate('/login')
-        }
-      }
-    }
-    // execute the async function to initialize the AuthContext.
     initAuth()
   }, [matchProtectedRoute])
   /* eslint-enable react-hooks/exhaustive-deps */
@@ -129,59 +116,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   /**
    * Function to handle logging the user in with the provided credentials.
    * @param params {LoginParams} The parameters to use when logging the user in.
-   * @param {ErrCallbackType} errorCallback The callback to invoke if an error
+   * @param {ErrorCallbackType} errorCallback The callback to invoke if an error
    * @returns {Promise<void>} A promise that resolves when user is logged in,
    *  or rejects if an error occurs.
    */
   const handleLogin = async (
     params: LoginParams,
-    errorCallback?: ErrCallbackType
+    errorCallback?: ErrorCallbackType
   ): Promise<void> => {
     try {
-      // set the loading state to true to indicate the request is in progress.
       setLoading(true)
-
-      // use the Amplify SDK's Auth.signIn API to sign in the user.
       await Auth.signIn(params.email, params.password)
-
-      // get the current user's data and id token from Cognito.
-      const [cognitoUser, userInfo, idToken]: [
-        CognitoUser,
-        CognitoUserInfo,
-        CognitoIdToken
-      ] = await Promise.all([
-        Auth.currentAuthenticatedUser(),
-        Auth.currentUserInfo(),
-        Auth.currentSession().then((session) => session.getIdToken()),
-      ])
-
-      // dispatch update to the user data state in the context provider.
-      setUser({
-        cognitoUser,
-        userInfo,
-        id: userInfo.id,
-        email: userInfo.attributes.email,
-        idToken,
-        jwt: idToken.getJwtToken(),
-      })
-
-      // set the loading state to false to indicate the data is fetched.
-      setLoading(false)
-
-      // navigate to the main app that the user is trying to access.
-      navigate('/app')
+      await initAuth()
     } catch (error) {
-      // TODO: show error message to user if there is an error.
       console.warn(error)
-      // set the loading state to false since the login failed.
       setLoading(false)
-      // call the error callback if it was provided.
-      if (errorCallback) {
-        errorCallback(error as Error)
-      }
-    } finally {
-      // set the user data in local storage.
-      await localStorage.setItem('userData', JSON.stringify(user))
+      setAlert({ message: 'Error logging in', severity: 'error' })
+      if (errorCallback) errorCallback(error as Error)
     }
   }
 
@@ -192,24 +143,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
    */
   const handleLogout = async (): Promise<void> => {
     try {
-      // make the API call to log the user out.
       await Auth.signOut()
-      // dispatch an update to set AuthContext.initialized flag to false.
-      setInitialized(false)
-      // clear the user data in the context provider.
-      setUser(null)
-      // clear the user data in local storage.
-      localStorage.removeItem('userData')
-      localStorage.removeItem(storageTokenKeyName)
-      localStorage.removeItem('refreshToken')
-      localStorage.removeItem('accessToken')
-      // set the loading flag in the context provider back to `false`.
-      setLoading(false)
-      // finally, navigate to the login page.
-      navigate('/login')
+      await initAuth()
     } catch (error) {
-      // TODO: show error message to user if there is an error.
       console.warn(error)
+      setLoading(false)
+      setAlert({ message: 'Error logging out', severity: 'error' })
     }
   }
 
@@ -217,10 +156,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const values = {
     user,
     loading,
+    updateUser,
     setUser,
     setLoading,
-    initialized,
-    setInitialized,
     login: handleLogin,
     logout: handleLogout,
   }

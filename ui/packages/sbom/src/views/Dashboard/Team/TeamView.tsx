@@ -13,22 +13,40 @@ import Typography from '@mui/material/Typography'
 import { useData } from '@/hooks/useData'
 import TeamMembersTable from './components/TeamMembersTable'
 import TeamViewProjectCard from './components/TeamViewProjectCard'
+import { Team, UserTableRowType } from '@/types'
 
 const TeamView = () => {
-  // get teams from data context
-  const { data: { teams = [] } = {} } = useData()
-
   // get teamId from URL params
-  const { teamId } = useParams()
+  const { teamId = '' } = useParams()
 
-  // find the team to edit from the data context and set it in local state.
-  const [team] = React.useState(() => {
-    const team = teams.find((t) => t.Id === teamId)
-    if (!team) {
-      // TODO: handle error where team isn't found with error boundary.
-      throw new Error(`Team with ID ${teamId} not found.`)
+  // get team data from context
+  const { data: { teams: { [teamId]: team = {} as Team } = {} } = {} } =
+    useData()
+
+  // find the team to show from the data context and set it in local state.
+  const [data] = React.useState(() => {
+    const { name = '', projects = {}, members = {}, tokens = {} } = team
+
+    // map the members object to an array of objects that can be used by the table.
+    const newMembers = Object.entries(members).map(
+      ([id, member]): UserTableRowType => {
+        const { email = '', isTeamLead = false } = member
+        return {
+          id,
+          email,
+          isTeamLead,
+          role: isTeamLead ? 'admin' : 'member',
+          avatarSrc: `https://ui-avatars.com/api/?name=${email}&background=0D8ABC&color=fff`,
+        }
+      }
+    )
+
+    return {
+      name,
+      members: newMembers,
+      projects: Object.entries(projects),
+      tokens: Object.entries(tokens),
     }
-    return team
   })
 
   return (
@@ -45,7 +63,7 @@ const TeamView = () => {
           }}
         >
           <Typography variant="h4" sx={{ mt: 1, mb: 3 }}>
-            {team?.Id}
+            {data?.name}
           </Typography>
           <Link to={`edit`}>Edit Team</Link>
         </Box>
@@ -57,7 +75,7 @@ const TeamView = () => {
               </Typography>
             </Grid>
             <Grid item xs={12} md={12}>
-              <TeamMembersTable members={team.members} />
+              <TeamMembersTable members={data.members} />
             </Grid>
           </Grid>
         </Box>
@@ -68,9 +86,9 @@ const TeamView = () => {
                 Projects
               </Typography>
             </Grid>
-            {team.projects &&
-              team.projects.map((project, index) => (
-                <Grid item xs={12} md={12} key={`project-${index}`}>
+            {data.projects &&
+              data.projects.map(([key, project]) => (
+                <Grid item xs={12} md={12} key={key}>
                   <TeamViewProjectCard project={project} />
                 </Grid>
               ))}

@@ -17,8 +17,3 @@ export const CONFIG = {
   TEAMS_API_URL: `${envConfig.API_URL}/team`,
   USER_API_URL: `${envConfig.API_URL}/user`,
 } as AppConfig
-
-/**
- * @constant {string} storageTokenKeyName The key for the access token in local storage.
- */
-export const storageTokenKeyName = 'accessToken'

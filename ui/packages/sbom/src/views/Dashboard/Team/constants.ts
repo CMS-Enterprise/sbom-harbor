@@ -1,19 +1,27 @@
 import { Project } from '@/types'
+import { FormState, FormTeamState } from './types'
 
 export const defaultProject: Project = {
-  projectName: '',
-  codebases: [],
+  name: '',
+  fisma: '',
+  codebases: {},
+}
+
+export const defaultTeam: FormTeamState = {
+  name: '',
+  projects: [],
+  members: [],
   tokens: [],
 }
 
-export const defaultTeam = {
-  Id: '',
-  members: [],
-  projects: [],
-}
-
-export const defaultFormState = {
+export const defaultFormState: FormState = {
   newAdminEmail: '',
   newMemberEmail: '',
-  ...defaultTeam,
+  newProjects: [],
+  projects: [],
+  members: [],
+  tokens: [],
+  name: '',
 }
+
+export const defaultFormStateNewProjects: FormState['newProjects'] = []

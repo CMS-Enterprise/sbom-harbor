@@ -4,8 +4,16 @@
 import * as React from 'react'
 import { AppState, Team } from '@/types'
 
+// DEBUG: remove this when we fetch from the real api
+import data from '@/data.json'
+
+// DEBUG: remove this when we fetch from the real api
+const {
+  devData: { teams: teamsDevData },
+} = data
+
 const INITIAL_STATE = {
-  teams: [],
+  teams: teamsDevData,
   setTeams: () => null,
   setData: () => null,
 } as AppState
@@ -13,7 +21,7 @@ const INITIAL_STATE = {
 const DataContext = React.createContext<{
   data: AppState
   setData: (values: AppState) => void
-  setTeams: (teams: Team[]) => void
+  setTeams: (teams: Record<string, Team>) => void
 }>({
   data: INITIAL_STATE,
   setData: () => ({}),
@@ -38,7 +46,7 @@ export const DataProvider = ({
   }
 
   // dispatches update to the user data state in the context provider.
-  const setTeams = (teams: Team[] = []) => {
+  const setTeams = (teams = {}) => {
     setData({ teams })
   }
 

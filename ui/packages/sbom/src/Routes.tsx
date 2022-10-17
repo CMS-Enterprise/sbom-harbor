@@ -14,8 +14,7 @@ import SignOut from '@/views/SignOut/SignOut'
 // ** Private Views
 import App from '@/views/App/App'
 import Dashboard from '@/views/Dashboard/Dashboard'
-import TeamNew from '@/views/Dashboard/Team/TeamNew'
-import TeamEdit from '@/views/Dashboard/Team/TeamEdit'
+import TeamForm from '@/views/Dashboard/Team/TeamForm'
 import TeamView from '@/views/Dashboard/Team/TeamView'
 
 // ** Components
@@ -38,10 +37,10 @@ const AppRoutes = (): JSX.Element => (
       {/* Index route that the user sees after logging in */}
       <Route path="" element={<Dashboard />} />
       {/* Team CRUD routes */}
-      <Route path="team/new" element={<TeamNew />} />
+      <Route path="team/new" element={<TeamForm />} />
       <Route path="teams/:teamId">
         <Route path="" element={<TeamView />} />
-        <Route path="edit" element={<TeamEdit />} />
+        <Route path="edit" element={<TeamForm />} />
       </Route>
     </Route>
   </Routes>

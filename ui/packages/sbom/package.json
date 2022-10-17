@@ -33,7 +33,6 @@
     "@mui/x-data-grid": "5.17.7",
     "amazon-cognito-identity-js": "5.2.11",
     "aws-amplify": "4.3.39",
-    "axios": "1.1.2",
     "classnames": "2.3.2",
     "clipboard-copy": "4.0.1",
     "date-fns": "2.29.3",
@@ -45,6 +44,7 @@
     "react-hook-form": "7.37.0",
     "react-popper": "2.3.0",
     "react-router-dom": "6.4.2",
+    "uuid": "9.0.0",
     "yup": "0.32.11"
   },
   "devDependencies": {

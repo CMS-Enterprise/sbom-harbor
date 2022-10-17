@@ -9,7 +9,7 @@ const getAddress = async (
   abortController: AbortController = new AbortController()
 ): Promise<Array<string>> => {
   const session = await Auth.currentSession()
-  const token = session.getAccessToken().getJwtToken()
+  const jwtToken = session.getAccessToken().getJwtToken()
 
   // TODO: use url.searchParams instead of building the url manually
   const url = `${SEARCH_URL}?filter=${filter}`
@@ -17,7 +17,7 @@ const getAddress = async (
   // url.searchParams.append('filter', filter)
 
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${jwtToken}` },
     method: 'GET',
     signal: abortController.signal,
   })

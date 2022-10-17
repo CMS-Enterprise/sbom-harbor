@@ -12,10 +12,17 @@ import Typography from '@mui/material/Typography'
 import { Team } from '@/types'
 
 type InputProps = {
-  team?: Team
+  team: Team
 }
 
 const DashboardTeamCard = ({ team }: InputProps): JSX.Element => {
+  const [state] = React.useState({
+    name: team.name,
+    projects: Object.entries(team.projects) || [],
+    members: Object.entries(team.members) || [],
+    tokens: Object.entries(team.tokens) || [],
+  })
+
   if (team) {
     return (
       <Card sx={{ position: 'relative' }}>
@@ -25,17 +32,17 @@ const DashboardTeamCard = ({ team }: InputProps): JSX.Element => {
               component="span"
               sx={{ color: 'primary.main', fontWeight: 'bold' }}
             >
-              {team.Id}
+              {state.name}
             </Box>
           </Typography>
           <Typography variant="h6">
-            {team?.projects?.length || 0} Projects
+            <>{state?.projects.length || 0} Projects</>
           </Typography>
           <Typography variant="body2" sx={{ mb: 3.25 }}>
-            {team?.members?.length || 0} Members
+            <>{state?.members.length || 0} Members</>
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Link to={`teams/${team.Id}`}>View</Link>
+            <Link to={`teams/${state.name}`}>View</Link>
           </Box>
         </CardContent>
       </Card>

@@ -6,13 +6,15 @@
  * @module @cyclonedx/ui/sbom/views/Dashboard/Team/TeamEdit
  */
 import * as React from 'react'
-import { useParams } from 'react-router-dom'
+import { useMatch, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import { v4 as uuidv4 } from 'uuid'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Container from '@mui/material/Container'
 import Grid from '@mui/material/Grid'
 import Paper from '@mui/material/Paper'
+import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import UserAutocomplete from '@/components/UserAutocomplete'
 import SubmitButton from '@/components/forms/SubmitButton'
@@ -20,78 +22,76 @@ import { useAlert } from '@/hooks/useAlert'
 import { useData } from '@/hooks/useData'
 import { CONFIG } from '@/utils/constants'
 import getUserData from '@/utils/get-cognito-user'
-import { Codebase } from '@/types'
+import { Team } from '@/types'
+import { FormState, FormTeamState } from './types'
+import { defaultFormState, defaultProject, defaultTeam } from './constants'
 import TeamMembersSection from './components/TeamMembersSection'
 import TeamViewProjectCreateCard from './components/TeamViewProjectCreateCard'
 import TeamViewProjectCreationCard from './components/TeamViewProjectCreationCard'
-import { defaultFormState, defaultProject, defaultTeam } from './constants'
-import { FormState } from './types'
 
 const TeamForm = () => {
-  // hook for getting the /teams/:teamId route parameter
-  const { teamId } = useParams()
-
-  // hook for using alert toasts
+  const newTeamRouteMatch = useMatch('/team/new')
   const { setAlert } = useAlert()
-
-  // local form state to set while submitting the form
+  const { data: { teams = {} } = {}, setTeams } = useData()
   const [submitting, setSubmitting] = React.useState(false)
 
-  // hook to get team data from the data context
   const {
-    data: { teams = [] },
-    setTeams,
-  } = useData()
-
-  // find the team to edit from the data context and set it in local state.
-  const [team] = React.useState(() => {
-    const team = teams.find((t) => t.Id === teamId)
-    if (!team) {
-      // TODO: handle error where team isn't found with error boundary.
-      throw new Error(`Team with ID ${teamId} not found.`)
-    }
-    return team || { ...defaultTeam }
-  })
-
-  // react-form hook
-  const { control } = useForm({
+    control,
+    // TODO: use commented out react-hook-form methods
+    // formState: { errors },
+    // handleSubmit,
+    // register,
+    // watch,
+  } = useForm({
     mode: 'all',
     shouldUnregister: true,
   })
 
-  // reducer for the form state
+  // hook for getting the /teams/:teamId route parameter
+  const { teamId } = useParams()
+
+  // find the team to edit from the data context and set it in local state.
+  const [team] = React.useState((): FormTeamState => {
+    // if the team data is not there or this is a new team, return the default team data.
+    if (newTeamRouteMatch || !teams || !teamId || !teams[teamId]) {
+      return defaultTeam
+    }
+    // create a new team data object with arrays for the projects, members, and tokens.
+    const rawTeam = { ...(teams[teamId] || defaultTeam) }
+    return {
+      name: rawTeam.name,
+      projects: Object.entries(rawTeam.projects),
+      members: Object.entries(rawTeam.members),
+      tokens: Object.entries(rawTeam.tokens),
+    }
+  })
+
+  // form input reducer
   const [formInput, setFormInput] = React.useReducer(
     (state: FormState, newState: FormState) => ({ ...state, ...newState }),
-    defaultFormState
+    { ...defaultFormState, ...team }
   )
-
-  // effect that updates the form state when the team is updated
-  React.useEffect(() => {
-    if (team?.members?.length) {
-      const { members = [], projects = [], Id = '' } = team
-      setFormInput({ ...formInput, members, projects, Id })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [team])
 
   /**
    * Handler for change events for the team member email inputs.
    * @param {React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>} event The event.
    */
-  const handleTeamMemberInputChange = (
+  const handleInputFieldChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = event.currentTarget
-    setFormInput({ [name]: value })
+    setFormInput({ ...formInput, [name]: value })
   }
 
   /**
    * Handler for adding a new project to the team
    */
   const handleAddProject = () => {
-    const { projects = [] } = formInput
-    const newProjectsToAdd = [...projects, { ...defaultProject }]
-    setFormInput({ ...formInput, projects: newProjectsToAdd })
+    // update the form state with the new projects object
+    setFormInput({
+      ...formInput,
+      newProjects: [...formInput.newProjects, { ...defaultProject }],
+    })
   }
 
   /**
@@ -103,8 +103,8 @@ const TeamForm = () => {
     event: React.MouseEvent<HTMLButtonElement>
   ) => {
     const email = event.currentTarget.dataset.value
-    const members = formInput?.members?.filter((m) => m.email !== email)
-    setFormInput({ members })
+    const nextData = formInput.members.filter(([, m]) => m.email !== email)
+    setFormInput({ ...formInput, members: nextData })
   }
 
   /**
@@ -116,19 +116,20 @@ const TeamForm = () => {
     const email = admin ? formInput.newAdminEmail : formInput.newMemberEmail
     // return early if there is no email defined in the form state.
     if (!email) {
+      console.warn('Tried to add a new member without an email')
       return
     }
-    // get the list of members already in the form state.
-    const { members = [] } = formInput
-    // update the form state with the new member and clear the email input,
+    // get the list of members already in the form state, and add the
+    // new member to the form state if they are not already in the list.
+    const nextData = [...formInput.members]
+    if (!nextData.find(([, m]) => m.email === email)) {
+      nextData.push([uuidv4(), { email, isTeamLead: admin }])
+    }
+    // update the form state with the new member and clear the email input.
     setFormInput({
-      members: [
-        // filter existing members to ensure new user is not added twice,
-        ...members.filter((m) => m.email !== email),
-        { email, isTeamLead: admin },
-      ],
-      // clear the email input for the field for the right type of user.
+      ...formInput,
       ...(admin ? { newAdminEmail: '' } : { newMemberEmail: '' }),
+      members: nextData,
     })
   }
 
@@ -157,74 +158,68 @@ const TeamForm = () => {
     const abortController = new AbortController()
 
     try {
-      // set the form to submitting state
       setSubmitting(true)
 
-      // filter out any empty projects or those with no name, and
-      // ensure that codebases are at least defined as an empty array.
-      const validProjects = formInput?.projects
-        ?.filter((p) => !!p.projectName)
-        ?.map((p) => {
-          return {
-            ...p,
-            codebases:
-              p?.codebases?.filter((cb: Codebase) => cb.codebaseName) || [],
-          }
-        })
+      const { jwtToken, userInfo: { attributes: { email = '' } = {} } = {} } =
+        await getUserData()
 
-      // update the form state with the "corrected" projects
-      setFormInput({ ...formInput, projects: validProjects })
-
-      // get the user's JWT token and email from Amplify Auth
       const {
-        jwtToken: token,
-        userInfo: { attributes: { email = '' } = {} } = {},
-      } = await getUserData()
+        name = team.name,
+        members = team.members,
+        projects = team.projects,
+        tokens: tokenEntries = team.tokens,
+      } = formInput
 
-      // get the team id and the final list of members from the form state
-      const { Id = team.Id, members = team.members, projects } = formInput
+      // filter out any empty email values from the projects object
+      const projectEntries = projects.filter(([, p]) => !!p.name)
+
+      // filter out any empty email values from the members object
+      const membersEntries = members.filter(([, m]) => !!m.email)
 
       // ensure that the current user is in the members list as an admin
-      if (!members.find((member) => member.email === email)) {
-        members.push({ email: email, isTeamLead: true })
+      if (members.findIndex(([, m]) => m.email === email) === -1) {
+        membersEntries.push([uuidv4(), { email, isTeamLead: true }])
       }
 
-      // create a final object representing the team
-      const newTeamData = {
-        ...team,
-        Id,
-        members,
-        projects,
+      // create a final object representing the team and add it to the teams data.
+      const updatedTeamsData = {
+        ...teams,
+        [uuidv4()]: {
+          ...team,
+          name,
+          members: Object.fromEntries(membersEntries),
+          projects: Object.fromEntries(projectEntries),
+          tokens: Object.fromEntries(tokenEntries),
+        } as Team,
       }
 
-      // fetch the user's team from the Teams API endpoint
+      // update the team in the database
       const response = await fetch(`${CONFIG.TEAMS_API_URL}`, {
-        method: 'PUT',
+        method: newTeamRouteMatch ? 'POST' : 'PUT',
         signal: abortController.signal,
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify(newTeamData),
+        headers: { Authorization: `Bearer ${jwtToken}` },
+        body: JSON.stringify(updatedTeamsData),
       })
 
-      // if the request was unsuccessful, throw an error
+      // if the request was unsuccessful, throw an error and go to catch block
       if (response.status !== 200) {
         throw new Error(response.statusText)
       }
 
       // update global app data with the new team since API call was successful
-      setTeams([...teams, newTeamData])
+      setTeams(updatedTeamsData)
+      setSubmitting(false)
       setAlert({
         message: 'Team updated successfully',
         severity: 'success',
       })
-      setSubmitting(false)
     } catch (error) {
-      // if theres an error, display an error message in a toast component.
+      console.error(error)
+      setSubmitting(false)
       setAlert({
         message: 'Something went wrong, unable to update team!',
         severity: 'error',
       })
-      setSubmitting(false)
-      console.error(error)
     }
 
     // return the abort controller as the cleanup function for this handler
@@ -237,9 +232,6 @@ const TeamForm = () => {
         variant="outlined"
         sx={{ mt: { xs: 3, md: 6 }, p: { xs: 2, md: 3 } }}
       >
-        <Typography variant="h4" sx={{ mt: 2 }}>
-          {team.Id}
-        </Typography>
         <Box
           component="form"
           noValidate
@@ -247,14 +239,36 @@ const TeamForm = () => {
           onSubmit={handleSubmitForm}
         >
           <Grid container spacing={6}>
+            <Grid item xs={12} sx={{ mt: 4 }}>
+              <TextField
+                fullWidth
+                name="name"
+                id="team"
+                label="Team Name"
+                onChange={handleInputFieldChange}
+                required
+                value={formInput.name}
+                variant="standard"
+                InputProps={{
+                  sx: {
+                    '& .Mui-disabled': {
+                      color: 'text.primary',
+                    },
+                  },
+                }}
+                sx={{
+                  display: 'revert',
+                }}
+              />
+            </Grid>
             <Grid item xs={6}>
               <TeamMembersSection
                 name="newAdminEmail"
                 title="admins"
                 handleAdd={handleAddTeamAdmin}
-                handleChange={handleTeamMemberInputChange}
+                handleChange={handleInputFieldChange}
                 handleRemove={handleRemoveTeamMember}
-                members={formInput.members?.filter((m) => m.isTeamLead)}
+                members={formInput.members.filter(([, m]) => m.isTeamLead)}
                 newEmail={formInput.newAdminEmail}
               />
             </Grid>
@@ -263,9 +277,9 @@ const TeamForm = () => {
                 name="newMemberEmail"
                 title="members"
                 handleAdd={handleAddTeamMember}
-                handleChange={handleTeamMemberInputChange}
+                handleChange={handleInputFieldChange}
                 handleRemove={handleRemoveTeamMember}
-                members={formInput.members?.filter((m) => !m.isTeamLead)}
+                members={formInput.members.filter(([, m]) => !m.isTeamLead)}
                 newEmail={formInput.newMemberEmail}
               />
             </Grid>
@@ -287,8 +301,8 @@ const TeamForm = () => {
               <TeamViewProjectCreationCard onClick={handleAddProject} />
             </Grid>
             {formInput?.projects &&
-              formInput.projects.map((project, index) => (
-                <Grid item xs={12} md={12} key={`project-${index}`}>
+              formInput.projects.map(([key, project]) => (
+                <Grid item xs={12} md={12} key={key}>
                   <TeamViewProjectCreateCard project={project} />
                 </Grid>
               ))}

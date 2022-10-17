@@ -1,69 +1,30 @@
-/**
- * Types used in custom hooks.
- * @module @cyclone-dx/sbom/ui/hooks/types
- */
-import { CognitoIdToken, CognitoUser } from 'amazon-cognito-identity-js'
-import { CognitoUserInfo } from '@/types'
-
-export type ErrCallbackType = (err: Error) => void
-
-export type UserDataState = UserDataType | null
-
-export type AuthProviderProps = {
-  children: React.ReactNode
-}
+import { UserDataType } from '@/types'
 
 export type LoginParams = {
   email: string
   password: string
 }
 
-export type RegisterParams = {
-  email: string
-  username: string
-  password: string
-}
-
-export type UserDataType = {
-  cognitoUser: CognitoUser
-  userInfo?: CognitoUserInfo
-  idToken?: CognitoIdToken
-  id?: string
-  role?: string
-  jwt?: string
-  avatar?: string | null
-  email?: string
-  fullName?: string
-  password?: string
-  username?: string
-}
-
+/**
+ * Types used in custom hooks.
+ * @module @cyclone-dx/sbom/ui/hooks/types
+ */
 export type AuthValuesType = {
   /**
    * State variable holding current user's session data. If the user is not
    * logged in or the current session is expired/invalid, this will be null.
    */
-  user: UserDataState
+  user: UserDataType | null
   /**
    * Dispatch function to update the state variable `user` corresponding to
    * the current user's session data, or to clear it when the user logs out.
    */
-  setUser: (value: UserDataState) => void
+  setUser: (value: UserDataType) => void
   /**
-   * Boolean flag indicating whether authentication state has initialized.
-   * If `true`, the app has loaded, and the check for the existence of a
-   * user session has been performed and completed. If a valid session was
-   * found, the user's session data has loaded into the state variable `user`.
-   * If `false`, the app has loaded but the check for the existence of a
-   * user session has not yet been completed.
-   * @see {@link @cyclonedx/ui-sbom/context/AuthContext}
+   * Dispatch function to get the user data from Cognito and put it in state
+   * by calling `setUser`.
    */
-  initialized: boolean
-  /**
-   * Dispatch function to update the state variable `initialized`.
-   * @param {boolean} value The value to set the state variable to.
-   */
-  setInitialized: (value: boolean) => void
+  updateUser: () => void
   /**
    * If `true`, an request to perform an authentication action is in progress.
    * This is used to prevent multiple authentication requests from being sent
@@ -80,9 +41,9 @@ export type AuthValuesType = {
   /**
    * Method for logging in a user with a username and password.
    * @param {LoginParams} params The username and password to use to login.
-   * @param {ErrCallbackType} errCallback The callback for handling errors.
+   * @param {ErrorCallbackType} errCallback The callback for handling errors.
    */
-  login: (params: LoginParams, errorCallback?: ErrCallbackType) => void
+  login: (params: LoginParams, errorCallback?: ErrorCallbackType) => void
   /**
    * Method for logging out the user and clearing their session data.
    */

@@ -19,7 +19,7 @@ export const getTeams = async (
   abortController?: AbortController
 ): Promise<Team[]> => {
   const session = await Auth.currentSession()
-  const token = session.getIdToken().getJwtToken()
+  const jwtToken = session.getIdToken().getJwtToken()
 
   const url = `${CONFIG.USER_API_URL}/teams`
   /**
@@ -29,7 +29,7 @@ export const getTeams = async (
    */
 
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${jwtToken}` },
     method: 'GET',
     signal: abortController?.signal,
   })

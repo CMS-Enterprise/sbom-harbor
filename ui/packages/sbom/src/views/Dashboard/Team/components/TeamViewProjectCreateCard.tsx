@@ -2,6 +2,7 @@
  * @module @cyclonedx/ui/sbom/views/Dashboard/Team/TeamViewProjectCreateCard
  */
 import * as React from 'react'
+import { v4 as uuidv4 } from 'uuid'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import Typography from '@mui/material/Typography'
@@ -22,26 +23,35 @@ const LANGUAGES = [...Object.keys(CodebaseLanguage)]
 const BUILD_TOOLS = [...Object.keys(BuildTool)]
 
 const defaultProject: Project = {
-  projectName: '',
-  codebases: [],
-  tokens: [],
+  name: '',
+  fisma: '',
+  codebases: {},
 }
 
 const defaultCodebase: Codebase = {
-  codebaseName: '',
-  language: '',
-  buildTool: '',
+  name: '',
+  language: CodebaseLanguage.NONE,
+  buildTool: BuildTool.NONE,
 }
 
 type InputProps = { project: Project }
 
+type FormState = {
+  name: string
+  fisma: string
+  codebases: [string, Codebase][]
+}
+
 const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
   // reducer for the form state
   const [formInput, setFormInput] = React.useReducer(
-    (state: Project, newState: Project) => ({ ...state, ...newState }),
+    (state: FormState, newState: FormState) => ({ ...state, ...newState }),
     {
       ...defaultProject,
-      ...project,
+      ...{
+        name: project.name,
+        codebases: Object.entries(project.codebases),
+      },
     }
   )
 
@@ -56,11 +66,7 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
     evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = evt.currentTarget
-    setFormInput({
-      projectName: project.projectName,
-      codebases: [...(project.codebases || []), newCodebase],
-      [name]: value,
-    })
+    setFormInput({ ...formInput, [name]: value })
   }
 
   // function that handles change events on form inputs for codebases.
@@ -73,18 +79,19 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
 
   // function that handles adding a new codebase to the project.
   const handleAddCodebase = () => {
-    // @ts-ignore
-    const codebases = [...formInput.codebases, { ...defaultCodebase }]
     setFormInput({
       ...formInput,
-      codebases,
+      codebases: {
+        ...formInput.codebases,
+        [uuidv4()]: { ...defaultCodebase },
+      },
     })
   }
 
   return (
     <Card>
       <CardHeader
-        title={project.projectName}
+        title={project.name}
         titleTypographyProps={{
           sx: {
             lineHeight: '2rem !important',
@@ -107,10 +114,10 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
             fullWidth
             id="projectName"
             label="Project Name"
-            name="projectName"
+            name="name"
             onChange={handleInput}
             required
-            value={formInput?.projectName}
+            value={formInput?.name}
             variant="standard"
             InputProps={{
               sx: {
@@ -134,7 +141,7 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
         >
           <Grid item sx={{ justifyContent: 'space-between' }}>
             <Typography component="p" variant="caption" sx={{ mb: 0 }}>
-              {project?.codebases?.length || 0} Codebases
+              {Object.keys(project.codebases).length || 0} Codebases
             </Typography>
           </Grid>
           <Grid item>
@@ -150,10 +157,10 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
           </Grid>
         </Grid>
 
-        {formInput?.codebases?.map((codebase: Codebase, index: number) => {
+        {formInput?.codebases?.map(([key, codebase], index) => {
           return (
             <Box
-              key={`${codebase.codebaseName}-${index}`}
+              key={key}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -181,10 +188,10 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
                       fullWidth
                       id="codebaseName"
                       label="Codebase Name"
-                      name="codebaseName"
+                      name="name"
                       onChange={handleInputCodebase}
                       required
-                      value={codebase.codebaseName}
+                      value={codebase.name}
                       variant="standard"
                       InputProps={{
                         sx: {
