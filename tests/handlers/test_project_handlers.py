@@ -208,7 +208,7 @@ def get(team_id: str, project_id: str, handler):
 
     event: dict = {
         "pathParameters": {
-            "projects": project_id,
+            "project": project_id,
         },
         "requestContext": {
             "http": {
@@ -262,7 +262,7 @@ def update(
 
     event: dict = {
         "pathParameters": {
-            "projects": project_id,
+            "project": project_id,
         },
         "requestContext": {
             "http": {
@@ -295,7 +295,7 @@ def delete(team_id: str, project_id: str, handler):
 
     event: dict = {
         "pathParameters": {
-            "projects": project_id,
+            "project": project_id,
         },
         "requestContext": {
             "http": {

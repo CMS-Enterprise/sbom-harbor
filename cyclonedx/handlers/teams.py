@@ -13,7 +13,7 @@ from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.handlers.common import (
     _extract_id_from_path,
     _get_method,
-    _print_values,
+    print_values,
     _should_process_children,
     _to_members,
     _to_projects,
@@ -29,7 +29,7 @@ def teams_handler(event: dict, context: dict) -> dict:
     ->  "Teams" Handler. Handles requests to the /teams endpoint.
     """
 
-    _print_values(event, context)
+    print_values(event, context)
 
     db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
 
@@ -181,7 +181,7 @@ def team_handler(event: dict, context: dict) -> dict:
 
     # Print the incoming values, so we can see them in
     # CloudWatch if there is an issue.
-    _print_values(event, context)
+    print_values(event, context)
 
     db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
 

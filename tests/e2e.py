@@ -1,21 +1,19 @@
 """ End-to-End Test for the system """
 
-import importlib.resources as pr
-from json import loads, dumps
-from optparse import OptionParser
-import boto3
+from json import dumps
+from uuid import uuid4
 
+import boto3
 from _pytest.outcomes import fail
 
 import requests
-import tests.sboms as sboms
-
+from cyclonedx.db.harbor_db_client import HarborDBClient
+from cyclonedx.model.project import Project
+from cyclonedx.model.team import Team
 
 client = boto3.client("cloudfront")
 distributions = client.list_distributions()
 distribution_list = distributions["DistributionList"]
-
-# only one right now
 
 try:
     sbom_api_distribution = distribution_list["Items"][0]
@@ -29,59 +27,95 @@ try:
             apigw_domain_name = domain_name
 
     CF_URL = f"https://{cf_domain_name}"
-    APIGW_URL = f"https://{apigw_domain_name}"
 
-    URL = CF_URL
-
-    REGION = "us-east-1"
-    STAGE = "prod"
-
-    USER = "sbomadmin@aquia.io"
-    PASS = "L0g1nTe5tP@55!"
-
-    LOGIN_URL = f"{URL}/api/v1/login"
-    TEAM_URL = f"{URL}/api/team"
-
-    team = "abc123"
-    project = "AwesomeProj"
-    codebase = "Website"
-
-    SBOM_UPLOAD_URL = f"{URL}/api/{team}/{project}/{codebase}/sbom"
-    USER_SEARCH_URL = f"{URL}/api/user/search"
-
-    SBOM = loads(pr.read_text(sboms, "keycloak.json"))
-    parser = OptionParser("usage: %prog [options]")
-    parser.add_option("--fail", dest="fail", help="fail flag", action="store")
 except KeyError:
     ...
 
 
-cfd: str = "dhcig4acx4lh0"
+def _login():
 
-
-def __get_token_url(team_name: str, token=None):
-    url = f"{URL}/api/{team_name}/token"
-
-    if token:
-        url = f"{url}/{token}"
-
-    return url
-
-
-def __login():
-
-    login_url = f"https://{cfd}.cloudfront.net/api/v1/login"
+    login_url = f"https://{cf_domain_name}/api/v1/login"
     user = "sbomadmin@aquia.io"
     password = "L0g1nTe5tP@55!"
 
     print(f"Sending To: POST:{login_url}, With: {user}, {password}")
     login_rsp = requests.post(login_url, json={"username": user, "password": password})
 
-    print(f"Login Rsp: {login_rsp.text}")
-
     login_rsp_json = login_rsp.json()
     print(f"Login Response: {dumps(login_rsp_json, indent=2)}")
     return login_rsp_json["token"]
+
+
+def test_get_two_separate_endpoints():
+
+    """
+    -> In this test, we get a single JWT from the login endpoint.
+    -> We then get a team and then a project using the same JWT.
+    -> If successful, then we know we can hit two different endpoints
+    -> with the same JWT and not be Forbidden(401).
+    """
+
+    resource = boto3.resource("dynamodb")
+
+    team_id: str = str(uuid4())
+    project_id: str = str(uuid4())
+
+    HarborDBClient(resource).create(
+        Team(
+            team_id=team_id,
+            name="Test Team",
+            projects=[
+                Project(
+                    name="Test Project",
+                    team_id=team_id,
+                    project_id=project_id,
+                )
+            ],
+        ),
+        recurse=True,
+    )
+
+    # Getting only one JWT
+    jwt: str = _login()
+
+    # Get the Project
+    url: str = f"https://{cf_domain_name}/api/v1/project/{project_id}?teamId={team_id}"
+    print(f"Sending To: GET:{url}")
+    project_rsp = requests.get(
+        url,
+        headers={
+            "Authorization": jwt,
+        },
+    )
+    print(
+        f"Response: ({project_rsp.status_code}) {dumps(project_rsp.json(), indent=2)}"
+    )
+
+    # Get the team
+    url: str = f"https://{cf_domain_name}/api/v1/team/{team_id}"
+    print(f"Sending To: GET:{url}")
+    team_rsp = requests.get(
+        url,
+        headers={
+            "Authorization": jwt,
+        },
+    )
+    print(f"Response: ({team_rsp.status_code}) {dumps(team_rsp.json(), indent=2)}")
+
+    # jwt: str = _login()
+
+    HarborDBClient(resource).delete(
+        Team(
+            team_id=team_id,
+            projects=[
+                Project(
+                    team_id=team_id,
+                    project_id=project_id,
+                )
+            ],
+        ),
+        recurse=True,
+    )
 
 
 def test_get_teams():
@@ -90,9 +124,9 @@ def test_get_teams():
     -> Get the teams
     """
 
-    jwt = __login()
+    jwt = _login()
 
-    url = f"https://{cfd}.cloudfront.net/api/v1/teams"
+    url = f"https://{cf_domain_name}/api/v1/teams"
 
     print(f"Sending To: GET:{url}")
     teams_rsp = requests.get(url, headers={"Authorization": jwt})
@@ -122,9 +156,9 @@ def test_get_teams_with_children():
     -> Get Teams With Children
     """
 
-    jwt = __login()
+    jwt = _login()
 
-    url = f"https://{cfd}.cloudfront.net/api/v1/teams?children=true"
+    url = f"https://{cf_domain_name}/api/v1/teams?children=true"
 
     print(f"Sending To: GET:{url}")
     teams_rsp = requests.get(
@@ -159,11 +193,11 @@ def test_get_team():
     -> Get Team
     """
 
-    jwt = __login()
+    jwt = _login()
 
     team_id: str = "18f863b5-0d3d-43cf-87e3-33a6a7d5842d"
 
-    url = f"https://{cfd}.cloudfront.net/api/v1/team/{team_id}"
+    url = f"https://{cf_domain_name}/api/v1/team/{team_id}"
 
     print(f"Sending To: GET:{url}")
     team_rsp = requests.get(url, headers={"Authorization": jwt})
@@ -180,11 +214,11 @@ def test_get_team_with_children():
     -> Get team with children
     """
 
-    jwt = __login()
+    jwt = _login()
 
     team_id: str = "18f863b5-0d3d-43cf-87e3-33a6a7d5842d"
 
-    url = f"https://{cfd}.cloudfront.net/api/v1/team/{team_id}?children=true"
+    url = f"https://{cf_domain_name}/api/v1/team/{team_id}?children=true"
 
     print(f"Sending To: GET:{url}")
     team_rsp = requests.get(url, headers={"Authorization": jwt})
@@ -210,7 +244,7 @@ def test_create_team():
     -> Create Team
     """
 
-    jwt = __login()
+    jwt = _login()
 
     name: str = "TeamName"
 
@@ -240,7 +274,7 @@ def test_create_team_with_children():
     -> Create Team with Children
     """
 
-    jwt = __login()
+    jwt = _login()
 
     name: str = "TestTeamName"
     proj1_name: str = "TestProjectName1"
@@ -282,7 +316,7 @@ def test_update_team():
     -> Update Team
     """
 
-    jwt = __login()
+    jwt = _login()
 
     new_name: str = "test_name_update"
 
@@ -374,165 +408,3 @@ def test_delete_team():
     team_id_after_delete: str = list(team_dict.keys())[0]
 
     assert team_id == team_id_after_delete
-
-
-def test_token():
-
-    """
-    Posts some SBOMS to the Endpoint currently running in AWS
-    """
-
-    (options, _) = parser.parse_args()
-
-    login_fail = False
-    create_fail = False
-    delete_fail = False
-    if options.fail:
-        if options.fail == "login":
-            login_fail = True
-        elif options.fail == "create":
-            create_fail = True
-        elif options.fail == "delete":
-            delete_fail = True
-        else:
-            print(f"{options.fail} is not a failure option")
-
-    print(f"Sending To: POST:{LOGIN_URL}")
-    login_rsp = requests.post(
-        LOGIN_URL,
-        json={"username": USER, "password": "wrong_password" if login_fail else PASS},
-    )
-
-    login_rsp_json = login_rsp.json()
-    print(f"Response: {login_rsp_json}")
-
-    if not login_fail:
-
-        jwt = login_rsp_json["token"]
-
-        create_token_url = __get_token_url("Team_DNE" if create_fail else team)
-        print(f"Sending To: POST:{create_token_url}")
-        create_token_rsp = requests.post(
-            create_token_url,
-            headers={"Authorization": jwt},
-            json={"name": "Test Token from e2e"},
-        )
-
-        token_json = create_token_rsp.json()
-        print(token_json)
-
-        if not create_fail:
-
-            token = token_json["token"]
-            delete_url = __get_token_url(
-                team, "not_real_token" if delete_fail else token
-            )
-            print(f"Sending To: DELETE:{delete_url}")
-            delete_token_rsp = requests.delete(
-                delete_url,
-                headers={"Authorization": jwt},
-            )
-
-            print(delete_token_rsp.text)
-
-
-def test_sbom_upload():
-    """
-    Posts some SBOMS to the Endpoint currently running in AWS
-    """
-
-    working_token = "8d191d16-467e-4150-8416-f51fc7ca1b93"
-    made_up_token = "8d191d16-467e-4150-8416-f51fc7ca1b69"
-    disabled_token = "8d191d16-467e-4150-8416-f51fc7ca1b94"
-    expired_token = "8d191d16-467e-4150-8416-f51fc7ca1b95"
-
-    print("Sending To: %s" % SBOM_UPLOAD_URL)
-
-    good_token_rsp = requests.post(
-        SBOM_UPLOAD_URL,
-        json=SBOM,
-        headers={"Authorization": working_token},
-    )
-
-    if good_token_rsp.status_code == 200:
-        print("Correct token test passed")
-    else:
-        print(f"Correct token test failed, received: {good_token_rsp.status_code}")
-        print(good_token_rsp.text)
-
-    made_up_token_rsp = requests.post(
-        SBOM_UPLOAD_URL,
-        json=SBOM,
-        headers={"Authorization": made_up_token},
-    )
-
-    if made_up_token_rsp.status_code == 403:
-        print("Bad Token test passed")
-    else:
-        print(f"Bad Token test failed, received: {made_up_token_rsp.status_code}")
-        print(made_up_token_rsp.text)
-
-    disabled_token_rsp = requests.post(
-        SBOM_UPLOAD_URL,
-        json=SBOM,
-        headers={"Authorization": disabled_token},
-    )
-
-    if disabled_token_rsp.status_code == 403:
-        print("Disabled Token test passed")
-    else:
-        print(f"Disabled Token test failed, received: {disabled_token_rsp.status_code}")
-        print(disabled_token_rsp.text)
-
-    expired_token_rsp = requests.post(
-        SBOM_UPLOAD_URL,
-        json=SBOM,
-        headers={"Authorization": expired_token},
-    )
-
-    if expired_token_rsp.status_code == 403:
-        print("Expired token test passed")
-    else:
-        print(f"Expired Token test failed, received: {expired_token_rsp.status_code}")
-        print(expired_token_rsp.text)
-
-
-def test_user_search():
-
-    """
-    -> User Search
-    """
-
-    jwt = __login()
-
-    user_mar = "mar"
-    url = f"{USER_SEARCH_URL}?filter={user_mar}"
-    print(f"Sending To: GET:{url}")
-    user_search_rsp = requests.get(
-        url,
-        headers={"Authorization": jwt},
-    )
-
-    mar_result = user_search_rsp.json()
-    if "maria@aquia.io" in mar_result and "martha@aquia.io" in mar_result:
-        print("Passed using 'mar' filter")
-    else:
-        print("Failed using 'mar' filter")
-
-    user_qui = "qui"
-    url = f"{USER_SEARCH_URL}?filter={user_qui}"
-    print(f"Sending To: GET:{url}")
-    user_search_rsp = requests.get(
-        url,
-        headers={"Authorization": jwt},
-    )
-
-    qui_result = user_search_rsp.json()
-    if (
-        "quinn@aquia.io" in qui_result
-        and "quinton@aquia.io" in qui_result
-        and "quison@aquia.io" in qui_result
-    ):
-        print("Passed using 'qui' filter")
-    else:
-        print("Failed using 'qui' filter")

@@ -43,7 +43,7 @@ class AuthorizerLambdaFactory:
                 runtime=SBOM_API_PYTHON_RUNTIME,
                 vpc=vpc,
                 vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
-                handler="cyclonedx.teams.jwt_authorizer_handler",
+                handler="cyclonedx.handlers.jwt_authorizer_handler",
                 code=create_asset(self),
                 timeout=Duration.seconds(10),
                 memory_size=512,

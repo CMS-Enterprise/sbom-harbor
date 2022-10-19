@@ -27,3 +27,5 @@ from .members import (
     members_handler,
     member_handler,
 )
+
+from .jwt_authorizer_handler import jwt_authorizer_handler

@@ -126,26 +126,24 @@ class SBOMIngressApiStack(Stack):
     __cwd = path.dirname(__file__)
 
     @staticmethod
-    def __enable_logging(api: apigwv2a.HttpApi, enabled):
+    def __enable_logging(api: apigwv2a.HttpApi):
 
         """
         -> Enables logging if necessary
         """
 
-        if enabled:
+        stage: apigwv2.CfnStage = api.default_stage.node.default_child
+        log_group = logs.LogGroup(
+            api,
+            "AccessLogs",
+            log_group_name="APIGWAccessLogs",
+            retention=RetentionDays.ONE_DAY,
+        )
 
-            stage: apigwv2.CfnStage = api.default_stage.node.default_child
-            log_group = logs.LogGroup(
-                api,
-                "AccessLogs",
-                log_group_name="APIGWAccessLogs",
-                retention=RetentionDays.ONE_DAY,
-            )
-
-            stage.access_log_settings = apigwv2.CfnStage.AccessLogSettingsProperty(
-                destination_arn=log_group.log_group_arn,
-                format="$context.requestId $context.error.messageString $context.integration.error",
-            )
+        stage.access_log_settings = apigwv2.CfnStage.AccessLogSettingsProperty(
+            destination_arn=log_group.log_group_arn,
+            format="$context.requestId $context.error.messageString $context.integration.error",
+        )
 
     # pylint: disable=R0913
     def __init__(
@@ -169,14 +167,14 @@ class SBOMIngressApiStack(Stack):
         self.api = apigwv2a.HttpApi(
             self,
             id="SBOMManagementApi",
-            description="SBOM Management API (Experimental)",
             default_authorizer=HttpLambdaAuthorizer(
-                "Teams_HttpLambdaAuthorizer",
-                authorizer_name="Teams_HttpLambdaAuthorizer",
+                id="SBOMApi_HttpLambdaAuthorizer_ID",
+                authorizer_name="SBOMApi_HttpLambdaAuthorizer_NAME",
                 handler=authorizer_factory.create(
                     "SBOMAPIAuthorizer"
                 ).get_lambda_function(),
             ),
+            description="SBOM Management API (Experimental)",
             cors_preflight=CorsPreflightOptions(
                 allow_origins=["*"],
                 allow_headers=[
@@ -196,6 +194,8 @@ class SBOMIngressApiStack(Stack):
                 ],
             ),
         )
+
+        SBOMIngressApiStack.__enable_logging(self.api)
 
         lambda_factory = LambdaFactory(
             self,

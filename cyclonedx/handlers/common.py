@@ -20,7 +20,75 @@ cognito_client = boto3.client("cognito-idp")
 team_schema = loads(pr.read_text(schemas, "team.schema.json"))
 
 
-def _print_values(event: dict, context: dict) -> None:
+def _wildcardize(method_arn: str):
+
+    """
+    -> Method to add wildcard characters to the method arn
+    """
+
+    split_arn: list[str] = method_arn.split("/")
+    preamble: str = split_arn[0]
+    return f"{preamble}/*/*"
+
+
+def allow_policy(method_arn: str, teams: str):
+
+    """
+    -> Policy to allow access to the specified resource
+    """
+
+    resource: str = _wildcardize(method_arn)
+
+    return {
+        "principalId": "apigateway.amazonaws.com",
+        "context": {
+            "teams": teams,
+        },
+        "policyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Action": "execute-api:Invoke",
+                    "Effect": "Allow",
+                    "Resource": resource,
+                },
+                {
+                    "Action": "cognito-idp:ListUsers",
+                    "Effect": "Allow",
+                    "Resource": resource,
+                },
+            ],
+        },
+    }
+
+
+def deny_policy():
+
+    """
+    -> Policy to deny access to the specified resource
+    """
+
+    return {
+        "principalId": "*",
+        "policyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Action": "*",
+                    "Effect": "Deny",
+                    "Resource": "*",
+                }
+            ],
+        },
+    }
+
+
+def print_values(event: dict, context: dict) -> None:
+
+    """
+    -> Prints the values of the event and context
+    """
+
     print(f"<EVENT event=|{dumps(event, indent=2)}| />")
     print(f"<CONTEXT context=|{context}| />")
 

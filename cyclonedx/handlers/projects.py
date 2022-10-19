@@ -14,7 +14,7 @@ from cyclonedx.handlers.common import (
     _extract_team_id_from_qs,
     _get_method,
     _get_request_body_as_dict,
-    _print_values,
+    print_values,
     _should_process_children,
     _to_codebases,
     _update_codebases,
@@ -29,7 +29,7 @@ def projects_handler(event: dict, context: dict) -> dict:
     ->  "Projects" Handler. Handles requests to the /projects endpoint.
     """
 
-    _print_values(event, context)
+    print_values(event, context)
 
     db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
 
@@ -55,7 +55,7 @@ def projects_handler(event: dict, context: dict) -> dict:
 def _do_get(event: dict, db_client: HarborDBClient) -> dict:
 
     # Get the project id from the path
-    project_id: str = _extract_id_from_path("projects", event)
+    project_id: str = _extract_id_from_path("project", event)
 
     # Get the team id from the querystring
     team_id: str = _extract_team_id_from_qs(event)
@@ -110,7 +110,7 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
     """
 
     # Get the project id from the path
-    project_id: str = _extract_id_from_path("projects", event)
+    project_id: str = _extract_id_from_path("project", event)
 
     # Get the ProjectId from the Path Parameter
     team_id: str = _extract_team_id_from_qs(event)
@@ -153,7 +153,7 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
 def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
 
     # Get the project id from the path
-    project_id: str = _extract_id_from_path("projects", event)
+    project_id: str = _extract_id_from_path("project", event)
 
     # Get the team id from the querystring
     team_id: str = _extract_team_id_from_qs(event)
@@ -183,7 +183,7 @@ def project_handler(event: dict, context: dict) -> dict:
 
     # Print the incoming values, so we can see them in
     # CloudWatch if there is an issue.
-    _print_values(event, context)
+    print_values(event, context)
 
     db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
 

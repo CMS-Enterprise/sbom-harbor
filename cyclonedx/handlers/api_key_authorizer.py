@@ -12,57 +12,11 @@ from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.handlers.common import _extract_id_from_path
 from cyclonedx.model.team import Team
-
-
-def allow_policy(method_arn: str, teams: str):
-
-    """
-    -> A policy that allows access to the
-    -> lambda specified by the method_arn.
-    """
-
-    return {
-        "principalId": "apigateway.amazonaws.com",
-        "context": {
-            "teams": teams,
-        },
-        "policyDocument": {
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Action": "execute-api:Invoke",
-                    "Effect": "Allow",
-                    "Resource": method_arn,
-                },
-                {
-                    "Action": "cognito-idp:ListUsers",
-                    "Effect": "Allow",
-                    "Resource": method_arn,
-                },
-            ],
-        },
-    }
-
-
-def deny_policy():
-
-    """
-    -> A policy that denies access to the resource.
-    """
-
-    return {
-        "principalId": "*",
-        "policyDocument": {
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Action": "*",
-                    "Effect": "Deny",
-                    "Resource": "*",
-                }
-            ],
-        },
-    }
+from cyclonedx.handlers.common import (
+    allow_policy,
+    deny_policy,
+    print_values,
+)
 
 
 def api_key_authorizer_handler(event: dict, context: dict = None):
@@ -70,6 +24,8 @@ def api_key_authorizer_handler(event: dict, context: dict = None):
     """
     -> This is the handler used when uploading an SBOM.
     """
+
+    print_values(event, context)
 
     try:
         # Extract the Method ARN and the token from the event

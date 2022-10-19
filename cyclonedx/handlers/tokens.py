@@ -16,7 +16,7 @@ from cyclonedx.handlers.common import (
     _extract_id_from_path,
     _extract_team_id_from_qs,
     _get_method,
-    _print_values,
+    print_values,
     _should_process_children,
 )
 from cyclonedx.model.team import Team
@@ -29,7 +29,7 @@ def tokens_handler(event: dict, context: dict) -> dict:
     ->  "Tokens" Handler. Handles requests to the /tokens endpoint.
     """
 
-    _print_values(event, context)
+    print_values(event, context)
 
     db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
 
@@ -199,7 +199,7 @@ def token_handler(event: dict, context: dict) -> dict:
 
     # Print the incoming values, so we can see them in
     # CloudWatch if there is an issue.
-    _print_values(event, context)
+    print_values(event, context)
 
     db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
 

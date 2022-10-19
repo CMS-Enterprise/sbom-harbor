@@ -30,17 +30,19 @@ def login_handler(event: dict, context: dict):
             UserPoolId=environ.get(USER_POOL_NAME_KEY),
             ClientId=environ.get(USER_POOL_CLIENT_ID_KEY),
             AuthFlow="ADMIN_NO_SRP_AUTH",
-            AuthParameters={"USERNAME": username, "PASSWORD": password},
+            AuthParameters={
+                "USERNAME": username,
+                "PASSWORD": password,
+            },
         )
     except cognito_client.exceptions.NotAuthorizedException as err:
+        print(f"Caught NotAuthorizedException: {err}")
         return __get_login_failed_response(401, err)
 
     jwt = resp["AuthenticationResult"]["AccessToken"]
 
     print("Log in success")
-    print(
-        f"Access token: {jwt}",
-    )
+    print(f"Access token: {jwt}")
     print(f"ID token: {resp['AuthenticationResult']['IdToken']}")
 
     return __get_login_success_response(jwt)
