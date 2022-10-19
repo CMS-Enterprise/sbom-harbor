@@ -38,6 +38,7 @@ export type CognitoUserInfo = {
   attributes: {
     email: string
     sub?: string
+    'custom:teams': string
   }
   id?: string
   username: string
@@ -59,6 +60,7 @@ export type UserDataType =
         email?: string
         fullName?: string
         password?: string
+        teams?: string[]
       })
   | null
 

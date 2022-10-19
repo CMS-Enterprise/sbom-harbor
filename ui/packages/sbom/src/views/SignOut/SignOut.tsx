@@ -5,7 +5,6 @@
  */
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Auth } from '@aws-amplify/auth'
 import { useAuth } from '@/hooks/useAuth'
 
 /**
@@ -13,20 +12,13 @@ import { useAuth } from '@/hooks/useAuth'
  * @returns {JSX.Element} A component that renders an empty React Fragment.
  */
 const SignOut = (): JSX.Element => {
+  const { logout } = useAuth()
   const navigate = useNavigate()
-  const { setUser } = useAuth()
 
   React.useEffect(() => {
-    const handleLogout = async () => {
-      try {
-        await Auth.signOut()
-        setUser(null)
-        navigate('/login')
-      } catch (error) {
-        console.log(error)
-      }
-    }
-    handleLogout()
+    logout().then(() => {
+      navigate('/login')
+    })
   })
 
   return <></>

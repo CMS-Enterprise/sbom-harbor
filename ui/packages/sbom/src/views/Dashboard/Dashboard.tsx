@@ -12,11 +12,13 @@ import Grid from '@mui/material/Grid'
 import { useData } from '@/hooks/useData'
 import DashboardTeamCard from './Team/components/DashboardTeamCard'
 import DashboardTeamCreationCard from './Team/components/DashboardTeamCreateCard'
+import useAuth from '@/hooks/useAuth'
 
 const DashboardContainer = (): JSX.Element => {
-  // get teams data from context
+  const { user } = useAuth()
   const {
     data: { teams = {} },
+    fetchTeams,
   } = useData()
 
   const navigate = useNavigate()
@@ -24,7 +26,13 @@ const DashboardContainer = (): JSX.Element => {
   /** Helper function that redirects the user to the new team creation view. */
   const navigateToCreateTeam = () => navigate('team/new')
 
-  // XXX: add teams data reducer here to fetch teams data
+  React.useEffect(() => {
+    if (user?.jwtToken) {
+      const controller = new AbortController()
+      fetchTeams(controller)
+      return () => controller.abort()
+    }
+  }, [user?.jwtToken])
 
   return (
     <Box sx={{ display: 'flex' }} data-testid="Dashboard">
@@ -42,7 +50,7 @@ const DashboardContainer = (): JSX.Element => {
             </Grid>
             {Object.entries(teams).map(([key, team]) => (
               <Grid item xs={12} md={4} key={key}>
-                <DashboardTeamCard team={team} />
+                <DashboardTeamCard teamId={key} />
               </Grid>
             ))}
           </Grid>

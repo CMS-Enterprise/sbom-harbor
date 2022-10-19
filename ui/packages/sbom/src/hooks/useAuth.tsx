@@ -7,14 +7,12 @@
  * @exports useAuth
  */
 import * as React from 'react'
-import { useMatch, useNavigate } from 'react-router-dom'
+import { useMatch, useNavigate, useLocation, redirect } from 'react-router-dom'
 import { Auth } from '@aws-amplify/auth'
 import { getUserData } from '@/utils/get-cognito-user'
-import { UserDataType } from '@/types'
 import { AuthValuesType, LoginParams } from './types'
 import useAlert from '@/hooks/useAlert'
-
-type UserDataState = UserDataType | null
+import { UserDataType } from '@/types'
 
 type AuthProviderProps = {
   children: React.ReactNode
@@ -25,8 +23,7 @@ type AuthProviderProps = {
  */
 const defaultProvider: AuthValuesType = {
   user: null,
-  loading: true,
-  updateUser: () => null,
+  loading: false,
   setUser: () => null,
   setLoading: () => Boolean,
   login: () => Promise.resolve(),
@@ -51,67 +48,74 @@ export const useAuth = () => React.useContext(AuthContext)
  * @returns {JSX.Element} The rendered provider that wraps the children nodes.
  */
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser]: [UserDataState, React.Dispatch<UserDataState>] =
-    React.useState<UserDataState>(defaultProvider.user)
+  const [user, setUser]: [UserDataType, React.Dispatch<UserDataType>] =
+    React.useState<UserDataType>(defaultProvider.user)
   const [loading, setLoading] = React.useState<boolean>(defaultProvider.loading)
+  const [initialized, setInitialized] = React.useState<boolean>(false)
 
   const { setAlert } = useAlert()
+  const location = useLocation()
   const navigate = useNavigate()
   const matchProtectedRoute = useMatch('/app/*')
-
-  const updateUser = React.useCallback(async () => {
-    try {
-      const { userInfo, ...rest } = await getUserData()
-      const { id, attributes, attributes: { email } = {}, username } = userInfo
-      const nextData = { ...rest, userInfo, attributes, id, email, username }
-      setUser(nextData)
-      console.debug('User data updated.', nextData)
-    } catch (error) {
-      setUser(null)
-      // we still throw the error to make sure this causes an error in the initAuth handler
-      throw error
-    }
-  }, [setUser])
 
   /**
    * Async function to check the validity of the user session and set user state.
    * @returns {Promise<void>} A promise that resolves when the user's sesson
    *  is resolved to a valid session, or rejects if no valid session exists.
    */
-  /* eslint-disable react-hooks/exhaustive-deps */
-  const initAuth = React.useCallback(async (): Promise<void> => {
+  const init = React.useCallback(async () => {
+    setLoading(true)
     try {
-      setLoading(true)
-      await updateUser()
+      const { userInfo, ...rest } = await getUserData()
+
+      const {
+        id,
+        attributes,
+        attributes: { email, 'custom:teams': userTeams = '' } = {},
+        username,
+      } = userInfo
+
+      const nextData = {
+        ...rest,
+        userInfo,
+        attributes,
+        id,
+        email,
+        username,
+        teams: userTeams.split(','),
+      }
+      setUser(nextData)
+      // @ts-ignore
+      window.user = nextData
       setLoading(false)
-      // if the user has navigated to a non-protected route
-      // outside of the app, redirect them back to the app.
-      if (!matchProtectedRoute) {
+      setInitialized(true)
+      // if the unauthenticated user is trying to navigate to a
+      // protected app routue, redirect them to the login page.
+      if (!matchProtectedRoute && location.pathname !== '/logout') {
         navigate('/app')
       }
     } catch (error) {
-      console.warn('initAuth:', error)
+      console.warn('init:', error)
       setUser(null)
       setLoading(false)
+      setInitialized(true)
       // if the unauthenticated user is trying to navigate to a
       // protected app routue, redirect them to the login page.
       if (matchProtectedRoute) {
         navigate('/login')
       }
     }
-  }, [matchProtectedRoute])
-  /* eslint-enable react-hooks/exhaustive-deps */
+  }, [loading, location.pathname, matchProtectedRoute])
 
   /**
    * Initializes the AuthContext by checking for a user session and setting
    *  the user state accordingly. If no valid user session exists, it sets
    *  the user state to null and clears local storage.
    */
-  /* eslint-disable react-hooks/exhaustive-deps */
   React.useEffect(() => {
-    initAuth()
+    if (loading || initialized) return
+    init()
   }, [matchProtectedRoute])
-  /* eslint-enable react-hooks/exhaustive-deps */
 
   /**
    * Function to handle logging the user in with the provided credentials.
@@ -127,7 +131,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setLoading(true)
       await Auth.signIn(params.email, params.password)
-      await initAuth()
+      await init()
     } catch (error) {
       console.warn(error)
       setLoading(false)
@@ -144,10 +148,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const handleLogout = async (): Promise<void> => {
     try {
       await Auth.signOut()
-      await initAuth()
+      await init()
     } catch (error) {
-      console.warn(error)
-      setLoading(false)
+      console.error(error)
       setAlert({ message: 'Error logging out', severity: 'error' })
     }
   }
@@ -156,7 +159,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const values = {
     user,
     loading,
-    updateUser,
     setUser,
     setLoading,
     login: handleLogin,
@@ -165,3 +167,5 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   return <AuthContext.Provider value={values}>{children}</AuthContext.Provider>
 }
+
+export default useAuth

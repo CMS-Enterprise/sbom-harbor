@@ -21,18 +21,19 @@ import SubmitButton from '@/components/forms/SubmitButton'
 import { useAlert } from '@/hooks/useAlert'
 import { useData } from '@/hooks/useData'
 import { CONFIG } from '@/utils/constants'
-import getUserData from '@/utils/get-cognito-user'
 import { Team } from '@/types'
 import { FormState, FormTeamState } from './types'
 import { defaultFormState, defaultProject, defaultTeam } from './constants'
 import TeamMembersSection from './components/TeamMembersSection'
 import TeamViewProjectCreateCard from './components/TeamViewProjectCreateCard'
 import TeamViewProjectCreationCard from './components/TeamViewProjectCreationCard'
+import { useAuth } from '@/hooks/useAuth'
 
 const TeamForm = () => {
   const newTeamRouteMatch = useMatch('/team/new')
   const { setAlert } = useAlert()
   const { data: { teams = {} } = {}, setTeams } = useData()
+  const { user } = useAuth()
   const [submitting, setSubmitting] = React.useState(false)
 
   const {
@@ -156,12 +157,11 @@ const TeamForm = () => {
   ): Promise<() => void> => {
     event.preventDefault()
     const abortController = new AbortController()
+    if (!user || submitting) return () => abortController.abort()
+    const { attributes: { email = '' } = {} } = user
 
     try {
       setSubmitting(true)
-
-      const { jwtToken, userInfo: { attributes: { email = '' } = {} } = {} } =
-        await getUserData()
 
       const {
         name = team.name,
@@ -197,7 +197,7 @@ const TeamForm = () => {
       const response = await fetch(`${CONFIG.TEAMS_API_URL}`, {
         method: newTeamRouteMatch ? 'POST' : 'PUT',
         signal: abortController.signal,
-        headers: { Authorization: `Bearer ${jwtToken}` },
+        headers: { Authorization: `${user.jwtToken}` },
         body: JSON.stringify(updatedTeamsData),
       })
 

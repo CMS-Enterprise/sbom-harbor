@@ -9,7 +9,7 @@ import { Link as RouterLink } from 'react-router-dom'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import { useAuth } from '@/hooks/useAuth'
+import useAuth from '@/hooks/useAuth'
 
 // ** Styled Components
 const ButtonBox = styled(Box)({ mr: 1, ml: 1, pr: 1, pl: 1 })

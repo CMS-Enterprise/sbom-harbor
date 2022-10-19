@@ -29,7 +29,7 @@ export const getTeams = async (
    */
 
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${jwtToken}` },
+    headers: { Authorization: `${jwtToken}` },
     method: 'GET',
     signal: abortController?.signal,
   })

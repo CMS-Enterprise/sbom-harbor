@@ -14,7 +14,7 @@ export type AuthValuesType = {
    * State variable holding current user's session data. If the user is not
    * logged in or the current session is expired/invalid, this will be null.
    */
-  user: UserDataType | null
+  user: UserDataType
   /**
    * Dispatch function to update the state variable `user` corresponding to
    * the current user's session data, or to clear it when the user logs out.
@@ -24,7 +24,6 @@ export type AuthValuesType = {
    * Dispatch function to get the user data from Cognito and put it in state
    * by calling `setUser`.
    */
-  updateUser: () => void
   /**
    * If `true`, an request to perform an authentication action is in progress.
    * This is used to prevent multiple authentication requests from being sent
@@ -43,9 +42,12 @@ export type AuthValuesType = {
    * @param {LoginParams} params The username and password to use to login.
    * @param {ErrorCallbackType} errCallback The callback for handling errors.
    */
-  login: (params: LoginParams, errorCallback?: ErrorCallbackType) => void
+  login: (
+    params: LoginParams,
+    errorCallback?: ErrorCallbackType
+  ) => Promise<void>
   /**
    * Method for logging out the user and clearing their session data.
    */
-  logout: () => void
+  logout: () => Promise<void>
 }

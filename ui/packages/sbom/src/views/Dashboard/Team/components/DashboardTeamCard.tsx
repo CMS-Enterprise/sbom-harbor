@@ -10,12 +10,19 @@ import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import { Team } from '@/types'
+import { useData } from '@/hooks/useData'
 
 type InputProps = {
-  team: Team
+  teamId: string
 }
 
-const DashboardTeamCard = ({ team }: InputProps): JSX.Element => {
+const DashboardTeamCard = ({ teamId }: InputProps): JSX.Element => {
+  const {
+    data: {
+      teams: { [teamId]: team },
+    },
+  } = useData()
+
   const [state] = React.useState({
     name: team.name,
     projects: Object.entries(team.projects) || [],
@@ -42,7 +49,7 @@ const DashboardTeamCard = ({ team }: InputProps): JSX.Element => {
             <>{state?.members.length || 0} Members</>
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Link to={`teams/${state.name}`}>View</Link>
+            <Link to={`teams/${teamId}`}>View</Link>
           </Box>
         </CardContent>
       </Card>

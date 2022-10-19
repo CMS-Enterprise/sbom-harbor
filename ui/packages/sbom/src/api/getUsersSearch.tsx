@@ -17,7 +17,7 @@ const getAddress = async (
   // url.searchParams.append('filter', filter)
 
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${jwtToken}` },
+    headers: { Authorization: `${jwtToken}` },
     method: 'GET',
     signal: abortController.signal,
   })

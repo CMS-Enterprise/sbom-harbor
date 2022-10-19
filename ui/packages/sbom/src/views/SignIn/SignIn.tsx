@@ -25,7 +25,8 @@ import { useTheme } from '@mui/material/styles'
 import EyeOutline from 'mdi-material-ui/EyeOutline'
 import EyeOffOutline from 'mdi-material-ui/EyeOffOutline'
 import SocialLoginButtons from '@/components/SocialLoginButtons'
-import { useAuth } from '@/hooks/useAuth'
+import useAlert from '@/hooks/useAlert'
+import useAuth from '@/hooks/useAuth'
 import BlankLayout from '@/layouts/BlankLayout'
 import {
   BoxWrapper,
@@ -57,8 +58,8 @@ interface FormData {
 const LoginPage = () => {
   const [showPassword, setShowPassword] = React.useState<boolean>(false)
 
-  // ** Hooks
   const auth = useAuth()
+  const { setAlert } = useAlert()
   const theme = useTheme()
   const hidden = useMediaQuery(theme.breakpoints.down('md'))
 
@@ -76,14 +77,15 @@ const LoginPage = () => {
     if (auth.loading) {
       return
     }
-    auth.setLoading(true)
     const { email, password } = data
     try {
       await auth.login({ email, password })
     } catch (error) {
-      // TODO: show error message to the user
-      auth.setLoading(false)
       console.warn(error)
+      setAlert({
+        message: 'There was an error logging in. Please try again.',
+        severity: 'error',
+      })
     }
   }
 

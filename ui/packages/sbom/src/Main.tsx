@@ -20,13 +20,13 @@ import theme from '@/utils/theme'
 const Main = (): JSX.Element => (
   <ThemeProvider theme={theme}>
     <CssBaseline />
-    <DataProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <DataProvider>
         <AlertProvider>
           <Routes />
         </AlertProvider>
-      </AuthProvider>
-    </DataProvider>
+      </DataProvider>
+    </AuthProvider>
   </ThemeProvider>
 )
 
