@@ -1,9 +1,8 @@
 """
 -> This module contains the handlers for CRUDing Tokens
 """
-import datetime
+from datetime import datetime
 import uuid
-from decimal import Decimal
 
 from json import dumps, loads
 
@@ -90,26 +89,34 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
 
     # Get the team id from the querystring
     team_id: str = _extract_team_id_from_qs(event)
-
-    request_body: dict = loads(event["body"])
     token_id: str = str(uuid.uuid4())
 
-    # Create a new token starting with "sbom-api",
-    # create a creation and expiration time
-    now = datetime.datetime.now()
-    later = now + relativedelta(years=1)
+    request_body: dict = loads(event["body"])
+
+    # Create a creation and expiration time
+    now = datetime.now()
+
+    try:
+        expires: str = request_body[Token.Fields.EXPIRES]
+        expires_dt: datetime = datetime.fromisoformat(expires)
+        if expires_dt <= now:
+            raise ValueError("Specified expiration date is before now.")
+    except KeyError:
+        later = now + relativedelta(years=1)
+        expires = later.isoformat()
+    except ValueError as ve:
+        raise ValueError("Unable to parse expiration date.") from ve
 
     # Get the timestamps to put in the database
-    created = now.timestamp()
-    expires = later.timestamp()
+    created = now.isoformat()
 
     token: Token = db_client.create(
         model=Token(
             team_id=team_id,
             token_id=token_id,
             name=request_body[Token.Fields.NAME],
-            created=Decimal(created),
-            expires=Decimal(expires),
+            created=created,
+            expires=expires,
             enabled=True,
             token=f"sbom-api-{uuid.uuid4()}",
         ),

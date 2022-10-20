@@ -1,6 +1,5 @@
 """ Token Model Object. Represents a Token within the SBOM Harbor System. """
 
-from decimal import Decimal
 from cyclonedx.model import (
     EntityKey,
     HarborModel,
@@ -51,8 +50,8 @@ class Token(HarborModel):
         team_id: str,
         token_id: str,
         name: str = "None",
-        created: Decimal = None,
-        expires: Decimal = None,
+        created: str = None,
+        expires: str = None,
         enabled: bool = True,
         token: str = "",
     ):
@@ -68,8 +67,8 @@ class Token(HarborModel):
         )
 
         self._name: str = name
-        self._created: Decimal = created
-        self._expires: Decimal = expires
+        self._created: str = created
+        self._expires: str = expires
         self._enabled: bool = enabled
         self._token: str = token
 
@@ -87,24 +86,24 @@ class Token(HarborModel):
         self._name = name
 
     @property
-    def created(self) -> Decimal:
+    def created(self) -> str:
 
         """Define the property that holds when the token was created"""
 
         return self._created
 
     @property
-    def expires(self) -> Decimal:
+    def expires(self) -> str:
 
         """Define the property that holds when the token expires"""
 
         return self._expires
 
     @expires.setter
-    def expires(self, expires: Decimal):
+    def expires(self, expires: str):
 
         """
-        -> Setter for the Decimal 'expires' property
+        -> Setter for the str 'expires' property
         """
 
         self._expires = expires
@@ -154,8 +153,8 @@ class Token(HarborModel):
 
         return {
             Token.Fields.NAME: self._name,
-            Token.Fields.CREATED: float(self.created),
-            Token.Fields.EXPIRES: float(self.expires),
+            Token.Fields.CREATED: self.created,
+            Token.Fields.EXPIRES: self.expires,
             Token.Fields.ENABLED: self.enabled,
             Token.Fields.TOKEN: self.token,
         }
