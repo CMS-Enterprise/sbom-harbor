@@ -3,7 +3,7 @@
  * It's the next version of {@link @cyclonedx/views/SignIn/SignIn}.
  */
 import * as React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import * as yup from 'yup'
 import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
@@ -26,7 +26,7 @@ import EyeOutline from 'mdi-material-ui/EyeOutline'
 import EyeOffOutline from 'mdi-material-ui/EyeOffOutline'
 import SocialLoginButtons from '@/components/SocialLoginButtons'
 import useAlert from '@/hooks/useAlert'
-import useAuth from '@/hooks/useAuth'
+import { useAuthDispatch } from '@/hooks/useAuth'
 import BlankLayout from '@/layouts/BlankLayout'
 import {
   BoxWrapper,
@@ -35,6 +35,7 @@ import {
   RightWrapper,
   TypographyStyled,
 } from '@/views/SignIn/SignIn.components'
+import loginUser from '@/actions/loginUser'
 
 const defaultValues = {
   email: '',
@@ -56,12 +57,18 @@ interface FormData {
  * @returns {JSX.Element} component that renders the the sign in form.
  */
 const LoginPage = () => {
-  const [showPassword, setShowPassword] = React.useState<boolean>(false)
-
-  const auth = useAuth()
-  const { setAlert } = useAlert()
+  // theming hooks
   const theme = useTheme()
   const hidden = useMediaQuery(theme.breakpoints.down('md'))
+
+  const navigate = useNavigate()
+  const { setAlert } = useAlert()
+
+  // auth state hooks
+  const dispatch = useAuthDispatch()
+
+  // local state
+  const [showPassword, setShowPassword] = React.useState<boolean>(false)
 
   const {
     control,
@@ -74,12 +81,10 @@ const LoginPage = () => {
   })
 
   const onSubmit = async (data: FormData) => {
-    if (auth.loading) {
-      return
-    }
     const { email, password } = data
     try {
-      await auth.login({ email, password })
+      await loginUser(dispatch, { email, password })
+      navigate('/app')
     } catch (error) {
       console.warn(error)
       setAlert({
@@ -323,7 +328,7 @@ const LoginPage = () => {
                 size="large"
                 type="submit"
                 variant="contained"
-                disabled={auth.loading}
+                // disabled={loading}
                 sx={{ mb: 5 }}
               >
                 Login

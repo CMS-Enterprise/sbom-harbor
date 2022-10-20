@@ -6,7 +6,7 @@
  * @module @cyclonedx/ui/sbom/views/Dashboard/Team/TeamEdit
  */
 import * as React from 'react'
-import { useMatch, useParams } from 'react-router-dom'
+import { useLoaderData, useMatch } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { v4 as uuidv4 } from 'uuid'
 import Box from '@mui/material/Box'
@@ -19,52 +19,38 @@ import Typography from '@mui/material/Typography'
 import UserAutocomplete from '@/components/UserAutocomplete'
 import SubmitButton from '@/components/forms/SubmitButton'
 import { useAlert } from '@/hooks/useAlert'
+import { useAuthState } from '@/hooks/useAuth'
 import { useData } from '@/hooks/useData'
 import { CONFIG } from '@/utils/constants'
 import { Team } from '@/types'
 import { FormState, FormTeamState } from './types'
-import { defaultFormState, defaultProject, defaultTeam } from './constants'
+import { defaultFormState, defaultProject } from './constants'
 import TeamMembersSection from './components/TeamMembersSection'
 import TeamViewProjectCreateCard from './components/TeamViewProjectCreateCard'
 import TeamViewProjectCreationCard from './components/TeamViewProjectCreationCard'
-import { useAuth } from '@/hooks/useAuth'
 
 const TeamForm = () => {
-  const newTeamRouteMatch = useMatch('/team/new')
   const { setAlert } = useAlert()
+  const { jwtToken, email } = useAuthState()
+
+  // data context hook to get all teams
+  // TODO: switch to updating a single team instead
   const { data: { teams = {} } = {}, setTeams } = useData()
-  const { user } = useAuth()
+
+  // route loader hook to fetch team data
+  const team = useLoaderData() as FormTeamState
+
+  // route match hook to determine if this is an edit or create form
+  const newTeamRouteMatch = useMatch('/team/new')
+
   const [submitting, setSubmitting] = React.useState(false)
 
   const {
     control,
     // TODO: use commented out react-hook-form methods
-    // formState: { errors },
-    // handleSubmit,
-    // register,
-    // watch,
   } = useForm({
     mode: 'all',
     shouldUnregister: true,
-  })
-
-  // hook for getting the /teams/:teamId route parameter
-  const { teamId } = useParams()
-
-  // find the team to edit from the data context and set it in local state.
-  const [team] = React.useState((): FormTeamState => {
-    // if the team data is not there or this is a new team, return the default team data.
-    if (newTeamRouteMatch || !teams || !teamId || !teams[teamId]) {
-      return defaultTeam
-    }
-    // create a new team data object with arrays for the projects, members, and tokens.
-    const rawTeam = { ...(teams[teamId] || defaultTeam) }
-    return {
-      name: rawTeam.name,
-      projects: Object.entries(rawTeam.projects),
-      members: Object.entries(rawTeam.members),
-      tokens: Object.entries(rawTeam.tokens),
-    }
   })
 
   // form input reducer
@@ -72,6 +58,18 @@ const TeamForm = () => {
     (state: FormState, newState: FormState) => ({ ...state, ...newState }),
     { ...defaultFormState, ...team }
   )
+
+  /* eslint-disable react-hooks/exhaustive-deps */
+  React.useEffect(() => {
+    if (!team || !formInput) return
+    setFormInput({ ...formInput, ...team })
+  }, [team])
+  /* eslint-enable react-hooks/exhaustive-deps */
+
+  const admins = React.useMemo(() => {
+    if (!formInput?.members) return []
+    return formInput.members.filter(([, m]) => m.isTeamLead === true)
+  }, [formInput])
 
   /**
    * Handler for change events for the team member email inputs.
@@ -151,14 +149,14 @@ const TeamForm = () => {
    * @param {React.FormEvent<HTMLFormElement>} event Form submit event.
    * @returns {Promise<void>} Promise that resolves to void when the submit
    * request completes, or resolves to an abort signal if the request fails.
+   * @todo switch to updating a single team instead of all teams
    */
   const handleSubmitForm = async (
     event: React.FormEvent<HTMLFormElement>
   ): Promise<() => void> => {
     event.preventDefault()
     const abortController = new AbortController()
-    if (!user || submitting) return () => abortController.abort()
-    const { attributes: { email = '' } = {} } = user
+    if (!jwtToken || submitting) return () => abortController.abort()
 
     try {
       setSubmitting(true)
@@ -193,11 +191,11 @@ const TeamForm = () => {
         } as Team,
       }
 
-      // update the team in the database
+      // update teams data in the database
       const response = await fetch(`${CONFIG.TEAMS_API_URL}`, {
         method: newTeamRouteMatch ? 'POST' : 'PUT',
         signal: abortController.signal,
-        headers: { Authorization: `${user.jwtToken}` },
+        headers: { Authorization: `${jwtToken}` },
         body: JSON.stringify(updatedTeamsData),
       })
 
@@ -268,7 +266,7 @@ const TeamForm = () => {
                 handleAdd={handleAddTeamAdmin}
                 handleChange={handleInputFieldChange}
                 handleRemove={handleRemoveTeamMember}
-                members={formInput.members.filter(([, m]) => m.isTeamLead)}
+                members={admins}
                 newEmail={formInput.newAdminEmail}
               />
             </Grid>

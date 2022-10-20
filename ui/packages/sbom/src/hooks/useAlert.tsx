@@ -61,7 +61,6 @@ export const AlertProvider = ({
     autoHide = true,
     timeout = DEFAULT_TIMEOUT,
   }: AlertProps) => {
-    console.log(severity, message, state)
     setState({
       ...state,
       isVisible: true,
@@ -73,7 +72,6 @@ export const AlertProvider = ({
   }
 
   const setData = (values: AlertState) => {
-    console.log('setData', values)
     setState((prevData: AlertState) => ({
       ...prevData,
       ...values,

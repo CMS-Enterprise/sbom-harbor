@@ -9,7 +9,7 @@ import { Link as RouterLink } from 'react-router-dom'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import useAuth from '@/hooks/useAuth'
+import { useAuthState } from '@/hooks/useAuth'
 
 // ** Styled Components
 const ButtonBox = styled(Box)({ mr: 1, ml: 1, pr: 1, pl: 1 })
@@ -47,15 +47,15 @@ const LogoutButton = (): JSX.Element => {
  * @returns {JSX.Element} Component containing a login or logout button.
  */
 const HeaderAuthButton = (): JSX.Element => {
-  const { user } = useAuth()
+  const { jwtToken } = useAuthState()
 
   // AuthContext.initAuth hasn't resolved yet, so don't render anything
-  if (user === null) {
+  if (jwtToken === null) {
     return <ButtonContainerBox />
   }
 
   // session is defined, so render logout button
-  if (user && user.jwtToken) {
+  if (jwtToken) {
     return (
       <ButtonContainerBox>
         <LogoutButton />

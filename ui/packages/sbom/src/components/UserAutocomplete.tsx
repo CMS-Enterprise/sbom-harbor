@@ -87,13 +87,11 @@ const UserSearchInput = ({
             option === value || option === ''
           }
           onChange={(_, newValue: string | null = '') => {
-            console.log('onChange', newValue)
             setOptions(newValue ? [newValue, ...options] : options)
             setValue(newValue)
             field.onChange(newValue)
           }}
           onInputChange={(_, newValue: string) => {
-            console.log('onInputChange', newValue)
             setInputValue(newValue)
           }}
           renderInput={(params) => (

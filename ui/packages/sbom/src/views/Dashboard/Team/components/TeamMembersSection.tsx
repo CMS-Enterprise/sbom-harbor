@@ -15,7 +15,7 @@ import { TeamMember } from '@/types'
 
 type TeamMembersSectionProps = {
   members?: [string, TeamMember][]
-  // TODO: add validation of email
+  // TODO: add email field validation
   newEmail?: string
   title: string
   name: string
@@ -73,17 +73,18 @@ const TeamMembersSection = ({
         {title}:
       </Typography>
       <Grid container spacing={1} sx={{ mb: 3 }}>
-        {members.map(([id, { email }], index) => (
-          <Grid item xs={12} key={id}>
-            <FormControl fullWidth variant="standard" disabled margin="none">
-              <TeamMemberReadOnlyField
-                index={index}
-                email={email}
-                handleRemove={handleRemove}
-              />
-            </FormControl>
-          </Grid>
-        ))}
+        {members &&
+          members.map(([id, { email }], index) => (
+            <Grid item xs={12} key={id}>
+              <FormControl fullWidth variant="standard" disabled margin="none">
+                <TeamMemberReadOnlyField
+                  index={index}
+                  email={email}
+                  handleRemove={handleRemove}
+                />
+              </FormControl>
+            </Grid>
+          ))}
         <Grid item xs={12}>
           <FormControl fullWidth variant="standard" size="small">
             <InputLabel htmlFor={`${name}`}>

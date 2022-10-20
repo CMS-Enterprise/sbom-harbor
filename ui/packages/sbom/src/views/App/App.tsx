@@ -15,7 +15,7 @@ import List from '@mui/material/List'
 import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
 
-// ** Icon
+// ** Icons
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import MenuIcon from '@mui/icons-material/Menu'
 
@@ -33,11 +33,8 @@ import MenuListItems from './AppDrawerListItems'
  * @returns {JSX.Element} The main application layout component.
  */
 const App = (): JSX.Element => {
-  // ** State
   const [drawerOpen, setDrawerOpen] = React.useState(true)
   const toggleDrawer = () => setDrawerOpen(!drawerOpen)
-
-  // XXX: replace teams fetching effect with a useData hook
 
   return (
     <Box

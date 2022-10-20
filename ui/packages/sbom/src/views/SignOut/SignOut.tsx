@@ -5,21 +5,22 @@
  */
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuthDispatch } from '@/hooks/useAuth'
+import logoutUser from '@/actions/logoutUser'
 
 /**
  * A blank component that signs out the user and redirects to the login page.
  * @returns {JSX.Element} A component that renders an empty React Fragment.
  */
 const SignOut = (): JSX.Element => {
-  const { logout } = useAuth()
+  const dispatch = useAuthDispatch()
   const navigate = useNavigate()
 
   React.useEffect(() => {
-    logout().then(() => {
+    logoutUser(dispatch).then(() => {
       navigate('/login')
     })
-  })
+  }, [])
 
   return <></>
 }

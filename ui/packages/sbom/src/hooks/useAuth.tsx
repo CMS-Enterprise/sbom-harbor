@@ -7,27 +7,97 @@
  * @exports useAuth
  */
 import * as React from 'react'
-import { useMatch, useNavigate, useLocation, redirect } from 'react-router-dom'
+import { useMatch, useNavigate, useLocation } from 'react-router-dom'
 import { Auth } from '@aws-amplify/auth'
-import { getUserData } from '@/utils/get-cognito-user'
-import { AuthValuesType, LoginParams } from './types'
-import useAlert from '@/hooks/useAlert'
-import { UserDataType } from '@/types'
+import { AuthValuesType } from './types'
 
 type AuthProviderProps = {
   children: React.ReactNode
 }
 
+type UserData = {
+  jwtToken?: string
+  email: string
+  username?: string
+  teams: string[]
+}
+
+const INITIAL_STATE = {
+  jwtToken: undefined,
+  email: '',
+  username: '',
+  teams: [],
+} as UserData
+
 /**
  * @type {AuthValuesType} The initial values provided by AuthContext.
  */
 const defaultProvider: AuthValuesType = {
-  user: null,
+  ...INITIAL_STATE,
+  errorMessage: null,
   loading: false,
-  setUser: () => null,
-  setLoading: () => Boolean,
-  login: () => Promise.resolve(),
-  logout: () => Promise.resolve(),
+}
+
+export const AuthReducer = (
+  initialState: AuthValuesType,
+  action: React.ReducerAction<React.Reducer<string, any>>
+) => {
+  switch (action.type) {
+    case 'REQUEST_LOGIN':
+      return {
+        ...initialState,
+        loading: true,
+      }
+    case 'LOGIN_SUCCESS':
+      return {
+        ...initialState,
+        email: action.payload.email,
+        jwtToken: action.payload.jwtToken,
+        teams: action.payload.teams,
+        username: action.payload.username,
+        loading: false,
+      }
+    case 'LOGOUT':
+      return {
+        ...initialState,
+        jwtToken: undefined,
+      }
+
+    case 'LOGIN_ERROR':
+      return {
+        ...initialState,
+        loading: false,
+        errorMessage: action.error,
+      }
+
+    default:
+      throw new Error(`Unhandled action type: ${action.type}`)
+  }
+}
+
+const AuthStateContext = React.createContext(INITIAL_STATE)
+const AuthDispatchContext = React.createContext(
+  (dispatch: React.Dispatch<unknown>): void => {
+    dispatch({ type: 'LOGIN_ERROR', error: 'No AuthProvider found' })
+  }
+)
+
+export function useAuthState() {
+  const context = React.useContext(AuthStateContext)
+  if (context === undefined) {
+    throw new Error('useAuthState must be used within a AuthProvider')
+  }
+
+  return context
+}
+
+export function useAuthDispatch() {
+  const context = React.useContext(AuthDispatchContext)
+  if (context === undefined) {
+    throw new Error('useAuthDispatch must be used within a AuthProvider')
+  }
+
+  return context
 }
 
 /**
@@ -48,15 +118,10 @@ export const useAuth = () => React.useContext(AuthContext)
  * @returns {JSX.Element} The rendered provider that wraps the children nodes.
  */
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser]: [UserDataType, React.Dispatch<UserDataType>] =
-    React.useState<UserDataType>(defaultProvider.user)
-  const [loading, setLoading] = React.useState<boolean>(defaultProvider.loading)
-  const [initialized, setInitialized] = React.useState<boolean>(false)
-
-  const { setAlert } = useAlert()
   const location = useLocation()
   const navigate = useNavigate()
   const matchProtectedRoute = useMatch('/app/*')
+  const [user, dispatch] = React.useReducer(AuthReducer, defaultProvider)
 
   /**
    * Async function to check the validity of the user session and set user state.
@@ -64,31 +129,35 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
    *  is resolved to a valid session, or rejects if no valid session exists.
    */
   const init = React.useCallback(async () => {
-    setLoading(true)
     try {
-      const { userInfo, ...rest } = await getUserData()
+      const user = await Auth.currentAuthenticatedUser()
+      const session = await Auth.currentSession()
 
-      const {
-        id,
-        attributes,
-        attributes: { email, 'custom:teams': userTeams = '' } = {},
-        username,
-      } = userInfo
-
-      const nextData = {
-        ...rest,
-        userInfo,
-        attributes,
-        id,
-        email,
-        username,
-        teams: userTeams.split(','),
+      if (!user || !session) {
+        throw new Error('No user or session')
       }
-      setUser(nextData)
-      // @ts-ignore
-      window.user = nextData
-      setLoading(false)
-      setInitialized(true)
+
+      const jwtToken = session.getAccessToken().getJwtToken()
+
+      // TODO: implement refresh sessions
+      // user.refreshSession(
+      //   session.getRefreshToken(),
+      //   async (err: any, session: CognitoUserSession) => {
+      //     if (err) {
+      //       throw err
+      //     }
+      //   }
+      // )
+
+      const payload = {
+        jwtToken,
+        email: user.attributes.email,
+        teams: user.attributes['custom:teams'].split(','),
+        username: user.getUsername(),
+      }
+
+      dispatch({ type: 'LOGIN_SUCCESS', payload })
+
       // if the unauthenticated user is trying to navigate to a
       // protected app routue, redirect them to the login page.
       if (!matchProtectedRoute && location.pathname !== '/logout') {
@@ -96,76 +165,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     } catch (error) {
       console.warn('init:', error)
-      setUser(null)
-      setLoading(false)
-      setInitialized(true)
+      dispatch({ type: 'LOGIN_ERROR', error })
       // if the unauthenticated user is trying to navigate to a
       // protected app routue, redirect them to the login page.
       if (matchProtectedRoute) {
         navigate('/login')
       }
     }
-  }, [loading, location.pathname, matchProtectedRoute])
+  }, [location.pathname, matchProtectedRoute, navigate])
 
   /**
    * Initializes the AuthContext by checking for a user session and setting
    *  the user state accordingly. If no valid user session exists, it sets
    *  the user state to null and clears local storage.
    */
+  /* eslint-disable react-hooks/exhaustive-deps */
   React.useEffect(() => {
-    if (loading || initialized) return
     init()
   }, [matchProtectedRoute])
-
-  /**
-   * Function to handle logging the user in with the provided credentials.
-   * @param params {LoginParams} The parameters to use when logging the user in.
-   * @param {ErrorCallbackType} errorCallback The callback to invoke if an error
-   * @returns {Promise<void>} A promise that resolves when user is logged in,
-   *  or rejects if an error occurs.
-   */
-  const handleLogin = async (
-    params: LoginParams,
-    errorCallback?: ErrorCallbackType
-  ): Promise<void> => {
-    try {
-      setLoading(true)
-      await Auth.signIn(params.email, params.password)
-      await init()
-    } catch (error) {
-      console.warn(error)
-      setLoading(false)
-      setAlert({ message: 'Error logging in', severity: 'error' })
-      if (errorCallback) errorCallback(error as Error)
-    }
-  }
-
-  /**
-   * Function to handle logging the user out and clearing the stored session.
-   * @returns {Promise<void>} A promise that resolves when the user has been
-   *  logged out, or rejects if an error occurs when making the API request.
-   */
-  const handleLogout = async (): Promise<void> => {
-    try {
-      await Auth.signOut()
-      await init()
-    } catch (error) {
-      console.error(error)
-      setAlert({ message: 'Error logging out', severity: 'error' })
-    }
-  }
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // set all the AuthContext values in the context provider.
-  const values = {
-    user,
-    loading,
-    setUser,
-    setLoading,
-    login: handleLogin,
-    logout: handleLogout,
-  }
-
-  return <AuthContext.Provider value={values}>{children}</AuthContext.Provider>
+  return (
+    <AuthStateContext.Provider value={user}>
+      <AuthDispatchContext.Provider value={dispatch}>
+        {children}
+      </AuthDispatchContext.Provider>
+    </AuthStateContext.Provider>
+  )
 }
 
 export default useAuth

@@ -4,31 +4,26 @@
  * @module @cyclonedx/ui/sbom/views/Dashboard/Team/TeamView
  */
 import * as React from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLoaderData } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Container from '@mui/material/Container'
 import Grid from '@mui/material/Grid'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
-import { useData } from '@/hooks/useData'
 import TeamMembersTable from './components/TeamMembersTable'
 import TeamViewProjectCard from './components/TeamViewProjectCard'
 import { Team, UserTableRowType } from '@/types'
 
 const TeamView = () => {
-  // get teamId from URL params
-  const { teamId = '' } = useParams()
+  const team = useLoaderData() as Team
+  const [members, setMembers] = React.useState<UserTableRowType[]>([])
 
-  // get team data from context
-  const { data: { teams: { [teamId]: team = {} as Team } = {} } = {} } =
-    useData()
+  React.useEffect(() => {
+    if (!team?.members) {
+      return
+    }
 
-  // find the team to show from the data context and set it in local state.
-  const [data] = React.useState(() => {
-    const { name = '', projects = {}, members = {}, tokens = {} } = team
-
-    // map the members object to an array of objects that can be used by the table.
-    const newMembers = Object.entries(members).map(
+    const newMembers = Object.entries(team.members).map(
       ([id, member]): UserTableRowType => {
         const { email = '', isTeamLead = false } = member
         return {
@@ -41,13 +36,8 @@ const TeamView = () => {
       }
     )
 
-    return {
-      name,
-      members: newMembers,
-      projects: Object.entries(projects),
-      tokens: Object.entries(tokens),
-    }
-  })
+    setMembers(newMembers)
+  }, [team?.members])
 
   return (
     <Container component="main" maxWidth="md" data-testid="team">
@@ -63,7 +53,7 @@ const TeamView = () => {
           }}
         >
           <Typography variant="h4" sx={{ mt: 1, mb: 3 }}>
-            {data?.name}
+            {team?.name}
           </Typography>
           <Link to={`edit`}>Edit Team</Link>
         </Box>
@@ -75,7 +65,7 @@ const TeamView = () => {
               </Typography>
             </Grid>
             <Grid item xs={12} md={12}>
-              <TeamMembersTable members={data.members} />
+              <TeamMembersTable members={members} />
             </Grid>
           </Grid>
         </Box>
@@ -86,8 +76,8 @@ const TeamView = () => {
                 Projects
               </Typography>
             </Grid>
-            {data.projects &&
-              data.projects.map(([key, project]) => (
+            {team?.projects &&
+              Object.entries(team.projects).map(([key, project]) => (
                 <Grid item xs={12} md={12} key={key}>
                   <TeamViewProjectCard project={project} />
                 </Grid>

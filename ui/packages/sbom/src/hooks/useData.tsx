@@ -2,20 +2,12 @@
  * @module @cyclonedx/ui/sbom/hooks/useData
  */
 import * as React from 'react'
-import { AppState, Team, UserDataType, UserState } from '@/types'
-
-// DEBUG: remove this when we fetch from the real api
-import data from '@/data.json'
+import { AppState, Team } from '@/types'
 import { CONFIG } from '@/utils/constants'
-import useAuth from './useAuth'
-
-// DEBUG: remove this when we fetch from the real api
-const {
-  devData: { teams: teamsDevData },
-} = data
+import { useAuthState } from './useAuth'
 
 const INITIAL_STATE = {
-  teams: teamsDevData,
+  teams: {},
   fetchTeams: () => Promise<null>,
   setTeams: () => null,
   setData: () => null,
@@ -33,6 +25,7 @@ const DataContext = React.createContext<{
   setTeams: () => ({}),
 })
 
+// TODO: make this into a reducer
 export const DataProvider = ({
   children,
   initialState = INITIAL_STATE,
@@ -40,9 +33,8 @@ export const DataProvider = ({
   children: JSX.Element
   initialState?: AppState
 }) => {
-  // XXX: make this into a reducer
+  const { jwtToken } = useAuthState()
   const [data, dispatchSetData] = React.useState<AppState>(initialState)
-  const { user } = useAuth()
 
   const setData = (values: AppState) => {
     dispatchSetData((prevData) => ({
@@ -52,37 +44,43 @@ export const DataProvider = ({
   }
 
   // dispatches update to the user data state in the context provider.
-  const setTeams = (teams = {}) => {
+  const setTeams = React.useCallback((teams = {}) => {
     setData({ teams })
-  }
+  }, [])
 
-  const fetchTeams = async (controller: AbortController) => {
-    if (!user || !user?.jwtToken) {
-      console.error('useData#fetchTeams', 'No user or user token found.')
-      return
+  const fetchTeams = React.useCallback(
+    async (controller: AbortController) => {
+      if (!jwtToken) {
+        console.warn('useData#fetchTeams', 'No user or user token found.')
+        return
+      }
+
+      const url = new URL(`${CONFIG.API_URL}/v1/teams`)
+      url.searchParams.append('children', 'true')
+
+      const teams = await fetch(url, {
+        signal: controller.signal,
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `${jwtToken}`,
+        },
+      })
+
+      const data = await teams.json()
+      return data
+    },
+    [jwtToken]
+  )
+
+  const value = React.useMemo(() => {
+    return {
+      data,
+      fetchTeams,
+      setData,
+      setTeams,
     }
-    const url = new URL(`${CONFIG.API_URL}/v1/teams`)
-    url.searchParams.append('children', 'true')
-
-    const teams = await fetch(url, {
-      signal: controller.signal,
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `${user?.jwtToken}`,
-      },
-    })
-
-    const data = await teams.json()
-    return data
-  }
-
-  const value = {
-    data,
-    fetchTeams,
-    setData,
-    setTeams,
-  }
+  }, [data, fetchTeams, setTeams])
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
 }

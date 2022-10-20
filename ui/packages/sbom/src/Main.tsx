@@ -3,10 +3,9 @@
  * @module @cyclonedx/ui/sbom/Main
  */
 import * as React from 'react'
+import { Outlet } from 'react-router-dom'
 import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider } from '@mui/material/styles'
-
-import Routes from '@/Routes'
 import { AlertProvider } from '@/hooks/useAlert'
 import { AuthProvider } from '@/hooks/useAuth'
 import { DataProvider } from '@/hooks/useData'
@@ -23,7 +22,7 @@ const Main = (): JSX.Element => (
     <AuthProvider>
       <DataProvider>
         <AlertProvider>
-          <Routes />
+          <Outlet />
         </AlertProvider>
       </DataProvider>
     </AuthProvider>

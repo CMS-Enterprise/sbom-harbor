@@ -108,29 +108,32 @@ export type Codebase = {
   buildTool: BuildTool
 }
 
+// TODO: some of these are frameworks, not languages
 export enum CodebaseLanguage {
   C = 'C',
   CPP = 'C++',
   DOTNET = '.NET',
-  GO = 'GO',
-  JAVA = 'JAVA',
-  JAVASCRIPT = 'JAVASCRIPT',
-  NODE = 'NODE',
+  GO = 'go',
+  JAVA = 'Java',
+  JAVASCRIPT = 'Javascript',
+  TYPESCRIPT = 'Typescript',
+  NODE = 'Node.js',
   PHP = 'PHP',
-  PYTHON = 'PYTHON',
-  RUBY = 'RUBY',
-  RUST = 'RUST',
-  OTHER = 'OTHER',
+  PYTHON = 'Python',
+  RUBY = 'Ruby',
+  RUST = 'Rust',
+  OTHER = 'Other',
   NONE = '',
 }
 
 export enum BuildTool {
-  ANT = 'ANT',
-  GRADLE = 'GRADLE',
-  MAVEN = 'MAVEN',
-  NPM = 'NPM',
-  PIP = 'PIP',
-  VISUAL_STUDIO_BUILD_TOOLS = 'VISUAL_STUDIO_BUILD_TOOLS',
-  OTHER = 'OTHER',
+  ANT = 'ant',
+  GRADLE = 'gradle',
+  MAVEN = 'maven',
+  NPM = 'npm',
+  YARN = 'yarn',
+  PIP = 'pip',
+  VISUAL_STUDIO_BUILD_TOOLS = 'Visual Studio Build Tools',
+  OTHER = 'Other',
   NONE = '',
 }
