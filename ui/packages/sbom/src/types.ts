@@ -11,6 +11,7 @@ export type AppConfig = {
   CF_DOMAIN: string
   API_URL: string
   USER_API_URL: string
+  TEAM_API_URL: string
   TEAMS_API_URL: string
   USER_POOL_ID: string
   USER_POOL_CLIENT_ID: string
@@ -22,6 +23,14 @@ export type AppStateSlice<P> = {
 
 export type AppState = {
   teams: Record<string, Team>
+}
+
+export type AppStateTeam = {
+  name: string
+  members: [string, TeamMember][]
+  projects: [string, Project][]
+  tokens: [string, Token][]
+  memberTableRows: UserTableRowType[]
 }
 
 export type ThemeColor =
@@ -65,10 +74,10 @@ export type UserDataType =
   | null
 
 export type UserTableRowType = {
+  id: string
   email: string
   isTeamLead: boolean
   avatarSrc?: string
-  id?: string
   name?: string
   role?: 'admin' | 'member'
   username?: string
@@ -76,6 +85,7 @@ export type UserTableRowType = {
 
 // ** Teams
 
+// a team as it is stored in the database
 export type Team = {
   name: string
   members: Record<string, TeamMember>

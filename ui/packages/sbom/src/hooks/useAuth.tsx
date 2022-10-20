@@ -34,21 +34,33 @@ const INITIAL_STATE = {
  */
 const defaultProvider: AuthValuesType = {
   ...INITIAL_STATE,
-  errorMessage: null,
   loading: false,
+}
+
+enum AuthActions {
+  REQUEST_LOGIN = 'REQUEST_LOGIN',
+  LOGIN_SUCCESS = 'LOGIN_SUCCESS',
+  LOGIN_ERROR = 'LOGIN_ERROR',
+  LOGOUT = 'LOGOUT',
+}
+
+interface AuthActionParams {
+  type: AuthActions
+  payload: AuthValuesType
+  error?: Error
 }
 
 export const AuthReducer = (
   initialState: AuthValuesType,
-  action: React.ReducerAction<React.Reducer<string, any>>
+  action: React.ReducerAction<React.Reducer<string, AuthActionParams>>
 ) => {
   switch (action.type) {
-    case 'REQUEST_LOGIN':
+    case AuthActions.REQUEST_LOGIN:
       return {
         ...initialState,
         loading: true,
       }
-    case 'LOGIN_SUCCESS':
+    case AuthActions.LOGIN_SUCCESS:
       return {
         ...initialState,
         email: action.payload.email,
@@ -57,17 +69,17 @@ export const AuthReducer = (
         username: action.payload.username,
         loading: false,
       }
-    case 'LOGOUT':
+    case AuthActions.LOGOUT:
       return {
         ...initialState,
         jwtToken: undefined,
       }
 
-    case 'LOGIN_ERROR':
+    case AuthActions.LOGIN_ERROR:
       return {
         ...initialState,
+        error: action.error,
         loading: false,
-        errorMessage: action.error,
       }
 
     default:
@@ -76,10 +88,9 @@ export const AuthReducer = (
 }
 
 const AuthStateContext = React.createContext(INITIAL_STATE)
+
 const AuthDispatchContext = React.createContext(
-  (dispatch: React.Dispatch<unknown>): void => {
-    dispatch({ type: 'LOGIN_ERROR', error: 'No AuthProvider found' })
-  }
+  ((value: AuthActionParams) => value) as React.Dispatch<AuthActionParams>
 )
 
 export function useAuthState() {
@@ -104,12 +115,6 @@ export function useAuthDispatch() {
  * @default {AuthValuesType=defaultProvider} The initial AuthContext
  */
 export const AuthContext = React.createContext(defaultProvider)
-
-/**
- * The custom hook to use the AuthContext in a functional component.
- * @returns {AuthValuesType} Hook that returns the current AuthContext value.
- */
-export const useAuth = () => React.useContext(AuthContext)
 
 /**
  * The AuthContextProvider is used to provide user data to components.
@@ -154,9 +159,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         email: user.attributes.email,
         teams: user.attributes['custom:teams'].split(','),
         username: user.getUsername(),
+        loading: false,
       }
 
-      dispatch({ type: 'LOGIN_SUCCESS', payload })
+      dispatch({ type: AuthActions.LOGIN_SUCCESS, payload })
 
       // if the unauthenticated user is trying to navigate to a
       // protected app routue, redirect them to the login page.
@@ -164,8 +170,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         navigate('/app')
       }
     } catch (error) {
-      console.warn('init:', error)
-      dispatch({ type: 'LOGIN_ERROR', error })
+      dispatch({
+        type: AuthActions.LOGIN_ERROR,
+        error: error as Error,
+        payload: defaultProvider,
+      })
       // if the unauthenticated user is trying to navigate to a
       // protected app routue, redirect them to the login page.
       if (matchProtectedRoute) {
@@ -194,5 +203,3 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     </AuthStateContext.Provider>
   )
 }
-
-export default useAuth

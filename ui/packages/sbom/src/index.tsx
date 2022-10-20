@@ -32,7 +32,7 @@ import reportWebVitals from '@/utils/reportWebVitals'
   // if NODE_ENV is production, return early. otherwise, run dev tools.
   if (process.env.NODE_ENV === 'production') return
   // print the global app CONFIG to the console
-  console.log('Welcome to the Harbor!', CONFIG)
+  console.debug('Welcome to the Harbor!', CONFIG)
   // enable React performance measurement tools.
   // see https://create-react-app.dev/docs/measuring-performance/
   reportWebVitals(console.debug)

@@ -96,20 +96,18 @@ type InputProps = {
  * @param {UserTableRowType[]} props.members - The list of team members.
  * @returns {JSX.Element} A component that renders a datagrid table of team members.
  */
-const TeamMembersTable = ({ members }: InputProps) => {
-  return (
-    <Card>
-      <DataGrid
-        autoHeight
-        hideFooter
-        rows={members.map((member) => ({ ...member, id: member.email }))}
-        columns={columns}
-        disableSelectionOnClick
-        pagination={undefined}
-      />
-    </Card>
-  )
-}
+const TeamMembersTable = ({ members }: InputProps) => (
+  <Card>
+    <DataGrid
+      autoHeight
+      hideFooter
+      rows={members.map((member) => ({ ...member, id: member.email }))}
+      columns={columns}
+      disableSelectionOnClick
+      pagination={undefined}
+    />
+  </Card>
+)
 
 TeamMembersTable.displayName = 'TeamMembersTable'
 

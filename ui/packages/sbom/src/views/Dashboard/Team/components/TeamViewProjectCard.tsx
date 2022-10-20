@@ -14,6 +14,13 @@ import { Project } from '@/types'
 type InputProps = { project: Project }
 
 const TeamViewProjectCard = ({ project }: InputProps): JSX.Element => {
+  const codebaseEntries = React.useMemo(() => {
+    if (!project?.codebases) {
+      return []
+    }
+    return Object.entries(project.codebases)
+  }, [project?.codebases])
+
   if (!project) {
     return <></>
   }
@@ -44,10 +51,10 @@ const TeamViewProjectCard = ({ project }: InputProps): JSX.Element => {
       </CardHeader>
       <CardContent>
         <Typography component="p" variant="caption" sx={{ mb: 5 }}>
-          <>{project?.codebases?.length || 0} Codebases</>
+          <>{codebaseEntries?.length || 0} Codebases</>
         </Typography>
         {project?.codebases &&
-          Object.entries(project.codebases).map(([key, item], index, array) => {
+          codebaseEntries.map(([key, item], index, array) => {
             return (
               <Box
                 key={key}

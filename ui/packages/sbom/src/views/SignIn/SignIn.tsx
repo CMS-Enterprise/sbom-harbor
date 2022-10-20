@@ -86,7 +86,6 @@ const LoginPage = () => {
       await loginUser(dispatch, { email, password })
       navigate('/app')
     } catch (error) {
-      console.warn(error)
       setAlert({
         message: 'There was an error logging in. Please try again.',
         severity: 'error',

@@ -15,5 +15,6 @@ const envConfig = JSON.parse(JSON.stringify(process.env.CONFIG))
 export const CONFIG = {
   ...envConfig,
   TEAMS_API_URL: `${envConfig.API_URL}/v1/teams`,
+  TEAM_API_URL: `${envConfig.API_URL}/v1/team`,
   USER_API_URL: `${envConfig.API_URL}/user`,
 } as AppConfig

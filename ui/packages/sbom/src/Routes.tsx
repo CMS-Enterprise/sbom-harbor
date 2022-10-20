@@ -30,26 +30,20 @@ import NavigateToLogin from '@/components/react-router/NavigateToLogin'
 // ** Utils
 import { CONFIG } from '@/utils/constants'
 import configureCognito from '@/utils/configureCognito'
-import { TeamMember, UserTableRowType } from './types'
+import { Team, TeamMember, UserTableRowType } from './types'
 
 const ErrorBoundary = () => {
   const error = useRouteError()
   const navigate = useNavigate()
-  console.error(error)
+  console.error('Error boundary:', error)
 
   React.useEffect(() => {
-    const timeout = setTimeout(() => {
-      return navigate('/logout')
-    }, 5000)
+    const timeout = setTimeout(() => navigate('/logout'), 5000)
     return () => clearTimeout(timeout)
   })
 
   return (
-    <Container
-      sx={{
-        m: 3,
-      }}
-    >
+    <Container sx={{ m: 3 }}>
       Your session has expired, please login again.
     </Container>
   )
@@ -112,29 +106,33 @@ const teamLoader = async ({
     throw new Error(response.statusText)
   }
 
-  const { [teamId]: team = {} } = await response.json()
+  const {
+    [teamId]: team = {
+      name: '',
+      members: {},
+      projects: {},
+      tokens: {},
+    },
+  }: { [teamId: string]: Team } = await response.json()
 
   const newMembers = Object.entries(team.members).map(
-    ([id, member]): [string, UserTableRowType] => {
+    ([id, member]: [string, TeamMember]): UserTableRowType => {
       const { email = '', isTeamLead = false } = member as TeamMember
-      return [
+      return {
         id,
-        {
-          id,
-          email,
-          isTeamLead,
-          role: isTeamLead ? 'admin' : 'member',
-          avatarSrc: `https://ui-avatars.com/api/?name=${email}&background=0D8ABC&color=fff`,
-        },
-      ]
+        email,
+        isTeamLead,
+        role: isTeamLead ? 'admin' : 'member',
+      }
     }
   )
 
   return {
     name: team.name,
-    members: newMembers,
+    members: Object.entries(team.members),
     projects: Object.entries(team.projects),
     tokens: Object.entries(team.tokens),
+    memberTableRows: newMembers,
   }
 }
 

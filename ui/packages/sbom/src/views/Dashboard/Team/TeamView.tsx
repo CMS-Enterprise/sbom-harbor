@@ -12,32 +12,18 @@ import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
 import TeamMembersTable from './components/TeamMembersTable'
 import TeamViewProjectCard from './components/TeamViewProjectCard'
-import { Team, UserTableRowType } from '@/types'
+import { AppStateTeam, UserTableRowType } from '@/types'
 
 const TeamView = () => {
-  const team = useLoaderData() as Team
+  const team = useLoaderData() as AppStateTeam
   const [members, setMembers] = React.useState<UserTableRowType[]>([])
 
   React.useEffect(() => {
-    if (!team?.members) {
+    if (!team?.memberTableRows) {
       return
     }
-
-    const newMembers = Object.entries(team.members).map(
-      ([id, member]): UserTableRowType => {
-        const { email = '', isTeamLead = false } = member
-        return {
-          id,
-          email,
-          isTeamLead,
-          role: isTeamLead ? 'admin' : 'member',
-          avatarSrc: `https://ui-avatars.com/api/?name=${email}&background=0D8ABC&color=fff`,
-        }
-      }
-    )
-
-    setMembers(newMembers)
-  }, [team?.members])
+    setMembers(team.memberTableRows)
+  }, [team?.memberTableRows])
 
   return (
     <Container component="main" maxWidth="md" data-testid="team">
@@ -77,7 +63,7 @@ const TeamView = () => {
               </Typography>
             </Grid>
             {team?.projects &&
-              Object.entries(team.projects).map(([key, project]) => (
+              team.projects.map(([key, project]) => (
                 <Grid item xs={12} md={12} key={key}>
                   <TeamViewProjectCard project={project} />
                 </Grid>

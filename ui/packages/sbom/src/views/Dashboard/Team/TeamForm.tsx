@@ -6,7 +6,7 @@
  * @module @cyclonedx/ui/sbom/views/Dashboard/Team/TeamEdit
  */
 import * as React from 'react'
-import { useLoaderData, useMatch } from 'react-router-dom'
+import { useLoaderData, useMatch, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { v4 as uuidv4 } from 'uuid'
 import Box from '@mui/material/Box'
@@ -20,28 +20,45 @@ import UserAutocomplete from '@/components/UserAutocomplete'
 import SubmitButton from '@/components/forms/SubmitButton'
 import { useAlert } from '@/hooks/useAlert'
 import { useAuthState } from '@/hooks/useAuth'
-import { useData } from '@/hooks/useData'
 import { CONFIG } from '@/utils/constants'
-import { Team } from '@/types'
+import { Project, TeamMember, Token } from '@/types'
 import { FormState, FormTeamState } from './types'
 import { defaultFormState, defaultProject } from './constants'
 import TeamMembersSection from './components/TeamMembersSection'
 import TeamViewProjectCreateCard from './components/TeamViewProjectCreateCard'
 import TeamViewProjectCreationCard from './components/TeamViewProjectCreationCard'
 
+/**
+ * Helper method that converts entries to an array of objects with ids used
+ *  for generating the properties of the object in the body of the request.
+ * @param {[string, Project | Token | TeamMember][]} entries key, value pairs
+ *  of the projects, tokens, or team members to be added to the team.
+ * @returns {Object} the projects, tokens, or team members to be added to the team,
+ *  with the key set to the value of the id field.
+ */
+const mapEntriesToArray = (
+  entries: [string, Project | Token | TeamMember][]
+): Array<TeamMember | Project | Token> =>
+  entries.map(([key, value]) => ({
+    id: key,
+    ...value,
+  }))
+
+/**
+ * A component that renders a page with a form for creating/editing a team.
+ * URL: /team/new - @see {@link @cyclone-dx/ui/sbom/Routes}.
+ * URL: /teams/:teamId/edit - @see {@link @cyclone-dx/ui/sbom/Routes}.
+ */
 const TeamForm = () => {
   const { setAlert } = useAlert()
   const { jwtToken, email } = useAuthState()
-
-  // data context hook to get all teams
-  // TODO: switch to updating a single team instead
-  const { data: { teams = {} } = {}, setTeams } = useData()
 
   // route loader hook to fetch team data
   const team = useLoaderData() as FormTeamState
 
   // route match hook to determine if this is an edit or create form
   const newTeamRouteMatch = useMatch('/team/new')
+  const { teamId = '' } = useParams()
 
   const [submitting, setSubmitting] = React.useState(false)
 
@@ -156,13 +173,15 @@ const TeamForm = () => {
   ): Promise<() => void> => {
     event.preventDefault()
     const abortController = new AbortController()
-    if (!jwtToken || submitting) return () => abortController.abort()
+
+    if (!jwtToken || submitting) {
+      return () => abortController.abort()
+    }
 
     try {
       setSubmitting(true)
 
       const {
-        name = team.name,
         members = team.members,
         projects = team.projects,
         tokens: tokenEntries = team.tokens,
@@ -175,28 +194,36 @@ const TeamForm = () => {
       const membersEntries = members.filter(([, m]) => !!m.email)
 
       // ensure that the current user is in the members list as an admin
+      // TODO: use team member endpoint instead of editing them directly
       if (members.findIndex(([, m]) => m.email === email) === -1) {
         membersEntries.push([uuidv4(), { email, isTeamLead: true }])
       }
 
       // create a final object representing the team and add it to the teams data.
-      const updatedTeamsData = {
-        ...teams,
-        [uuidv4()]: {
-          ...team,
-          name,
-          members: Object.fromEntries(membersEntries),
-          projects: Object.fromEntries(projectEntries),
-          tokens: Object.fromEntries(tokenEntries),
-        } as Team,
+      const updatedTeamData = {
+        name: formInput.name,
+        members: mapEntriesToArray(membersEntries),
+        projects: mapEntriesToArray(projectEntries),
+        tokens: mapEntriesToArray(tokenEntries),
       }
 
+      // determine the endpoint to use based on if this is a create or edit form.
+      const url = newTeamRouteMatch
+        ? CONFIG.TEAM_API_URL
+        : `${CONFIG.TEAM_API_URL}/${teamId}`
+
+      // determine the request verb based on if this is a create or edit form.
+      const method = newTeamRouteMatch ? 'POST' : 'PUT'
+
       // update teams data in the database
-      const response = await fetch(`${CONFIG.TEAMS_API_URL}`, {
-        method: newTeamRouteMatch ? 'POST' : 'PUT',
+      const response = await fetch(url, {
+        method,
+        body: JSON.stringify(updatedTeamData),
+        headers: {
+          Authorization: `${jwtToken}`,
+          'Content-Type': 'application/json',
+        },
         signal: abortController.signal,
-        headers: { Authorization: `${jwtToken}` },
-        body: JSON.stringify(updatedTeamsData),
       })
 
       // if the request was unsuccessful, throw an error and go to catch block
@@ -205,8 +232,9 @@ const TeamForm = () => {
       }
 
       // update global app data with the new team since API call was successful
-      setTeams(updatedTeamsData)
       setSubmitting(false)
+
+      // show a success message to the user
       setAlert({
         message: 'Team updated successfully',
         severity: 'success',
