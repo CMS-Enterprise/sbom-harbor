@@ -47,7 +47,7 @@ class Project(HarborModel):
         team_id: str,
         project_id: str,
         name: str = "",
-        fisma: str = "",
+        fisma: str = "unknown",
         codebases: list[HarborModel] = None,
     ):
 

@@ -4,6 +4,7 @@ from json import (
     dumps
 )
 
+import boto3
 from boto3 import resource
 from json_normalize import json_normalize
 
@@ -11,6 +12,8 @@ from cyclonedx.constants import (
     SBOM_BUCKET_NAME_KEY,
     SBOM_S3_KEY
 )
+from cyclonedx.db.harbor_db_client import HarborDBClient
+from cyclonedx.model.project import Project
 
 
 def summarizer_handler(event: dict = None, context: dict = None):
@@ -66,17 +69,24 @@ def summarizer_handler(event: dict = None, context: dict = None):
 def generate_report_filename(metadata: dict):
 
     # get timestamp value and convert to date time if it exists
+    db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
+
     submit_date = ""
     timestamp = metadata.get('x-amz-meta-sbom-api-timestamp', "")
     if timestamp:
         submit_date = datetime.fromtimestamp(float(timestamp)).isoformat()
 
     project = metadata.get('x-amz-meta-sbom-api-project', "")
+    team = metadata.get('x-amz-meta-sbom-api-team', "")
 
-    # The customer requested the default for this field should be marked as "unknown"
-    fisma = metadata.get('x-amz-meta-sbom-api-fisma', "unknown")
+    project_model: Project = db_client.get(
+        Project(
+            team_id=team,
+            project_id=project,
+        )
+    )
 
-    return f"harbor-data-summary-{project}-{fisma}-{submit_date}"
+    return f"harbor-data-summary-{project}-{project_model.fisma}-{submit_date}"
 
 
 def get_object_from_s3(s3: resource, bucket_name: str, key: str) -> dict:

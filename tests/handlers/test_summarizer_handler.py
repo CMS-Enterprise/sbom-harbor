@@ -4,10 +4,13 @@
 
 import importlib.resources as pr
 import fnmatch
+import uuid
 from json import loads
 from typing import Callable
 from cyclonedx.enrichment.dependency_track import summarizer_handler
 import tests.test_data as test_data
+from cyclonedx.db.harbor_db_client import HarborDBClient
+from cyclonedx.model.project import Project
 
 
 def set_summary_event_sbom_name(sbom_name: str, event: dict):
@@ -20,10 +23,27 @@ def set_summary_event_sbom_name(sbom_name: str, event: dict):
         findings["sbom_s3_key"] = sbom_name
 
 
+def create_dynamodb_project_entry(test_dynamo_db_resource):
+    team_id = "testTeam"
+    project_id = "TestProject"
+    fisma_id = "testFisma"
+
+    HarborDBClient(test_dynamo_db_resource).create(
+        Project(
+            team_id=team_id,
+            project_id=project_id,
+            name=project_id,
+            fisma=fisma_id,
+        )
+    )
+
+
 def test_summarizer_has_results(
     upload_to_test_bucket: Callable,
     s3_test_bucket,  # botocore.client.BaseClient
     upload_to_ingress: Callable,
+    test_dynamo_db_resource,
+    test_harbor_teams_table
 ):
 
     """
@@ -31,6 +51,7 @@ def test_summarizer_has_results(
     -> that has the data requested in the event value
     """
 
+    create_dynamodb_project_entry(test_dynamo_db_resource)
     event: dict = loads(pr.read_text(test_data, "summarizer_event.json"))
     sbom_file = pr.read_text(test_data, "sbom-keycloak.json")
     results = upload_to_ingress(bytearray(sbom_file.encode()))
@@ -55,7 +76,7 @@ def test_summarizer_has_results(
 
     # Verify the new report file is in the bucket
     project = "TestProject"
-    fisma = "unknown"
+    fisma = "testFisma"
 
     flattened_file_pattern = f"harbor-data-summary-{project}-{fisma}-*"
     assert len(fnmatch.filter(list_of_files, flattened_file_pattern)) >= 1
