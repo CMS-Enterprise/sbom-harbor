@@ -2,15 +2,24 @@
 -> Test module for the Summarizer Handler
 """
 
-import importlib.resources as pr
 import fnmatch
-import uuid
+import glob
+import os
+from json import dumps
 from json import loads
 from typing import Callable
-from cyclonedx.enrichment.dependency_track import summarizer_handler
+
+# pylint: disable-msg=E0611
+from importlib.resources import read_text, path, files
+
+import pytest
+
 import tests.test_data as test_data
 from cyclonedx.db.harbor_db_client import HarborDBClient
+from cyclonedx.enrichment.dependency_track import summarizer_handler
+from cyclonedx.enrichment.dependency_track.summarizer_handler import FileTypes
 from cyclonedx.model.project import Project
+from tests.test_data import summary_samples
 
 
 def set_summary_event_sbom_name(sbom_name: str, event: dict):
@@ -24,6 +33,9 @@ def set_summary_event_sbom_name(sbom_name: str, event: dict):
 
 
 def create_dynamodb_project_entry(test_dynamo_db_resource):
+    """
+    -> Creates a test dynamodb entry
+    """
     team_id = "testTeam"
     project_id = "TestProject"
     fisma_id = "testFisma"
@@ -38,25 +50,23 @@ def create_dynamodb_project_entry(test_dynamo_db_resource):
     )
 
 
-def test_summarizer_has_results(
+def summarize_data(
     upload_to_test_bucket: Callable,
-    s3_test_bucket,  # botocore.client.BaseClient
+    s3_test_bucket,
     upload_to_ingress: Callable,
     test_dynamo_db_resource,
-    test_harbor_teams_table
-):
+) -> []:
 
     """
-    -> Verifies the summarizer returns a report file
-    -> that has the data requested in the event value
+    -> Runs the data through the summarizer and returns a list of files in the s3 bucket
     """
 
     create_dynamodb_project_entry(test_dynamo_db_resource)
-    event: dict = loads(pr.read_text(test_data, "summarizer_event.json"))
-    sbom_file = pr.read_text(test_data, "sbom-keycloak.json")
+    event: dict = loads(read_text(test_data, "summarizer_event.json"))
+    sbom_file = read_text(test_data, "sbom-keycloak.json")
     results = upload_to_ingress(bytearray(sbom_file.encode()))
 
-    with pr.path(test_data, "findings-dt-sbom-keycloak.json") as file_path:
+    with path(test_data, "findings-dt-sbom-keycloak.json") as file_path:
         upload_to_test_bucket(str(file_path), "findings-dt-sbom-keycloak.json")
 
     # Get the correct name of the SBOM we uploaded through ingress
@@ -68,27 +78,84 @@ def test_summarizer_has_results(
     # Send event into summarizer
     summarizer_handler(event)
 
-    list_of_files = []
+    files_in_bucket = []
 
     # Collect list of all the files currently in the bucket
     for bucket_objects in s3_test_bucket.objects.all():
-        list_of_files.append(bucket_objects.key)
+        files_in_bucket.append(bucket_objects.key)
 
-    # Verify the new report file is in the bucket
+    return files_in_bucket
+
+
+def test_summarizer_has_results(
+    upload_to_test_bucket: Callable,
+    s3_test_bucket,
+    upload_to_ingress: Callable,
+    test_dynamo_db_resource,
+    test_harbor_teams_table,
+):
+
+    """
+    -> Verifies the summarizer returns a report file
+    -> that has the data requested in the event value
+    """
+    list_of_files = summarize_data(
+        upload_to_test_bucket,
+        s3_test_bucket,
+        upload_to_ingress,
+        test_dynamo_db_resource,
+    )
+
+    # There should only be 4 files in the bucket: orignal_sbom,
+    # original_findings, normalized_sbom, normalized_findings
+    assert len(list_of_files) == 4
+
+    # Verify the expected files are in the bucket
     project = "TestProject"
     fisma = "testFisma"
 
-    flattened_file_pattern = f"harbor-data-summary-{project}-{fisma}-*"
+    flattened_file_pattern = f"harbor-data-summary-{FileTypes.sbom}-{project}-{fisma}-*"
     assert len(fnmatch.filter(list_of_files, flattened_file_pattern)) >= 1
 
-    # TODO delete the following or move it to another file, this only
-    #  exists as an easy way to debug output
-    # s3_obj_wrapper = s3_test_bucket.Object(expected_file_name)
-    # s3_object: dict = s3_obj_wrapper.get()
-    # report_file = s3_object["Body"].read().decode("utf-8")
-    # json_report = json.loads(report_file)
-    #
-    # filehandle = open(f"/home/m32956/workspace/cyclonedx-python/tests
-    #   /handlers/summarizer_handler/{expected_file_name}.json", "w")
-    # filehandle.writelines(json.dumps(json_report, indent=4))
-    # filehandle.close()
+    flattened_file_pattern = (
+        f"harbor-data-summary-{FileTypes.findings}-{project}-{fisma}-*"
+    )
+    assert len(fnmatch.filter(list_of_files, flattened_file_pattern)) >= 1
+
+
+@pytest.mark.skip(reason="Only used for debugging summary files")
+def test_get_summary_output(
+    upload_to_test_bucket: Callable,
+    s3_test_bucket,
+    upload_to_ingress: Callable,
+    test_dynamo_db_resource,
+    test_harbor_teams_table,
+):
+    """
+    -> Helpful utility to refresh and update the sample summary files.
+    -> Intentionally disabled by default
+    """
+    directory_files = glob.glob(f"{files(summary_samples)}/*.json", recursive=True)
+
+    for f in directory_files:
+        try:
+            os.remove(f)
+        except OSError as e:
+            print("Error: %s : %s" % (f, e.strerror))
+
+    list_of_files = summarize_data(
+        upload_to_test_bucket,
+        s3_test_bucket,
+        upload_to_ingress,
+        test_dynamo_db_resource,
+    )
+
+    for file in list_of_files:
+        s3_obj_wrapper = s3_test_bucket.Object(file)
+        s3_object: dict = s3_obj_wrapper.get()
+        report_file = s3_object["Body"].read().decode("utf-8")
+        json_report = loads(report_file)
+
+        filehandle = open(f"{files(summary_samples)}/{file}.json", "w")
+        filehandle.writelines(dumps(json_report, indent=4))
+        filehandle.close()

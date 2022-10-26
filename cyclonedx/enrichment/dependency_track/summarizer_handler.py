@@ -1,8 +1,7 @@
-from datetime import datetime
-from json import (
-    loads,
-    dumps
-)
+"""This handler takes findings and it's associated SBOM,
+and then outputs flattened versions of the files"""
+
+from json import loads, dumps
 
 import boto3
 from boto3 import resource
@@ -10,36 +9,52 @@ from json_normalize import json_normalize
 
 from cyclonedx.constants import (
     SBOM_BUCKET_NAME_KEY,
-    SBOM_S3_KEY
+    SBOM_S3_KEY,
+    S3_META_TIMESTAMP_KEY,
+    S3_META_TEAM_KEY,
+    S3_META_PROJECT_KEY,
+    S3_META_CODEBASE_KEY,
 )
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.model.project import Project
 
 
+class FileTypes:
+    """Simple class to track output file types"""
+
+    sbom = "SBOM"
+    findings = "FINDINGS"
+
+
 def summarizer_handler(event: dict = None, context: dict = None):
-    """ This handler retrieves the findings file and associated SBOM from the S3 bucket, adds some metadata,
-     combines them, and then flattens them into a single file that uses dot notation. EX: field.subfield.item
-     The newly created flattened file is then placed into the S3 bucket with the naming scheme of:
-     harbor-sbom_name-report-company_name-FISMA_ID-submit_date
-      """
-    compiled_results = []
-    bucket_name = None
-    sbom_name = None
+    """This handler retrieves the findings file and associated SBOM from the S3 bucket,
+     adds some metadata,
+    combines them, and then flattens them into a single file that uses dot notation.
+     EX: field.subfield.item
+    The newly created flattened file is then placed into the S3 bucket with the
+    naming scheme of:
+    harbor-sbom_name-report-company_name-FISMA_ID-submit_date
+    """
 
-    original_sbom = None
-    original_sbom_metadata = None
+    sbom_data: list = []
+    findings_data: list = []
+    bucket_name: str = ""
+    sbom_name: str = ""
 
-    s3 = resource("s3")
+    original_sbom: str = ""
+    original_sbom_metadata: dict = {}
+
+    s3: resource() = resource("s3")
 
     for result in event:
 
-        if bucket_name is None:
+        if not bucket_name:
             bucket_name = result[SBOM_BUCKET_NAME_KEY]
 
-        if sbom_name is None:
+        if not sbom_name:
             sbom_name = result[SBOM_S3_KEY]
 
-        if original_sbom is None:
+        if not original_sbom:
             sbom_object = get_object_from_s3(s3, bucket_name, sbom_name)
             original_sbom = sbom_object["Body"].read().decode("utf-8")
             original_sbom_metadata = sbom_object["Metadata"]
@@ -53,31 +68,38 @@ def summarizer_handler(event: dict = None, context: dict = None):
 
         add_metadata_to_finding(findings_s3_json, original_sbom_metadata)
 
-        compiled_results.append(findings_s3_json)
+        findings_data.append(findings_s3_json)
 
-    compiled_results.append(loads(original_sbom))
+    sbom_data.append(loads(original_sbom))
 
     # The normalizer field combine_lists takes the values "chain" or "product".
     # "product" may be better, but it is causing memory problems (locally at least)
-    normalized_results = json_normalize(compiled_results, combine_lists="chain")
+    sbom_data_normalized = json_normalize(sbom_data, combine_lists="chain")
+    findings_data_normalized = json_normalize(findings_data, combine_lists="chain")
 
-    s3.Object(bucket_name, generate_report_filename(original_sbom_metadata)).put(
-        Body=bytearray(dumps(list(normalized_results)), "utf-8"),
+    s3.Object(
+        bucket_name, generate_report_filename(FileTypes.sbom, original_sbom_metadata)
+    ).put(
+        Body=bytearray(dumps(list(sbom_data_normalized)), "utf-8"),
+    )
+
+    s3.Object(
+        bucket_name,
+        generate_report_filename(FileTypes.findings, original_sbom_metadata),
+    ).put(
+        Body=bytearray(dumps(list(findings_data_normalized)), "utf-8"),
     )
 
 
-def generate_report_filename(metadata: dict):
+def generate_report_filename(data_type: str, metadata: dict):
 
-    # get timestamp value and convert to date time if it exists
+    """Creates a filename for the report following the format of:
+    harbor-data-summary-{data_type}-{project}-{project_model.fisma}-{timestamp}"""
     db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
 
-    submit_date = ""
-    timestamp = metadata.get('x-amz-meta-sbom-api-timestamp', "")
-    if timestamp:
-        submit_date = datetime.fromtimestamp(float(timestamp)).isoformat()
-
-    project = metadata.get('x-amz-meta-sbom-api-project', "")
-    team = metadata.get('x-amz-meta-sbom-api-team', "")
+    timestamp = metadata.get(S3_META_TIMESTAMP_KEY, "")
+    project = metadata.get(S3_META_PROJECT_KEY, "")
+    team = metadata.get(S3_META_TEAM_KEY, "")
 
     project_model: Project = db_client.get(
         Project(
@@ -86,7 +108,9 @@ def generate_report_filename(metadata: dict):
         )
     )
 
-    return f"harbor-data-summary-{project}-{project_model.fisma}-{submit_date}"
+    return (
+        f"harbor-data-summary-{data_type}-{project}-{project_model.fisma}-{timestamp}"
+    )
 
 
 def get_object_from_s3(s3: resource, bucket_name: str, key: str) -> dict:
@@ -96,6 +120,6 @@ def get_object_from_s3(s3: resource, bucket_name: str, key: str) -> dict:
 
 def add_metadata_to_finding(finding_json: dict, metadata: dict):
     """adds metadata to the findings"""
-    finding_json["project"]["name"] = metadata["x-amz-meta-sbom-api-project"]
-    finding_json["project"]["team"] = metadata["x-amz-meta-sbom-api-team"]
-    finding_json["project"]["codebase"] = metadata["x-amz-meta-sbom-api-codebase"]
+    finding_json["project"]["name"] = metadata[S3_META_PROJECT_KEY]
+    finding_json["project"]["team"] = metadata[S3_META_TEAM_KEY]
+    finding_json["project"]["codebase"] = metadata[S3_META_CODEBASE_KEY]
