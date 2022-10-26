@@ -11,6 +11,8 @@ import requests
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
+from tests.data.add_test_team_data_to_dynamodb import test_add_test_team
+from tests.data.create_cognito_users import test_create_cognito_users
 from tests.e2e import (
     login,
     get_cloudfront_url,
@@ -94,6 +96,9 @@ def test_get_teams():
     -> Get the teams
     """
 
+    test_add_test_team()
+    test_create_cognito_users()
+
     jwt = login(cf_url)
 
     url = f"{cf_url}/api/v1/teams"
@@ -126,6 +131,9 @@ def test_get_teams_with_children():
     -> Get Teams With Children
     """
 
+    test_add_test_team()
+    test_create_cognito_users()
+
     jwt = login(cf_url)
 
     url = f"{cf_url}/api/v1/teams?children=true"
@@ -157,20 +165,26 @@ def test_get_teams_with_children():
         fail()
 
 
-def test_get_team():
+def test_get_team(team_id: str = None):
 
     """
-    -> Get Team
+    -> Get Team. The results of this query will not have children
     """
 
-    jwt = login(cf_url)
-
-    team_id: str = "18f863b5-0d3d-43cf-87e3-33a6a7d5842d"
+    if not team_id:
+        jwt, team_id = test_create_team()
+    else:
+        jwt = login(cf_url)
 
     url = f"{cf_url}/api/v1/team/{team_id}"
 
     print(f"Sending To: GET:{url}")
-    team_rsp = requests.get(url, headers={"Authorization": jwt})
+    team_rsp = requests.get(
+        url,
+        headers={
+            "Authorization": jwt,
+        },
+    )
 
     print_response(team_rsp)
     team_dict: dict = team_rsp.json()
@@ -178,33 +192,33 @@ def test_get_team():
     assert list(team_dict.keys()) == [team_id]
 
 
-def test_get_team_with_children():
+def test_get_team_with_children(team_id: str = None):
 
     """
     -> Get team with children
     """
 
-    jwt = login(cf_url)
-
-    team_id: str = "18f863b5-0d3d-43cf-87e3-33a6a7d5842d"
+    if not team_id:
+        jwt, team_id = test_create_team()
+    else:
+        jwt = login(cf_url)
 
     url = f"{cf_url}/api/v1/team/{team_id}?children=true"
 
     print(f"Sending To: GET:{url}")
-    team_rsp = requests.get(url, headers={"Authorization": jwt})
+    team_rsp = requests.get(
+        url,
+        headers={
+            "Authorization": jwt,
+        },
+    )
 
     print_response(team_rsp)
     team_dict: dict = team_rsp.json()
 
     assert list(team_dict.keys()) == [team_id]
 
-    try:
-
-        dp1 = team_dict[team_id]
-        assert dp1["projects"]
-
-    except KeyError:
-        fail()
+    return team_dict
 
 
 def test_create_team():
@@ -217,12 +231,14 @@ def test_create_team():
 
     name: str = "TeamName"
 
-    url = "https://b5jpfzyp5l.execute-api.us-east-1.amazonaws.com/api/v1/team"
+    url = f"{cf_url}/api/v1/team"
 
     print(f"Sending To: POST:{url}")
     team_rsp = requests.post(
         url,
-        headers={"Authorization": jwt},
+        headers={
+            "Authorization": jwt,
+        },
         json={
             "name": name,
         },
@@ -249,7 +265,7 @@ def test_create_team_with_children():
     proj1_name: str = "TestProjectName1"
     proj2_name: str = "TestProjectName2"
 
-    url = "https://b5jpfzyp5l.execute-api.us-east-1.amazonaws.com/api/v1/team"
+    url = f"{cf_url}/api/v1/team"
 
     print(f"Sending To: POST:{url}")
     team_rsp = requests.post(
@@ -379,3 +395,17 @@ def test_delete_team():
     team_id_after_delete: str = list(team_dict.keys())[0]
 
     assert team_id == team_id_after_delete
+
+
+def test_initial_token_created_when_team_created():
+
+    """
+    -> Test that an initial token is created when a team is created
+    """
+
+    _, team_id = test_create_team()
+    rsp: dict = test_get_team_with_children(team_id)
+    team: dict = list(rsp.values()).pop()
+    tokens: dict = team["tokens"]
+
+    assert len(tokens.values()) == 1

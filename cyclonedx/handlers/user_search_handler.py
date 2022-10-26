@@ -1,15 +1,13 @@
 """
 -> Module for User Search
 """
-from json import dumps
 from os import environ
 
 from cyclonedx.constants import (
     USER_POOL_NAME_KEY,
 )
-from cyclonedx.handlers.common import cognito_client
-from cyclonedx.handlers.cyclonedx_util import (
-    __create_user_search_response_obj,
+from cyclonedx.handlers.common import cognito_client, harbor_response
+from cyclonedx.handlers.dependency_track import (
     __get_query_string_params_from_event,
 )
 
@@ -40,4 +38,4 @@ def user_search_handler(event: dict = None, context: dict = None):
         attr = user["Attributes"]
         emails.append(attr[0]["Value"])
 
-    return __create_user_search_response_obj(200, dumps(emails))
+    return harbor_response(200, emails)

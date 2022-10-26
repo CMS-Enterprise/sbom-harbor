@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import copy
 from enum import Enum
+from uuid import uuid4
 
 from cyclonedx.constants import (
     HARBOR_TEAMS_TABLE_PARTITION_KEY,
@@ -14,9 +15,20 @@ from cyclonedx.constants import (
 )
 
 
+def generate_model_id():
+
+    """
+    -> This is the single location that model object IDs are created
+    """
+
+    return str(uuid4())
+
+
 class EntityType(Enum):
 
-    """EntityType Defines the Model Types"""
+    """
+    -> EntityType Defines the Model Types
+    """
 
     TEAM = "team"
     PROJECT = "project"

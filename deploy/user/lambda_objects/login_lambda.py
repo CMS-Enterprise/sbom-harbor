@@ -1,3 +1,6 @@
+"""
+-> Module to house the SBOMLoginLambda Construct
+"""
 from aws_cdk import (
     aws_ec2 as ec2,
     aws_iam as iam,
@@ -20,7 +23,7 @@ from deploy.util import create_asset
 
 class SBOMLoginLambda(Construct):
 
-    """ Lambda to manage logging in """
+    """Lambda to manage logging in"""
 
     def __init__(
         self,
@@ -41,28 +44,33 @@ class SBOMLoginLambda(Construct):
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
-            handler="cyclonedx.user.login_handler",
+            handler="cyclonedx.handlers.login_handler",
             code=create_asset(self),
             timeout=Duration.seconds(10),
             memory_size=512,
             environment={
                 USER_POOL_NAME_KEY: user_pool_id,
-                USER_POOL_CLIENT_ID_KEY: user_pool_client_id
-            }
+                USER_POOL_CLIENT_ID_KEY: user_pool_client_id,
+            },
         )
 
-        self.login_func.add_to_role_policy(iam.PolicyStatement(
-            effect=iam.Effect.ALLOW,
-            actions=[
-                'cognito-idp:AdminGetUser',
-                'cognito-idp:AdminEnableUser',
-                'cognito-idp:AdminDisableUser',
-                'cognito-idp:AdminInitiateAuth',
-            ],
-            resources=[
-                f"*"
-            ]
-        ))
+        self.login_func.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "cognito-idp:AdminGetUser",
+                    "cognito-idp:AdminEnableUser",
+                    "cognito-idp:AdminDisableUser",
+                    "cognito-idp:AdminInitiateAuth",
+                ],
+                resources=["*"],
+            )
+        )
 
     def get_lambda_function(self):
+
+        """
+        -> Get the actual Lambda Construct
+        """
+
         return self.login_func

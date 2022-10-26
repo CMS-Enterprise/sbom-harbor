@@ -1,10 +1,20 @@
 """ Token Model Object. Represents a Token within the SBOM Harbor System. """
+from uuid import uuid4
 
 from cyclonedx.model import (
     EntityKey,
     HarborModel,
     EntityType,
 )
+
+
+def generate_token() -> str:
+
+    """
+    -> Function to generate an API token consistently
+    """
+
+    return f"sbom-api-{uuid4()}"
 
 
 class Token(HarborModel):

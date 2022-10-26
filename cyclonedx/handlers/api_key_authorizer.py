@@ -3,14 +3,13 @@
 -> authorization when uploading and SBOM.
 """
 
-import datetime
-from json import dumps
+from datetime import datetime
 
 import boto3
 
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.exceptions.database_exception import DatabaseError
-from cyclonedx.handlers.common import _extract_id_from_path
+from cyclonedx.handlers.common import _extract_id_from_path, harbor_response
 from cyclonedx.model.team import Team
 from cyclonedx.handlers.common import (
     allow_policy,
@@ -39,17 +38,19 @@ def api_key_authorizer_handler(event: dict, context: dict = None):
             recurse=True,
         )
     except KeyError as ke:
-        return {
-            "statusCode": 400,
-            "isBase64Encoded": False,
-            "body": dumps({"error": f"Unable to find key: {ke}"}),
-        }
+        return harbor_response(
+            400,
+            {
+                "error": f"Unable to find key: {ke}",
+            },
+        )
     except DatabaseError as de:
-        return {
-            "statusCode": 400,
-            "isBase64Encoded": False,
-            "body": dumps({"error": f"Missing team {de}"}),
-        }
+        return harbor_response(
+            400,
+            {
+                "error": f"Missing team {de}",
+            },
+        )
 
     # Set the policy to default Deny
     policy: dict = deny_policy()
@@ -59,11 +60,10 @@ def api_key_authorizer_handler(event: dict, context: dict = None):
 
         # Make sure the token is enabled
         if token_obj.token == token and token_obj.enabled:
-            now = datetime.datetime.now().timestamp()
             expires = token_obj.expires
 
             # Make sure the token is not expired
-            if now < float(expires):
+            if datetime.now() < datetime.fromisoformat(expires):
                 policy = allow_policy(method_arn, "")
 
     # If the token exists, is enabled and not expired, then allow

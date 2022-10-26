@@ -9,7 +9,7 @@ from cyclonedx.constants import (
     USER_POOL_NAME_KEY,
 )
 from cyclonedx.handlers.common import cognito_client
-from cyclonedx.handlers.cyclonedx_util import (
+from cyclonedx.handlers.dependency_track import (
     __get_body_from_first_record,
 )
 

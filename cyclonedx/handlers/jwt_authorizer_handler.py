@@ -4,6 +4,7 @@
 from typing import Callable
 
 import boto3
+from botocore.exceptions import ClientError
 from jose import jwt
 
 from cyclonedx.handlers.common import (
@@ -82,7 +83,10 @@ def _get_user(username: str, event: dict, client):
     """
 
     cognito_user_pool_id = _get_cognito_user_pool_id(event)
-    return client.admin_get_user(UserPoolId=cognito_user_pool_id, Username=username)
+    return client.admin_get_user(
+        UserPoolId=cognito_user_pool_id,
+        Username=username,
+    )
 
 
 def _verify_token(token: str):
@@ -106,15 +110,20 @@ def jwt_authorizer_handler(event, context):
     print_values(event, context)
 
     (method_arn, token, username) = _get_arn_token_username(event)
-    cognito_user = _get_user(
-        username,
-        event,
-        boto3.client("cognito-idp"),
-    )
-    teams: str = _get_teams(cognito_user)
 
-    return _get_policy(
-        method_arn=method_arn,
-        teams=teams,
-        token=token,
-    )
+    try:
+
+        cognito_user = _get_user(
+            username,
+            event,
+            boto3.client("cognito-idp"),
+        )
+        teams: str = _get_teams(cognito_user)
+
+        return _get_policy(
+            method_arn=method_arn,
+            teams=teams,
+            token=token,
+        )
+    except ClientError:
+        return deny_policy()

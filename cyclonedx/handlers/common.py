@@ -5,6 +5,7 @@
 import uuid
 from json import dumps, loads
 import importlib.resources as pr
+from typing import Union
 
 import boto3
 
@@ -29,6 +30,20 @@ def _wildcardize(method_arn: str):
     split_arn: list[str] = method_arn.split("/")
     preamble: str = split_arn[0]
     return f"{preamble}/*/*"
+
+
+# pylint: disable = E1136
+def harbor_response(status_code: int, body: Union[dict, list]):
+
+    """
+    -> Generate a response for a lambda.
+    """
+
+    return {
+        "statusCode": status_code,
+        "isBase64Encoded": False,
+        "body": dumps(body),
+    }
 
 
 def allow_policy(method_arn: str, teams: str):

@@ -3,6 +3,7 @@
 """
 import copy
 import pytest
+from moto import mock_cognitoidp
 
 from cyclonedx.handlers.common import (
     _wildcardize,
@@ -267,6 +268,7 @@ def test_deny_policy():
     assert policy["policyDocument"]["Statement"][0]["Effect"] == "Deny"
 
 
+@mock_cognitoidp
 def test_jwt_authorizer_handler():
 
     """

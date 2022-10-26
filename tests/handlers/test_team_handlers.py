@@ -55,6 +55,12 @@ def test_flow():
     res_team_id: str = list(response_dict.keys()).pop()
     assert team_id == res_team_id
 
+    # Test to verify that a single token is also
+    # created when the team is: ISPGCASP-864
+    team: dict = list(response_dict.values()).pop()
+    tokens: dict = team["tokens"]
+    assert len(tokens.values()) == 1
+
     res_team_dict: dict = response_dict[res_team_id]
     res_projects_dict: dict = res_team_dict["projects"]
     res_projects_ids: list = list(res_projects_dict.keys())

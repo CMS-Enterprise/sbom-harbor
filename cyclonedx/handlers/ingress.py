@@ -1,3 +1,6 @@
+"""
+-> Module to house the SBOM Ingress Handler
+"""
 import datetime
 from json import dumps
 from os import environ
@@ -11,14 +14,15 @@ from cyclonedx.constants import (
     S3_META_TEAM_KEY,
     S3_META_PROJECT_KEY,
     S3_META_CODEBASE_KEY,
-    S3_META_TIMESTAMP_KEY
+    S3_META_TIMESTAMP_KEY,
 )
-from cyclonedx.handlers.cyclonedx_util import (
+from cyclonedx.handlers.dependency_track import (
     __create_pristine_response_obj,
     __get_body_from_event,
 )
 
 from cyclonedx.core import CycloneDxCore
+
 
 def sbom_ingress_handler(event: dict = None, context: dict = None) -> dict:
 

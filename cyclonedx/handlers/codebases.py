@@ -1,9 +1,8 @@
 """
 -> This module contains the handlers for CRUDing CodeBases
 """
-import uuid
 
-from json import dumps, loads
+from json import loads
 
 import boto3
 
@@ -15,9 +14,11 @@ from cyclonedx.handlers.common import (
     _extract_team_id_from_qs,
     _get_method,
     print_values,
+    harbor_response,
     _should_process_children,
     update_codebase_data,
 )
+from cyclonedx.model import generate_model_id
 from cyclonedx.model.team import Team
 from cyclonedx.model.codebase import CodeBase
 
@@ -55,17 +56,13 @@ def codebases_handler(event: dict, context: dict) -> dict:
         for codebase in
             codebase_list
     ]
-    response: dict = {
+    resp: dict = {
         codebase.entity_id: codebase.to_json()
         for codebase in codebases
     }
     # fmt: on
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps(response),
-    }
+    return harbor_response(200, resp)
 
 
 def _do_get(event: dict, db_client: HarborDBClient) -> dict:
@@ -84,11 +81,12 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
         recurse=_should_process_children(event),
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({codebase_id: codebase.to_json()}),
-    }
+    return harbor_response(
+        200,
+        {
+            codebase_id: codebase.to_json(),
+        },
+    )
 
 
 def _do_post(event: dict, db_client: HarborDBClient) -> dict:
@@ -103,7 +101,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
     project_id: str = _extract_project_id_from_qs(event)
 
     request_body: dict = loads(event["body"])
-    codebase_id: str = str(uuid.uuid4())
+    codebase_id: str = generate_model_id()
 
     codebase: CodeBase = db_client.create(
         model=CodeBase(
@@ -116,11 +114,12 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
         ),
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({codebase_id: codebase.to_json()}),
-    }
+    return harbor_response(
+        200,
+        {
+            codebase_id: codebase.to_json(),
+        },
+    )
 
 
 def _do_put(event: dict, db_client: HarborDBClient) -> dict:
@@ -163,11 +162,12 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
         recurse=False,
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({codebase_id: codebase.to_json()}),
-    }
+    return harbor_response(
+        200,
+        {
+            codebase_id: codebase.to_json(),
+        },
+    )
 
 
 def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
@@ -189,11 +189,12 @@ def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
         model=codebase,
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({codebase_id: codebase.to_json()}),
-    }
+    return harbor_response(
+        200,
+        {
+            codebase_id: codebase.to_json(),
+        },
+    )
 
 
 def codebase_handler(event: dict, context: dict) -> dict:
@@ -224,14 +225,6 @@ def codebase_handler(event: dict, context: dict) -> dict:
             result = _do_delete(event, db_client)
         return result
     except ValueError as ve:
-        return {
-            "statusCode": 400,
-            "isBase64Encoded": False,
-            "body": dumps({"error": str(ve)}),
-        }
+        return harbor_response(400, {"error": str(ve)})
     except DatabaseError as de:
-        return {
-            "statusCode": 400,
-            "isBase64Encoded": False,
-            "body": dumps({"error": str(de)}),
-        }
+        return harbor_response(400, {"error": str(de)})

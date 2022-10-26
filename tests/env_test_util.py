@@ -16,8 +16,8 @@ from cyclonedx.constants import (
     S3_META_CODEBASE_KEY,
 )
 from cyclonedx.dtendpoints import DTEndpoints
-from cyclonedx.handlers.cyclonedx_util import ICClient
 from cyclonedx.enrichment import des_interface_handler
+from cyclonedx.handlers.ion_channel import ICClient
 
 
 def test_add_team_to_teams_custom_attribute():

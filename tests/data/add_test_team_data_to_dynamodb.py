@@ -5,7 +5,6 @@
 
 import logging
 import uuid
-from decimal import Decimal
 from datetime import (
     datetime,
     timedelta,
@@ -14,6 +13,7 @@ from datetime import (
 import boto3
 
 from cyclonedx.db.harbor_db_client import HarborDBClient
+from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.model import EntityType
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member
@@ -47,8 +47,8 @@ language = "TYPESCRIPT"
 build_tool = "YARN"
 
 now = datetime.now()
-created = Decimal(now.timestamp())
-expires = Decimal((now + timedelta(days=100)).timestamp())
+created = datetime.now()
+expires = now + timedelta(days=100)
 token_val = str(uuid.uuid4())
 
 
@@ -77,6 +77,15 @@ def test_add_test_team():
     """
 
     for team_id in ["dawn-patrol", "dusk-patrol"]:
+
+        try:
+            HarborDBClient(ddb_resource).delete(
+                Team(team_id=team_id),
+                recurse=True,
+            )
+        except DatabaseError:
+            ...
+
         HarborDBClient(ddb_resource).create(
             Team(
                 team_id=team_id,
@@ -112,8 +121,8 @@ def test_add_test_team():
                         token_id=token_id,
                         name=f"{team_id}-{token_id}",
                         enabled=True,
-                        created=created,
-                        expires=expires,
+                        created=created.isoformat(),
+                        expires=expires.isoformat(),
                         token=token_val,
                     )
                 ],

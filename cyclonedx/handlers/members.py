@@ -1,9 +1,6 @@
 """
 -> This module contains the handlers for CRUDing Members
 """
-from uuid import uuid4
-
-from json import dumps
 
 import boto3
 
@@ -15,8 +12,10 @@ from cyclonedx.handlers.common import (
     _get_method,
     _get_request_body_as_dict,
     print_values,
+    harbor_response,
     _should_process_children,
 )
+from cyclonedx.model import generate_model_id
 from cyclonedx.model.team import Team
 from cyclonedx.model.member import Member
 
@@ -43,17 +42,13 @@ def members_handler(event: dict, context: dict) -> dict:
 
     # fmt: off
     # Declare a response dictionary
-    response: dict = {
+    resp: dict = {
         member.entity_id: member.to_json()
         for member in team.members
     }
     # fmt: on
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps(response),
-    }
+    return harbor_response(200, resp)
 
 
 def _do_get(event: dict, db_client: HarborDBClient) -> dict:
@@ -72,11 +67,7 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
         recurse=_should_process_children(event),
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({member_id: member.to_json()}),
-    }
+    return harbor_response(200, {member_id: member.to_json()})
 
 
 def _do_post(event: dict, db_client: HarborDBClient) -> dict:
@@ -92,7 +83,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
     request_body: dict = _get_request_body_as_dict(event)
 
     # Generate a new member id
-    member_id: str = str(uuid4())
+    member_id: str = generate_model_id()
 
     member: Member = db_client.create(
         model=Member(
@@ -103,11 +94,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
         ),
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({member_id: member.to_json()}),
-    }
+    return harbor_response(200, {member_id: member.to_json()})
 
 
 def _do_put(event: dict, db_client: HarborDBClient) -> dict:
@@ -153,11 +140,7 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
         recurse=False,
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({member_id: member.to_json()}),
-    }
+    return harbor_response(200, {member_id: member.to_json()})
 
 
 def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
@@ -179,11 +162,7 @@ def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
         model=member,
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({member_id: member.to_json()}),
-    }
+    return harbor_response(200, {member_id: member.to_json()})
 
 
 def member_handler(event: dict, context: dict) -> dict:
@@ -214,14 +193,6 @@ def member_handler(event: dict, context: dict) -> dict:
             result = _do_delete(event, db_client)
         return result
     except ValueError as ve:
-        return {
-            "statusCode": 400,
-            "isBase64Encoded": False,
-            "body": dumps({"error": str(ve)}),
-        }
+        return harbor_response(400, {"error": str(ve)})
     except DatabaseError as de:
-        return {
-            "statusCode": 400,
-            "isBase64Encoded": False,
-            "body": dumps({"error": str(de)}),
-        }
+        return harbor_response(400, {"error": str(de)})

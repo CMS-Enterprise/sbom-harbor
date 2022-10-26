@@ -29,3 +29,5 @@ from .members import (
 )
 
 from .jwt_authorizer_handler import jwt_authorizer_handler
+from .login_handler import login_handler
+from .user_search_handler import user_search_handler

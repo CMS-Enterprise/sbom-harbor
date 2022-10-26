@@ -1,3 +1,6 @@
+"""
+-> Module for the Dependency Track Interface Handler
+"""
 from io import StringIO
 from json import dumps
 
@@ -7,18 +10,18 @@ from cyclonedx.constants import (
     SBOM_BUCKET_NAME_KEY,
     SBOM_S3_KEY,
 )
-from cyclonedx.handlers.cyclonedx_util import (
+from cyclonedx.handlers.dependency_track import (
     __validate,
     __create_project,
     __upload_sbom,
     __get_findings,
-    __delete_project
+    __delete_project,
 )
 
 
 def dt_interface_handler(event: dict = None, context: dict = None):
 
-    """ Dependency Track Ingress Handler
+    """Dependency Track Ingress Handler
     This code takes an SBOM in the S3 Bucket and submits it to Dependency Track
     to get findings.  To accomplish this, a project must be created in DT, the
     SBOM submitted under that project, then the project is deleted.

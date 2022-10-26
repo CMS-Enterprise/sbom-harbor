@@ -2,7 +2,6 @@
 -> This module contains the handlers for CRUDing Tokens
 """
 from datetime import datetime
-import uuid
 
 from json import dumps, loads
 
@@ -18,8 +17,9 @@ from cyclonedx.handlers.common import (
     print_values,
     _should_process_children,
 )
+from cyclonedx.model import generate_model_id
 from cyclonedx.model.team import Team
-from cyclonedx.model.token import Token
+from cyclonedx.model.token import Token, generate_token
 
 
 def tokens_handler(event: dict, context: dict) -> dict:
@@ -89,7 +89,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
 
     # Get the team id from the querystring
     team_id: str = _extract_team_id_from_qs(event)
-    token_id: str = str(uuid.uuid4())
+    token_id: str = generate_model_id()
 
     request_body: dict = loads(event["body"])
 
@@ -118,7 +118,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
             created=created,
             expires=expires,
             enabled=True,
-            token=f"sbom-api-{uuid.uuid4()}",
+            token=generate_token(),
         ),
     )
 

@@ -2,7 +2,6 @@
 -> Module for the code that tests the api_key_authorizer_handler
 """
 import datetime
-from decimal import Decimal
 from uuid import uuid4
 
 import boto3
@@ -44,8 +43,8 @@ def test_good_token():
                     team_id=team_id,
                     token_id=token_id,
                     name=token_name,
-                    created=Decimal(created.timestamp()),
-                    expires=Decimal(expires.timestamp()),
+                    created=created.isoformat(),
+                    expires=expires.isoformat(),
                     enabled=True,
                     token=token,
                 )
@@ -99,8 +98,8 @@ def test_expired_token():
                     team_id=team_id,
                     token_id=token_id,
                     name=token_name,
-                    created=Decimal(created.timestamp()),
-                    expires=Decimal(expires.timestamp()),
+                    created=created.isoformat(),
+                    expires=expires.isoformat(),
                     enabled=True,
                     token=token,
                 )
@@ -152,8 +151,8 @@ def test_disabled_token():
                     team_id=team_id,
                     token_id=token_id,
                     name=token_name,
-                    created=Decimal(created.timestamp()),
-                    expires=Decimal(expires.timestamp()),
+                    created=created.isoformat(),
+                    expires=expires.isoformat(),
                     enabled=False,
                     token=token,
                 )

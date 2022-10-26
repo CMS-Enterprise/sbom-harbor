@@ -1,10 +1,10 @@
 """
 -> Ion Channel Interface Handler
 """
-from cyclonedx.handlers.cyclonedx_util import (
+from cyclonedx.handlers.dependency_track import (
     __get_all_s3_obj_data,
-    ICClient,
 )
+from cyclonedx.handlers.ion_channel import ICClient
 
 
 def ic_interface_handler(event: dict = None, context: dict = None):

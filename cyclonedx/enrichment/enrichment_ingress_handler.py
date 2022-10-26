@@ -1,3 +1,6 @@
+"""
+-> Module for the Enrichment Ingress Handler
+"""
 from json import dumps
 
 import boto3
@@ -8,9 +11,9 @@ from cyclonedx.constants import (
     EVENT_BUS_SOURCE,
     SBOM_BUCKET_NAME_KEY,
     SBOM_S3_KEY,
-    EVENT_BUS_NAME
+    EVENT_BUS_NAME,
 )
-from cyclonedx.handlers.cyclonedx_util import __get_records_from_event
+from cyclonedx.handlers.dependency_track import __get_records_from_event
 
 
 def enrichment_ingress_handler(event: dict = None, context: dict = None):
@@ -35,8 +38,7 @@ def enrichment_ingress_handler(event: dict = None, context: dict = None):
         sbom_obj = s3_obj["object"]
         key: str = sbom_obj["key"]
 
-        eb_client = boto3.client('events')
-
+        eb_client = boto3.client("events")
 
         # s3_object = s3.Object(bucket_name, key).get()
 
@@ -49,17 +51,17 @@ def enrichment_ingress_handler(event: dict = None, context: dict = None):
         response = eb_client.put_events(
             Entries=[
                 {
-                    'Source': EVENT_BUS_SOURCE,
-                    'DetailType': EVENT_BUS_DETAIL_TYPE,
-                    'Detail': dumps(
+                    "Source": EVENT_BUS_SOURCE,
+                    "DetailType": EVENT_BUS_DETAIL_TYPE,
+                    "Detail": dumps(
                         {
                             SBOM_BUCKET_NAME_KEY: bucket_name,
                             SBOM_S3_KEY: key,
-                            'results': {},
-                            'output': {},
+                            "results": {},
+                            "output": {},
                         },
                     ),
-                    'EventBusName': EVENT_BUS_NAME,
+                    "EventBusName": EVENT_BUS_NAME,
                 },
             ],
         )

@@ -2,7 +2,6 @@
 -> This module contains the handlers for CRUDing Projects
 """
 
-import uuid
 from json import dumps
 
 import boto3
@@ -19,6 +18,7 @@ from cyclonedx.handlers.common import (
     _to_codebases,
     _update_codebases,
 )
+from cyclonedx.model import generate_model_id
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
 
@@ -78,7 +78,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
     team_id: str = _extract_team_id_from_qs(event)
 
     request_body: dict = _get_request_body_as_dict(event)
-    project_id: str = str(uuid.uuid4())
+    project_id: str = generate_model_id()
 
     project: Project = db_client.create(
         model=Project(

@@ -1,9 +1,9 @@
 """
 -> This module contains the handlers for CRUDing Teams
 """
-
-import uuid
-from json import dumps, loads
+import datetime
+from datetime import timedelta
+from json import loads
 
 import boto3
 
@@ -14,13 +14,16 @@ from cyclonedx.handlers.common import (
     _extract_id_from_path,
     _get_method,
     print_values,
+    harbor_response,
     _should_process_children,
     _to_members,
     _to_projects,
     _update_members,
     _update_projects,
 )
+from cyclonedx.model import generate_model_id
 from cyclonedx.model.team import Team
+from cyclonedx.model.token import Token, generate_token
 
 
 def teams_handler(event: dict, context: dict) -> dict:
@@ -33,57 +36,65 @@ def teams_handler(event: dict, context: dict) -> dict:
 
     db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
 
-    # Dig the teams ids out of the response we put into the policy
-    # that dictates if the user can even access the resource.
-    request_context: dict = event["requestContext"]
-    authorizer: dict = request_context["authorizer"]
-    lambda_key: dict = authorizer["lambda"]
-    team_ids: str = lambda_key["teams"]
+    try:
 
-    # Split the string up if the delimiter exists.  Each string token
-    # is treated like a separate team id.
-    if COGNITO_TEAM_DELIMITER in team_ids:
-        team_ids_lst = team_ids.split(COGNITO_TEAM_DELIMITER)
-    else:
-        team_ids_lst = [team_ids]
+        # Dig the teams ids out of the response we put into the policy
+        # that dictates if the user can even access the resource.
+        request_context: dict = event["requestContext"]
+        authorizer: dict = request_context["authorizer"]
+        lambda_key: dict = authorizer["lambda"]
+        team_ids: str = lambda_key["teams"]
 
-    # Get the children if there are any
-    get_children: bool = _should_process_children(event)
+        # Split the string up if the delimiter exists.  Each string token
+        # is treated like a separate team id.
+        if COGNITO_TEAM_DELIMITER in team_ids:
+            team_ids_lst = team_ids.split(COGNITO_TEAM_DELIMITER)
+        else:
+            team_ids_lst = [team_ids]
 
-    # Declare a response dictionary
-    response: dict = {}
+        # Get the children if there are any
+        get_children: bool = _should_process_children(event)
 
-    # Iterate over the list of ids and get the teams.
-    for team_id in team_ids_lst:
-        team: Team = Team(team_id=team_id)
-        team = db_client.get(team, recurse=get_children)
-        response[team.team_id] = team.to_json()
+        # Declare a response dictionary
+        response_dict: dict = {}
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps(response),
-    }
+        # Iterate over the list of ids and get the teams.
+        for team_id in team_ids_lst:
+            team: Team = Team(team_id=team_id)
+            team = db_client.get(team, recurse=get_children)
+            response_dict[team.team_id] = team.to_json()
+
+    except DatabaseError as de:
+        return harbor_response(400, {"error": str(de)})
+    except KeyError as ke:
+        return harbor_response(400, {"error": str(ke)})
+
+    return harbor_response(200, response_dict)
 
 
 def _do_get(event: dict, db_client: HarborDBClient) -> dict:
 
     team_id: str = _extract_id_from_path("team", event)
     team = db_client.get(
-        model=Team(team_id=team_id), recurse=_should_process_children(event)
+        model=Team(team_id=team_id),
+        recurse=_should_process_children(event),
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({team_id: team.to_json()}),
-    }
+    return harbor_response(
+        200,
+        {
+            team_id: team.to_json(),
+        },
+    )
 
 
 def _do_post(event: dict, db_client: HarborDBClient) -> dict:
 
     request_body: dict = loads(event["body"])
-    team_id: str = str(uuid.uuid4())
+    team_id: str = generate_model_id()
+
+    created: datetime = datetime.datetime.now()
+    expires: datetime = created + timedelta(weeks=1)
 
     team: Team = db_client.create(
         model=Team(
@@ -91,21 +102,33 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
             name=request_body[Team.Fields.NAME],
             members=_to_members(team_id, request_body),
             projects=_to_projects(team_id, request_body),
+            tokens=[
+                Token(
+                    team_id=team_id,
+                    token_id=generate_model_id(),
+                    name="Initial Token",
+                    created=created.isoformat(),
+                    expires=expires.isoformat(),
+                    enabled=True,
+                    token=generate_token(),
+                )
+            ],
         ),
         recurse=True,
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({team_id: team.to_json()}),
-    }
+    return harbor_response(
+        200,
+        {
+            team_id: team.to_json(),
+        },
+    )
 
 
 def _do_put(event: dict, db_client: HarborDBClient) -> dict:
 
     """
-    -> The behavior of this function is that the objets in the request_body
+    -> The behavior of this function is that the objects in the request_body
     -> will be updated.  If a new object (project or member) comes in the request,
     -> it will not be created.  If a child object noes not exist in the request_body
     -> and exists in the database, the object will not be deleted.  Objects can only
@@ -145,11 +168,12 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
         recurse=False,
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({team_id: team.to_json()}),
-    }
+    return harbor_response(
+        200,
+        {
+            team_id: team.to_json(),
+        },
+    )
 
 
 def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
@@ -166,11 +190,12 @@ def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
         recurse=True,
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({team_id: {}}),
-    }
+    return harbor_response(
+        200,
+        {
+            team_id: {},
+        },
+    )
 
 
 def team_handler(event: dict, context: dict) -> dict:
@@ -201,14 +226,6 @@ def team_handler(event: dict, context: dict) -> dict:
             result = _do_delete(event, db_client)
         return result
     except ValueError as ve:
-        return {
-            "statusCode": 400,
-            "isBase64Encoded": False,
-            "body": dumps({"error": str(ve)}),
-        }
+        return harbor_response(400, {"error": str(ve)})
     except DatabaseError as de:
-        return {
-            "statusCode": 400,
-            "isBase64Encoded": False,
-            "body": dumps({"error": str(de)}),
-        }
+        return harbor_response(400, {"error": str(de)})
