@@ -46,7 +46,23 @@ def harbor_response(status_code: int, body: Union[dict, list]):
     }
 
 
-def allow_policy(method_arn: str, teams: str):
+def extract_attrib_from_event(attrib: str, event: dict):
+
+    """
+    -> Extracts the value of 'attrib' from the event
+    """
+
+    try:
+        request_context: dict = event["requestContext"]
+        authorizer: dict = request_context["authorizer"]
+        lambda_key: dict = authorizer["lambda"]
+        return lambda_key[attrib]
+    except KeyError as ke:
+        err: str = f"Event is missing cognito attribute: ({attrib})"
+        raise ValueError(err) from ke
+
+
+def allow_policy(method_arn: str, user_email: str = "", teams: str = ""):
 
     """
     -> Policy to allow access to the specified resource
@@ -58,6 +74,7 @@ def allow_policy(method_arn: str, teams: str):
         "principalId": "apigateway.amazonaws.com",
         "context": {
             "teams": teams,
+            "user_email": user_email,
         },
         "policyDocument": {
             "Version": "2012-10-17",
@@ -210,7 +227,7 @@ def _to_projects(team_id: str, request_body: dict):
         return []
 
 
-def _to_members(team_id: str, request_body: dict):
+def _to_members(team_id: str, request_body: dict) -> list[Member]:
 
     try:
         members: list[dict] = request_body["members"]

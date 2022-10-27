@@ -41,6 +41,16 @@ class Member(HarborModel):
             email=item[Member.Fields.EMAIL],
         )
 
+    def __eq__(self, other: "Member"):
+
+        """
+        -> __eq__ allows us to use convenient Python constructs to
+        -> see if a member is in a list: if Member in list[Member].
+        -> added in ISPGCASP-849
+        """
+
+        return self.email == other.email
+
     def __init__(
         self: "Member",
         team_id: str,

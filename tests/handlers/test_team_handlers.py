@@ -23,8 +23,10 @@ from cyclonedx.handlers import (
     # TODO Test teams_handler
     team_handler,
 )
+from cyclonedx.model.member import Member
 
 from tests.conftest import create_harbor_table
+from tests.handlers import EMAIL
 
 project_id1 = str(uuid.uuid4())
 project_id2 = str(uuid.uuid4())
@@ -45,6 +47,10 @@ def test_flow():
     response_dict: dict = loads(create_response["body"])
     team_id: str = list(response_dict.keys()).pop()
     team_dict: dict = response_dict[team_id]
+    members_dict: dict = team_dict["members"]
+    member: dict = list(members_dict.values()).pop()
+    assert member[Member.Fields.EMAIL] == EMAIL
+
     projects_dict: dict = team_dict["projects"]
     projects_ids: list = list(projects_dict.keys())
 
@@ -93,17 +99,26 @@ def create(handler):
 
     event: dict = {
         "requestContext": {
+            "authorizer": {
+                "lambda": {
+                    "user_email": EMAIL,
+                }
+            },
             "http": {
                 "method": "POST",
-            }
+            },
         },
         "queryStringParameters": {"children": False},
         "body": dumps(
             {
                 "name": "Initial Team Name",
                 "projects": [
-                    {"name": "Initial Project Name 1"},
-                    {"name": "Initial Project Name 2"},
+                    {
+                        "name": "Initial Project Name 1",
+                    },
+                    {
+                        "name": "Initial Project Name 2",
+                    },
                 ],
             }
         ),
@@ -127,7 +142,9 @@ def get(team_id: str, handler):
                 "method": "GET",
             }
         },
-        "queryStringParameters": {"children": True},
+        "queryStringParameters": {
+            "children": True,
+        },
     }
 
     return handler(event, {})

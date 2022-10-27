@@ -5,16 +5,17 @@ import copy
 import pytest
 from moto import mock_cognitoidp
 
-from cyclonedx.handlers.common import (
-    _wildcardize,
-    allow_policy,
-    deny_policy,
+from tests.handlers import (
+    METHOD_ARN,
+    TEAMS,
+    EMAIL,
 )
+
 from cyclonedx.handlers.jwt_authorizer_handler import (
     _get_arn_token_username,
     _get_cognito_user_pool_id,
-    _get_teams,
     _get_user,
+    _get_user_attrib,
     jwt_authorizer_handler,
 )
 
@@ -24,8 +25,6 @@ token_part_2: str = "eyJzdWIiOiJkYTdlYjRjZS0xYTM5LTRiNWEtOTU3Mi0zNmJkMzI5YzRjODg
 token_part_3: str = "fFertjqRXGrD8tzcfpHDSd1oMJbzLfN0193Q7DAnsJ27EfOqUWQmmUh7Op-vwhvvjRybDEjmCZUIMA2TJQ88FYL8d2ju9FjNk-COoqd070uPCWDBY4vA6qcHo7f6WaW1Xh4A7HQLhKHrp4RitvbBEHhhmzdK7yJlaoJlvs5EjqQnB1laibaBbHWacCO_4WF08Lzh7_DdC-dvPy_IeE-3xbzm30lpxHtX5d3JEGMjXmAvJmmUyf0BDMh0WTOww-ZRkGcpituMZY2Hl-EGUIEF2vdJvM1kJcsEaKtryofqoVe4IT9V2vYY4WNVfQ-_nP8ALr5sLwxlgSlpoUZT52ye4g"
 TOKEN: str = f"{token_part_1}.{token_part_2}.{token_part_3}"
 USERNAME: str = "da7eb4ce-1a39-4b5a-9572-36bd329c4c88"
-METHOD_ARN: str = "arn:aws:execute-api:us-east-1:531175407938:hvi0slqerb/$default/GET/api/v1/project/0dba7774-58e0-4d4e-ac5a-1f2b71b22bc5"
-TEAMS: str = "dawn-patrol,dusk-patrol"
 USER_POOL_ID: str = "us-east-1_KoPlW6ycj"
 aws_lambda_test_event: dict = {
     "version": "1.0",
@@ -95,7 +94,7 @@ test_cognito_response: dict = {
             "Value": TEAMS,
         },
         {"Name": "sub", "Value": "da7eb4ce-1a39-4b5a-9572-36bd329c4c88"},
-        {"Name": "email", "Value": "sbomadmin@aquia.io"},
+        {"Name": "email", "Value": EMAIL},
     ],
     "UserCreateDate": "DATE",
     "UserLastModifiedDate": "DATE",
@@ -116,21 +115,6 @@ test_cognito_response: dict = {
 }
 
 
-def test_wildcardize():
-
-    """
-    -> Tests _wildcardize()
-    """
-
-    resultant_arn: str = "arn:aws:execute-api:us-east-1:531175407938:hvi0slqerb/*/*"
-
-    keep: str = "arn:aws:execute-api:us-east-1:531175407938:hvi0slqerb"
-    toss: str = "/$default/GET/api/v1/project/b3a96b74-4125-40a3-9074-0d50bd1d3ed5"
-    example_arn: str = f"{keep}{toss}"
-    wildcardized_arn: str = _wildcardize(example_arn)
-    assert resultant_arn == wildcardized_arn
-
-
 def test_get_policy():
 
     """
@@ -146,7 +130,7 @@ def test_get_teams():
     -> Tests _get_teams()
     """
 
-    assert _get_teams(test_cognito_response) == TEAMS
+    assert _get_user_attrib(test_cognito_response, "custom:teams") == TEAMS
 
 
 def test_get_teams_no_teams_attrib():
@@ -162,7 +146,7 @@ def test_get_teams_no_teams_attrib():
     # Get rid of the UserAttributes attribute
     del new_response["UserAttributes"]
 
-    assert _get_teams(new_response) == ""
+    assert _get_user_attrib(new_response, "custom:teams") == ""
 
 
 def test_get_teams_no_teams_in_attrib():
@@ -178,7 +162,7 @@ def test_get_teams_no_teams_in_attrib():
     # Get rid of the teams in the new dictionary
     new_response["UserAttributes"][0]["Value"] = ""
 
-    assert _get_teams(new_response) == ""
+    assert _get_user_attrib(new_response, "custom:teams") == ""
 
 
 def test_get_cognito_user_pool_id():
@@ -239,33 +223,6 @@ def test_verify_token():
     """
 
     ...
-
-
-def test_allow_policy():
-
-    """
-    -> Tests allow_policy()
-    """
-
-    policy: dict = allow_policy(METHOD_ARN, TEAMS)
-
-    assert policy["context"]["teams"] == TEAMS
-    assert policy["policyDocument"]["Statement"][0]["Resource"] == _wildcardize(
-        METHOD_ARN
-    )
-    assert policy["policyDocument"]["Statement"][1]["Resource"] == _wildcardize(
-        METHOD_ARN
-    )
-
-
-def test_deny_policy():
-
-    """
-    -> Tests deny_policy()
-    """
-
-    policy: dict = deny_policy()
-    assert policy["policyDocument"]["Statement"][0]["Effect"] == "Deny"
 
 
 @mock_cognitoidp

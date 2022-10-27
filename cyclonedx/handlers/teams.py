@@ -6,7 +6,6 @@ from datetime import timedelta
 from json import loads
 
 import boto3
-
 from cyclonedx.constants import COGNITO_TEAM_DELIMITER
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.exceptions.database_exception import DatabaseError
@@ -15,6 +14,7 @@ from cyclonedx.handlers.common import (
     _get_method,
     print_values,
     harbor_response,
+    extract_attrib_from_event,
     _should_process_children,
     _to_members,
     _to_projects,
@@ -23,6 +23,7 @@ from cyclonedx.handlers.common import (
 )
 from cyclonedx.model import generate_model_id
 from cyclonedx.model.team import Team
+from cyclonedx.model.member import Member
 from cyclonedx.model.token import Token, generate_token
 
 
@@ -40,10 +41,7 @@ def teams_handler(event: dict, context: dict) -> dict:
 
         # Dig the teams ids out of the response we put into the policy
         # that dictates if the user can even access the resource.
-        request_context: dict = event["requestContext"]
-        authorizer: dict = request_context["authorizer"]
-        lambda_key: dict = authorizer["lambda"]
-        team_ids: str = lambda_key["teams"]
+        team_ids: str = extract_attrib_from_event("teams", event)
 
         # Split the string up if the delimiter exists.  Each string token
         # is treated like a separate team id.
@@ -92,15 +90,28 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
 
     request_body: dict = loads(event["body"])
     team_id: str = generate_model_id()
+    user_email: str = extract_attrib_from_event("user_email", event)
 
     created: datetime = datetime.datetime.now()
     expires: datetime = created + timedelta(weeks=1)
+
+    creating_member: Member = Member(
+        team_id=team_id,
+        member_id=generate_model_id(),
+        email=user_email,
+        is_team_lead=True,
+    )
+
+    members: list[Member] = _to_members(team_id, request_body)
+
+    if creating_member not in members:
+        members.append(creating_member)
 
     team: Team = db_client.create(
         model=Team(
             team_id=team_id,
             name=request_body[Team.Fields.NAME],
-            members=_to_members(team_id, request_body),
+            members=members,
             projects=_to_projects(team_id, request_body),
             tokens=[
                 Token(

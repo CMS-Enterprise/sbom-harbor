@@ -11,7 +11,7 @@ from moto import mock_dynamodb
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.handlers.api_key_authorizer import api_key_authorizer_handler
 from cyclonedx.model.team import Team
-from cyclonedx.model.token import Token
+from cyclonedx.model.token import Token, generate_token
 from tests.conftest import create_harbor_table
 
 
@@ -82,7 +82,7 @@ def test_expired_token():
     token_name: str = "token-name"
     created = datetime.datetime.now()
     expires = created - relativedelta(weeks=1)
-    token: str = str(uuid4())
+    token: str = generate_token()
 
     # Create Resource. It will be a mock because of the
     # annotation over the class

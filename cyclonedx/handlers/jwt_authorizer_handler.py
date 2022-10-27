@@ -14,28 +14,28 @@ from cyclonedx.handlers.common import (
 )
 
 
-def _get_policy(method_arn: str, teams: str, token: str):
+def _get_policy(method_arn: str, email: str, teams: str, token: str):
 
     """
     -> Get the policy that we must return for access or denial
     """
 
-    ap: dict = allow_policy(method_arn, teams)
+    ap: dict = allow_policy(method_arn, email, teams)
     dp: dict = deny_policy()
     token_verified: bool = _verify_token(token)
     return ap if token_verified else dp
 
 
-def _get_teams(response: dict) -> str:
+def _get_user_attrib(cognito_user: dict, attrib: str) -> str:
 
     """
     -> Extracts the teams from the Cognito User Query Response
     """
 
     try:
-        user_attrib = response["UserAttributes"]
+        user_attrib = cognito_user["UserAttributes"]
 
-        filter_lambda: Callable = lambda o: o["Name"] == "custom:teams"
+        filter_lambda: Callable = lambda o: o["Name"] == attrib
         teams_filter: filter = filter(filter_lambda, user_attrib)
         teams_attr: list = list(teams_filter)
 
@@ -76,7 +76,7 @@ def _get_arn_token_username(event: dict):
     return method_arn, token, username
 
 
-def _get_user(username: str, event: dict, client):
+def _get_user(username: str, event: dict, client) -> dict:
 
     """
     -> Gets the Cognito user based on their username
@@ -113,15 +113,17 @@ def jwt_authorizer_handler(event, context):
 
     try:
 
-        cognito_user = _get_user(
+        cognito_user: dict = _get_user(
             username,
             event,
             boto3.client("cognito-idp"),
         )
-        teams: str = _get_teams(cognito_user)
+        email: str = _get_user_attrib(cognito_user, "email")
+        teams: str = _get_user_attrib(cognito_user, "custom:teams")
 
         return _get_policy(
             method_arn=method_arn,
+            email=email,
             teams=teams,
             token=token,
         )

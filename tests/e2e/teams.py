@@ -10,6 +10,7 @@ from _pytest.outcomes import fail
 import requests
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.model.project import Project
+from cyclonedx.model.member import Member
 from cyclonedx.model.team import Team
 from tests.data.add_test_team_data_to_dynamodb import test_add_test_team
 from tests.data.create_cognito_users import test_create_cognito_users
@@ -20,6 +21,26 @@ from tests.e2e import (
 )
 
 cf_url: str = get_cloudfront_url()
+
+
+def test_user_creating_team_is_member():
+
+    """
+    -> Function to test that if a user creates a team,
+    -> they are a member of that team.
+    """
+
+    test_create_cognito_users()
+
+    _, team_id = test_create_team()
+
+    new_team: Team = HarborDBClient(boto3.resource("dynamodb")).get(
+        Team(team_id=team_id),
+        recurse=True,
+    )
+
+    member: Member = new_team.members.pop()
+    assert member.email == "sbomadmin@aquia.io"
 
 
 def test_get_two_separate_endpoints():
@@ -229,7 +250,7 @@ def test_create_team():
 
     jwt = login(cf_url)
 
-    name: str = "TeamName"
+    name: str = "Test Team Name"
 
     url = f"{cf_url}/api/v1/team"
 

@@ -64,7 +64,7 @@ def api_key_authorizer_handler(event: dict, context: dict = None):
 
             # Make sure the token is not expired
             if datetime.now() < datetime.fromisoformat(expires):
-                policy = allow_policy(method_arn, "")
+                policy = allow_policy(method_arn)
 
     # If the token exists, is enabled and not expired, then allow
     return policy
