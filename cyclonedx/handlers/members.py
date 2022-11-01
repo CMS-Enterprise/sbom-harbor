@@ -4,7 +4,9 @@
 
 import boto3
 
+from cyclonedx.ciam import HarborCognitoClient
 from cyclonedx.db.harbor_db_client import HarborDBClient
+from cyclonedx.exceptions.ciam_exception import HarborCiamError
 from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.handlers.common import (
     _extract_id_from_path,
@@ -85,6 +87,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
     # Generate a new member id
     member_id: str = generate_model_id()
 
+    # Create the member in the database
     member: Member = db_client.create(
         model=Member(
             team_id=team_id,
@@ -92,6 +95,12 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
             email=request_body[Member.Fields.EMAIL],
             is_team_lead=request_body[Member.Fields.IS_TEAM_LEAD],
         ),
+    )
+
+    # Add the team to the team attrib in Cognito
+    HarborCognitoClient().add_team_to_member(
+        team_id=team_id,
+        member=member,
     )
 
     return harbor_response(200, {member_id: member.to_json()})
@@ -162,6 +171,12 @@ def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
         model=member,
     )
 
+    # Remove the team from the team attrib in Cognito
+    HarborCognitoClient().remove_team_from_member(
+        team_id=team_id,
+        member=member,
+    )
+
     return harbor_response(200, {member_id: member.to_json()})
 
 
@@ -192,7 +207,5 @@ def member_handler(event: dict, context: dict) -> dict:
         elif method == "DELETE":
             result = _do_delete(event, db_client)
         return result
-    except ValueError as ve:
-        return harbor_response(400, {"error": str(ve)})
-    except DatabaseError as de:
-        return harbor_response(400, {"error": str(de)})
+    except (ValueError, DatabaseError, HarborCiamError) as e:
+        return harbor_response(400, {"error": str(e)})

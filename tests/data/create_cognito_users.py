@@ -1,20 +1,35 @@
-
+"""
+-> Module to house functions to create cognito users
+-> for test.
+"""
 import boto3
 
-client = boto3.client('cognito-idp')
+from cyclonedx.ciam import CognitoUserData
+
+client = boto3.client("cognito-idp")
 
 
 def test_create_cognito_users():
 
+    """
+    -> Test to generate cognito users in the AWS account
+    """
+
     usernames = [
-        "sbomadmin", "quinn", "quinton",
-        "quison", "heather", "bill", "martha",
-        "fred", "maria", "sam", "linda"
+        "sbomadmin",
+        "quinn",
+        "quinton",
+        "quison",
+        "heather",
+        "bill",
+        "martha",
+        "fred",
+        "maria",
+        "sam",
+        "linda",
     ]
 
-    response = client.list_user_pools(
-        MaxResults=5
-    )
+    response = client.list_user_pools(MaxResults=5)
 
     user_pool = response["UserPools"][0]
     user_pool_id: str = user_pool["Id"]
@@ -25,13 +40,14 @@ def test_create_cognito_users():
 
         email_username = f"{username}@aquia.io"
 
-        teams = "dawn-patrol,dusk-patrol" if username == 'sbomadmin' else "dawn-patrol"
+        teams = "dawn-patrol,dusk-patrol" if username == "sbomadmin" else "dawn-patrol"
 
         try:
             client.admin_delete_user(
                 UserPoolId=user_pool_id,
                 Username=email_username,
             )
+            # pylint: disable = W0703
         except Exception:
             ...
 
@@ -40,22 +56,23 @@ def test_create_cognito_users():
             Username=email_username,
             UserAttributes=[
                 {
-                    'Name': 'email',
-                    'Value': email_username
-                }, {
-                    'Name': 'custom:teams',
-                    'Value': teams
-                }
+                    "Name": CognitoUserData.Attrib.EMAIL,
+                    "Value": email_username,
+                },
+                {
+                    "Name": CognitoUserData.Attrib.TEAMS,
+                    "Value": teams,
+                },
             ],
-            TemporaryPassword='AbC123P@55!',
+            TemporaryPassword="AbC123P@55!",
             ForceAliasCreation=True,
-            MessageAction='SUPPRESS',
-            DesiredDeliveryMediums=['EMAIL']
+            MessageAction="SUPPRESS",
+            DesiredDeliveryMediums=["EMAIL"],
         )
 
         client.admin_set_user_password(
             UserPoolId=user_pool_id,
             Username=email_username,
-            Password='L0g1nTe5tP@55!',
+            Password="L0g1nTe5tP@55!",
             Permanent=True,
         )

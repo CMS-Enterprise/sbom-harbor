@@ -1,14 +1,13 @@
 """
 -> Module for the Login Handler
 """
-from os import environ
-from json import dumps
 
-from cyclonedx.constants import (
-    USER_POOL_CLIENT_ID_KEY,
-    USER_POOL_NAME_KEY,
+from cyclonedx.ciam import HarborCognitoClient
+from cyclonedx.exceptions.ciam_exception import HarborCiamError
+from cyclonedx.handlers.common import (
+    harbor_response,
+    print_values,
 )
-from cyclonedx.handlers.common import cognito_client
 from cyclonedx.handlers.dependency_track import (
     __get_body_from_first_record,
 )
@@ -20,53 +19,16 @@ def login_handler(event: dict, context: dict):
     -> Login Handler
     """
 
-    body = __get_body_from_first_record(event)
+    print_values(event, context)
 
+    body: dict = __get_body_from_first_record(event)
     username = body["username"]
     password = body["password"]
 
+    cognito_client: HarborCognitoClient = HarborCognitoClient()
+
     try:
-        resp = cognito_client.admin_initiate_auth(
-            UserPoolId=environ.get(USER_POOL_NAME_KEY),
-            ClientId=environ.get(USER_POOL_CLIENT_ID_KEY),
-            AuthFlow="ADMIN_NO_SRP_AUTH",
-            AuthParameters={
-                "USERNAME": username,
-                "PASSWORD": password,
-            },
-        )
-    except cognito_client.exceptions.NotAuthorizedException as err:
-        print(f"Caught NotAuthorizedException: {err}")
-        return __get_login_failed_response(401, err)
-
-    jwt = resp["AuthenticationResult"]["AccessToken"]
-
-    print("Log in success")
-    print(f"Access token: {jwt}")
-    print(f"ID token: {resp['AuthenticationResult']['IdToken']}")
-
-    return __get_login_success_response(jwt)
-
-
-def __get_login_failed_response(status_code: int, err: Exception):
-    return {
-        "statusCode": status_code,
-        "isBase64Encoded": False,
-        "body": dumps(
-            {
-                "error": str(err),
-            }
-        ),
-    }
-
-
-def __get_login_success_response(jwt: str):
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps(
-            {
-                "token": jwt,
-            }
-        ),
-    }
+        jwt: str = cognito_client.get_jwt(username, password)
+        return harbor_response(200, {"token": jwt})
+    except HarborCiamError as ciam_err:
+        return harbor_response(401, {"error": str(ciam_err)})

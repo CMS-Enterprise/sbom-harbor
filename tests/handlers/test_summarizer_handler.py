@@ -5,21 +5,20 @@
 import fnmatch
 import glob
 import os
-from json import dumps
-from json import loads
-from typing import Callable
 
 # pylint: disable-msg=E0611
-from importlib.resources import read_text, path, files
+from importlib.resources import files, path, read_text
+from json import dumps, loads
+from typing import Callable
 
 import pytest
 
-import tests.test_data as test_data
+import tests.data as test_data
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.enrichment.dependency_track import summarizer_handler
 from cyclonedx.enrichment.dependency_track.summarizer_handler import FileTypes
 from cyclonedx.model.project import Project
-from tests.test_data import summary_samples
+from tests.data import summary_samples
 
 
 def set_summary_event_sbom_name(sbom_name: str, event: dict):

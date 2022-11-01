@@ -1,6 +1,7 @@
 """
 -> Test for the member handlers
 """
+import os
 import uuid
 from json import (
     dumps,
@@ -8,44 +9,46 @@ from json import (
 )
 
 import boto3
-from moto import mock_dynamodb
+from moto import (
+    mock_cognitoidp,
+    mock_dynamodb,
+)
 
+from cyclonedx.ciam import CognitoUserData, HarborCognitoClient
+from cyclonedx.constants import USER_POOL_ID_KEY
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.model.team import Team
-from cyclonedx.model.member import Member
 
-# TODO I'm testing moving this here to see
-#  if the @mock_dynamodb annotation still works.
-#  Pylint hates imports inside of functions, so
-#  we should try leaving it here. However, if this
-#  test fails, be highly suspicious of this
-#  and move it back into the test function.
-#  The Pylint error can be suppressed with:
-#  # pylint: disable=C0415
-#  over the imports inside the test function.
+from cyclonedx.model.member import Member
 from cyclonedx.handlers import (
     members_handler,
     member_handler,
 )
 
-from tests.conftest import create_harbor_table
+
+from tests.conftest import create_mock_cognito_infra, create_mock_dynamodb_infra
 
 
 @mock_dynamodb
+@mock_cognitoidp
 def test_flow():
 
     """
     -> Test the creation, updating and deletion of a member.
     """
 
+    cognito_idp = boto3.client("cognito-idp")
+    team_id: str = str(uuid.uuid4())
+    email: str = "test@email.net"
+    teams: str = "dawn-patrol,dusk-patrol"
+    post_create_teams: set = set(f"dawn-patrol,dusk-patrol,{team_id}".split(","))
+    user_pool_id, _, _ = create_mock_cognito_infra(cognito_idp, teams, email)
+    os.environ[USER_POOL_ID_KEY] = user_pool_id
+
+    create_mock_dynamodb_infra(boto3.resource("dynamodb"))
     db_client: HarborDBClient = HarborDBClient(
         dynamodb_resource=boto3.resource("dynamodb")
     )
-
-    create_harbor_table(boto3.resource("dynamodb"))
-
-    team_id: str = str(uuid.uuid4())
-    email: str = "test@email.net"
 
     db_client.create(
         Team(
@@ -64,6 +67,11 @@ def test_flow():
     response_dict: dict = loads(create_response["body"])
 
     print(dumps(response_dict, indent=2))
+
+    cognito_client: HarborCognitoClient = HarborCognitoClient()
+    cognito_user_data: CognitoUserData = cognito_client.get_user_data(email)
+    actual_teams: set = set(cognito_user_data.teams.split(","))
+    assert post_create_teams == actual_teams
 
     member_id: str = list(response_dict.keys()).pop()
     member_dict: dict = response_dict[member_id]

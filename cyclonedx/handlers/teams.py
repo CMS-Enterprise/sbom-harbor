@@ -6,10 +6,14 @@ from datetime import timedelta
 from json import loads
 
 import boto3
+
+from cyclonedx.ciam import HarborCognitoClient
 from cyclonedx.constants import COGNITO_TEAM_DELIMITER
 from cyclonedx.db.harbor_db_client import HarborDBClient
+from cyclonedx.exceptions.ciam_exception import HarborCiamError
 from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.handlers.common import (
+    ContextKeys,
     _extract_id_from_path,
     _get_method,
     print_values,
@@ -86,15 +90,13 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
     )
 
 
-def _do_post(event: dict, db_client: HarborDBClient) -> dict:
-
-    request_body: dict = loads(event["body"])
-    team_id: str = generate_model_id()
-    user_email: str = extract_attrib_from_event("user_email", event)
-
-    created: datetime = datetime.datetime.now()
-    expires: datetime = created + timedelta(weeks=1)
-
+def _add_creating_member(
+    team_id: str,
+    username: str,
+    user_email: str,
+    members: list[Member],
+    cognito_client: HarborCognitoClient,
+):
     creating_member: Member = Member(
         team_id=team_id,
         member_id=generate_model_id(),
@@ -102,10 +104,49 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
         is_team_lead=True,
     )
 
-    members: list[Member] = _to_members(team_id, request_body)
-
     if creating_member not in members:
         members.append(creating_member)
+
+    # Here, we add the team to the creating user
+    cognito_client.add_team_to_member(
+        team_id=team_id,
+        cognito_username=username,
+    )
+
+
+def _do_post(event: dict, db_client: HarborDBClient) -> dict:
+
+    request_body: dict = loads(event["body"])
+
+    team_id: str = generate_model_id()
+
+    user_email: str = extract_attrib_from_event(ContextKeys.EMAIL, event)
+    username: str = extract_attrib_from_event(ContextKeys.USERNAME, event)
+    members: list[Member] = _to_members(team_id, request_body)
+
+    # Create the Cognito Client
+    cognito_client: HarborCognitoClient = HarborCognitoClient()
+
+    # Add the team to all of the members in the request
+    # pylint: disable = W0106
+    [
+        cognito_client.add_team_to_member(
+            team_id=team_id,
+            member=member,
+        )
+        for member in members
+    ]
+
+    _add_creating_member(
+        team_id=team_id,
+        username=username,
+        user_email=user_email,
+        members=members,
+        cognito_client=cognito_client,
+    )
+
+    created: datetime = datetime.datetime.now()
+    expires: datetime = created + timedelta(weeks=1)
 
     team: Team = db_client.create(
         model=Team(
@@ -189,12 +230,26 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
 
 def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
 
+    cognito_client: HarborCognitoClient = HarborCognitoClient()
+
     team_id: str = _extract_id_from_path("team", event)
 
     team: Team = db_client.get(
         model=Team(team_id=team_id),
         recurse=True,
     )
+
+    username: str = extract_attrib_from_event(ContextKeys.USERNAME, event)
+
+    # pylint: disable = W0106
+    [
+        cognito_client.remove_team_from_member(
+            team_id=team_id,
+            member=member,
+            cognito_username=username,
+        )
+        for member in team.members
+    ]
 
     db_client.delete(
         model=team,
@@ -236,7 +291,5 @@ def team_handler(event: dict, context: dict) -> dict:
         elif method == "DELETE":
             result = _do_delete(event, db_client)
         return result
-    except ValueError as ve:
-        return harbor_response(400, {"error": str(ve)})
-    except DatabaseError as de:
-        return harbor_response(400, {"error": str(de)})
+    except (ValueError, DatabaseError, HarborCiamError) as e:
+        return harbor_response(400, {"error": str(e)})

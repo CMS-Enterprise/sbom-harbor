@@ -13,6 +13,7 @@ from cyclonedx.handlers.common import (
     _extract_team_id_from_qs,
     _get_method,
     _get_request_body_as_dict,
+    harbor_response,
     print_values,
     _should_process_children,
     _to_codebases,
@@ -202,15 +203,5 @@ def project_handler(event: dict, context: dict) -> dict:
         elif method == "DELETE":
             result = _do_delete(event, db_client)
         return result
-    except ValueError as ve:
-        return {
-            "statusCode": 400,
-            "isBase64Encoded": False,
-            "body": dumps({"error": str(ve)}),
-        }
-    except DatabaseError as de:
-        return {
-            "statusCode": 400,
-            "isBase64Encoded": False,
-            "body": dumps({"error": str(de)}),
-        }
+    except (ValueError, DatabaseError) as e:
+        return harbor_response(400, {"error": str(e)})

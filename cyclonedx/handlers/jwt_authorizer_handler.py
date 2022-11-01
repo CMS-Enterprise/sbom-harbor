@@ -1,12 +1,14 @@
 """
 -> Module to house the JWT Custom Authorizer
 """
-from typing import Callable
-
-import boto3
 from botocore.exceptions import ClientError
 from jose import jwt
 
+from cyclonedx.ciam import (
+    CognitoUserData,
+    HarborCognitoClient,
+)
+from cyclonedx.ciam.jwt_data import JwtData
 from cyclonedx.handlers.common import (
     allow_policy,
     deny_policy,
@@ -14,40 +16,16 @@ from cyclonedx.handlers.common import (
 )
 
 
-def _get_policy(method_arn: str, email: str, teams: str, token: str):
+def _get_policy(method_arn: str, email: str, teams: str, username: str, token: str):
 
     """
     -> Get the policy that we must return for access or denial
     """
 
-    ap: dict = allow_policy(method_arn, email, teams)
+    ap: dict = allow_policy(method_arn, email, teams, username)
     dp: dict = deny_policy()
     token_verified: bool = _verify_token(token)
     return ap if token_verified else dp
-
-
-def _get_user_attrib(cognito_user: dict, attrib: str) -> str:
-
-    """
-    -> Extracts the teams from the Cognito User Query Response
-    """
-
-    try:
-        user_attrib = cognito_user["UserAttributes"]
-
-        filter_lambda: Callable = lambda o: o["Name"] == attrib
-        teams_filter: filter = filter(filter_lambda, user_attrib)
-        teams_attr: list = list(teams_filter)
-
-        teams: str = ""
-        if len(teams_attr) > 0:
-            teams_attr_value: dict = teams_attr[0]
-            teams: str = teams_attr_value["Value"]
-
-        return teams
-    except KeyError as ke:
-        print(f"KeyError while getting teams: {ke}")
-        return ""
 
 
 def _get_cognito_user_pool_id(event: dict):
@@ -60,33 +38,6 @@ def _get_cognito_user_pool_id(event: dict):
     claims = jwt.get_unverified_claims(token)
     iss: str = claims["iss"]
     return iss.rsplit("/", 1)[-1]
-
-
-def _get_arn_token_username(event: dict):
-
-    """
-    -> Gets the Function ARN, the token and the username
-    -> from the event
-    """
-
-    method_arn: str = event["methodArn"]
-    token: str = event["authorizationToken"]
-    claims = jwt.get_unverified_claims(token)
-    username = claims["username"]
-    return method_arn, token, username
-
-
-def _get_user(username: str, event: dict, client) -> dict:
-
-    """
-    -> Gets the Cognito user based on their username
-    """
-
-    cognito_user_pool_id = _get_cognito_user_pool_id(event)
-    return client.admin_get_user(
-        UserPoolId=cognito_user_pool_id,
-        Username=username,
-    )
 
 
 def _verify_token(token: str):
@@ -109,23 +60,26 @@ def jwt_authorizer_handler(event, context):
 
     print_values(event, context)
 
-    (method_arn, token, username) = _get_arn_token_username(event)
+    cognito_client: HarborCognitoClient = HarborCognitoClient()
 
     try:
 
-        cognito_user: dict = _get_user(
-            username,
-            event,
-            boto3.client("cognito-idp"),
-        )
-        email: str = _get_user_attrib(cognito_user, "email")
-        teams: str = _get_user_attrib(cognito_user, "custom:teams")
+        # Get the JWT token from the event
+        token: str = event["authorizationToken"]
+        method_arn: str = event["methodArn"]
+
+        jwt_data: JwtData = HarborCognitoClient.get_jwt_data(token)
+        token: str = jwt_data.token
+        username = jwt_data.username
+
+        user_data: CognitoUserData = cognito_client.get_user_data(username)
 
         return _get_policy(
             method_arn=method_arn,
-            email=email,
-            teams=teams,
+            email=user_data.email,
+            teams=user_data.teams,
             token=token,
+            username=username,
         )
     except ClientError:
         return deny_policy()

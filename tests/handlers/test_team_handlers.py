@@ -2,30 +2,29 @@
 -> Module to test the Teams handlers
 """
 import uuid
+import os
 from json import (
     dumps,
     loads,
 )
+from typing import Callable
 
 import boto3
-from moto import mock_dynamodb
+from moto import (
+    mock_cognitoidp,
+    mock_dynamodb,
+)
 
-# TODO I'm testing moving this here to see
-#  if the @mock_dynamodb annotation still works.
-#  Pylint hates imports inside of functions, so
-#  we should try leaving it here. However, if this
-#  test fails, be highly suspicious of this
-#  and move it back into the test function.
-#  The Pylint error can be suppressed with:
-#  # pylint: disable=C0415
-#  over the imports inside the test function.
+from cyclonedx.ciam import CognitoUserData, HarborCognitoClient
+from cyclonedx.constants import USER_POOL_ID_KEY
 from cyclonedx.handlers import (
     # TODO Test teams_handler
     team_handler,
 )
+from cyclonedx.handlers.common import ContextKeys
 from cyclonedx.model.member import Member
 
-from tests.conftest import create_harbor_table
+from tests.conftest import create_mock_cognito_infra, create_mock_dynamodb_infra
 from tests.handlers import EMAIL
 
 project_id1 = str(uuid.uuid4())
@@ -34,22 +33,49 @@ member_id = str(uuid.uuid4())
 
 
 @mock_dynamodb
-def test_flow():
+@mock_cognitoidp
+def test_create():
 
     """
-    -> Test the creation, updating and deletion of a team.
+    -> Create Team Test
     """
 
-    create_harbor_table(boto3.resource("dynamodb"))
+    cognito_idp = boto3.client("cognito-idp")
+    email: str = "test@email.net"
+    teams: str = "dawn-patrol,dusk-patrol"
+    user_pool_id, username, _ = create_mock_cognito_infra(cognito_idp, teams, email)
+    os.environ[USER_POOL_ID_KEY] = user_pool_id
+
+    # Setup DynamoDB Mock
+    create_mock_dynamodb_infra(boto3.resource("dynamodb"))
 
     # Create
-    create_response: dict = create(team_handler)
+    create_response: dict = create(team_handler, username=email)
     response_dict: dict = loads(create_response["body"])
     team_id: str = list(response_dict.keys()).pop()
     team_dict: dict = response_dict[team_id]
     members_dict: dict = team_dict["members"]
     member: dict = list(members_dict.values()).pop()
     assert member[Member.Fields.EMAIL] == EMAIL
+
+    cognito_client: HarborCognitoClient = HarborCognitoClient()
+    cognito_user_data: CognitoUserData = cognito_client.get_user_data(email)
+    post_create_teams: set = set(f"{teams},{team_id}".split(","))
+    actual_teams: set = set(cognito_user_data.teams.split(","))
+    assert post_create_teams == actual_teams
+
+    return team_id, team_dict, username
+
+
+@mock_dynamodb
+@mock_cognitoidp
+def test_get():
+
+    """
+    -> Get Team Test
+    """
+
+    team_id, team_dict, username = test_create()
 
     projects_dict: dict = team_dict["projects"]
     projects_ids: list = list(projects_dict.keys())
@@ -74,6 +100,19 @@ def test_flow():
     for pid in projects_ids:
         assert pid in res_projects_ids
 
+    return team_id, res_projects_ids, username
+
+
+@mock_dynamodb
+@mock_cognitoidp
+def test_update():
+
+    """
+    -> Update Team Test
+    """
+
+    team_id, res_projects_ids, username = test_get()
+
     # Update
     update_response: dict = update(
         team_id,
@@ -83,15 +122,40 @@ def test_flow():
     )
     print(dumps(loads(update_response["body"]), indent=2))
 
+    return team_id, username
+
+
+@mock_dynamodb
+@mock_cognitoidp
+def test_delete():
+
+    """
+    -> Delete Team Test
+    """
+
+    cognito_idp = boto3.client("cognito-idp")
+    email: str = "test@email.net"
+    teams: str = "dawn-patrol,dusk-patrol"
+    user_pool_id, _, _ = create_mock_cognito_infra(cognito_idp, teams, email)
+    os.environ[USER_POOL_ID_KEY] = user_pool_id
+
+    # Setup DynamoDB Mock
+    create_mock_dynamodb_infra(boto3.resource("dynamodb"))
+
+    # Create
+    create_response: dict = create(team_handler, username=email)
+    response_dict: dict = loads(create_response["body"])
+    team_id: str = list(response_dict.keys()).pop()
+
     # Delete
-    delete(team_id, team_handler)
+    delete(team_id, email, team_handler)
 
     # Get Test (Should return nothing)
     get_response: dict = get(team_id, team_handler)
     assert get_response["statusCode"] == 400
 
 
-def create(handler):
+def create(handler, username: str):
 
     """
     -> Create a team
@@ -101,7 +165,8 @@ def create(handler):
         "requestContext": {
             "authorizer": {
                 "lambda": {
-                    "user_email": EMAIL,
+                    ContextKeys.EMAIL: EMAIL,
+                    ContextKeys.USERNAME: username,
                 }
             },
             "http": {
@@ -180,7 +245,7 @@ def update(team_id: str, project1_id: str, project2_id: str, handler):
     return handler(event, {})
 
 
-def delete(team_id: str, handler):
+def delete(team_id: str, username: str, handler: Callable):
 
     """
     -> Delete a team
@@ -191,11 +256,19 @@ def delete(team_id: str, handler):
             "team": team_id,
         },
         "requestContext": {
+            "authorizer": {
+                "lambda": {
+                    ContextKeys.EMAIL: EMAIL,
+                    ContextKeys.USERNAME: username,
+                }
+            },
             "http": {
                 "method": "DELETE",
-            }
+            },
         },
-        "queryStringParameters": {"children": True},
+        "queryStringParameters": {
+            "children": True,
+        },
     }
 
     return handler(event, {})

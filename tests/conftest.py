@@ -12,6 +12,7 @@ from moto import (
     mock_dynamodb,
 )
 
+from cyclonedx.ciam import CognitoUserData
 from cyclonedx.constants import (
     HARBOR_TEAMS_TABLE_NAME,
     HARBOR_TEAMS_TABLE_PARTITION_KEY,
@@ -27,6 +28,8 @@ from cyclonedx.db.harbor_db_client import HarborDBClient
 # instead break it up into smaller files
 
 test_bucket_name = "sbom.bucket.test"
+
+FINAL_TEST_PASSWORD = "L0g1nTe5tP@55!"
 
 
 @pytest.fixture(autouse=True)
@@ -114,10 +117,10 @@ def test_harbor_teams_table(test_dynamo_db_resource):
     -> dynamodb and returns a pointer to the table object
     """
 
-    yield create_harbor_table(test_dynamo_db_resource)
+    yield create_mock_dynamodb_infra(test_dynamo_db_resource)
 
 
-def create_harbor_table(dynamodb_resource):
+def create_mock_dynamodb_infra(dynamodb_resource):
 
     """
     -> A function to create the harbor table
@@ -150,3 +153,104 @@ def create_harbor_table(dynamodb_resource):
             "WriteCapacityUnits": 1,
         },
     )
+
+
+def create_mock_cognito_infra(
+    cognito_client,
+    teams: str = "dawn-patrol,dusk-patrol",
+    email_username: str = "test@email.net",
+) -> [str, str]:
+
+    """
+    -> Using Moto, we set up the mock Cognito infrastructure
+    """
+
+    create_user_pool_result = cognito_client.create_user_pool(
+        PoolName="Test Cognito Pool",
+        Schema=[
+            {
+                "Name": "email",
+                "AttributeDataType": "String",
+                "Required": True,
+                "Mutable": True,
+            }
+        ],
+    )
+    user_pool_id: str = create_user_pool_result["UserPool"]["Id"]
+
+    user_pool_client_name: str = "test_user_pool_client"
+    create_user_pool_result = cognito_client.create_user_pool_client(
+        UserPoolId=user_pool_id,
+        ClientName=user_pool_client_name,
+    )
+    user_pool_client_data: dict = create_user_pool_result["UserPoolClient"]
+    user_pool_client_id: str = user_pool_client_data["ClientId"]
+
+    cognito_client.add_custom_attributes(
+        UserPoolId=user_pool_id,
+        CustomAttributes=[
+            {
+                "Name": "teams",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+            },
+        ],
+    )
+
+    create_users_in_cognito(
+        cognito_client,
+        user_pool_id,
+        [email_username],
+        teams,
+    )
+
+    return user_pool_id, user_pool_client_id, email_username
+
+
+def create_users_in_cognito(
+    cognito_client,
+    user_pool_id: str,
+    email_usernames: list[str],
+    teams: str,
+):
+
+    """
+    -> Create mock users in Cognito
+    """
+
+    def do_create(email_username: str) -> None:
+
+        """
+        -> Inner function to keep the code out of the list comprehension
+        """
+
+        cognito_client.admin_create_user(
+            UserPoolId=user_pool_id,
+            Username=email_username,
+            UserAttributes=[
+                {
+                    "Name": CognitoUserData.Attrib.EMAIL,
+                    "Value": email_username,
+                },
+                {
+                    "Name": CognitoUserData.Attrib.TEAMS,
+                    "Value": teams,
+                },
+            ],
+            TemporaryPassword="AbC123P@55!",
+            ForceAliasCreation=True,
+            MessageAction="SUPPRESS",
+            DesiredDeliveryMediums=["EMAIL"],
+        )
+
+        cognito_client.admin_set_user_password(
+            UserPoolId=user_pool_id,
+            Username=email_username,
+            Password=FINAL_TEST_PASSWORD,
+            Permanent=True,
+        )
+
+    # pylint: disable=W0106
+    [do_create(email_username) for email_username in email_usernames]

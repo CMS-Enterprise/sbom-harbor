@@ -7,7 +7,7 @@ from json import dumps, loads
 import boto3
 from moto import mock_dynamodb
 
-from tests.conftest import create_harbor_table
+from tests.conftest import create_mock_dynamodb_infra
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.team import Team
@@ -39,7 +39,7 @@ def test_flow():
         dynamodb_resource=boto3.resource("dynamodb")
     )
 
-    create_harbor_table(boto3.resource("dynamodb"))
+    create_mock_dynamodb_infra(boto3.resource("dynamodb"))
 
     team_id: str = str(uuid.uuid4())
 

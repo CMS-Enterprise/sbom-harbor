@@ -224,7 +224,5 @@ def codebase_handler(event: dict, context: dict) -> dict:
         elif method == "DELETE":
             result = _do_delete(event, db_client)
         return result
-    except ValueError as ve:
-        return harbor_response(400, {"error": str(ve)})
-    except DatabaseError as de:
-        return harbor_response(400, {"error": str(de)})
+    except (ValueError, DatabaseError) as e:
+        return harbor_response(400, {"error": str(e)})

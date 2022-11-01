@@ -11,7 +11,7 @@ from constructs import Construct
 
 from cyclonedx.constants import (
     USER_POOL_CLIENT_ID_KEY,
-    USER_POOL_NAME_KEY,
+    USER_POOL_ID_KEY,
 )
 from deploy.constants import (
     LOGIN_LN,
@@ -49,7 +49,7 @@ class SBOMLoginLambda(Construct):
             timeout=Duration.seconds(10),
             memory_size=512,
             environment={
-                USER_POOL_NAME_KEY: user_pool_id,
+                USER_POOL_ID_KEY: user_pool_id,
                 USER_POOL_CLIENT_ID_KEY: user_pool_client_id,
             },
         )

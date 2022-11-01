@@ -12,7 +12,7 @@ from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.handlers.api_key_authorizer import api_key_authorizer_handler
 from cyclonedx.model.team import Team
 from cyclonedx.model.token import Token, generate_token
-from tests.conftest import create_harbor_table
+from tests.conftest import create_mock_dynamodb_infra
 
 
 @mock_dynamodb
@@ -33,7 +33,7 @@ def test_good_token():
     # annotation over the class
     resource = boto3.resource("dynamodb")
 
-    create_harbor_table(resource)
+    create_mock_dynamodb_infra(resource)
     HarborDBClient(resource).create(
         Team(
             team_id=team_id,
@@ -88,7 +88,7 @@ def test_expired_token():
     # annotation over the class
     resource = boto3.resource("dynamodb")
 
-    create_harbor_table(resource)
+    create_mock_dynamodb_infra(resource)
     HarborDBClient(resource).create(
         Team(
             team_id=team_id,
@@ -141,7 +141,7 @@ def test_disabled_token():
     # annotation over the class
     resource = boto3.resource("dynamodb")
 
-    create_harbor_table(resource)
+    create_mock_dynamodb_infra(resource)
     HarborDBClient(resource).create(
         Team(
             team_id=team_id,
@@ -190,7 +190,7 @@ def test_missing_token():
     # annotation over the class
     resource = boto3.resource("dynamodb")
 
-    create_harbor_table(resource)
+    create_mock_dynamodb_infra(resource)
     HarborDBClient(resource).create(
         Team(
             team_id=team_id,

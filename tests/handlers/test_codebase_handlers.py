@@ -29,7 +29,7 @@ from cyclonedx.handlers import (
     codebase_handler,
 )
 
-from tests.conftest import create_harbor_table
+from tests.conftest import create_mock_dynamodb_infra
 
 
 @mock_dynamodb
@@ -43,7 +43,7 @@ def test_flow():
         dynamodb_resource=boto3.resource("dynamodb")
     )
 
-    create_harbor_table(boto3.resource("dynamodb"))
+    create_mock_dynamodb_infra(boto3.resource("dynamodb"))
 
     team_id: str = str(uuid.uuid4())
     project_id: str = str(uuid.uuid4())

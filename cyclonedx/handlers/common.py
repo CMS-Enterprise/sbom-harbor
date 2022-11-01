@@ -11,14 +11,27 @@ import boto3
 
 import cyclonedx.schemas as schemas
 from cyclonedx.db.harbor_db_client import HarborDBClient
-from cyclonedx.model import EntityType, HarborModel
+from cyclonedx.model import (
+    EntityType,
+    HarborModel,
+)
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
 
-cognito_client = boto3.client("cognito-idp")
 team_schema = loads(pr.read_text(schemas, "team.schema.json"))
+
+
+class ContextKeys:
+
+    """
+    -> Strings to simplify value access in the event context
+    """
+
+    EMAIL = "user_email"
+    TEAMS = "teams"
+    USERNAME = "username"
 
 
 def _wildcardize(method_arn: str):
@@ -62,7 +75,12 @@ def extract_attrib_from_event(attrib: str, event: dict):
         raise ValueError(err) from ke
 
 
-def allow_policy(method_arn: str, user_email: str = "", teams: str = ""):
+def allow_policy(
+    method_arn: str,
+    user_email: str = "",
+    teams: str = "",
+    username: str = "",
+):
 
     """
     -> Policy to allow access to the specified resource
@@ -73,8 +91,9 @@ def allow_policy(method_arn: str, user_email: str = "", teams: str = ""):
     return {
         "principalId": "apigateway.amazonaws.com",
         "context": {
-            "teams": teams,
-            "user_email": user_email,
+            ContextKeys.EMAIL: user_email,
+            ContextKeys.TEAMS: teams,
+            ContextKeys.USERNAME: username,
         },
         "policyDocument": {
             "Version": "2012-10-17",

@@ -1,21 +1,26 @@
 """
 -> Module to test the JWT Authorizer
 """
-import copy
+import os
+
+import boto3
 import pytest
 from moto import mock_cognitoidp
 
+from tests.conftest import create_mock_cognito_infra
 from tests.handlers import (
     METHOD_ARN,
     TEAMS,
     EMAIL,
 )
 
+from cyclonedx.constants import USER_POOL_ID_KEY
+from cyclonedx.ciam import (
+    HarborCognitoClient,
+    JwtData,
+)
 from cyclonedx.handlers.jwt_authorizer_handler import (
-    _get_arn_token_username,
     _get_cognito_user_pool_id,
-    _get_user,
-    _get_user_attrib,
     jwt_authorizer_handler,
 )
 
@@ -124,47 +129,6 @@ def test_get_policy():
     ...
 
 
-def test_get_teams():
-
-    """
-    -> Tests _get_teams()
-    """
-
-    assert _get_user_attrib(test_cognito_response, "custom:teams") == TEAMS
-
-
-def test_get_teams_no_teams_attrib():
-
-    """
-    -> Tests _get_teams()
-    """
-
-    # Create a new response so we don't mess with the
-    # one defined for all the tests
-    new_response: dict = copy.deepcopy(test_cognito_response)
-
-    # Get rid of the UserAttributes attribute
-    del new_response["UserAttributes"]
-
-    assert _get_user_attrib(new_response, "custom:teams") == ""
-
-
-def test_get_teams_no_teams_in_attrib():
-
-    """
-    -> Tests _get_teams()
-    """
-
-    # Create a new response so we don't mess with the
-    # one defined for all the tests
-    new_response: dict = copy.deepcopy(test_cognito_response)
-
-    # Get rid of the teams in the new dictionary
-    new_response["UserAttributes"][0]["Value"] = ""
-
-    assert _get_user_attrib(new_response, "custom:teams") == ""
-
-
 def test_get_cognito_user_pool_id():
 
     """
@@ -181,39 +145,15 @@ def test_get_arn_token_username():
     -> Tests _get_arn_token_username()
     """
 
-    (arn, token, username) = _get_arn_token_username(aws_lambda_test_event)
+    token: str = aws_lambda_test_event["authorizationToken"]
+    arn: str = aws_lambda_test_event["methodArn"]
+
+    jwt_data: JwtData = HarborCognitoClient.get_jwt_data(token)
+    username = jwt_data.username
 
     assert METHOD_ARN == arn
     assert TOKEN == token
     assert USERNAME == username
-
-
-def test_get_user():
-
-    """
-    -> Tests _get_user()
-    """
-
-    class MockCognitoClient:
-
-        """
-        -> Using a tiny mock class rather than Moto
-        -> because no setup is necessary
-        """
-
-        # pylint: disable=R0201
-        def admin_get_user(self, UserPoolId, Username):
-
-            """
-            -> Mock Cognito IDP admin_get_user() method
-            """
-
-            assert USER_POOL_ID == UserPoolId
-            assert USERNAME == Username
-            return test_cognito_response
-
-    response: dict = _get_user(USERNAME, aws_lambda_test_event, MockCognitoClient())
-    assert test_cognito_response == response
 
 
 def test_verify_token():
@@ -233,6 +173,11 @@ def test_jwt_authorizer_handler():
     -> Currently, we can only determine that it is indeed a policy document
     -> We need to improve these tests once we have _verify_token() implemented
     """
+
+    cognito_client = boto3.client("cognito-idp")
+
+    user_pool_id, _, _ = create_mock_cognito_infra(cognito_client)
+    os.environ[USER_POOL_ID_KEY] = user_pool_id
 
     policy: dict = jwt_authorizer_handler(aws_lambda_test_event, {})
 
