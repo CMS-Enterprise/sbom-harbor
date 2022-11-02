@@ -9,15 +9,16 @@ import boto3
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.handlers.common import (
+    QueryStringKeys,
     _extract_id_from_path,
-    _extract_team_id_from_qs,
+    _extract_value_from_qs,
     _get_method,
     _get_request_body_as_dict,
-    harbor_response,
-    print_values,
     _should_process_children,
     _to_codebases,
     _update_codebases,
+    harbor_response,
+    print_values,
 )
 from cyclonedx.model import generate_model_id
 from cyclonedx.model.project import Project
@@ -35,7 +36,7 @@ def projects_handler(event: dict, context: dict) -> dict:
     db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
 
     # Get the team id from the querystring
-    team_id: str = _extract_team_id_from_qs(event)
+    team_id: str = _extract_value_from_qs(QueryStringKeys.TEAM_ID, event)
 
     # Use ProjectId Extract existing project from DynamoDB with children
     team: Team = db_client.get(
@@ -59,7 +60,7 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
     project_id: str = _extract_id_from_path("project", event)
 
     # Get the team id from the querystring
-    team_id: str = _extract_team_id_from_qs(event)
+    team_id: str = _extract_value_from_qs(QueryStringKeys.TEAM_ID, event)
 
     project = db_client.get(
         model=Project(team_id=team_id, project_id=project_id),
@@ -76,7 +77,7 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
 def _do_post(event: dict, db_client: HarborDBClient) -> dict:
 
     # Get the team id from the querystring
-    team_id: str = _extract_team_id_from_qs(event)
+    team_id: str = _extract_value_from_qs(QueryStringKeys.TEAM_ID, event)
 
     request_body: dict = _get_request_body_as_dict(event)
     project_id: str = generate_model_id()
@@ -114,7 +115,7 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
     project_id: str = _extract_id_from_path("project", event)
 
     # Get the ProjectId from the Path Parameter
-    team_id: str = _extract_team_id_from_qs(event)
+    team_id: str = _extract_value_from_qs(QueryStringKeys.TEAM_ID, event)
 
     # Use ProjectId Extract existing project from DynamoDB with children
     project: Project = db_client.get(
@@ -157,7 +158,7 @@ def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
     project_id: str = _extract_id_from_path("project", event)
 
     # Get the team id from the querystring
-    team_id: str = _extract_team_id_from_qs(event)
+    team_id: str = _extract_value_from_qs(QueryStringKeys.TEAM_ID, event)
 
     project: Project = db_client.get(
         model=Project(team_id=team_id, project_id=project_id),

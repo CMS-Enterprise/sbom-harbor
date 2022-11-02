@@ -2,7 +2,6 @@
 -> This module contains the handlers for CRUDing Tokens
 """
 from datetime import datetime
-
 from json import dumps, loads
 
 import boto3
@@ -11,12 +10,13 @@ from dateutil.relativedelta import relativedelta
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.handlers.common import (
+    QueryStringKeys,
     _extract_id_from_path,
-    _extract_team_id_from_qs,
+    _extract_value_from_qs,
     _get_method,
+    _should_process_children,
     harbor_response,
     print_values,
-    _should_process_children,
 )
 from cyclonedx.model import generate_model_id
 from cyclonedx.model.team import Team
@@ -34,7 +34,7 @@ def tokens_handler(event: dict, context: dict) -> dict:
     db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
 
     # Get the team id from the querystring
-    team_id: str = _extract_team_id_from_qs(event)
+    team_id: str = _extract_value_from_qs(QueryStringKeys.TEAM_ID, event)
 
     # Use ProjectId Extract existing
     # project from DynamoDB with children
@@ -64,7 +64,7 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
     token_id: str = _extract_id_from_path("token", event)
 
     # Get the team id from the querystring
-    team_id: str = _extract_team_id_from_qs(event)
+    team_id: str = _extract_value_from_qs(QueryStringKeys.TEAM_ID, event)
 
     token = db_client.get(
         model=Token(
@@ -89,7 +89,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
     """
 
     # Get the team id from the querystring
-    team_id: str = _extract_team_id_from_qs(event)
+    team_id: str = _extract_value_from_qs(QueryStringKeys.TEAM_ID, event)
     token_id: str = generate_model_id()
 
     request_body: dict = loads(event["body"])
@@ -141,7 +141,7 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
     token_id: str = _extract_id_from_path("token", event)
 
     # Get the ProjectId from the Path Parameter
-    team_id: str = _extract_team_id_from_qs(event)
+    team_id: str = _extract_value_from_qs(QueryStringKeys.TEAM_ID, event)
 
     # Use ProjectId Extract existing project from DynamoDB with children
     token: Token = db_client.get(
@@ -179,7 +179,7 @@ def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
     token_id: str = _extract_id_from_path("token", event)
 
     # Get the team id from the querystring
-    team_id: str = _extract_team_id_from_qs(event)
+    team_id: str = _extract_value_from_qs(QueryStringKeys.TEAM_ID, event)
 
     token: Token = db_client.get(
         model=Token(

@@ -3,8 +3,10 @@
 -> for test.
 """
 import boto3
+from botocore.exceptions import ClientError
 
 from cyclonedx.ciam import CognitoUserData
+from tests.conftest import FINAL_TEST_PASSWORD
 
 client = boto3.client("cognito-idp")
 
@@ -47,8 +49,7 @@ def test_create_cognito_users():
                 UserPoolId=user_pool_id,
                 Username=email_username,
             )
-            # pylint: disable = W0703
-        except Exception:
+        except ClientError:
             ...
 
         client.admin_create_user(
@@ -73,6 +74,6 @@ def test_create_cognito_users():
         client.admin_set_user_password(
             UserPoolId=user_pool_id,
             Username=email_username,
-            Password="L0g1nTe5tP@55!",
+            Password=FINAL_TEST_PASSWORD,
             Permanent=True,
         )

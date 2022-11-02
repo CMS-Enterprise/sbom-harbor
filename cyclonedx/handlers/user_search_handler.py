@@ -2,21 +2,22 @@
 -> Module for User Search
 """
 from cyclonedx.ciam import HarborCognitoClient
-from cyclonedx.handlers.common import harbor_response, print_values
-from cyclonedx.handlers.dependency_track import (
-    __get_query_string_params_from_event,
+from cyclonedx.handlers.common import (
+    QueryStringKeys,
+    _extract_value_from_qs,
+    harbor_response,
+    print_values,
 )
 
 
-def user_search_handler(event: dict = None, context: dict = None):
+def user_search_handler(event: dict = None, context: dict = None) -> dict:
 
     """
     -> Handler for User Search
     """
 
     print_values(event, context)
-    query_params = __get_query_string_params_from_event(event)
-    filter_str = query_params["filter"]
+    filter_str = _extract_value_from_qs(QueryStringKeys.FILTER, event)
     cognito_client: HarborCognitoClient = HarborCognitoClient()
     emails: list[str] = cognito_client.get_matching_users(filter_str)
 

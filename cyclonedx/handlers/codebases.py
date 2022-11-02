@@ -9,18 +9,18 @@ import boto3
 from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.handlers.common import (
+    QueryStringKeys,
     _extract_id_from_path,
-    _extract_project_id_from_qs,
-    _extract_team_id_from_qs,
+    _extract_value_from_qs,
     _get_method,
-    print_values,
-    harbor_response,
     _should_process_children,
+    harbor_response,
+    print_values,
     update_codebase_data,
 )
 from cyclonedx.model import generate_model_id
-from cyclonedx.model.team import Team
 from cyclonedx.model.codebase import CodeBase
+from cyclonedx.model.team import Team
 
 
 def codebases_handler(event: dict, context: dict) -> dict:
@@ -34,7 +34,7 @@ def codebases_handler(event: dict, context: dict) -> dict:
     db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
 
     # Get the team id from the querystring
-    team_id: str = _extract_team_id_from_qs(event)
+    team_id: str = _extract_value_from_qs(QueryStringKeys.TEAM_ID, event)
 
     # Use CodeBaseId Extract existing
     # codebase from DynamoDB with children
@@ -71,7 +71,7 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
     codebase_id: str = _extract_id_from_path("codebase", event)
 
     # Get the team id from the querystring
-    team_id: str = _extract_team_id_from_qs(event)
+    team_id: str = _extract_value_from_qs(QueryStringKeys.TEAM_ID, event)
 
     codebase = db_client.get(
         model=CodeBase(
@@ -97,8 +97,8 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
     """
 
     # Get the team id from the querystring
-    team_id: str = _extract_team_id_from_qs(event)
-    project_id: str = _extract_project_id_from_qs(event)
+    team_id: str = _extract_value_from_qs(QueryStringKeys.TEAM_ID, event)
+    project_id: str = _extract_value_from_qs(QueryStringKeys.PROJECT_ID, event)
 
     request_body: dict = loads(event["body"])
     codebase_id: str = generate_model_id()
@@ -130,10 +130,10 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
     """
 
     # Get the team id from the query string
-    team_id: str = _extract_team_id_from_qs(event)
+    team_id: str = _extract_value_from_qs(QueryStringKeys.TEAM_ID, event)
 
     # Get the team id from the query string
-    project_id: str = _extract_project_id_from_qs(event)
+    project_id: str = _extract_value_from_qs(QueryStringKeys.PROJECT_ID, event)
 
     # Get the codebase id from the path
     codebase_id: str = _extract_id_from_path("codebase", event)
@@ -176,7 +176,7 @@ def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
     codebase_id: str = _extract_id_from_path("codebase", event)
 
     # Get the team id from the querystring
-    team_id: str = _extract_team_id_from_qs(event)
+    team_id: str = _extract_value_from_qs(QueryStringKeys.TEAM_ID, event)
 
     codebase: CodeBase = db_client.get(
         model=CodeBase(

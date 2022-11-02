@@ -1,24 +1,20 @@
 """ This Module has all the utility functions
 necessary to interoperate with Dependency Track."""
 from io import StringIO
-
 from json import dumps, loads
 from time import sleep
 from uuid import uuid4
 
+from boto3 import client, resource
 from botocore.client import BaseClient
-from boto3 import (
-    client,
-    resource,
-)
 from jsonschema.exceptions import ValidationError
 from requests import Response, get, post, put
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from cyclonedx.constants import (
     DT_API_KEY,
-    DT_ROOT_PWD,
     DT_DEFAULT_ADMIN_PWD,
+    DT_ROOT_PWD,
     EMPTY_VALUE,
     S3_META_CODEBASE_KEY,
     S3_META_PROJECT_KEY,
@@ -272,35 +268,6 @@ def __get_body_from_first_record(event) -> dict:
     body = event_dict["body"]
 
     return loads(body)
-
-
-def __get_query_string_params_from_event(event) -> dict:
-
-    """
-    If the request context exists, then there will
-    be a 'body' key, and it will contain the JSON object
-    as a **string** that the POST body contained.
-    """
-
-    print(f"Incoming Event: {event}")
-    print(f"Incoming Event Type: {type(event)}")
-
-    event_dict: dict = {}
-
-    if isinstance(event, dict):
-        event_dict = event
-    elif isinstance(event, str):
-        event_dict = loads(event)
-
-    if "Records" in event_dict:
-        event_dict = event_dict["Records"][0]
-
-    body = event_dict["queryStringParameters"]
-    body = body.decode("utf-8") if isinstance(body, bytes) else body
-    print(f"Extracted queryStringParameters: {body}")
-    print(f"Extracted queryStringParameters Type: {type(body)}")
-
-    return body
 
 
 def __get_records_from_event(event) -> list:

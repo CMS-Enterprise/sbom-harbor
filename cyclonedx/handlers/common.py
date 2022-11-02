@@ -2,19 +2,16 @@
 -> Common Handler Functions
 """
 
+import importlib.resources as pr
 import uuid
 from json import dumps, loads
-import importlib.resources as pr
 from typing import Union
 
 import boto3
 
 import cyclonedx.schemas as schemas
 from cyclonedx.db.harbor_db_client import HarborDBClient
-from cyclonedx.model import (
-    EntityType,
-    HarborModel,
-)
+from cyclonedx.model import EntityType, HarborModel
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
@@ -32,6 +29,17 @@ class ContextKeys:
     EMAIL = "user_email"
     TEAMS = "teams"
     USERNAME = "username"
+
+
+class QueryStringKeys:
+
+    """
+    -> This class keeps the keys to named values in the query string
+    """
+
+    TEAM_ID = "teamId"
+    PROJECT_ID = "projectId"
+    FILTER = "filter"
 
 
 def _wildcardize(method_arn: str):
@@ -171,22 +179,11 @@ def _extract_id_from_path(param_name: str, event: dict):
         raise ValueError(f"Event Missing Parameter: {param_name}") from ke
 
 
-def _extract_team_id_from_qs(event: dict):
+def _extract_value_from_qs(key: str, event: dict):
 
     try:
-        path_params: dict = event["queryStringParameters"]
-        team_id: str = path_params["teamId"]
-        return team_id
-    except KeyError as ke:
-        raise ValueError(f"Missing Team ID: {ke}") from ke
-
-
-def _extract_project_id_from_qs(event: dict):
-
-    try:
-        path_params: dict = event["queryStringParameters"]
-        project_id: str = path_params["projectId"]
-        return project_id
+        params: dict = event["queryStringParameters"]
+        return params[key]
     except KeyError as ke:
         raise ValueError(f"Missing Project ID: {ke}") from ke
 
