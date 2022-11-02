@@ -1,4 +1,3 @@
-
 """ Database and Model tests for Deleting objects in the HarborTeamsTable """
 
 import uuid
@@ -6,11 +5,11 @@ from decimal import Decimal
 
 import pytest
 
+from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.constants import (
     HARBOR_TEAMS_TABLE_PARTITION_KEY,
     HARBOR_TEAMS_TABLE_SORT_KEY,
 )
-from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.model import EntityType
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member
@@ -20,6 +19,10 @@ from cyclonedx.model.token import Token
 
 
 def test_delete_team_only(test_dynamo_db_resource, test_harbor_teams_table):
+
+    """
+    -> Delete Team Test
+    """
 
     team_id = str(uuid.uuid4())
     entity_type = EntityType.TEAM.value
@@ -68,6 +71,10 @@ def test_delete_team_only(test_dynamo_db_resource, test_harbor_teams_table):
 
 
 def test_delete_project_only(test_dynamo_db_resource, test_harbor_teams_table):
+
+    """
+    -> Delete Project Test
+    """
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
@@ -120,6 +127,10 @@ def test_delete_project_only(test_dynamo_db_resource, test_harbor_teams_table):
 
 
 def test_delete_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
+
+    """
+    -> Delete Codebase Test
+    """
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
@@ -182,6 +193,10 @@ def test_delete_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
 
 def test_delete_member_only(test_dynamo_db_resource, test_harbor_teams_table):
 
+    """
+    -> Delete Member Test
+    """
+
     team_id = str(uuid.uuid4())
     member_id = str(uuid.uuid4())
     email = "test.user@aquia.io"
@@ -233,6 +248,10 @@ def test_delete_member_only(test_dynamo_db_resource, test_harbor_teams_table):
 
 
 def test_delete_token_only(test_dynamo_db_resource, test_harbor_teams_table):
+
+    """
+    -> Delete Token Test
+    """
 
     team_id = str(uuid.uuid4())
     token_id = str(uuid.uuid4())
@@ -292,7 +311,14 @@ def test_delete_token_only(test_dynamo_db_resource, test_harbor_teams_table):
         print(f"Exception here: {token['Item']}")
 
 
-def test_delete_team_with_a_child_of_each_type(test_dynamo_db_resource, test_harbor_teams_table):
+# pylint: disable = R0915
+def test_delete_team_with_a_child_of_each_type(
+    test_dynamo_db_resource, test_harbor_teams_table
+):
+
+    """
+    -> Delete Team/w children Test
+    """
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
@@ -453,7 +479,7 @@ def test_delete_team_with_a_child_of_each_type(test_dynamo_db_resource, test_har
                             language=language,
                             build_tool=build_tool,
                         )
-                    ]
+                    ],
                 )
             ],
             members=[
@@ -517,7 +543,6 @@ def test_delete_team_with_a_child_of_each_type(test_dynamo_db_resource, test_har
 
     with pytest.raises(KeyError):
         print(f"Exception here: {member['Item']}")
-
 
     token = test_harbor_teams_table.get_item(
         Key={

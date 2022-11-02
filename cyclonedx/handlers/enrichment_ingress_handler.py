@@ -8,10 +8,10 @@ from jsonschema.exceptions import ValidationError
 
 from cyclonedx.constants import (
     EVENT_BUS_DETAIL_TYPE,
+    EVENT_BUS_NAME,
     EVENT_BUS_SOURCE,
     SBOM_BUCKET_NAME_KEY,
     SBOM_S3_KEY,
-    EVENT_BUS_NAME,
 )
 from cyclonedx.handlers.dependency_track import __get_records_from_event
 

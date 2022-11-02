@@ -1,32 +1,31 @@
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_lambda as lambda_,
-    Duration,
-    aws_events as eventbridge,
-    aws_s3 as i_bucket,
-)
+"""
+-> Module to house SummarizerLambda
+"""
+from aws_cdk import Duration
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_events as eventbridge
+from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_s3 as i_bucket
 from constructs import Construct
 
-from deploy.constants import (
-    PRIVATE,
-    SBOM_API_PYTHON_RUNTIME,
-    SUMMARIZER_LN,
-)
+from deploy.constants import PRIVATE, SBOM_API_PYTHON_RUNTIME, SUMMARIZER_LN
 from deploy.util import create_asset
 
 
 class SummarizerLambda(Construct):
 
-    """This Construct creates a Lambda
-    use to manage Dependency Track operations"""
+    """
+    -> This Construct creates a Lambda
+    -> use to manage Dependency Track operations
+    """
 
     def __init__(
-            self,
-            scope: Construct,
-            *,
-            vpc: ec2.Vpc,
-            s3_bucket: i_bucket,
-            event_bus: eventbridge.EventBus,
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+        s3_bucket: i_bucket,
+        event_bus: eventbridge.EventBus,
     ):
         super().__init__(scope, SUMMARIZER_LN)
 
@@ -39,7 +38,7 @@ class SummarizerLambda(Construct):
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
-            handler="cyclonedx.enrichment.dependency_track.summarizer_handler",
+            handler="cyclonedx.handlers.summarizer_handler",
             code=create_asset(self),
             timeout=Duration.minutes(1),
             security_groups=[dt_func_sg],
@@ -51,4 +50,9 @@ class SummarizerLambda(Construct):
         s3_bucket.grant_read_write(self.func)
 
     def get_lambda_function(self):
+
+        """
+        -> Get the CDK Lambda Construct
+        """
+
         return self.func

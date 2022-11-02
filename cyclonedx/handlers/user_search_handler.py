@@ -1,13 +1,12 @@
 """
 -> Module for User Search
 """
-from cyclonedx.ciam import HarborCognitoClient
+from cyclonedx.clients import HarborCognitoClient
 from cyclonedx.handlers.common import (
     QueryStringKeys,
     _extract_value_from_qs,
-    harbor_response,
-    print_values,
 )
+from cyclonedx.handlers.common import harbor_response, print_values
 
 
 def user_search_handler(event: dict = None, context: dict = None) -> dict:

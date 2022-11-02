@@ -1,10 +1,8 @@
 """
 -> Ion Channel Interface Handler
 """
-from cyclonedx.handlers.dependency_track import (
-    __get_all_s3_obj_data,
-)
-from cyclonedx.handlers.ion_channel import ICClient
+from cyclonedx.clients import IonChannelClient
+from cyclonedx.handlers.dependency_track import __get_all_s3_obj_data
 
 
 def ic_interface_handler(event: dict = None, context: dict = None):
@@ -27,7 +25,7 @@ def ic_interface_handler(event: dict = None, context: dict = None):
 
     # Create an Ion Channel Request Factory
     # and import the SBOM
-    ic_client = ICClient(sbom_name, True)
+    ic_client = IonChannelClient(sbom_name, True)
     ic_client.import_sbom(sbom_str_file)
     ic_client.analyze_sbom()
 

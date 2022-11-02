@@ -6,15 +6,8 @@ from os import environ
 import boto3
 from moto import mock_cognitoidp
 
-from cyclonedx.ciam import (
-    CognitoUserData,
-    HarborCognitoClient,
-    JwtData,
-)
-from cyclonedx.constants import (
-    USER_POOL_CLIENT_ID_KEY,
-    USER_POOL_ID_KEY,
-)
+from cyclonedx.clients.ciam import CognitoUserData, HarborCognitoClient, JwtData
+from cyclonedx.constants import USER_POOL_CLIENT_ID_KEY, USER_POOL_ID_KEY
 from tests.conftest import (
     FINAL_TEST_PASSWORD,
     create_mock_cognito_infra,

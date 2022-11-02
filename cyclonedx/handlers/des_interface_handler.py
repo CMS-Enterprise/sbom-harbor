@@ -1,7 +1,7 @@
 """
 -> Module for the Default Enrichment Source Handler
 """
-from json import loads, dumps
+from json import dumps, loads
 from time import sleep
 
 import requests

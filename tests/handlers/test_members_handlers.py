@@ -3,29 +3,17 @@
 """
 import os
 import uuid
-from json import (
-    dumps,
-    loads,
-)
+from json import dumps, loads
 
 import boto3
-from moto import (
-    mock_cognitoidp,
-    mock_dynamodb,
-)
+from moto import mock_cognitoidp, mock_dynamodb
 
-from cyclonedx.ciam import CognitoUserData, HarborCognitoClient
+from cyclonedx.clients.ciam import CognitoUserData, HarborCognitoClient
+from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.constants import USER_POOL_ID_KEY
-from cyclonedx.db.harbor_db_client import HarborDBClient
-from cyclonedx.model.team import Team
-
+from cyclonedx.handlers import member_handler, members_handler
 from cyclonedx.model.member import Member
-from cyclonedx.handlers import (
-    members_handler,
-    member_handler,
-)
-
-
+from cyclonedx.model.team import Team
 from tests.conftest import create_mock_cognito_infra, create_mock_dynamodb_infra
 
 

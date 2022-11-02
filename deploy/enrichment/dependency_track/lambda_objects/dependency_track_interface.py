@@ -1,25 +1,17 @@
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_elasticloadbalancingv2 as elbv2,
-    aws_lambda as lambda_,
-    aws_ssm as ssm,
-    aws_events as eventbridge,
-    aws_s3 as i_bucket,
-    Duration,
-)
+"""
+-> Module to house DependencyTrackInterfaceLambda
+"""
+from aws_cdk import Duration
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_elasticloadbalancingv2 as elbv2
+from aws_cdk import aws_events as eventbridge
+from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_s3 as i_bucket
+from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 
-from cyclonedx.constants import (
-    DT_API_BASE,
-    DT_API_KEY,
-    DT_ROOT_PWD,
-    EMPTY_VALUE,
-)
-from deploy.constants import (
-    DT_INTERFACE_LN,
-    PRIVATE,
-    SBOM_API_PYTHON_RUNTIME,
-)
+from cyclonedx.constants import DT_API_BASE, DT_API_KEY, DT_ROOT_PWD, EMPTY_VALUE
+from deploy.constants import DT_INTERFACE_LN, PRIVATE, SBOM_API_PYTHON_RUNTIME
 from deploy.enrichment.dependency_track import DependencyTrackLoadBalancer
 from deploy.util import create_asset
 
@@ -54,7 +46,7 @@ class DependencyTrackInterfaceLambda(Construct):
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
-            handler="cyclonedx.enrichment.dependency_track.dt_interface_handler",
+            handler="cyclonedx.handlers.dt_interface_handler",
             code=create_asset(self),
             environment={
                 DT_API_BASE: fq_dn,
@@ -79,7 +71,8 @@ class DependencyTrackInterfaceLambda(Construct):
         root_pwd_param.grant_write(self.func)
 
         api_key_param = ssm.StringParameter(
-            self, DT_API_KEY,
+            self,
+            DT_API_KEY,
             string_value=EMPTY_VALUE,
             parameter_name=DT_API_KEY,
         )
@@ -88,4 +81,9 @@ class DependencyTrackInterfaceLambda(Construct):
         api_key_param.grant_write(self.func)
 
     def get_lambda_function(self):
+
+        """
+        -> Getter for the actual construct
+        """
+
         return self.func

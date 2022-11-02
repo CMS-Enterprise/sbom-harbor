@@ -7,7 +7,7 @@ from json import dumps, loads
 import boto3
 from dateutil.relativedelta import relativedelta
 
-from cyclonedx.db.harbor_db_client import HarborDBClient
+from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.handlers.common import (
     QueryStringKeys,

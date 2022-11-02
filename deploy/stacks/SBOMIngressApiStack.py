@@ -2,19 +2,14 @@
 
 from os import path
 
-
-from aws_cdk import (
-    CfnOutput,
-    aws_apigatewayv2_alpha as apigwv2a,
-    aws_apigatewayv2 as apigwv2,
-    aws_ec2 as ec2,
-    aws_logs as logs,
-    aws_lambda as lambda_,
-    aws_cognito as cognito,
-    aws_s3 as s3,
-    Duration,
-    Stack,
-)
+from aws_cdk import CfnOutput, Duration, Stack
+from aws_cdk import aws_apigatewayv2 as apigwv2
+from aws_cdk import aws_apigatewayv2_alpha as apigwv2a
+from aws_cdk import aws_cognito as cognito
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_logs as logs
+from aws_cdk import aws_s3 as s3
 from aws_cdk.aws_apigatewayv2_alpha import (
     CorsHttpMethod,
     CorsPreflightOptions,
@@ -22,10 +17,12 @@ from aws_cdk.aws_apigatewayv2_alpha import (
 )
 from aws_cdk.aws_apigatewayv2_authorizers_alpha import HttpLambdaAuthorizer
 from aws_cdk.aws_apigatewayv2_integrations_alpha import HttpLambdaIntegration
+from aws_cdk.aws_iam import Effect, PolicyStatement
 from aws_cdk.aws_logs import RetentionDays
 from constructs import Construct
-from deploy.user import SBOMLoginLambda, SBOMUserSearchLambda
-from deploy.util import SbomIngressLambda, create_asset
+
+from cyclonedx.constants import USER_POOL_CLIENT_ID_KEY, USER_POOL_ID_KEY
+from deploy.authorizers import AuthorizerLambdaFactory, SBOMUploadAPIKeyAuthorizerLambda
 from deploy.constants import (
     API_GW_ID_EXPORT_NAME,
     API_GW_URL_EXPORT_ID,
@@ -35,13 +32,8 @@ from deploy.constants import (
     S3_BUCKET_NAME,
     SBOM_API_PYTHON_RUNTIME,
 )
-from deploy.teams import (
-    AuthorizerLambdaFactory,
-    SBOMUploadAPIKeyAuthorizerLambda,
-)
-from deploy.util import (
-    DynamoTableManager,
-)
+from deploy.user import SBOMLoginLambda, SBOMUserSearchLambda
+from deploy.util import DynamoTableManager, SbomIngressLambda, create_asset
 
 INGRESS_API_STACK_ID = "SBOM-Management-Api"
 
@@ -59,14 +51,16 @@ class LambdaFactory:
         -> belonging to the team sending an SBOM
         """
 
+        # pylint: disable = R0913
         def __init__(
             self,
             scope: Construct,
-            *,
             vpc: ec2.Vpc,
             table_mgr: DynamoTableManager,
             handler: str,
             name: str,
+            user_pool_id: str,
+            user_pool_client_id: str,
         ):
 
             super().__init__(scope, name)
@@ -82,6 +76,24 @@ class LambdaFactory:
                 code=create_asset(self),
                 timeout=Duration.seconds(10),
                 memory_size=512,
+                environment={
+                    USER_POOL_ID_KEY: user_pool_id,
+                    USER_POOL_CLIENT_ID_KEY: user_pool_client_id,
+                },
+            )
+
+            self.lambda_func.add_to_role_policy(
+                PolicyStatement(
+                    effect=Effect.ALLOW,
+                    actions=[
+                        "cognito-idp:AdminDisableUser",
+                        "cognito-idp:AdminEnableUser",
+                        "cognito-idp:AdminGetUser",
+                        "cognito-idp:ListUsers",
+                        "cognito-idp:AdminUpdateUserAttributes",
+                    ],
+                    resources=["*"],
+                )
             )
 
             table_mgr.grant(self.lambda_func)
@@ -94,15 +106,20 @@ class LambdaFactory:
 
             return self.lambda_func
 
+    # pylint: disable = R0913
     def __init__(
         self,
         scope: Construct,
         vpc: ec2.Vpc,
         table_mgr: DynamoTableManager,
+        user_pool_id: str,
+        user_pool_client_id: str,
     ):
         self.scope = scope
         self.vpc = vpc
         self.table_mgr = table_mgr
+        self.user_pool_id = user_pool_id
+        self.user_pool_client_id = user_pool_client_id
 
     def create(self, lambda_name: str, func: str):
 
@@ -116,6 +133,8 @@ class LambdaFactory:
             name=f"SBOMHarbor_{lambda_name}_Lambda",
             table_mgr=self.table_mgr,
             handler=func,
+            user_pool_id=self.user_pool_id,
+            user_pool_client_id=self.user_pool_client_id,
         )
 
 
@@ -162,6 +181,8 @@ class SBOMIngressApiStack(Stack):
         authorizer_factory = AuthorizerLambdaFactory(
             self,
             vpc=vpc,
+            user_pool_id=user_pool.user_pool_id,
+            user_pool_client_id=user_pool_client.user_pool_client_id,
         )
 
         self.api = apigwv2a.HttpApi(
@@ -201,6 +222,8 @@ class SBOMIngressApiStack(Stack):
             self,
             vpc=vpc,
             table_mgr=table_mgr,
+            user_pool_id=user_pool.user_pool_id,
+            user_pool_client_id=user_pool_client.user_pool_client_id,
         )
 
         self.__add_team_routes(
@@ -224,15 +247,15 @@ class SBOMIngressApiStack(Stack):
         )
 
         self.__add_login_route(
-            user_pool_client=user_pool_client,
-            user_pool=user_pool,
             vpc=vpc,
+            user_pool=user_pool,
+            user_pool_client=user_pool_client,
         )
 
         self.__add_user_search_route(
+            vpc=vpc,
             user_pool=user_pool,
             user_pool_client=user_pool_client,
-            vpc=vpc,
         )
 
         self.__add_sbom_upload_route(
@@ -269,7 +292,7 @@ class SBOMIngressApiStack(Stack):
                 "Teams_HttpLambdaIntegration",
                 handler=lambda_factory.create(
                     lambda_name="Teams",
-                    func="cyclonedx.handlers.teams.teams_handler",
+                    func="cyclonedx.handlers.teams_handler",
                 ).get_lambda_function(),
             ),
         )
@@ -285,7 +308,7 @@ class SBOMIngressApiStack(Stack):
                 "Team_HttpLambdaIntegration",
                 handler=lambda_factory.create(
                     lambda_name="Team",
-                    func="cyclonedx.handlers.teams.team_handler",
+                    func="cyclonedx.handlers.team_handler",
                 ).get_lambda_function(),
             ),
         )
@@ -316,7 +339,7 @@ class SBOMIngressApiStack(Stack):
                 "Projects_HttpLambdaIntegration",
                 handler=lambda_factory.create(
                     lambda_name="Projects",
-                    func="cyclonedx.handlers.projects.projects_handler",
+                    func="cyclonedx.handlers.projects_handler",
                 ).get_lambda_function(),
             ),
         )
@@ -332,7 +355,7 @@ class SBOMIngressApiStack(Stack):
                 "Project_HttpLambdaIntegration",
                 handler=lambda_factory.create(
                     lambda_name="Project",
-                    func="cyclonedx.handlers.projects.project_handler",
+                    func="cyclonedx.handlers.project_handler",
                 ).get_lambda_function(),
             ),
         )
@@ -346,7 +369,7 @@ class SBOMIngressApiStack(Stack):
                 "Project_HttpLambdaIntegration_POST",
                 handler=lambda_factory.create(
                     lambda_name="Project_POST",
-                    func="cyclonedx.handlers.projects.project_handler",
+                    func="cyclonedx.handlers.project_handler",
                 ).get_lambda_function(),
             ),
         )
@@ -363,7 +386,7 @@ class SBOMIngressApiStack(Stack):
                 "Codebases_HttpLambdaIntegration",
                 handler=lambda_factory.create(
                     lambda_name="Codebases",
-                    func="cyclonedx.handlers.codebases.codebases_handler",
+                    func="cyclonedx.handlers.codebases_handler",
                 ).get_lambda_function(),
             ),
         )
@@ -379,7 +402,7 @@ class SBOMIngressApiStack(Stack):
                 "Codebase_HttpLambdaIntegration",
                 handler=lambda_factory.create(
                     lambda_name="Codebase",
-                    func="cyclonedx.handlers.codebases.codebase_handler",
+                    func="cyclonedx.handlers.codebase_handler",
                 ).get_lambda_function(),
             ),
         )
@@ -393,7 +416,7 @@ class SBOMIngressApiStack(Stack):
                 "Codebase_HttpLambdaIntegration_POST",
                 handler=lambda_factory.create(
                     lambda_name="Codebase_POST",
-                    func="cyclonedx.handlers.codebases.codebase_handler",
+                    func="cyclonedx.handlers.codebase_handler",
                 ).get_lambda_function(),
             ),
         )
@@ -410,7 +433,7 @@ class SBOMIngressApiStack(Stack):
                 "Tokens_HttpLambdaIntegration",
                 handler=lambda_factory.create(
                     lambda_name="Tokens",
-                    func="cyclonedx.handlers.tokens.tokens_handler",
+                    func="cyclonedx.handlers.tokens_handler",
                 ).get_lambda_function(),
             ),
         )
@@ -426,7 +449,7 @@ class SBOMIngressApiStack(Stack):
                 "Token_HttpLambdaIntegration",
                 handler=lambda_factory.create(
                     lambda_name="Token",
-                    func="cyclonedx.handlers.tokens.token_handler",
+                    func="cyclonedx.handlers.token_handler",
                 ).get_lambda_function(),
             ),
         )
@@ -440,7 +463,7 @@ class SBOMIngressApiStack(Stack):
                 "Token_HttpLambdaIntegration_POST",
                 handler=lambda_factory.create(
                     lambda_name="Token_POST",
-                    func="cyclonedx.handlers.tokens.token_handler",
+                    func="cyclonedx.handlers.token_handler",
                 ).get_lambda_function(),
             ),
         )
@@ -457,7 +480,7 @@ class SBOMIngressApiStack(Stack):
                 "Members_HttpLambdaIntegration",
                 handler=lambda_factory.create(
                     lambda_name="Members",
-                    func="cyclonedx.handlers.members.members_handler",
+                    func="cyclonedx.handlers.members_handler",
                 ).get_lambda_function(),
             ),
         )
@@ -473,7 +496,7 @@ class SBOMIngressApiStack(Stack):
                 "Member_HttpLambdaIntegration",
                 handler=lambda_factory.create(
                     lambda_name="Member",
-                    func="cyclonedx.handlers.members.member_handler",
+                    func="cyclonedx.handlers.member_handler",
                 ).get_lambda_function(),
             ),
         )
@@ -487,7 +510,7 @@ class SBOMIngressApiStack(Stack):
                 "Member_HttpLambdaIntegration_POST",
                 handler=lambda_factory.create(
                     lambda_name="Member_POST",
-                    func="cyclonedx.handlers.members.member_handler",
+                    func="cyclonedx.handlers.member_handler",
                 ).get_lambda_function(),
             ),
         )

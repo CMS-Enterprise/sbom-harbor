@@ -10,14 +10,14 @@ import boto3
 import requests
 from requests import Response, get, put
 
+from cyclonedx.clients.ion_channel.ion_channel import IonChannelClient
 from cyclonedx.constants import (
-    S3_META_TEAM_KEY,
-    S3_META_PROJECT_KEY,
     S3_META_CODEBASE_KEY,
+    S3_META_PROJECT_KEY,
+    S3_META_TEAM_KEY,
 )
 from cyclonedx.dtendpoints import DTEndpoints
-from cyclonedx.enrichment import des_interface_handler
-from cyclonedx.handlers.ion_channel import ICClient
+from cyclonedx.handlers import des_interface_handler
 
 
 def test_add_team_to_teams_custom_attribute():
@@ -130,7 +130,7 @@ def test_get_analysis_id():
 
     try:
         name: str = "TEST STeam-SProject-SCodebase"
-        ic_client = ICClient(name, True)
+        ic_client = IonChannelClient(name, True)
         response = ic_client.get_analysis_id("6c4ce5c9-fcf4-43af-9c8e-f42f06267cd4")
 
         print(dumps(response, indent=2))

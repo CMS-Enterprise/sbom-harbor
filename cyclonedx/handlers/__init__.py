@@ -3,31 +3,17 @@
 -> run any code needed for the module as a whole.
 """
 
-from .teams import (
-    teams_handler,
-    team_handler,
-)
-
-from .projects import (
-    projects_handler,
-    project_handler,
-)
-
-from .tokens import (
-    tokens_handler,
-    token_handler,
-)
-
-from .codebases import (
-    codebases_handler,
-    codebase_handler,
-)
-
-from .members import (
-    members_handler,
-    member_handler,
-)
-
+from .api_key_authorizer import api_key_authorizer_handler
+from .codebases import codebase_handler, codebases_handler
+from .des_interface_handler import des_interface_handler
+from .dt_interface_handler import dt_interface_handler
+from .ingress import sbom_ingress_handler
+from .ion_channel_interface_handler import ic_interface_handler
 from .jwt_authorizer_handler import jwt_authorizer_handler
 from .login_handler import login_handler
+from .members import member_handler, members_handler
+from .projects import project_handler, projects_handler
+from .summarizer_handler import summarizer_handler
+from .teams import team_handler, teams_handler
+from .tokens import token_handler, tokens_handler
 from .user_search_handler import user_search_handler

@@ -1,14 +1,13 @@
-
 """ Database and Model tests for Creating objects in the HarborTeamsTable """
 
 import uuid
 from decimal import Decimal
 
+from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.constants import (
     HARBOR_TEAMS_TABLE_PARTITION_KEY,
     HARBOR_TEAMS_TABLE_SORT_KEY,
 )
-from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.model import EntityType
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member
@@ -18,6 +17,10 @@ from cyclonedx.model.token import Token
 
 
 def test_create_team_only(test_dynamo_db_resource, test_harbor_teams_table):
+
+    """
+    -> Create Team Test
+    """
 
     team_id = str(uuid.uuid4())
     entity_type = "team"
@@ -45,6 +48,10 @@ def test_create_team_only(test_dynamo_db_resource, test_harbor_teams_table):
 
 
 def test_create_project_only(test_dynamo_db_resource, test_harbor_teams_table):
+
+    """
+    -> Create Project Test
+    """
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
@@ -75,6 +82,10 @@ def test_create_project_only(test_dynamo_db_resource, test_harbor_teams_table):
 
 
 def test_create_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
+
+    """
+    -> Create Codebase Test
+    """
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
@@ -111,6 +122,10 @@ def test_create_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
 
 def test_create_member_only(test_dynamo_db_resource, test_harbor_teams_table):
 
+    """
+    -> Create Member Test
+    """
+
     team_id = str(uuid.uuid4())
     member_id = str(uuid.uuid4())
 
@@ -140,6 +155,10 @@ def test_create_member_only(test_dynamo_db_resource, test_harbor_teams_table):
 
 
 def test_create_token_only(test_dynamo_db_resource, test_harbor_teams_table):
+
+    """
+    -> Create Token Test
+    """
 
     team_id = str(uuid.uuid4())
     token_id = str(uuid.uuid4())
@@ -176,7 +195,12 @@ def test_create_token_only(test_dynamo_db_resource, test_harbor_teams_table):
     assert expires == item["expires"]
     assert token_val == item["token"]
 
+
 def test_create_team_with_project(test_dynamo_db_resource, test_harbor_teams_table):
+
+    """
+    -> Create Team/w Project Test
+    """
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
@@ -186,7 +210,6 @@ def test_create_team_with_project(test_dynamo_db_resource, test_harbor_teams_tab
         Team(
             team_id=team_id,
             name=team_id,
-
             projects=[
                 Project(
                     team_id=team_id,
@@ -194,7 +217,7 @@ def test_create_team_with_project(test_dynamo_db_resource, test_harbor_teams_tab
                     name=project_id,
                     fisma=fisma_id,
                 )
-            ]
+            ],
         ),
         recurse=True,
     )
@@ -226,7 +249,13 @@ def test_create_team_with_project(test_dynamo_db_resource, test_harbor_teams_tab
     assert project_id == project_item["name"]
 
 
-def test_create_team_with_a_child_of_each_type(test_dynamo_db_resource, test_harbor_teams_table):
+def test_create_team_with_a_child_of_each_type(
+    test_dynamo_db_resource, test_harbor_teams_table
+):
+
+    """
+    -> Create Team/w children Test
+    """
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
@@ -261,7 +290,7 @@ def test_create_team_with_a_child_of_each_type(test_dynamo_db_resource, test_har
                             language=language,
                             build_tool=build_tool,
                         )
-                    ]
+                    ],
                 )
             ],
             members=[
@@ -337,7 +366,9 @@ def test_create_team_with_a_child_of_each_type(test_dynamo_db_resource, test_har
 
     codebase_item = codebase["Item"]
     assert team_id == codebase_item[HARBOR_TEAMS_TABLE_PARTITION_KEY]
-    assert "{}#{}".format(cet, codebase_id) == codebase_item[HARBOR_TEAMS_TABLE_SORT_KEY]
+    assert (
+        "{}#{}".format(cet, codebase_id) == codebase_item[HARBOR_TEAMS_TABLE_SORT_KEY]
+    )
     assert codebase_id == codebase_item[CodeBase.Fields.NAME]
     assert language == codebase_item[CodeBase.Fields.LANGUAGE]
     assert build_tool == codebase_item[CodeBase.Fields.BUILD_TOOL]
@@ -355,4 +386,3 @@ def test_create_team_with_a_child_of_each_type(test_dynamo_db_resource, test_har
     assert created == token_item[Token.Fields.CREATED]
     assert expires == token_item[Token.Fields.EXPIRES]
     assert token_val == token_item[Token.Fields.TOKEN]
-    

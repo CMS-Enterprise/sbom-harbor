@@ -1,29 +1,19 @@
 """
 -> Module to test the Teams handlers
 """
-import uuid
 import os
-from json import (
-    dumps,
-    loads,
-)
+import uuid
+from json import dumps, loads
 from typing import Callable
 
 import boto3
-from moto import (
-    mock_cognitoidp,
-    mock_dynamodb,
-)
+from moto import mock_cognitoidp, mock_dynamodb
 
-from cyclonedx.ciam import CognitoUserData, HarborCognitoClient
+from cyclonedx.clients.ciam import CognitoUserData, HarborCognitoClient
 from cyclonedx.constants import USER_POOL_ID_KEY
-from cyclonedx.handlers import (
-    # TODO Test teams_handler
-    team_handler,
-)
+from cyclonedx.handlers import team_handler  # TODO Test teams_handler
 from cyclonedx.handlers.common import ContextKeys
 from cyclonedx.model.member import Member
-
 from tests.conftest import create_mock_cognito_infra, create_mock_dynamodb_infra
 from tests.handlers import EMAIL
 

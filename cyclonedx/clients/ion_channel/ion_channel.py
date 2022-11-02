@@ -10,14 +10,11 @@ from botocore.client import BaseClient
 from requests import Response
 from urllib3.exceptions import ResponseError
 
-from cyclonedx.constants import (
-    IC_API_BASE,
-    IC_API_KEY,
-    IC_RULESET_TEAM_ID,
-)
+from cyclonedx.constants import IC_API_BASE, IC_API_KEY, IC_RULESET_TEAM_ID
+
 
 # pylint: disable = R0902
-class ICClient:
+class IonChannelClient:
 
     """
     -> The ICClient is a client for Ion Channel

@@ -1,21 +1,21 @@
 """This handler takes findings and it's associated SBOM,
 and then outputs flattened versions of the files"""
 
-from json import loads, dumps
+from json import dumps, loads
 
 import boto3
 from boto3 import resource
 from json_normalize import json_normalize
 
+from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.constants import (
+    S3_META_CODEBASE_KEY,
+    S3_META_PROJECT_KEY,
+    S3_META_TEAM_KEY,
+    S3_META_TIMESTAMP_KEY,
     SBOM_BUCKET_NAME_KEY,
     SBOM_S3_KEY,
-    S3_META_TIMESTAMP_KEY,
-    S3_META_TEAM_KEY,
-    S3_META_PROJECT_KEY,
-    S3_META_CODEBASE_KEY,
 )
-from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.model.project import Project
 
 

@@ -2,18 +2,12 @@
 -> Test for the codebase handlers
 """
 import uuid
-from json import (
-    dumps,
-    loads,
-)
+from json import dumps, loads
 
 import boto3
 from moto import mock_dynamodb
 
-from cyclonedx.model.project import Project
-from cyclonedx.db.harbor_db_client import HarborDBClient
-from cyclonedx.model.team import Team
-from cyclonedx.model.codebase import CodeBase
+from cyclonedx.clients.db.dynamodb import HarborDBClient
 
 # TODO I'm testing moving this here to see
 #  if the @mock_dynamodb annotation still works.
@@ -24,11 +18,10 @@ from cyclonedx.model.codebase import CodeBase
 #  The Pylint error can be suppressed with:
 #  # pylint: disable=C0415
 #  over the imports inside the test function.
-from cyclonedx.handlers import (
-    codebases_handler,
-    codebase_handler,
-)
-
+from cyclonedx.handlers import codebase_handler, codebases_handler
+from cyclonedx.model.codebase import CodeBase
+from cyclonedx.model.project import Project
+from cyclonedx.model.team import Team
 from tests.conftest import create_mock_dynamodb_infra
 
 

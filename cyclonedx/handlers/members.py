@@ -4,8 +4,8 @@
 
 import boto3
 
-from cyclonedx.ciam import HarborCognitoClient
-from cyclonedx.db.harbor_db_client import HarborDBClient
+from cyclonedx.clients.ciam import HarborCognitoClient
+from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.exceptions.ciam_exception import HarborCiamError
 from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.handlers.common import (

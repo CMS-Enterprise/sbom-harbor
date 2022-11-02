@@ -6,16 +6,13 @@ from json import dumps
 
 from boto3 import resource
 
-from cyclonedx.constants import (
-    SBOM_BUCKET_NAME_KEY,
-    SBOM_S3_KEY,
-)
+from cyclonedx.constants import SBOM_BUCKET_NAME_KEY, SBOM_S3_KEY
 from cyclonedx.handlers.dependency_track import (
-    __validate,
     __create_project,
-    __upload_sbom,
-    __get_findings,
     __delete_project,
+    __get_findings,
+    __upload_sbom,
+    __validate,
 )
 
 

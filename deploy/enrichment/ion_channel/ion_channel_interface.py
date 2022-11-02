@@ -1,25 +1,18 @@
+"""
+-> Module to house the IonChannelInterfaceLambda Construct
+"""
 import os
 
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_lambda as lambda_,
-    aws_ssm as ssm,
-    aws_events as eventbridge,
-    aws_s3 as i_bucket,
-    Duration,
-)
+from aws_cdk import Duration
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_events as eventbridge
+from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_s3 as i_bucket
+from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 
-from cyclonedx.constants import (
-    IC_API_KEY,
-    IC_API_BASE,
-    IC_RULESET_TEAM_ID
-)
-from deploy.constants import (
-    PRIVATE,
-    SBOM_API_PYTHON_RUNTIME,
-    IC_INTERFACE_LN,
-)
+from cyclonedx.constants import IC_API_BASE, IC_API_KEY, IC_RULESET_TEAM_ID
+from deploy.constants import IC_INTERFACE_LN, PRIVATE, SBOM_API_PYTHON_RUNTIME
 from deploy.util import create_asset
 
 
@@ -48,7 +41,7 @@ class IonChannelInterfaceLambda(Construct):
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
-            handler="cyclonedx.enrichment.ion_channel.ic_interface_handler",
+            handler="cyclonedx.handlers.ic_interface_handler",
             code=create_asset(self),
             timeout=Duration.minutes(1),
             security_groups=[dt_func_sg],
@@ -62,7 +55,8 @@ class IonChannelInterfaceLambda(Construct):
         # Ion Channel JWT Needs to be in the 'ION_CHANNEL_TOKEN'
         # Environment Variable
         api_key_param = ssm.StringParameter(
-            self, IC_API_KEY,
+            self,
+            IC_API_KEY,
             string_value=os.environ.get("ION_CHANNEL_TOKEN"),
             parameter_name=IC_API_KEY,
         )
@@ -70,7 +64,8 @@ class IonChannelInterfaceLambda(Construct):
 
         # Storing the Ion Channel Host here for consistency.
         ic_base_url_param = ssm.StringParameter(
-            self, IC_API_BASE,
+            self,
+            IC_API_BASE,
             string_value="api.ionchannel.io",
             parameter_name=IC_API_BASE,
         )
@@ -78,11 +73,17 @@ class IonChannelInterfaceLambda(Construct):
 
         # Storing the Ion Channel Team ID here for consistency as well.
         ic_team_id_param = ssm.StringParameter(
-            self, IC_RULESET_TEAM_ID,
+            self,
+            IC_RULESET_TEAM_ID,
             string_value="232a5775-9231-4083-9422-c2333cecb7da",
             parameter_name=IC_RULESET_TEAM_ID,
         )
         ic_team_id_param.grant_read(self.func)
 
     def get_lambda_function(self):
+
+        """
+        -> Getter for the actual construct
+        """
+
         return self.func

@@ -3,19 +3,12 @@
 """
 import datetime
 import uuid
-from json import (
-    dumps,
-    loads,
-)
+from json import dumps, loads
 
 import boto3
 from moto import mock_dynamodb
 
-from tests.conftest import create_mock_dynamodb_infra
-from cyclonedx.db.harbor_db_client import HarborDBClient
-
-from cyclonedx.model.team import Team
-from cyclonedx.model.token import Token
+from cyclonedx.clients.db.dynamodb import HarborDBClient
 
 # TODO I'm testing moving this here to see
 #  if the @mock_dynamodb annotation still works.
@@ -26,10 +19,10 @@ from cyclonedx.model.token import Token
 #  The Pylint error can be suppressed with:
 #  # pylint: disable=C0415
 #  over the imports inside the test function.
-from cyclonedx.handlers import (
-    tokens_handler,
-    token_handler,
-)
+from cyclonedx.handlers import token_handler, tokens_handler
+from cyclonedx.model.team import Team
+from cyclonedx.model.token import Token
+from tests.conftest import create_mock_dynamodb_infra
 
 
 @mock_dynamodb

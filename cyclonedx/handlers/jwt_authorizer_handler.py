@@ -4,16 +4,9 @@
 from botocore.exceptions import ClientError
 from jose import jwt
 
-from cyclonedx.ciam import (
-    CognitoUserData,
-    HarborCognitoClient,
-)
-from cyclonedx.ciam.jwt_data import JwtData
-from cyclonedx.handlers.common import (
-    allow_policy,
-    deny_policy,
-    print_values,
-)
+from cyclonedx.clients.ciam import CognitoUserData, HarborCognitoClient
+from cyclonedx.clients.ciam.jwt_data import JwtData
+from cyclonedx.handlers.common import allow_policy, deny_policy, print_values
 
 
 def _get_policy(method_arn: str, email: str, teams: str, username: str, token: str):

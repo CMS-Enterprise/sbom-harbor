@@ -7,22 +7,14 @@ import boto3
 import pytest
 from moto import mock_cognitoidp
 
-from tests.conftest import create_mock_cognito_infra
-from tests.handlers import (
-    METHOD_ARN,
-    TEAMS,
-    EMAIL,
-)
-
+from cyclonedx.clients.ciam import HarborCognitoClient, JwtData
 from cyclonedx.constants import USER_POOL_ID_KEY
-from cyclonedx.ciam import (
-    HarborCognitoClient,
-    JwtData,
-)
 from cyclonedx.handlers.jwt_authorizer_handler import (
     _get_cognito_user_pool_id,
     jwt_authorizer_handler,
 )
+from tests.conftest import create_mock_cognito_infra
+from tests.handlers import EMAIL, METHOD_ARN, TEAMS
 
 # pylint: disable=C0301
 token_part_1: str = "eyJraWQiOiJmYUdKYWR4NDB1UmxLMExyd2ZXQklObjhuaTRWdGZTYzc0ODJ2MmpRQWJFPSIsImFsZyI6IlJTMjU2In0"

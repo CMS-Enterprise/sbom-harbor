@@ -1,20 +1,13 @@
 """Factory for generating Authorizer Lambdas"""
 
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_lambda as lambda_,
-    Duration,
-)
-from aws_cdk.aws_iam import (
-    PolicyStatement,
-    Effect,
-)
+from aws_cdk import Duration
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_lambda as lambda_
+from aws_cdk.aws_iam import Effect, PolicyStatement
 from constructs import Construct
 
-from deploy.constants import (
-    PRIVATE,
-    SBOM_API_PYTHON_RUNTIME,
-)
+from cyclonedx.constants import USER_POOL_CLIENT_ID_KEY, USER_POOL_ID_KEY
+from deploy.constants import PRIVATE, SBOM_API_PYTHON_RUNTIME
 from deploy.util import create_asset
 
 
@@ -26,12 +19,14 @@ class AuthorizerLambdaFactory:
 
         """Lambda to check DynamoDB for a token belonging to the team sending an SBOM"""
 
+        # pylint: disable = R0913
         def __init__(
             self,
             scope: Construct,
-            *,
             vpc: ec2.Vpc,
             name: str,
+            user_pool_id: str,
+            user_pool_client_id: str,
         ):
 
             super().__init__(scope, name)
@@ -47,6 +42,10 @@ class AuthorizerLambdaFactory:
                 code=create_asset(self),
                 timeout=Duration.seconds(10),
                 memory_size=512,
+                environment={
+                    USER_POOL_ID_KEY: user_pool_id,
+                    USER_POOL_CLIENT_ID_KEY: user_pool_client_id,
+                },
             )
 
             self.lambda_func.add_to_role_policy(
@@ -64,7 +63,9 @@ class AuthorizerLambdaFactory:
 
         def get_lambda_function(self):
 
-            """Get the CDK Lambda Construct"""
+            """
+            -> Get the CDK Lambda Construct
+            """
 
             return self.lambda_func
 
@@ -72,12 +73,16 @@ class AuthorizerLambdaFactory:
         self: "AuthorizerLambdaFactory",
         scope: Construct,
         vpc: ec2.Vpc,
+        user_pool_id: str,
+        user_pool_client_id: str,
     ):
 
         """Constructor"""
 
         self.scope = scope
         self.vpc = vpc
+        self.user_pool_id = user_pool_id
+        self.user_pool_client_id = user_pool_client_id
 
     def create(self, lambda_name: str):
 
@@ -87,4 +92,6 @@ class AuthorizerLambdaFactory:
             self.scope,
             vpc=self.vpc,
             name=f"{lambda_name}_Authorizer",
+            user_pool_id=self.user_pool_id,
+            user_pool_client_id=self.user_pool_client_id,
         )

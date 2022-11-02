@@ -1,25 +1,20 @@
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_lambda as lambda_,
-    aws_s3 as i_bucket,
-    aws_iam as iam,
-    Duration,
-)
+"""
+-> Module to house SbomIngressLambda
+"""
+from aws_cdk import Duration
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_iam as iam
+from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_s3 as i_bucket
 from constructs import Construct
 
-from cyclonedx.constants import (
-    SBOM_BUCKET_NAME_KEY
-)
-from deploy.constants import (
-    SBOM_INGRESS_LN,
-    SBOM_API_PYTHON_RUNTIME,
-    PRIVATE
-)
+from cyclonedx.constants import SBOM_BUCKET_NAME_KEY
+from deploy.constants import PRIVATE, SBOM_API_PYTHON_RUNTIME, SBOM_INGRESS_LN
 from deploy.util import create_asset
 
 
 class SbomIngressLambda(Construct):
-    
+
     """Constructs a Lambda that can take
     SBOMS and puts them in the S3 Bucket"""
 
@@ -40,7 +35,7 @@ class SbomIngressLambda(Construct):
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
-            handler="cyclonedx.handlers.ingress.sbom_ingress_handler",
+            handler="cyclonedx.handlers.sbom_ingress_handler",
             code=create_asset(self),
             environment={
                 SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name,
@@ -52,8 +47,13 @@ class SbomIngressLambda(Construct):
         s3_bucket.grant_put(self.sbom_ingress_func)
 
         self.sbom_ingress_func.grant_invoke(
-            iam.ServicePrincipal('apigateway.amazonaws.com'),
+            iam.ServicePrincipal("apigateway.amazonaws.com"),
         )
 
     def get_lambda_function(self):
+
+        """
+        -> Get the CDK Lambda Construct
+        """
+
         return self.sbom_ingress_func

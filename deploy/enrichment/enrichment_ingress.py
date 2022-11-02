@@ -1,21 +1,16 @@
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_lambda as lambda_,
-    aws_s3 as s3,
-    aws_s3_notifications as s3n,
-    aws_events as eventbridge,
-    Duration,
-)
+"""
+-> Module to house EnrichmentIngressLambda
+"""
+from aws_cdk import Duration
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_events as eventbridge
+from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_s3 as s3
+from aws_cdk import aws_s3_notifications as s3n
 from constructs import Construct
 
-from cyclonedx.constants import (
-    SBOM_BUCKET_NAME_KEY,
-)
-from deploy.constants import (
-    PRIVATE,
-    SBOM_API_PYTHON_RUNTIME,
-    SBOM_ENRICHMENT_LN,
-)
+from cyclonedx.constants import SBOM_BUCKET_NAME_KEY
+from deploy.constants import PRIVATE, SBOM_API_PYTHON_RUNTIME, SBOM_ENRICHMENT_LN
 from deploy.util import create_asset
 
 
@@ -42,7 +37,7 @@ class EnrichmentIngressLambda(Construct):
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
-            handler="cyclonedx.enrichment.enrichment_ingress_handler",
+            handler="cyclonedx.handlers.enrichment_ingress_handler",
             code=create_asset(self),
             environment={
                 SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name,
@@ -68,4 +63,9 @@ class EnrichmentIngressLambda(Construct):
         )
 
     def get_lambda_function(self):
+
+        """
+        -> Returns the actual Construct
+        """
+
         return self.func

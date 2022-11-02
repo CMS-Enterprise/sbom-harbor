@@ -7,20 +7,16 @@ import os
 
 import boto3
 import pytest
-from moto import (
-    mock_s3,
-    mock_dynamodb,
-)
+from moto import mock_dynamodb, mock_s3
 
-from cyclonedx.ciam import CognitoUserData
+from cyclonedx.clients.ciam import CognitoUserData
+from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.constants import (
     HARBOR_TEAMS_TABLE_NAME,
     HARBOR_TEAMS_TABLE_PARTITION_KEY,
     HARBOR_TEAMS_TABLE_SORT_KEY,
 )
-
 from cyclonedx.handlers.ingress import sbom_ingress_handler
-from cyclonedx.db.harbor_db_client import HarborDBClient
 
 # This file is where all pytest fixtures should be
 # placed to make sure they are available for all tests to use

@@ -14,9 +14,8 @@ from typing import Callable
 import pytest
 
 import tests.data as test_data
-from cyclonedx.db.harbor_db_client import HarborDBClient
-from cyclonedx.enrichment.dependency_track import summarizer_handler
-from cyclonedx.enrichment.dependency_track.summarizer_handler import FileTypes
+from cyclonedx.clients.db.dynamodb import HarborDBClient
+from cyclonedx.handlers.summarizer_handler import FileTypes, summarizer_handler
 from cyclonedx.model.project import Project
 from tests.data import summary_samples
 

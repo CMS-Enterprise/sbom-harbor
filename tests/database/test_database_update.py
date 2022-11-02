@@ -1,16 +1,17 @@
-
 """ Database and Model tests for Creating objects in the HarborTeamsTable """
-
 import uuid
+from datetime import datetime
 from decimal import Decimal
 
 import pytest
+from dateutil.relativedelta import relativedelta
 
+from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.constants import (
     HARBOR_TEAMS_TABLE_PARTITION_KEY,
     HARBOR_TEAMS_TABLE_SORT_KEY,
 )
-from cyclonedx.db.harbor_db_client import HarborDBClient
+from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.model import EntityType
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member
@@ -20,10 +21,19 @@ from cyclonedx.model.token import Token
 
 
 def get_ek(et: str, model_id: str):
+
+    """
+    -> Creates an Entity Key
+    """
+
     return "{}#{}".format(et, model_id)
 
 
 def test_update_team_only(test_dynamo_db_resource, test_harbor_teams_table):
+
+    """
+    -> Update Team Test
+    """
 
     team_id = str(uuid.uuid4())
     entity_type = EntityType.TEAM.value
@@ -40,7 +50,7 @@ def test_update_team_only(test_dynamo_db_resource, test_harbor_teams_table):
         )
 
         pytest.fail("HarborDBClient should have thrown exception")
-    except Exception:
+    except DatabaseError:
         ...
 
     # Put the Item
@@ -86,6 +96,10 @@ def test_update_team_only(test_dynamo_db_resource, test_harbor_teams_table):
 
 def test_update_project_only(test_dynamo_db_resource, test_harbor_teams_table):
 
+    """
+    -> Update Project Test
+    """
+
     entity_type = EntityType.PROJECT.value
 
     team_id = str(uuid.uuid4())
@@ -93,7 +107,6 @@ def test_update_project_only(test_dynamo_db_resource, test_harbor_teams_table):
     project_name = "RATM"
     new_project_name = "MTRA"
     fisma_id = str(uuid.uuid4())
-
 
     try:
 
@@ -107,7 +120,7 @@ def test_update_project_only(test_dynamo_db_resource, test_harbor_teams_table):
         )
 
         pytest.fail("HarborDBClient should have thrown exception")
-    except Exception:
+    except DatabaseError:
         ...
 
     entity_key = get_ek(entity_type, project_id)
@@ -157,6 +170,10 @@ def test_update_project_only(test_dynamo_db_resource, test_harbor_teams_table):
 
 def test_update_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
 
+    """
+    -> Update Codebase Test
+    """
+
     entity_type = EntityType.CODEBASE.value
 
     team_id = str(uuid.uuid4())
@@ -185,7 +202,7 @@ def test_update_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
         )
 
         pytest.fail("HarborDBClient should have thrown exception")
-    except Exception:
+    except DatabaseError:
         ...
 
     entity_key = get_ek(entity_type, codebase_id)
@@ -246,6 +263,10 @@ def test_update_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
 
 def test_update_member_only(test_dynamo_db_resource, test_harbor_teams_table):
 
+    """
+    -> Update Member Test
+    """
+
     entity_type = EntityType.MEMBER.value
 
     team_id = str(uuid.uuid4())
@@ -269,7 +290,7 @@ def test_update_member_only(test_dynamo_db_resource, test_harbor_teams_table):
         )
 
         pytest.fail("HarborDBClient should have thrown exception")
-    except Exception:
+    except DatabaseError:
         ...
 
     entity_key = get_ek(entity_type, member_id)
@@ -322,17 +343,21 @@ def test_update_member_only(test_dynamo_db_resource, test_harbor_teams_table):
 
 def test_update_token_only(test_dynamo_db_resource, test_harbor_teams_table):
 
+    """
+    -> Update Token Test
+    """
+
     entity_type = EntityType.TOKEN.value
 
     team_id = str(uuid.uuid4())
     token_id = str(uuid.uuid4())
     token_val = str(uuid.uuid4())
 
-    created = Decimal(507482179.234)
-    new_created = Decimal(507483179.234)
+    created: datetime = datetime.now()
+    expires: datetime = created + relativedelta(weeks=1)
 
-    expires = Decimal(507492179.234)
-    new_expires = Decimal(507494179.234)
+    new_created = datetime.now() + relativedelta(days=1)
+    new_expires = new_created + relativedelta(weeks=1)
 
     try:
 
@@ -341,14 +366,14 @@ def test_update_token_only(test_dynamo_db_resource, test_harbor_teams_table):
                 team_id=team_id,
                 token_id=token_id,
                 enabled=True,
-                created=created,
-                expires=expires,
+                created=created.isoformat(),
+                expires=expires.isoformat(),
                 token=token_val,
             )
         )
 
         pytest.fail("HarborDBClient should have thrown exception")
-    except Exception:
+    except DatabaseError:
         ...
 
     entity_key = get_ek(entity_type, token_id)
@@ -358,8 +383,8 @@ def test_update_token_only(test_dynamo_db_resource, test_harbor_teams_table):
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: team_id,
             HARBOR_TEAMS_TABLE_SORT_KEY: entity_key,
-            Token.Fields.CREATED: created,
-            Token.Fields.EXPIRES: expires,
+            Token.Fields.CREATED: created.isoformat(),
+            Token.Fields.EXPIRES: expires.isoformat(),
             Token.Fields.ENABLED: True,
             Token.Fields.TOKEN: token_val,
         }
@@ -376,8 +401,8 @@ def test_update_token_only(test_dynamo_db_resource, test_harbor_teams_table):
     assert team_id == item[HARBOR_TEAMS_TABLE_PARTITION_KEY]
     assert entity_key == item[HARBOR_TEAMS_TABLE_SORT_KEY]
     assert item[Token.Fields.ENABLED]
-    assert created == item[Token.Fields.CREATED]
-    assert expires == item[Token.Fields.EXPIRES]
+    assert created.isoformat() == item[Token.Fields.CREATED]
+    assert expires.isoformat() == item[Token.Fields.EXPIRES]
     assert token_val == item[Token.Fields.TOKEN]
 
     HarborDBClient(test_dynamo_db_resource).update(
@@ -385,8 +410,8 @@ def test_update_token_only(test_dynamo_db_resource, test_harbor_teams_table):
             team_id=team_id,
             token_id=token_id,
             enabled=True,
-            created=new_created,
-            expires=new_expires,
+            created=new_created.isoformat(),
+            expires=new_expires.isoformat(),
             token=token_val,
         )
     )
@@ -402,12 +427,20 @@ def test_update_token_only(test_dynamo_db_resource, test_harbor_teams_table):
     assert team_id == item[HARBOR_TEAMS_TABLE_PARTITION_KEY]
     assert entity_key == item[HARBOR_TEAMS_TABLE_SORT_KEY]
     assert item[Token.Fields.ENABLED]
-    assert new_created == item[Token.Fields.CREATED]
-    assert new_expires == item[Token.Fields.EXPIRES]
+    assert new_created.isoformat() == item[Token.Fields.CREATED]
+    assert new_expires.isoformat() == item[Token.Fields.EXPIRES]
     assert token_val == item[Token.Fields.TOKEN]
 
 
-def test_update_team_with_a_child_of_each_type(test_dynamo_db_resource, test_harbor_teams_table):
+# pylint: disable = R0915
+def test_update_team_with_a_child_of_each_type(
+    test_dynamo_db_resource,
+    test_harbor_teams_table,
+):
+
+    """
+    -> Update Team/w children Test
+    """
 
     team_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
@@ -515,7 +548,7 @@ def test_update_team_with_a_child_of_each_type(test_dynamo_db_resource, test_har
                             language=new_language,
                             build_tool=build_tool,
                         )
-                    ]
+                    ],
                 )
             ],
             members=[
@@ -591,7 +624,9 @@ def test_update_team_with_a_child_of_each_type(test_dynamo_db_resource, test_har
 
     codebase_item = codebase["Item"]
     assert team_id == codebase_item[HARBOR_TEAMS_TABLE_PARTITION_KEY]
-    assert "{}#{}".format(cet, codebase_id) == codebase_item[HARBOR_TEAMS_TABLE_SORT_KEY]
+    assert (
+        "{}#{}".format(cet, codebase_id) == codebase_item[HARBOR_TEAMS_TABLE_SORT_KEY]
+    )
     assert new_codebase_name == codebase_item[CodeBase.Fields.NAME]
     assert new_language == codebase_item[CodeBase.Fields.LANGUAGE]
     assert build_tool == codebase_item[CodeBase.Fields.BUILD_TOOL]

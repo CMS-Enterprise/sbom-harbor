@@ -8,7 +8,7 @@ import boto3
 from dateutil.relativedelta import relativedelta
 from moto import mock_dynamodb
 
-from cyclonedx.db.harbor_db_client import HarborDBClient
+from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.handlers.api_key_authorizer import api_key_authorizer_handler
 from cyclonedx.model.team import Team
 from cyclonedx.model.token import Token, generate_token

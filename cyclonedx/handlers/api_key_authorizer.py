@@ -7,15 +7,16 @@ from datetime import datetime
 
 import boto3
 
-from cyclonedx.db.harbor_db_client import HarborDBClient
+from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.exceptions.database_exception import DatabaseError
-from cyclonedx.handlers.common import _extract_id_from_path, harbor_response
-from cyclonedx.model.team import Team
 from cyclonedx.handlers.common import (
+    _extract_id_from_path,
     allow_policy,
     deny_policy,
+    harbor_response,
     print_values,
 )
+from cyclonedx.model.team import Team
 
 
 def api_key_authorizer_handler(event: dict, context: dict = None):

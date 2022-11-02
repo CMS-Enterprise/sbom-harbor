@@ -2,30 +2,18 @@
     This is the module containing the SBOM Harbor Database Client.
 """
 
-from typing import (
-    Any,
-    Type,
-    TypeVar,
-    Callable,
-)
-from boto3.dynamodb.conditions import (
-    Attr,
-    Equals,
-    Key,
-)
+from typing import Any, Callable, Type, TypeVar
+
+from boto3.dynamodb.conditions import Attr, Equals, Key
 from botocore.exceptions import ClientError
 
 from cyclonedx.constants import (
-    HARBOR_TEAMS_TABLE_PARTITION_KEY,
     HARBOR_TEAMS_TABLE_NAME,
+    HARBOR_TEAMS_TABLE_PARTITION_KEY,
     HARBOR_TEAMS_TABLE_SORT_KEY,
 )
-from cyclonedx.model import (
-    EntityKey,
-    EntityType,
-    HarborModel,
-)
 from cyclonedx.exceptions.database_exception import DatabaseError
+from cyclonedx.model import EntityKey, EntityType, HarborModel
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project

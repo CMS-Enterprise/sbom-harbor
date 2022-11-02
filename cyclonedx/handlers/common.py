@@ -10,7 +10,7 @@ from typing import Union
 import boto3
 
 import cyclonedx.schemas as schemas
-from cyclonedx.db.harbor_db_client import HarborDBClient
+from cyclonedx.clients import HarborDBClient
 from cyclonedx.model import EntityType, HarborModel
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member

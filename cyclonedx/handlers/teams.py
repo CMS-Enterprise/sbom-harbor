@@ -7,27 +7,27 @@ from json import loads
 
 import boto3
 
-from cyclonedx.ciam import HarborCognitoClient
+from cyclonedx.clients.ciam import HarborCognitoClient
+from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.constants import COGNITO_TEAM_DELIMITER
-from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.exceptions.ciam_exception import HarborCiamError
 from cyclonedx.exceptions.database_exception import DatabaseError
 from cyclonedx.handlers.common import (
     ContextKeys,
     _extract_id_from_path,
     _get_method,
-    print_values,
-    harbor_response,
-    extract_attrib_from_event,
     _should_process_children,
     _to_members,
     _to_projects,
     _update_members,
     _update_projects,
+    extract_attrib_from_event,
+    harbor_response,
+    print_values,
 )
 from cyclonedx.model import generate_model_id
-from cyclonedx.model.team import Team
 from cyclonedx.model.member import Member
+from cyclonedx.model.team import Team
 from cyclonedx.model.token import Token, generate_token
 
 

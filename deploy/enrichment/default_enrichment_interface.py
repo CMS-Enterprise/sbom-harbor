@@ -1,34 +1,37 @@
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_lambda as lambda_,
-    aws_events as eventbridge,
-    aws_s3 as i_bucket,
-    Duration,
-)
+"""
+-> Module to house the default enrichment lambda definition
+"""
+from aws_cdk import Duration
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_events as eventbridge
+from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_s3 as i_bucket
 from constructs import Construct
 
-from deploy.constants import (
-    PRIVATE,
-    SBOM_API_PYTHON_RUNTIME,
-    DEFAULT_INTERFACE_LN,
-)
+from deploy.constants import DEFAULT_INTERFACE_LN, PRIVATE, SBOM_API_PYTHON_RUNTIME
 from deploy.util import create_asset
 
 
 class DefaultEnrichmentInterfaceLambda(Construct):
 
-    """This Construct creates a Lambda
-    that can enrich an SBOM with data from NVD
+    """
+    -> This Construct creates a Lambda
+    -> that can enrich an SBOM with data from NVD
     """
 
     def __init__(
-            self,
-            scope: Construct,
-            *,
-            vpc: ec2.Vpc,
-            s3_bucket: i_bucket,
-            event_bus: eventbridge.EventBus,
+        self,
+        scope: Construct,
+        *,
+        vpc: ec2.Vpc,
+        s3_bucket: i_bucket,
+        event_bus: eventbridge.EventBus,
     ):
+
+        """
+        -> Constructor
+        """
+
         super().__init__(scope, DEFAULT_INTERFACE_LN)
 
         dt_func_sg = ec2.SecurityGroup(self, "LaunchTemplateSG", vpc=vpc)
@@ -40,7 +43,7 @@ class DefaultEnrichmentInterfaceLambda(Construct):
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
-            handler="cyclonedx.enrichment.des_interface_handler",
+            handler="cyclonedx.handlers.des_interface_handler",
             code=create_asset(self),
             timeout=Duration.minutes(15),
             security_groups=[dt_func_sg],
@@ -52,4 +55,9 @@ class DefaultEnrichmentInterfaceLambda(Construct):
         s3_bucket.grant_read_write(self.func)
 
     def get_lambda_function(self):
+
+        """
+        -> Getter for the actual construct
+        """
+
         return self.func

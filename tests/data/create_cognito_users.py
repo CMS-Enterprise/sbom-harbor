@@ -5,8 +5,8 @@
 import boto3
 from botocore.exceptions import ClientError
 
-from cyclonedx.ciam import CognitoUserData
 from tests.conftest import FINAL_TEST_PASSWORD
+from cyclonedx.clients.ciam import CognitoUserData
 
 client = boto3.client("cognito-idp")
 

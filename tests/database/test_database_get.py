@@ -6,12 +6,12 @@ from uuid import uuid4
 
 import boto3
 
+from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.constants import (
     HARBOR_TEAMS_TABLE_NAME,
     HARBOR_TEAMS_TABLE_PARTITION_KEY,
     HARBOR_TEAMS_TABLE_SORT_KEY,
 )
-from cyclonedx.db.harbor_db_client import HarborDBClient
 from cyclonedx.model import EntityType
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member

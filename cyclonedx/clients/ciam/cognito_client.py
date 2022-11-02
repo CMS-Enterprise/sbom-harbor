@@ -6,14 +6,14 @@ from os import environ
 import boto3
 import botocore.exceptions
 
-from cyclonedx.ciam.jwt_data import JwtData
-from cyclonedx.ciam.user_data import CognitoUserData
-from cyclonedx.exceptions.ciam_exception import HarborCiamError
+from cyclonedx.clients.ciam.jwt_data import JwtData
+from cyclonedx.clients.ciam.user_data import CognitoUserData
 from cyclonedx.constants import (
     COGNITO_TEAM_DELIMITER,
     USER_POOL_CLIENT_ID_KEY,
     USER_POOL_ID_KEY,
 )
+from cyclonedx.exceptions.ciam_exception import HarborCiamError
 from cyclonedx.model.member import Member
 
 
