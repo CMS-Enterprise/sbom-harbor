@@ -1,6 +1,6 @@
 """ This module has constants throughout the build code """
-
 from os import getenv
+from boto3 import session
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_lambda as lambda_
 from dotenv import load_dotenv
@@ -8,117 +8,108 @@ from dotenv import load_dotenv
 # load environment variables from .env file into os.environ
 load_dotenv(".env")
 
+ENVIRONMENT = getenv("ENVIRONMENT") or getenv("AWS_VAULT") or "sandbox"
+awsSession = session.Session()
+regionCodes = {
+  "us-east-1": "use1",
+  "us-east-2": "use2",
+  "us-west-1": "usw1",
+  "us-west-2": "usw2"
+}
+
 # General
 SBOM_API_PYTHON_RUNTIME = lambda_.Runtime.PYTHON_3_9
 
 # AWS
-AWS_ACCOUNT_NUM=getenv("AWS_ACCOUNT_NUM")
-AWS_DEFAULT_REGION=getenv("AWS_DEFAULT_REGION")
-AWS_REGION=getenv("AWS_REGION")
+AWS_ACCOUNT_ID=awsSession.client('sts').get_caller_identity().get('Account')
+AWS_REGION=awsSession.region_name
+AWS_REGION_SHORT=regionCodes.get(AWS_REGION)
 
 # Cognito
 AUTHORIZATION_HEADER = "Authorization"
-COGNITO_POOLS_AUTH_ID = "cognito_pools_auth_id"
-COGNITO_DOMAIN_PREFIX = f"sbom-web-app-{AWS_ACCOUNT_NUM}"
-USER_POOL_DOMAIN_ID = f"SBOMUserPoolDomain{AWS_ACCOUNT_NUM}"
-USER_POOL_ID = f"SBOMUserPool_ID_{AWS_ACCOUNT_NUM}"
-USER_POOL_NAME = f"SBOMUserPool_{AWS_ACCOUNT_NUM}"
-USER_POOL_GROUP_ID = f"SBOMUserPoolGroup_Admin_ID_{AWS_ACCOUNT_NUM}"
-USER_POOL_GROUP_NAME = f"SBOMUserPoolGroup_Admin_{AWS_ACCOUNT_NUM}"
+USER_POOL_ID = "CognitoUserPool"
+USER_POOL_NAME = f"{ENVIRONMENT}-HarborUsers-{AWS_REGION_SHORT}"
+USER_POOL_GROUP_ID = "AdminsUserPoolGroup"
+USER_POOL_GROUP_NAME = f"{ENVIRONMENT}-Admins-{AWS_REGION_SHORT}"
 USER_POOL_GROUP_DESCRIPTION = "Default group for authenticated administrator users"
-USER_POOL_APP_CLIENT_ID = "SBOMUserPool_AppClient"
-USER_POOL_APP_CLIENT_NAME = "SBOMUserPool_App"
-USER_ROLE_ID = "SBOMUserRole_ID"
-USER_ROLE_NAME = "SBOMUserRole"
-ADMIN_USER_ID = "sbomadmin"
-ADMIN_USER_USERNAME = "sbomadmin@aquia.us"
+USER_POOL_APP_CLIENT_ID = "UserPoolAppClient"
+USER_POOL_APP_CLIENT_NAME = f"{ENVIRONMENT}-Harbor-{AWS_REGION_SHORT}"
+USER_ROLE_ID = "CognitoUserRole"
+USER_ROLE_NAME = f"{ENVIRONMENT}-CognitoUser-{AWS_REGION_SHORT}"
 
 # Load Balancer
 APP_LB_ID = "AppLoadBalancer"
-APP_LB_SECURITY_GROUP_ID = "AppLoadBalancer-SecurityGroup"
+APP_LB_SECURITY_GROUP_ID = f"{ENVIRONMENT}-AppLoadBalancer-{AWS_REGION_SHORT}"
 
 # Lambdas
-SBOM_INGRESS_LN = "SBOMIngressLambda"
-CREATE_TOKEN_LN = "CreateTokenLambda"
-DELETE_TOKEN_LN = "DeleteTokenLambda"
-REGISTER_TEAM_LN = "RegisterTeamLambda"
-UPDATE_TEAM_LN = "UpdateTeamLambda"
-GET_TEAM_LN = "GetTeamLambda"
-GET_TEAMS_FOR_ID_LN = "GetTeamsForIdLambda"
-USER_SEARCH_LN = "UserSearchLambda"
-LOGIN_LN = "LoginLambda"
-SBOM_ENRICHMENT_LN = "SBOMEnrichmentIngressLambda"
-DT_INTERFACE_LN = "DependencyTrackInterfaceLambda"
-IC_INTERFACE_LN = "IonChannelInterfaceLambda"
-DEFAULT_INTERFACE_LN = "DefaultEnrichmentInterfaceLambda"
-ENRICHMENT_EGRESS_LN = "EnrichmentEgressLambda"
+SBOM_INGRESS_LN = "SBOMIngress"
+CREATE_TOKEN_LN = "CreateToken"
+DELETE_TOKEN_LN = "DeleteToken"
+REGISTER_TEAM_LN = "RegisterTeam"
+UPDATE_TEAM_LN = "UpdateTeam"
+GET_TEAM_LN = "GetTeam"
+GET_TEAMS_FOR_ID_LN = "GetTeamsForId"
+USER_SEARCH_LN = "UserSearch"
+LOGIN_LN = "Login"
+SBOM_ENRICHMENT_LN = "SBOMEnrichmentIngress"
+DT_INTERFACE_LN = "DependencyTrackInterface"
+IC_INTERFACE_LN = "IonChannelInterface"
+DEFAULT_INTERFACE_LN = "DefaultEnrichmentInterface"
+ENRICHMENT_EGRESS_LN = "EnrichmentEgress"
 AUTHORIZER_LN = "JwtTokenAuthorizer"
 TOKEN_AUTHORIZER_LN = "APITokenAuthorizer"
 API_KEY_AUTHORIZER_LN = "APIKeyAuthorizer"
-SUMMARIZER_LN = "SummarizerLambda"
+SUMMARIZER_LN = "Summarizer"
 
 # Dependency Track
 DT_API_INTEGRATION = "DT_API_INT"
 DT_CONTAINER_ID = "dtContainer"
 DT_DOCKER_ID = "dependencytrack/apiserver"
-DT_FARGATE_SVC_NAME = "DTFargateService"
+DT_FARGATE_SVC_NAME = f"{ENVIRONMENT}-DTFargateService-{AWS_REGION_SHORT}"
 DT_INSTALL_LOC = "/apiserver"
 DT_LB_ID = "DEPENDENCY-TRACK-LOAD-BALANCER"
 DT_LB_LOGGING_ID = "DEPENDENCY-TRACK-LOAD-BALANCER-LOGGING"
 DT_LB_SG_ID = "DEPENDENCY-TRACK-LOAD-BALANCER-SECURITY-GROUP"
 DT_REST_API_GATEWAY = "DT_REST_API_GW"
-DT_SBOM_QUEUE_NAME = "DT_SBOMQueue"
+DT_SBOM_QUEUE_NAME = f"{ENVIRONMENT}-DT_SBOMQueue-{AWS_REGION_SHORT}"
 DT_TASK_DEF_ID = "dtTaskDefinition"
 EFS_MOUNT_ID = "dtApiStorage"
 FARGATE_CLUSTER_ID = "DTFargateCluster"
 
-# APIs
-SBOM_INGRESS_API_ID = "SBOM-API"
-REST_API_NAME = "SBOMApi"
-
 # S3 - SBOMs
-S3_BUCKET_ID = f"sbom.bucket.id.{AWS_ACCOUNT_NUM}"
-S3_BUCKET_NAME = f"sbom.bucket.{AWS_ACCOUNT_NUM}"
-INGRESS_BUCKET_NAME = f"ingress.{S3_BUCKET_NAME}"
-ENRICHMENT_BUCKET_NAME = f"enrichment.{S3_BUCKET_NAME}"
+S3_BUCKET_ID = "UploadsEnrichmentBucket"
+S3_BUCKET_NAME = f"{ENVIRONMENT}-harbor-sbom-uploads-enrichment-{AWS_ACCOUNT_ID}-{AWS_REGION_SHORT}"
 
 # S3 - UI
-S3_WS_BUCKET_NAME = f"sbom.webapp.bucket.{AWS_ACCOUNT_NUM}"
-S3_WS_BUCKET_ID = f"{S3_WS_BUCKET_NAME}.id"
-UI_CONFIG_FILE_NAME = "config.json"
-UI_DEPLOYMENT_ID = "ui_deployment_id"
+S3_WS_BUCKET_NAME = f"{ENVIRONMENT}-harbor-web-assets-{AWS_ACCOUNT_ID}-{AWS_REGION_SHORT}"
+S3_WS_BUCKET_ID = "WebAssetsBucket"
+UI_DEPLOYMENT_ID = "UiDeployment"
+
 
 # Stacks
-STACK_ID = "SBOMApi"
-ENRICHMENT_STACK_ID = f"{STACK_ID}-Enrichment"
-INGRESS_STACK_ID = f"{STACK_ID}-Ingress"
-SHARED_RESOURCE_STACK_ID = f"{STACK_ID}-Shared-Resource"
-USER_MANAGEMENT_STACK_ID = f"{STACK_ID}-User-Management"
-WEB_STACK_ID = f"{STACK_ID}-Web"
+STACK_ID_PREFIX = f"{ENVIRONMENT}-harbor"
+ENRICHMENT_STACK_ID = f"{STACK_ID_PREFIX}-enrichment-{AWS_REGION_SHORT}"
+API_STACK_ID = f"{STACK_ID_PREFIX}-backend-{AWS_REGION_SHORT}"
+SHARED_RESOURCE_STACK_ID = f"{STACK_ID_PREFIX}-shared-resources-{AWS_REGION_SHORT}"
+USER_MANAGEMENT_STACK_ID = f"{STACK_ID_PREFIX}-user-management-{AWS_REGION_SHORT}"
+WEB_STACK_ID = f"{STACK_ID_PREFIX}-frontend-{AWS_REGION_SHORT}"
 
 # VPC
-VPC_ID = "sbom.vpc.id"
-VPC_NAME = "sbom.vpc"
+VPC_ID = "HarborNetworkVpc"
+VPC_NAME = f"{ENVIRONMENT}-HarborNetwork-{AWS_REGION_SHORT}"
 VPC_TAG_NAME = f"{SHARED_RESOURCE_STACK_ID}/{VPC_NAME}/{VPC_NAME}"
 
 # EC2
 CIDR = "10.0.0.0/16"
-EC2_INSTANCE_AMI = "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-20220131"
-EC2_INSTANCE_NAME = "DependencyTrack"
-EC2_INSTANCE_TYPE = "t2.medium"
-EC2_SSH_KEY_NAME = "aquia"
 
 # Subnets
-PRIVATE = ec2.SubnetType.PRIVATE_WITH_NAT
-PRIVATE_SUBNET_NAME = "SBOMPrivateSubnet"
+PRIVATE = ec2.SubnetType.PRIVATE_WITH_EGRESS
+PRIVATE_SUBNET_NAME = "Private"
 PUBLIC = ec2.SubnetType.PUBLIC
-PUBLIC_SUBNET_NAME = "SBOMPublicSubnet"
+PUBLIC_SUBNET_NAME = "Public"
 
 # API Gateway
 API_GW_ID_EXPORT_NAME = "apigwurl"
-API_GW_URL_EXPORT_ID = f"{API_GW_ID_EXPORT_NAME}id"
-API_GW_URL_KEY = "apigw_url"
 
 # Cloudfront
-CLOUDFRONT_DIST_NAME = "sbomapidistribution"
-CLOUDFRONT_BUCKET_NAME = f"cloudfront.logging.bucket.{AWS_ACCOUNT_NUM}"
+CLOUDFRONT_DIST_ID = "CloudFrontDistribution"

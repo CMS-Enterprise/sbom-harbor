@@ -9,8 +9,14 @@ from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_s3_notifications as s3n
 from constructs import Construct
 
-from cyclonedx.constants import SBOM_BUCKET_NAME_KEY
-from deploy.constants import PRIVATE, SBOM_API_PYTHON_RUNTIME, SBOM_ENRICHMENT_LN
+from cyclonedx.constants import (
+    SBOM_BUCKET_NAME_KEY,
+)
+from deploy.constants import (
+    PRIVATE,
+    SBOM_API_PYTHON_RUNTIME,
+    SBOM_ENRICHMENT_LN,
+)
 from deploy.util import create_asset
 
 

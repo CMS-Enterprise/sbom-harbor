@@ -8,7 +8,11 @@ from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_s3 as i_bucket
 from constructs import Construct
 
-from deploy.constants import PRIVATE, SBOM_API_PYTHON_RUNTIME, SUMMARIZER_LN
+from deploy.constants import (
+    PRIVATE,
+    SBOM_API_PYTHON_RUNTIME,
+    SUMMARIZER_LN,
+)
 from deploy.util import create_asset
 
 

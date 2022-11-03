@@ -5,7 +5,7 @@ from aws_cdk import (
     aws_cloudfront as cf,
     aws_iam as iam,
     aws_s3 as s3,
-    aws_s3_deployment as s3d,
+    CfnOutput,
     Duration,
     Fn,
     RemovalPolicy,
@@ -15,11 +15,9 @@ from constructs import Construct
 from deploy.constants import (
     API_GW_ID_EXPORT_NAME,
     AUTHORIZATION_HEADER,
-    CLOUDFRONT_DIST_NAME,
+    CLOUDFRONT_DIST_ID,
     S3_WS_BUCKET_ID,
     S3_WS_BUCKET_NAME,
-    UI_DEPLOYMENT_ID,
-    VPC_NAME,
     WEB_STACK_ID,
 )
 from deploy.util.SBOMHarborCertificate import Cert as SBOMHarborCert
@@ -43,7 +41,7 @@ class SBOMWebStack(Stack):
             kw_args["viewer_certificate"] = harbor_cert.get_viewer_cert()
 
         return cf.CloudFrontWebDistribution(
-            self, CLOUDFRONT_DIST_NAME,
+            self, CLOUDFRONT_DIST_ID,
             **kw_args,
             origin_configs=[
                 cf.SourceConfiguration(
@@ -119,8 +117,8 @@ class SBOMWebStack(Stack):
         )
 
         oai = cf.OriginAccessIdentity(
-            self, "SBOMHarborOriginAccessIdentity",
-            comment="SBOM Origin Access Identity"
+            self, "HarborOriginAccessIdentity",
+            comment="Harbor Origin Access Identity"
         )
 
         website_bucket.add_to_resource_policy(
@@ -131,15 +129,11 @@ class SBOMWebStack(Stack):
             )
         )
 
-        # This line specifies where the UI is as an asset.
-        # We need to have written whatever we needed already to the
-        # UI build folder before this line runs.
-        sources = s3d.Source.asset(self.__ui_loc)
-
-        s3d.BucketDeployment(
-            self, UI_DEPLOYMENT_ID,
-            sources=[sources],
-            destination_bucket=website_bucket,
+        # referenced by UI deployment script
+        CfnOutput(
+            self, "WebAssetsBucketName",
+            description="Source for CloudFront to serve frontend UI assets",
+            value=website_bucket.bucket_name
         )
 
         # Create a Certificate to read the environment
@@ -151,6 +145,13 @@ class SBOMWebStack(Stack):
             website_bucket=website_bucket, oai=oai,
             apigw_url=Fn.import_value(API_GW_ID_EXPORT_NAME),
             harbor_cert=harbor_cert,
+        )
+
+        # referenced by UI deployment script
+        CfnOutput(
+            self, "CloudFrontDomain",
+            description="CloudFront Distribution domain name",
+            value=distribution.distribution_domain_name
         )
 
         harbor_cert.create_host_record(distribution)

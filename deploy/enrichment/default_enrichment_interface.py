@@ -8,7 +8,11 @@ from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_s3 as i_bucket
 from constructs import Construct
 
-from deploy.constants import DEFAULT_INTERFACE_LN, PRIVATE, SBOM_API_PYTHON_RUNTIME
+from deploy.constants import (
+    PRIVATE,
+    SBOM_API_PYTHON_RUNTIME,
+    DEFAULT_INTERFACE_LN,
+)
 from deploy.util import create_asset
 
 
@@ -27,11 +31,6 @@ class DefaultEnrichmentInterfaceLambda(Construct):
         s3_bucket: i_bucket,
         event_bus: eventbridge.EventBus,
     ):
-
-        """
-        -> Constructor
-        """
-
         super().__init__(scope, DEFAULT_INTERFACE_LN)
 
         dt_func_sg = ec2.SecurityGroup(self, "LaunchTemplateSG", vpc=vpc)

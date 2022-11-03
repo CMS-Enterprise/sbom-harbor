@@ -20,7 +20,10 @@ from deploy.constructs.harbor_teams_table import HarborTeamsTable
 from deploy.util import SBOMApiVpc
 from deploy.util import DynamoTableManager
 
-from cyclonedx.constants import EVENT_BUS_NAME
+from cyclonedx.constants import (
+  EVENT_BUS_ID,
+  EVENT_BUS_NAME
+)
 
 
 class SBOMSharedResourceStack(Stack):
@@ -54,7 +57,7 @@ class SBOMSharedResourceStack(Stack):
 
         self.event_bus = eventbridge.EventBus(
             self,
-            EVENT_BUS_NAME,
+            EVENT_BUS_ID,
             event_bus_name=EVENT_BUS_NAME,
         )
 

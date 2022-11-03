@@ -9,6 +9,9 @@ from json import dumps
 import boto3
 import requests
 from requests import Response, get, put
+from deploy.constants import (
+    S3_BUCKET_NAME,
+)
 
 from cyclonedx.clients.ion_channel.ion_channel import IonChannelClient
 from cyclonedx.constants import (
@@ -104,17 +107,16 @@ def test_put_sbom_in_s3():
     """Puts an SBOM in S3 with the correct metadata fro testing"""
 
     sbom = "sboms/keycloak.json"
-    bucket_name = f"sbom.bucket.{os.environ.get('AWS_ACCOUNT_NUM')}"
     s3_obj_name = "sbom-keycloak.json"
 
-    print(f"Putting: {s3_obj_name} in {bucket_name}")
+    print(f"Putting: {s3_obj_name} in {S3_BUCKET_NAME}")
 
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, sbom)
 
     with open(filename, "rb") as fh:
         s3 = boto3.resource("s3")
-        s3.Object(bucket_name, s3_obj_name).put(
+        s3.Object(S3_BUCKET_NAME, s3_obj_name).put(
             Body=fh,
             Metadata={
                 S3_META_TEAM_KEY: "EVAL TestTeam",

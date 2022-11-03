@@ -1,11 +1,12 @@
 
 """This Stack is used to set up shared resources
 that the other stacks use when deploying the application"""
+
 from aws_cdk import (
-    aws_ec2 as ec2,
     aws_iam as iam,
     aws_cognito as cognito,
     Stack,
+    CfnOutput,
 )
 from constructs import Construct
 
@@ -15,7 +16,6 @@ from deploy.constants import (
 from deploy.user import (
     SBOMUserPool,
     SBOMUserPoolClient,
-    SBOMUserPoolDomain,
     SBOMUserPoolGroup,
     SBOMUserRole
 )
@@ -26,8 +26,6 @@ class SBOMUserManagement(Stack):
     def __init__(
         self,
         scope: Construct,
-        *,
-        vpc: ec2.Vpc,
         **kwargs,
     ) -> None:
 
@@ -37,14 +35,22 @@ class SBOMUserManagement(Stack):
         # Create the Cognito user pool
         user_pool = SBOMUserPool(self)
         self.cognito_user_pool = user_pool.get_cognito_user_pool()
-
-        # Create the Cognito user pool domain
-        user_pool_domain = SBOMUserPoolDomain(self, user_pool=user_pool)
-        self.cognito_user_pool_domain = user_pool_domain.get_cognito_user_pool_domain()
+        CfnOutput(
+          self,
+          id="UserPoolID",
+          value=self.cognito_user_pool.user_pool_id,
+          description="Referenced by UI deployment"
+        )
 
         # Create the Cognito user pool app client
         user_pool_client = SBOMUserPoolClient(self, user_pool=user_pool)
         self.cognito_user_pool_client = user_pool_client.get_cognito_user_pool_client()
+        CfnOutput(
+          self,
+          id="UserPoolClientID",
+          value=self.cognito_user_pool_client.user_pool_client_id,
+          description="Referenced by UI deployment"
+        )
 
         # Create the role for the Cognito user pool group
         user_role = SBOMUserRole(self, user_pool=user_pool)

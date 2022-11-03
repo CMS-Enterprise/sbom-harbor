@@ -2,14 +2,20 @@
 
 from os import path
 
-from aws_cdk import CfnOutput, Duration, Stack
-from aws_cdk import aws_apigatewayv2 as apigwv2
-from aws_cdk import aws_apigatewayv2_alpha as apigwv2a
-from aws_cdk import aws_cognito as cognito
-from aws_cdk import aws_ec2 as ec2
-from aws_cdk import aws_lambda as lambda_
-from aws_cdk import aws_logs as logs
-from aws_cdk import aws_s3 as s3
+
+from aws_cdk import (
+    CfnOutput,
+    aws_apigatewayv2_alpha as apigwv2a,
+    aws_apigatewayv2 as apigwv2,
+    aws_ec2 as ec2,
+    aws_logs as logs,
+    aws_lambda as lambda_,
+    aws_cognito as cognito,
+    aws_s3 as s3,
+    RemovalPolicy,
+    Duration,
+    Stack,
+)
 from aws_cdk.aws_apigatewayv2_alpha import (
     CorsHttpMethod,
     CorsPreflightOptions,
@@ -24,8 +30,8 @@ from constructs import Construct
 from cyclonedx.constants import USER_POOL_CLIENT_ID_KEY, USER_POOL_ID_KEY
 from deploy.authorizers import AuthorizerLambdaFactory, SBOMUploadAPIKeyAuthorizerLambda
 from deploy.constants import (
+    API_STACK_ID,
     API_GW_ID_EXPORT_NAME,
-    API_GW_URL_EXPORT_ID,
     AUTHORIZATION_HEADER,
     PRIVATE,
     S3_BUCKET_ID,
@@ -35,7 +41,6 @@ from deploy.constants import (
 from deploy.user import SBOMLoginLambda, SBOMUserSearchLambda
 from deploy.util import DynamoTableManager, SbomIngressLambda, create_asset
 
-INGRESS_API_STACK_ID = "SBOM-Management-Api"
 
 
 class LambdaFactory:
@@ -44,7 +49,7 @@ class LambdaFactory:
     -> LambdaFactory creates Lambda configurations
     """
 
-    class SBOMLambda(Construct):
+    class HarborLambda(Construct):
 
         """
         -> Lambda to check DynamoDB for a token
@@ -127,10 +132,10 @@ class LambdaFactory:
         -> SBOMLambda
         """
 
-        return LambdaFactory.SBOMLambda(
+        return LambdaFactory.HarborLambda(
             self.scope,
             vpc=self.vpc,
-            name=f"SBOMHarbor_{lambda_name}_Lambda",
+            name=f"Harbor_{lambda_name}_Lambda",
             table_mgr=self.table_mgr,
             handler=func,
             user_pool_id=self.user_pool_id,
@@ -157,6 +162,7 @@ class SBOMIngressApiStack(Stack):
             "AccessLogs",
             log_group_name="APIGWAccessLogs",
             retention=RetentionDays.ONE_DAY,
+            removal_policy=RemovalPolicy.DESTROY
         )
 
         stage.access_log_settings = apigwv2.CfnStage.AccessLogSettingsProperty(
@@ -176,7 +182,7 @@ class SBOMIngressApiStack(Stack):
     ) -> None:
 
         # Run the constructor of the Stack superclass.
-        super().__init__(scope, INGRESS_API_STACK_ID, **kwargs)
+        super().__init__(scope, API_STACK_ID, **kwargs)
 
         authorizer_factory = AuthorizerLambdaFactory(
             self,
@@ -274,8 +280,8 @@ class SBOMIngressApiStack(Stack):
 
         CfnOutput(
             self,
-            API_GW_URL_EXPORT_ID,
-            value=f"{self.api.http_api_id}.execute-api.us-east-1.amazonaws.com",
+            API_GW_ID_EXPORT_NAME,
+            value=self.api.url.replace("https://","").replace("/",""),
             export_name=API_GW_ID_EXPORT_NAME,
             description="URL Of the API Gateway",
         )

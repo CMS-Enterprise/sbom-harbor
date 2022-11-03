@@ -26,8 +26,7 @@ process.env.USER_POOL_CLIENT_ID =
     .toString()
     .trim()
 
-process.env.AWS_REGION =
-  process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'us-east-1'
+process.env.AWS_REGION = process.env.AWS_REGION || 'us-east-1'
 
 const CONFIG = {
   API_URL: process.env.API_URL,

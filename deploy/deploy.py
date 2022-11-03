@@ -6,8 +6,7 @@ from aws_cdk import (
     aws_events as eventbridge,
 )
 from deploy.constants import (
-    AWS_ACCOUNT_NUM,
-    AWS_DEFAULT_REGION,
+    AWS_ACCOUNT_ID,
     AWS_REGION,
 )
 from deploy.stacks import (
@@ -17,6 +16,7 @@ from deploy.stacks import (
     SBOMWebStack,
 )
 from deploy.stacks.SBOMIngressApiStack import SBOMIngressApiStack
+
 from deploy.util import DynamoTableManager
 
 from tests.data.create_cognito_users import test_create_cognito_users
@@ -30,8 +30,8 @@ def dodep() -> None:
     """
 
     env = cdk.Environment(
-        account=AWS_ACCOUNT_NUM,
-        region=AWS_REGION if AWS_REGION is not None else AWS_DEFAULT_REGION,
+        account=AWS_ACCOUNT_ID,
+        region=AWS_REGION,
     )
 
     # Create the CDK app to pass into all the Stacks
@@ -44,7 +44,7 @@ def dodep() -> None:
     table_manager: DynamoTableManager = shared_resources.get_dynamo_table_manager()
     event_bus: eventbridge.EventBus = shared_resources.get_event_bus()
 
-    user_management = SBOMUserManagement(app, vpc=vpc, env=env)
+    user_management = SBOMUserManagement(app, env=env)
     user_pool: cognito.UserPool = user_management.get_user_pool()
     user_pool_client: cognito.UserPoolClient = user_management.get_user_pool_client()
 

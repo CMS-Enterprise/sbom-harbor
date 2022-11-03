@@ -8,8 +8,14 @@ from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_s3 as i_bucket
 from constructs import Construct
 
-from cyclonedx.constants import SBOM_BUCKET_NAME_KEY
-from deploy.constants import PRIVATE, SBOM_API_PYTHON_RUNTIME, SBOM_INGRESS_LN
+from cyclonedx.constants import (
+    SBOM_BUCKET_NAME_KEY
+)
+from deploy.constants import (
+    SBOM_INGRESS_LN,
+    SBOM_API_PYTHON_RUNTIME,
+    PRIVATE
+)
 from deploy.util import create_asset
 
 
