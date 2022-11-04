@@ -2,28 +2,18 @@
 that the other stacks use when deploying the application"""
 
 from os import path
-from constructs import Construct
-from aws_cdk import (
-    aws_s3 as s3,
-    aws_ec2 as ec2,
-    aws_events as eventbridge,
-    aws_dynamodb as dynamodb,
-    RemovalPolicy,
-    Stack,
-)
-from deploy.constants import (
-    S3_BUCKET_ID,
-    S3_BUCKET_NAME,
-    SHARED_RESOURCE_STACK_ID,
-)
-from deploy.constructs.harbor_teams_table import HarborTeamsTable
-from deploy.util import SBOMApiVpc
-from deploy.util import DynamoTableManager
 
-from cyclonedx.constants import (
-  EVENT_BUS_ID,
-  EVENT_BUS_NAME
-)
+from aws_cdk import RemovalPolicy, Stack
+from aws_cdk import aws_dynamodb as dynamodb
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_events as eventbridge
+from aws_cdk import aws_s3 as s3
+from constructs import Construct
+
+from cyclonedx.constants import EVENT_BUS_ID, EVENT_BUS_NAME
+from deploy.constants import S3_BUCKET_ID, S3_BUCKET_NAME, SHARED_RESOURCE_STACK_ID
+from deploy.constructs.harbor_teams_table import HarborTeamsTable
+from deploy.util import DynamoTableManager, SBOMApiVpc, s3_utils
 
 
 class SBOMSharedResourceStack(Stack):
@@ -53,7 +43,10 @@ class SBOMSharedResourceStack(Stack):
             public_read_access=False,
             removal_policy=RemovalPolicy.DESTROY,
             event_bridge_enabled=True,
+            versioned=True,
         )
+
+        s3_utils.set_source_bucket_replication(self)
 
         self.event_bus = eventbridge.EventBus(
             self,

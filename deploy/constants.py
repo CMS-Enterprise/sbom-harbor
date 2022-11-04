@@ -1,8 +1,9 @@
 """ This module has constants throughout the build code """
 from os import getenv
-from boto3 import session
+
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_lambda as lambda_
+from boto3 import session
 from dotenv import load_dotenv
 
 # load environment variables from .env file into os.environ
@@ -11,19 +12,19 @@ load_dotenv(".env")
 ENVIRONMENT = getenv("ENVIRONMENT") or getenv("AWS_VAULT") or "sandbox"
 awsSession = session.Session()
 regionCodes = {
-  "us-east-1": "use1",
-  "us-east-2": "use2",
-  "us-west-1": "usw1",
-  "us-west-2": "usw2"
+    "us-east-1": "use1",
+    "us-east-2": "use2",
+    "us-west-1": "usw1",
+    "us-west-2": "usw2",
 }
 
 # General
 SBOM_API_PYTHON_RUNTIME = lambda_.Runtime.PYTHON_3_9
 
 # AWS
-AWS_ACCOUNT_ID=awsSession.client('sts').get_caller_identity().get('Account')
-AWS_REGION=awsSession.region_name
-AWS_REGION_SHORT=regionCodes.get(AWS_REGION)
+AWS_ACCOUNT_ID = awsSession.client("sts").get_caller_identity().get("Account")
+AWS_REGION = awsSession.region_name
+AWS_REGION_SHORT = regionCodes.get(AWS_REGION)
 
 # Cognito
 AUTHORIZATION_HEADER = "Authorization"
@@ -61,6 +62,9 @@ TOKEN_AUTHORIZER_LN = "APITokenAuthorizer"
 API_KEY_AUTHORIZER_LN = "APIKeyAuthorizer"
 SUMMARIZER_LN = "Summarizer"
 
+# External bucket integration point
+EXTERNAL_BUCKET_NAME = "sbom-harbor-summary-share-test"
+
 # Dependency Track
 DT_API_INTEGRATION = "DT_API_INT"
 DT_CONTAINER_ID = "dtContainer"
@@ -78,10 +82,14 @@ FARGATE_CLUSTER_ID = "DTFargateCluster"
 
 # S3 - SBOMs
 S3_BUCKET_ID = "UploadsEnrichmentBucket"
-S3_BUCKET_NAME = f"{ENVIRONMENT}-harbor-sbom-uploads-enrichment-{AWS_ACCOUNT_ID}-{AWS_REGION_SHORT}"
+S3_BUCKET_NAME = (
+    f"{ENVIRONMENT}-harbor-sbom-uploads-enrichment-{AWS_ACCOUNT_ID}-{AWS_REGION_SHORT}"
+)
 
 # S3 - UI
-S3_WS_BUCKET_NAME = f"{ENVIRONMENT}-harbor-web-assets-{AWS_ACCOUNT_ID}-{AWS_REGION_SHORT}"
+S3_WS_BUCKET_NAME = (
+    f"{ENVIRONMENT}-harbor-web-assets-{AWS_ACCOUNT_ID}-{AWS_REGION_SHORT}"
+)
 S3_WS_BUCKET_ID = "WebAssetsBucket"
 UI_DEPLOYMENT_ID = "UiDeployment"
 
