@@ -154,7 +154,7 @@ class HarborDBClient:
         if recurse and model.has_children():
             HarborDBClient._recurse(model=model, func=self.create)
 
-        return self.get(model=model, recurse=recurse)
+        return model
 
     def update(self: "HarborDBClient", model: T, recurse: bool = False) -> T:
 
