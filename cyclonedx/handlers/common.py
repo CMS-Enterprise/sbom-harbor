@@ -64,6 +64,9 @@ def harbor_response(status_code: int, body: Union[dict, list]):
         "statusCode": status_code,
         "isBase64Encoded": False,
         "body": dumps(body),
+        "headers": {
+            "Content-Type": "application/json",
+        },
     }
 
 

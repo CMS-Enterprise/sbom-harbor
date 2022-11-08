@@ -1,10 +1,13 @@
 """
 -> Module to house the common test properties
 """
+import json
+from uuid import uuid4
 from cyclonedx.handlers.common import (
     _wildcardize,
     allow_policy,
     deny_policy,
+    harbor_response,
 )
 from tests.handlers import (
     EMAIL,
@@ -54,3 +57,29 @@ def test_deny_policy():
 
     policy: dict = deny_policy()
     assert policy["policyDocument"]["Statement"][0]["Effect"] == "Deny"
+
+
+def test_harbor_response():
+
+    """
+    -> Tests harbor_response() to validate the shape of the output object
+    """
+
+    # expected response params
+    status_code = 200
+    body: dict = {"id": f"{uuid4()}"}
+    headers: dict = {"Content-Type": "application/json"}
+
+    # generate a response object
+    response = harbor_response(
+        status_code,
+        body,
+    )
+
+    # ensure all required params are included
+    assert response == {
+        "statusCode": status_code,
+        "headers": headers,
+        "isBase64Encoded": False,
+        "body": json.dumps(body),
+    }
