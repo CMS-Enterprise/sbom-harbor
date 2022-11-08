@@ -19,6 +19,7 @@ from cyclonedx.clients.db.dynamodb import HarborDBClient
 #  # pylint: disable=C0415
 #  over the imports inside the test function.
 from cyclonedx.handlers import codebase_handler, codebases_handler
+from cyclonedx.model import HarborModel
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
@@ -79,6 +80,7 @@ def test_flow():
     assert codebase_dict[CodeBase.Fields.NAME] == codebase_name
     assert codebase_dict[CodeBase.Fields.LANGUAGE] == language
     assert codebase_dict[CodeBase.Fields.BUILD_TOOL] == build_tool
+    assert codebase_dict[HarborModel.Fields.ID] == codebase_id
 
     # Get Test 1
     get_response: dict = get(
@@ -92,6 +94,7 @@ def test_flow():
     assert codebase_dict[CodeBase.Fields.NAME] == codebase_name
     assert codebase_dict[CodeBase.Fields.LANGUAGE] == language
     assert codebase_dict[CodeBase.Fields.BUILD_TOOL] == build_tool
+    assert codebase_dict[HarborModel.Fields.ID] == codebase_id
 
     # Get Test 2
     get_response: dict = get_all(
@@ -106,6 +109,7 @@ def test_flow():
     assert codebase_dict[CodeBase.Fields.NAME] == codebase_name
     assert codebase_dict[CodeBase.Fields.LANGUAGE] == language
     assert codebase_dict[CodeBase.Fields.BUILD_TOOL] == build_tool
+    assert codebase_dict[HarborModel.Fields.ID] == codebase_id
 
     # Update
     new_codebase_name: str = str(uuid.uuid4())

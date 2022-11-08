@@ -211,6 +211,7 @@ class Team(HarborModel):
             ret_tokens[token.entity_id] = token.to_json()
 
         return {
+            HarborModel.Fields.ID: self.entity_id,
             Team.Fields.NAME: self.name,
             "projects": ret_projects,
             "members": ret_members,

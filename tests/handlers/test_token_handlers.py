@@ -20,6 +20,7 @@ from cyclonedx.clients.db.dynamodb import HarborDBClient
 #  # pylint: disable=C0415
 #  over the imports inside the test function.
 from cyclonedx.handlers import token_handler, tokens_handler
+from cyclonedx.model import HarborModel
 from cyclonedx.model.team import Team
 from cyclonedx.model.token import Token
 from tests.conftest import create_mock_dynamodb_infra
@@ -66,6 +67,7 @@ def test_flow():
     assert token_dict[Token.Fields.CREATED]
     assert token_dict[Token.Fields.EXPIRES]
     assert token_dict[Token.Fields.TOKEN]
+    assert token_dict[HarborModel.Fields.ID] == token_id
 
     # Get Test 1
     get_response: dict = get(
@@ -80,6 +82,7 @@ def test_flow():
     assert token_dict[Token.Fields.CREATED]
     assert token_dict[Token.Fields.EXPIRES]
     assert token_dict[Token.Fields.TOKEN]
+    assert token_dict[HarborModel.Fields.ID] == token_id
 
     # Get Test 2
     get_response: dict = get_all(
@@ -95,6 +98,7 @@ def test_flow():
     assert token_dict[Token.Fields.CREATED]
     assert token_dict[Token.Fields.EXPIRES]
     assert token_dict[Token.Fields.TOKEN]
+    assert token_dict[HarborModel.Fields.ID] == token_id
 
     # Update
     new_name: str = str(uuid.uuid4())

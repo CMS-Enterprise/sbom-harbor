@@ -19,6 +19,7 @@ from cyclonedx.clients.db.dynamodb import HarborDBClient
 #  # pylint: disable=C0415
 #  over the imports inside the test function.
 from cyclonedx.handlers import project_handler, projects_handler
+from cyclonedx.model import HarborModel
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.team import Team
 from tests.conftest import create_mock_dynamodb_infra
@@ -52,6 +53,8 @@ def test_flow():
 
     project_id: str = list(response_dict.keys()).pop()
     project_dict: dict = response_dict[project_id]
+    assert project_dict[HarborModel.Fields.ID] == project_id
+
     codebases_dict: dict = project_dict["codebases"]
     codebase_ids: list = list(codebases_dict.keys())
     assert len(codebase_ids) == 2
@@ -66,6 +69,8 @@ def test_flow():
 
     project_id: str = list(response_dict.keys()).pop()
     project_dict: dict = response_dict[project_id]
+    assert project_dict[HarborModel.Fields.ID] == project_id
+
     codebases_dict: dict = project_dict["codebases"]
     codebase_ids: list = list(codebases_dict.keys())
     assert len(codebase_ids) == 2
@@ -79,6 +84,8 @@ def test_flow():
 
     project_id: str = list(response_dict.keys()).pop()
     project_dict: dict = response_dict[project_id]
+    assert project_dict[HarborModel.Fields.ID] == project_id
+
     codebases_dict: dict = project_dict["codebases"]
     codebase_ids: list = list(codebases_dict.keys())
     assert len(codebase_ids) == 2

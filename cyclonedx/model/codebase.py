@@ -109,7 +109,8 @@ class CodeBase(HarborModel):
 
     def to_json(self):
         return {
-            CodeBase.Fields.NAME: self._name,
-            CodeBase.Fields.LANGUAGE: self._language,
-            CodeBase.Fields.BUILD_TOOL: self._build_tool,
+            HarborModel.Fields.ID: self.entity_id,
+            CodeBase.Fields.NAME: self.name,
+            CodeBase.Fields.LANGUAGE: self.language,
+            CodeBase.Fields.BUILD_TOOL: self.build_tool,
         }

@@ -13,6 +13,7 @@ from cyclonedx.clients.ciam import CognitoUserData, HarborCognitoClient
 from cyclonedx.constants import USER_POOL_ID_KEY
 from cyclonedx.handlers import team_handler  # TODO Test teams_handler
 from cyclonedx.handlers.common import ContextKeys
+from cyclonedx.model import HarborModel
 from cyclonedx.model.member import Member
 from tests.conftest import create_mock_cognito_infra, create_mock_dynamodb_infra
 from tests.handlers import EMAIL
@@ -77,9 +78,11 @@ def test_get():
     res_team_id: str = list(response_dict.keys()).pop()
     assert team_id == res_team_id
 
+    team: dict = list(response_dict.values()).pop()
+    assert team[HarborModel.Fields.ID] == team_id
+
     # Test to verify that a single token is also
     # created when the team is: ISPGCASP-864
-    team: dict = list(response_dict.values()).pop()
     tokens: dict = team["tokens"]
     assert len(tokens.values()) == 1
 

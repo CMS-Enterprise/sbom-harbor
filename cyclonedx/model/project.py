@@ -145,6 +145,7 @@ class Project(HarborModel):
             ret_codebases[codebase.entity_id] = codebase.to_json()
 
         return {
+            HarborModel.Fields.ID: self.entity_id,
             Project.Fields.NAME: self._name,
             Project.Fields.FISMA: self._fisma,
             "codebases": ret_codebases,

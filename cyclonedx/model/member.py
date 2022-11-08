@@ -97,6 +97,7 @@ class Member(HarborModel):
     def to_json(self):
 
         return {
+            HarborModel.Fields.ID: self.entity_id,
             Member.Fields.EMAIL: self.email,
             Member.Fields.IS_TEAM_LEAD: self.is_team_lead,
         }

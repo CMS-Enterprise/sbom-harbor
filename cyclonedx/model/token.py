@@ -162,6 +162,7 @@ class Token(HarborModel):
         """
 
         return {
+            HarborModel.Fields.ID: self.entity_id,
             Token.Fields.NAME: self._name,
             Token.Fields.CREATED: self.created,
             Token.Fields.EXPIRES: self.expires,

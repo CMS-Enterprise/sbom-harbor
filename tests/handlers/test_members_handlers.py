@@ -12,6 +12,7 @@ from cyclonedx.clients.ciam import CognitoUserData, HarborCognitoClient
 from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.constants import USER_POOL_ID_KEY
 from cyclonedx.handlers import member_handler, members_handler
+from cyclonedx.model import HarborModel
 from cyclonedx.model.member import Member
 from cyclonedx.model.team import Team
 from tests.conftest import create_mock_cognito_infra, create_mock_dynamodb_infra
@@ -65,6 +66,7 @@ def test_flow():
     member_dict: dict = response_dict[member_id]
     assert email == member_dict[Member.Fields.EMAIL]
     assert member_dict[Member.Fields.IS_TEAM_LEAD]
+    assert member_dict[HarborModel.Fields.ID] == member_id
 
     # Get Test 1
     get_response: dict = get(
@@ -76,6 +78,7 @@ def test_flow():
     member_dict: dict = response_dict[member_id]
     assert email == member_dict[Member.Fields.EMAIL]
     assert member_dict[Member.Fields.IS_TEAM_LEAD]
+    assert member_dict[HarborModel.Fields.ID] == member_id
 
     # Get Test 2
     get_response: dict = get_all(
@@ -88,6 +91,7 @@ def test_flow():
     member_dict: dict = response_dict[member_id]
     assert email == member_dict[Member.Fields.EMAIL]
     assert member_dict[Member.Fields.IS_TEAM_LEAD]
+    assert member_dict[HarborModel.Fields.ID] == member_id
 
     # Update
     new_email: str = "new@email.org"

@@ -117,9 +117,11 @@ class HarborModel:
 
     class Fields:
 
-        """Fields that"""
+        """Inner Class to hold the fields of the HarborModel"""
 
         PARENT_ID = "parentId"
+
+        ID = "id"
 
     def __init__(
         self: object,
