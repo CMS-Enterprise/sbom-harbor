@@ -15,7 +15,7 @@ import pytest
 
 import tests.data as test_data
 from cyclonedx.clients.db.dynamodb import HarborDBClient
-from cyclonedx.handlers.summarizer_handler import FileTypes, summarizer_handler
+from cyclonedx.handlers.summarizer_handler import summarizer_handler
 from cyclonedx.model.project import Project
 from tests.data import summary_samples
 
@@ -109,15 +109,10 @@ def test_summarizer_has_results(
     assert len(list_of_files) == 4
 
     # Verify the expected files are in the bucket
-    project = "TestProject"
-    fisma = "testFisma"
-
-    flattened_file_pattern = f"harbor-data-summary-{FileTypes.sbom}-{project}-{fisma}-*"
+    flattened_file_pattern = "harbor-data-summary/CycloneDX/*"
     assert len(fnmatch.filter(list_of_files, flattened_file_pattern)) >= 1
 
-    flattened_file_pattern = (
-        f"harbor-data-summary-{FileTypes.findings}-{project}-{fisma}-*"
-    )
+    flattened_file_pattern = "harbor-data-summary/Dependency-Track/*"
     assert len(fnmatch.filter(list_of_files, flattened_file_pattern)) >= 1
 
 
@@ -154,6 +149,8 @@ def test_get_summary_output(
         report_file = s3_object["Body"].read().decode("utf-8")
         json_report = loads(report_file)
 
+        if not os.path.exists(f"{files(summary_samples)}/{file}"):
+            os.makedirs(f"{files(summary_samples)}/{file}")
         filehandle = open(f"{files(summary_samples)}/{file}.json", "w")
         filehandle.writelines(dumps(json_report, indent=4))
         filehandle.close()

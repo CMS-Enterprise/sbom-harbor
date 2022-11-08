@@ -1,6 +1,6 @@
 """This handler takes findings and it's associated SBOM,
 and then outputs flattened versions of the files"""
-
+import datetime
 from json import dumps, loads
 
 import boto3
@@ -36,12 +36,11 @@ def summarizer_handler(event: dict = None, context: dict = None):
     harbor-sbom_name-report-company_name-FISMA_ID-submit_date
     """
 
-    sbom_data: list = []
     findings_data: list = []
     bucket_name: str = ""
     sbom_name: str = ""
 
-    original_sbom: str = ""
+    original_sbom: dict = {}
     original_sbom_metadata: dict = {}
 
     s3: resource() = resource("s3")
@@ -56,7 +55,7 @@ def summarizer_handler(event: dict = None, context: dict = None):
 
         if not original_sbom:
             sbom_object = get_object_from_s3(s3, bucket_name, sbom_name)
-            original_sbom = sbom_object["Body"].read().decode("utf-8")
+            original_sbom = loads(sbom_object["Body"].read().decode("utf-8"))
             original_sbom_metadata = sbom_object["Metadata"]
 
         results = result["results"]
@@ -70,28 +69,40 @@ def summarizer_handler(event: dict = None, context: dict = None):
 
         findings_data.append(findings_s3_json)
 
-    sbom_data.append(loads(original_sbom))
+    date_folder_path: str = generate_date_folder_path()
 
-    # The normalizer field combine_lists takes the values "chain" or "product".
-    # "product" may be better, but it is causing memory problems (locally at least)
-    sbom_data_normalized = json_normalize(sbom_data, combine_lists="chain")
-    findings_data_normalized = json_normalize(findings_data, combine_lists="chain")
+    # Normalize the findings for each format and generate a separate file for each
+    for finding in findings_data:
+        application_name: str = "Unknown"
+        finding_metadata = finding.get("meta", "")
+        if finding_metadata:
+            application_name = finding_metadata.get("application", "Unknown")
 
+        s3.Object(
+            bucket_name,
+            generate_report_filename(
+                application_name, original_sbom_metadata, date_folder_path
+            ),
+        ).put(
+            Body=bytearray(
+                dumps(list(json_normalize(finding, combine_lists="chain"))), "utf-8"
+            ),
+        )
+
+    sbom_data_normalized = json_normalize(original_sbom, combine_lists="chain")
     s3.Object(
-        bucket_name, generate_report_filename(FileTypes.sbom, original_sbom_metadata)
+        bucket_name,
+        generate_report_filename(
+            original_sbom.get("bomFormat", "Unknown"),
+            original_sbom_metadata,
+            date_folder_path,
+        ),
     ).put(
         Body=bytearray(dumps(list(sbom_data_normalized)), "utf-8"),
     )
 
-    s3.Object(
-        bucket_name,
-        generate_report_filename(FileTypes.findings, original_sbom_metadata),
-    ).put(
-        Body=bytearray(dumps(list(findings_data_normalized)), "utf-8"),
-    )
 
-
-def generate_report_filename(data_type: str, metadata: dict):
+def generate_report_filename(data_type: str, metadata: dict, date_folder_path: str):
 
     """Creates a filename for the report following the format of:
     harbor-data-summary-{data_type}-{project}-{project_model.fisma}-{timestamp}"""
@@ -109,8 +120,18 @@ def generate_report_filename(data_type: str, metadata: dict):
     )
 
     return (
-        f"harbor-data-summary-{data_type}-{project}-{project_model.fisma}-{timestamp}"
+        f"harbor-data-summary/{data_type}/{date_folder_path}/{project}"
+        f"-{project_model.fisma}-{timestamp}"
     )
+
+
+def generate_date_folder_path() -> str:
+    """
+    -> Creates the folders for the year, month, and day to be attached
+    -> to the filename to help with structuring the data
+    """
+    date = datetime.datetime.now()
+    return f"{date.strftime('%Y')}/{date.strftime('%m')}/{date.strftime('%d')}"
 
 
 def get_object_from_s3(s3: resource, bucket_name: str, key: str) -> dict:
