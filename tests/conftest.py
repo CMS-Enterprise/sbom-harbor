@@ -49,7 +49,12 @@ def fixture_s3_test_obj():
     """creates and makes available a test bucket"""
     with mock_s3():
         s3 = boto3.resource("s3")
-        s3.create_bucket(Bucket=test_bucket_name)
+        s3.create_bucket(
+            Bucket=test_bucket_name,
+            CreateBucketConfiguration={
+                "LocationConstraint": os.getenv("AWS_REGION"),
+            },
+        )
         yield s3
 
 
