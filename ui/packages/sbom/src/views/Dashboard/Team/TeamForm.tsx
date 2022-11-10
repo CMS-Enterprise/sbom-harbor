@@ -21,28 +21,12 @@ import SubmitButton from '@/components/forms/SubmitButton'
 import { useAlert } from '@/hooks/useAlert'
 import { useAuthState } from '@/hooks/useAuth'
 import { CONFIG } from '@/utils/constants'
-import { Project, TeamMember, Token } from '@/types'
+import { Project } from '@/types'
 import { FormState, FormTeamState } from './types'
 import { defaultFormState, defaultProject } from './constants'
 import TeamMembersSection from './components/TeamMembersSection'
 import TeamViewProjectCreateCard from './components/TeamViewProjectCreateCard'
 import TeamViewProjectCreationCard from './components/TeamViewProjectCreationCard'
-
-/**
- * Helper method that converts entries to an array of objects with ids used
- *  for generating the properties of the object in the body of the request.
- * @param {[string, Project | Token | TeamMember][]} entries key, value pairs
- *  of the projects, tokens, or team members to be added to the team.
- * @returns {Object} the projects, tokens, or team members to be added to the team,
- *  with the key set to the value of the id field.
- */
-const mapEntriesToArray = (
-  entries: [string, Project | Token | TeamMember][]
-): Array<TeamMember | Project | Token> =>
-  entries.map(([key, value]) => ({
-    id: key,
-    ...value,
-  }))
 
 /**
  * A component that renders a page with a form for creating/editing a team.
@@ -85,7 +69,7 @@ const TeamForm = () => {
 
   const admins = React.useMemo(() => {
     if (!formInput?.members) return []
-    return formInput.members.filter(([, m]) => m.isTeamLead === true)
+    return formInput?.members.filter((m) => m.isTeamLead === true) || []
   }, [formInput])
 
   /**
@@ -103,10 +87,29 @@ const TeamForm = () => {
    * Handler for adding a new project to the team
    */
   const handleAddProject = () => {
+    const id = uuidv4()
+
     // update the form state with the new projects object
     setFormInput({
       ...formInput,
-      newProjects: [...formInput.newProjects, { ...defaultProject }],
+      projects: {
+        ...formInput.projects,
+        [id]: { ...defaultProject, id },
+      },
+    })
+  }
+
+  /**
+   * Handler for adding a new project to the team
+   */
+  const handleUpdateProject = (payload: Project) => {
+    // update the form state with the new projects object
+    return setFormInput({
+      ...formInput,
+      projects: {
+        ...formInput.projects,
+        [payload.id]: { ...payload },
+      },
     })
   }
 
@@ -119,7 +122,7 @@ const TeamForm = () => {
     event: React.MouseEvent<HTMLButtonElement>
   ) => {
     const email = event.currentTarget.dataset.value
-    const nextData = formInput.members.filter(([, m]) => m.email !== email)
+    const nextData = formInput.members.filter((m) => m.email !== email)
     setFormInput({ ...formInput, members: nextData })
   }
 
@@ -138,8 +141,9 @@ const TeamForm = () => {
     // get the list of members already in the form state, and add the
     // new member to the form state if they are not already in the list.
     const nextData = [...formInput.members]
-    if (!nextData.find(([, m]) => m.email === email)) {
-      nextData.push([uuidv4(), { email, isTeamLead: admin }])
+    if (!nextData.find((m) => m.email === email)) {
+      const id = uuidv4()
+      nextData.push({ id, email, isTeamLead: admin })
     }
     // update the form state with the new member and clear the email input.
     setFormInput({
@@ -188,23 +192,26 @@ const TeamForm = () => {
       } = formInput
 
       // filter out any empty email values from the projects object
-      const projectEntries = projects.filter(([, p]) => !!p.name)
+      const projectEntries = Object.entries(projects).filter(
+        ([, p]) => !!p.name
+      )
 
       // filter out any empty email values from the members object
-      const membersEntries = members.filter(([, m]) => !!m.email)
+      const membersEntries = members.filter((m) => !!m.email)
 
       // ensure that the current user is in the members list as an admin
       // TODO: use team member endpoint instead of editing them directly
-      if (members.findIndex(([, m]) => m.email === email) === -1) {
-        membersEntries.push([uuidv4(), { email, isTeamLead: true }])
+      if (members.findIndex((m) => m.email === email) === -1) {
+        const id = uuidv4()
+        membersEntries.push({ id, email, isTeamLead: true })
       }
 
       // create a final object representing the team and add it to the teams data.
       const updatedTeamData = {
         name: formInput.name,
-        members: mapEntriesToArray(membersEntries),
-        projects: mapEntriesToArray(projectEntries),
-        tokens: mapEntriesToArray(tokenEntries),
+        members: Object.values(membersEntries),
+        projects: Object.values(projectEntries),
+        tokens: Object.values(tokenEntries),
       }
 
       // determine the endpoint to use based on if this is a create or edit form.
@@ -305,7 +312,7 @@ const TeamForm = () => {
                 handleAdd={handleAddTeamMember}
                 handleChange={handleInputFieldChange}
                 handleRemove={handleRemoveTeamMember}
-                members={formInput.members.filter(([, m]) => !m.isTeamLead)}
+                members={formInput.members.filter((m) => !m.isTeamLead)}
                 newEmail={formInput.newMemberEmail}
               />
             </Grid>
@@ -326,12 +333,15 @@ const TeamForm = () => {
             <Grid item xs={12} md={12}>
               <TeamViewProjectCreationCard onClick={handleAddProject} />
             </Grid>
-            {formInput?.projects &&
-              formInput.projects.map(([key, project]) => (
-                <Grid item xs={12} md={12} key={key}>
-                  <TeamViewProjectCreateCard project={project} />
-                </Grid>
-              ))}
+            {/* FIXME: adding projects is not working */}
+            {Object.entries(formInput.projects).map(([key, project]) => (
+              <Grid item xs={12} md={12} key={key}>
+                <TeamViewProjectCreateCard
+                  project={project}
+                  onUpdate={handleUpdateProject}
+                />
+              </Grid>
+            ))}
           </Grid>
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>

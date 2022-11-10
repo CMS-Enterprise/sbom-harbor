@@ -1,8 +1,8 @@
 import { Project, TeamMember, Token } from '@/types'
 
 export type FormTeamState = {
-  projects: [string, Project][]
-  members: [string, TeamMember][]
+  projects: Record<string, Project>
+  members: Array<TeamMember>
   tokens: [string, Token][]
   name: string
 }
@@ -10,7 +10,7 @@ export type FormTeamState = {
 export type FormState = {
   newAdminEmail?: string
   newMemberEmail?: string
-  newProjects: Project[]
+  newProjects: Record<string, Project>
 } & FormTeamState
 
 export type FormStateNewProjects = Array<Project> | []

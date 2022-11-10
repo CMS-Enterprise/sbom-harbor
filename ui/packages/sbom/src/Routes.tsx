@@ -9,6 +9,8 @@ import {
   Params,
   useNavigate,
   useRouteError,
+  json,
+  isRouteErrorResponse,
 } from 'react-router-dom'
 import { Auth } from '@aws-amplify/auth'
 import Container from '@mui/material/Container'
@@ -30,32 +32,43 @@ import NavigateToLogin from '@/components/react-router/NavigateToLogin'
 // ** Utils
 import { CONFIG } from '@/utils/constants'
 import configureCognito from '@/utils/configureCognito'
-import { Team, TeamMember, UserTableRowType } from './types'
+import { TeamApiResponse } from './types'
 
 const ErrorBoundary = () => {
   const error = useRouteError()
   const navigate = useNavigate()
   console.error('Error boundary:', error)
 
-  React.useEffect(() => {
-    const timeout = setTimeout(() => navigate('/logout'), 5000)
-    return () => clearTimeout(timeout)
-  })
+  if (isRouteErrorResponse(error) && error.status === 401) {
+    setTimeout(() => navigate('/logout'), 5000)
+    return (
+      <div>
+        <h1>
+          {error.status} {error.statusText}
+        </h1>
+        <h2>{error.data}</h2>
+        <p>Your session has expired. Please login again.</p>
+      </div>
+    )
+  }
 
+  // generic error
   return (
-    <Container sx={{ m: 3 }}>
-      Your session has expired, please login again.
-    </Container>
+    <Container sx={{ m: 3 }}>Something went wrong. Please try again.</Container>
   )
 }
 
-const teamsLoader = async ({ request }: { request: Request }) => {
+const authLoader = async () => {
   const session = await Auth.currentSession()
   const jwtToken = session.getAccessToken().getJwtToken()
-
   if (!jwtToken) {
-    throw new Error('No JWT token found')
+    throw new Response('Invalid Session', { status: 401 })
   }
+  return jwtToken
+}
+
+const teamsLoader = async ({ request }: { request: Request }) => {
+  const jwtToken = await authLoader()
 
   const url = new URL(`${CONFIG.API_URL}/v1/teams`)
   url.searchParams.append('children', 'true')
@@ -69,11 +82,11 @@ const teamsLoader = async ({ request }: { request: Request }) => {
     signal: request.signal,
   })
 
-  if (response.status === 401 || response.status === 403) {
-    throw new Error(response.statusText)
+  if (!response.ok) {
+    throw new Response(response.statusText, { status: response.status })
   }
 
-  return await response.json()
+  return json<Promise<TeamApiResponse>>(await response.json())
 }
 
 const teamLoader = async ({
@@ -83,12 +96,7 @@ const teamLoader = async ({
   request: Request
   params: Params<string>
 }) => {
-  const session = await Auth.currentSession()
-  const jwtToken = session.getAccessToken().getJwtToken()
-
-  if (!jwtToken) {
-    throw new Error('No JWT token found')
-  }
+  const jwtToken = await authLoader()
 
   const url = new URL(`${CONFIG.API_URL}/v1/team/${teamId}`)
   url.searchParams.append('children', 'true')
@@ -102,38 +110,11 @@ const teamLoader = async ({
     signal: request.signal,
   })
 
-  if (response.status === 401 || response.status === 403) {
-    throw new Error(response.statusText)
+  if (!response.ok) {
+    throw new Response(response.statusText, { status: response.status })
   }
 
-  const {
-    [teamId]: team = {
-      name: '',
-      members: {},
-      projects: {},
-      tokens: {},
-    },
-  }: { [teamId: string]: Team } = await response.json()
-
-  const newMembers = Object.entries(team.members).map(
-    ([id, member]: [string, TeamMember]): UserTableRowType => {
-      const { email = '', isTeamLead = false } = member as TeamMember
-      return {
-        id,
-        email,
-        isTeamLead,
-        role: isTeamLead ? 'admin' : 'member',
-      }
-    }
-  )
-
-  return {
-    name: team.name,
-    members: Object.entries(team.members),
-    projects: Object.entries(team.projects),
-    tokens: Object.entries(team.tokens),
-    memberTableRows: newMembers,
-  }
+  return json<Promise<TeamApiResponse>>(await response.json())
 }
 
 export const router = createHashRouter([
@@ -162,6 +143,7 @@ export const router = createHashRouter([
         path: 'app/*',
         element: <App />,
         errorElement: <ErrorBoundary />,
+        loader: authLoader,
         children: [
           {
             index: true,

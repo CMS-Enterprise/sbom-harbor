@@ -47,6 +47,11 @@ const columns: GridColDef[] = [
   },
   {
     flex: 0.33,
+    field: 'id',
+    headerName: 'ID',
+  },
+  {
+    flex: 0.165,
     field: 'name',
     headerName: 'User',
     renderCell: ({ row }: RenderCellProps) => (
@@ -56,8 +61,7 @@ const columns: GridColDef[] = [
     ),
   },
   {
-    flex: 0.3,
-    minWidth: 250,
+    flex: 0.2,
     field: 'email',
     headerName: 'Email',
     renderCell: ({ row: { email } }: RenderCellProps) => (
@@ -65,7 +69,7 @@ const columns: GridColDef[] = [
     ),
   },
   {
-    flex: 0.2,
+    flex: 0.165,
     minWidth: 130,
     field: 'role',
     headerName: 'Role',
@@ -101,7 +105,7 @@ const TeamMembersTable = ({ members }: InputProps) => (
     <DataGrid
       autoHeight
       hideFooter
-      rows={members.map((member) => ({ ...member, id: member.email }))}
+      rows={members}
       columns={columns}
       disableSelectionOnClick
       pagination={undefined}

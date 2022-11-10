@@ -12,18 +12,10 @@ import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
 import TeamMembersTable from './components/TeamMembersTable'
 import TeamViewProjectCard from './components/TeamViewProjectCard'
-import { AppStateTeam, UserTableRowType } from '@/types'
+import { Team } from '@/types'
 
 const TeamView = () => {
-  const team = useLoaderData() as AppStateTeam
-  const [members, setMembers] = React.useState<UserTableRowType[]>([])
-
-  React.useEffect(() => {
-    if (!team?.memberTableRows) {
-      return
-    }
-    setMembers(team.memberTableRows)
-  }, [team?.memberTableRows])
+  const { name = '', members = [], projects = [] } = useLoaderData() as Team
 
   return (
     <Container component="main" maxWidth="md" data-testid="team">
@@ -39,7 +31,7 @@ const TeamView = () => {
           }}
         >
           <Typography variant="h4" sx={{ mt: 1, mb: 3 }}>
-            {team?.name}
+            {name}
           </Typography>
           <Link to={`edit`}>Edit Team</Link>
         </Box>
@@ -62,9 +54,9 @@ const TeamView = () => {
                 Projects
               </Typography>
             </Grid>
-            {team?.projects &&
-              team.projects.map(([key, project]) => (
-                <Grid item xs={12} md={12} key={key}>
+            {projects &&
+              projects.map((project) => (
+                <Grid item xs={12} md={12} key={project.id}>
                   <TeamViewProjectCard project={project} />
                 </Grid>
               ))}

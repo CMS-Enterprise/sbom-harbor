@@ -18,28 +18,24 @@ import Select from '@mui/material/Select'
 import InputLabel from '@mui/material/InputLabel'
 import DotsVertical from 'mdi-material-ui/DotsVertical'
 import { Codebase, CodebaseLanguage, BuildTool, Project } from '@/types'
+import {
+  defaultProject,
+  defaultCodebase,
+} from '@/views/Dashboard/Team/constants'
 
 const LANGUAGES = [...Object.keys(CodebaseLanguage)]
 const BUILD_TOOLS = [...Object.keys(BuildTool)]
 
-const defaultProject: Project = {
-  name: '',
-  fisma: '',
-  codebases: {},
+type InputProps = {
+  project: Project
+  onUpdate: (payload: Project) => void
 }
-
-const defaultCodebase: Codebase = {
-  name: '',
-  language: CodebaseLanguage.NONE,
-  buildTool: BuildTool.NONE,
-}
-
-type InputProps = { project: Project }
 
 type FormState = {
+  id: string
   name: string
   fisma: string
-  codebases: [string, Codebase][]
+  codebases: Record<string, Codebase>
 }
 
 const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
@@ -48,10 +44,9 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
     (state: FormState, newState: FormState) => ({ ...state, ...newState }),
     {
       ...defaultProject,
-      ...{
-        name: project.name,
-        codebases: Object.entries(project.codebases),
-      },
+      id: uuidv4(),
+      name: project.name,
+      codebases: project.codebases,
     }
   )
 
@@ -66,7 +61,8 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
     evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = evt.currentTarget
-    setFormInput({ ...formInput, [name]: value })
+    const payload = { ...formInput, [name]: value }
+    setFormInput(payload)
   }
 
   // function that handles change events on form inputs for codebases.
@@ -79,11 +75,12 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
 
   // function that handles adding a new codebase to the project.
   const handleAddCodebase = () => {
+    const id = uuidv4()
     setFormInput({
       ...formInput,
       codebases: {
         ...formInput.codebases,
-        [uuidv4()]: { ...defaultCodebase },
+        [id]: { ...defaultCodebase, id },
       },
     })
   }
@@ -157,111 +154,113 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
           </Grid>
         </Grid>
 
-        {formInput?.codebases?.map(([key, codebase], index) => {
-          return (
-            <Box
-              key={key}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                mb:
-                  index !== (formInput?.codebases?.length || 0) - 1
-                    ? 5.75
-                    : undefined,
-              }}
-            >
-              <Box
-                sx={{
-                  ml: 3,
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Box sx={{ mr: 2, display: 'flex', flexDirection: 'column' }}>
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: 600, color: 'text.primary' }}
-                  >
-                    <TextField
-                      fullWidth
-                      id="codebaseName"
-                      label="Codebase Name"
-                      name="name"
-                      onChange={handleInputCodebase}
-                      required
-                      value={codebase.name}
-                      variant="standard"
-                      InputProps={{
-                        sx: {
-                          '& .Mui-disabled': {
-                            color: 'text.primary',
-                          },
-                        },
-                      }}
-                    />
-                  </Typography>
-                </Box>
+        {formInput?.codebases &&
+          Object.entries(formInput.codebases).map(
+            ([key, codebase], index, array) => {
+              return (
                 <Box
+                  key={key}
                   sx={{
                     display: 'flex',
-                    flexWrap: 'wrap',
                     alignItems: 'center',
-                    justifyContent: 'flex-end',
+                    mb: index !== (array.length || 0) - 1 ? 5.75 : undefined,
                   }}
                 >
-                  <Grid container spacing={1}>
-                    <Grid item>
-                      <FormControl>
-                        <InputLabel>Language</InputLabel>
-                        <Select
-                          size="small"
-                          value={codebase.language}
-                          label="Age"
-                          defaultValue=""
-                          id="demo-simple-select-outlined"
-                          labelId="demo-simple-select-outlined-label"
-                        >
-                          <MenuItem value="">
-                            <em>None</em>
-                          </MenuItem>
-                          {LANGUAGES.map((language: string) => (
-                            <MenuItem key={language} value={language}>
-                              {language}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item>
-                      <FormControl>
-                        <InputLabel>Build Tool</InputLabel>
-                        <Select
-                          size="small"
-                          value={codebase.buildTool}
-                          label="Age"
-                          defaultValue=""
-                          id="demo-simple-select-outlined"
-                          labelId="demo-simple-select-outlined-label"
-                        >
-                          <MenuItem value="">
-                            <em>None</em>
-                          </MenuItem>
-                          {BUILD_TOOLS.map((buildTool: string) => (
-                            <MenuItem key={buildTool} value={buildTool}>
-                              {buildTool}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
+                  <Box
+                    sx={{
+                      ml: 3,
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <Box
+                      sx={{ mr: 2, display: 'flex', flexDirection: 'column' }}
+                    >
+                      <Typography
+                        variant="h6"
+                        sx={{ fontWeight: 600, color: 'text.primary' }}
+                      >
+                        <TextField
+                          fullWidth
+                          id="codebaseName"
+                          label="Codebase Name"
+                          name="name"
+                          onChange={handleInputCodebase}
+                          required
+                          value={codebase.name}
+                          variant="standard"
+                          InputProps={{
+                            sx: {
+                              '& .Mui-disabled': {
+                                color: 'text.primary',
+                              },
+                            },
+                          }}
+                        />
+                      </Typography>
+                    </Box>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                      }}
+                    >
+                      <Grid container spacing={1}>
+                        <Grid item>
+                          <FormControl>
+                            <InputLabel>Language</InputLabel>
+                            <Select
+                              size="small"
+                              value={codebase.language}
+                              label="Age"
+                              defaultValue=""
+                              id="demo-simple-select-outlined"
+                              labelId="demo-simple-select-outlined-label"
+                            >
+                              <MenuItem value="">
+                                <em>None</em>
+                              </MenuItem>
+                              {LANGUAGES.map((language: string) => (
+                                <MenuItem key={language} value={language}>
+                                  {language}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                        <Grid item>
+                          <FormControl>
+                            <InputLabel>Build Tool</InputLabel>
+                            <Select
+                              size="small"
+                              value={codebase.buildTool}
+                              label="Age"
+                              defaultValue=""
+                              id="demo-simple-select-outlined"
+                              labelId="demo-simple-select-outlined-label"
+                            >
+                              <MenuItem value="">
+                                <em>None</em>
+                              </MenuItem>
+                              {BUILD_TOOLS.map((buildTool: string) => (
+                                <MenuItem key={buildTool} value={buildTool}>
+                                  {buildTool}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                      </Grid>
+                    </Box>
+                  </Box>
                 </Box>
-              </Box>
-            </Box>
-          )
-        })}
+              )
+            }
+          )}
       </CardContent>
     </Card>
   )

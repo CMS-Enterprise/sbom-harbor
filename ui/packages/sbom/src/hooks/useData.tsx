@@ -7,7 +7,7 @@ import { CONFIG } from '@/utils/constants'
 import { useAuthState } from './useAuth'
 
 const INITIAL_STATE = {
-  teams: {},
+  teams: [] as Team[],
   fetchTeams: () => Promise<null>,
   setTeams: () => null,
   setData: () => null,
@@ -15,14 +15,14 @@ const INITIAL_STATE = {
 
 const DataContext = React.createContext<{
   data: AppState
-  fetchTeams: (controller: AbortController) => Promise<Record<string, Team>>
+  fetchTeams: (controller: AbortController) => Promise<Team[]>
   setData: (values: AppState) => void
-  setTeams: (teams: Record<string, Team>) => void
+  setTeams: (teams: Team[]) => void
 }>({
   data: INITIAL_STATE,
-  fetchTeams: () => Promise.resolve({}),
+  fetchTeams: () => Promise.resolve([]),
   setData: () => ({}),
-  setTeams: () => ({}),
+  setTeams: () => [],
 })
 
 // TODO: make this into a reducer
@@ -44,7 +44,7 @@ export const DataProvider = ({
   }
 
   // dispatches update to the user data state in the context provider.
-  const setTeams = React.useCallback((teams = {}) => {
+  const setTeams = React.useCallback((teams: Team[] = []) => {
     setData({ teams })
   }, [])
 

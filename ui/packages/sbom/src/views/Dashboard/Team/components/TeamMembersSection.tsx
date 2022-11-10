@@ -14,7 +14,7 @@ import TeamMemberReadOnlyField from '@/views/Dashboard/Team/components/TeamMembe
 import { TeamMember } from '@/types'
 
 type TeamMembersSectionProps = {
-  members?: [string, TeamMember][]
+  members?: TeamMember[]
   // TODO: add email field validation
   newEmail?: string
   title: string
@@ -74,7 +74,7 @@ const TeamMembersSection = ({
       </Typography>
       <Grid container spacing={1} sx={{ mb: 3 }}>
         {members &&
-          members.map(([id, { email }], index) => (
+          members.map(({ id, email }, index) => (
             <Grid item xs={12} key={id}>
               <FormControl fullWidth variant="standard" disabled margin="none">
                 <TeamMemberReadOnlyField

@@ -16,7 +16,8 @@ type InputProps = {
 }
 
 const DashboardTeamCard = ({ teamId }: InputProps): JSX.Element => {
-  const { data: { teams: { [teamId]: team } = {} } = {} } = useData()
+  const { data: { teams } = {} } = useData()
+  const team = teams?.find((t) => t.id === teamId)
 
   if (team) {
     const { name = '', projects = {}, members = {} } = team

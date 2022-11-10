@@ -22,14 +22,14 @@ export type AppStateSlice<P> = {
 }
 
 export type AppState = {
-  teams: Record<string, Team>
+  teams: Array<Team>
 }
 
 export type AppStateTeam = {
   name: string
-  members: [string, TeamMember][]
-  projects: [string, Project][]
-  tokens: [string, Token][]
+  members: TeamMember[]
+  projects: Project[]
+  tokens: Token[]
   memberTableRows: UserTableRowType[]
 }
 
@@ -87,18 +87,29 @@ export type UserTableRowType = {
 
 // a team as it is stored in the database
 export type Team = {
+  id: string
   name: string
-  members: Record<string, TeamMember>
-  projects: Record<string, Project>
-  tokens: Record<string, Token>
+  members: Array<TeamMember>
+  projects: Array<Project>
+  tokens: Array<Token>
+}
+
+export type TeamApiResponse = {
+  id: string
+  name: string
+  members: Array<TeamMember>
+  projects: Array<Project>
+  tokens: Array<Token>
 }
 
 export type TeamMember = {
+  id: string
   email: string
   isTeamLead: boolean
 }
 
 export type Token = {
+  id: string
   name: string
   created: string | number
   expires: string | number
@@ -107,12 +118,21 @@ export type Token = {
 }
 
 export type Project = {
+  id: string
+  name: string
+  fisma: string
+  codebases: Record<string, Codebase>
+}
+
+export type ProjectResponse = {
+  id: string
   name: string
   fisma: string
   codebases: Record<string, Codebase>
 }
 
 export type Codebase = {
+  id: string
   name: string
   language: CodebaseLanguage
   buildTool: BuildTool

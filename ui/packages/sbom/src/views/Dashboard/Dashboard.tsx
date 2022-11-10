@@ -10,7 +10,7 @@ import Box from '@mui/material/Box'
 import Container from '@mui/material/Container'
 import Grid from '@mui/material/Grid'
 import { useData } from '@/hooks/useData'
-import { Team } from '@/types'
+import { Team, TeamApiResponse } from '@/types'
 import DashboardTeamCard from './Team/components/DashboardTeamCard'
 import DashboardTeamCreationCard from './Team/components/DashboardTeamCreateCard'
 
@@ -21,14 +21,14 @@ const DashboardContainer = (): JSX.Element => {
   const { setTeams } = useData()
 
   // hook for getting the route loader data
-  const teams = useLoaderData() as Record<string, Team>
-
-  // Helper function that redirects the user to the new team creation view.
-  const navigateToCreateTeam = React.useCallback(() => navigate('team/new'), [])
+  const teams = useLoaderData() as Team[]
 
   // update teams in the data context from the route loader data
   // TODO: find a better way to do this or remove it and only use loader data
   React.useEffect(() => setTeams(teams), [teams, setTeams])
+
+  // Helper function that redirects the user to the new team creation view.
+  const navigateToCreateTeam = React.useCallback(() => navigate('team/new'), [])
 
   return (
     <Box sx={{ display: 'flex' }} data-testid="Dashboard">
@@ -46,10 +46,9 @@ const DashboardContainer = (): JSX.Element => {
             </Grid>
 
             {teams &&
-              // @ts-ignore
-              Object.entries(teams).map(([key]) => (
-                <Grid item xs={12} md={4} key={key}>
-                  <DashboardTeamCard teamId={key} />
+              teams.map((team: TeamApiResponse) => (
+                <Grid item xs={12} md={4} key={team.id}>
+                  <DashboardTeamCard teamId={team.id} />
                 </Grid>
               ))}
           </Grid>
