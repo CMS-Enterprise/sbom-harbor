@@ -3,7 +3,6 @@
 """
 
 import importlib.resources as pr
-import uuid
 from json import dumps, loads
 from typing import Union
 
@@ -11,7 +10,7 @@ import boto3
 
 import cyclonedx.schemas as schemas
 from cyclonedx.clients import HarborDBClient
-from cyclonedx.model import EntityType, HarborModel
+from cyclonedx.model import EntityType, HarborModel, generate_model_id
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
@@ -210,14 +209,13 @@ def get_db_client():
     return HarborDBClient(boto3.resource("dynamodb"))
 
 
-def _to_codebases(team_id: str, project_id: str, request_body: dict):
+def _to_codebases(team_id: str, project_id: str, codebases: list[dict]):
 
     try:
-        codebases: list[dict] = request_body["codebases"]
         return [
             CodeBase(
                 team_id=team_id,
-                codebase_id=codebase.get("id", str(uuid.uuid4())),
+                codebase_id=generate_model_id(codebase.get(CodeBase.Fields.ID, "")),
                 project_id=project_id,
                 name=codebase["name"],
                 language=codebase["language"],
@@ -230,30 +228,39 @@ def _to_codebases(team_id: str, project_id: str, request_body: dict):
         return []
 
 
-def _to_projects(team_id: str, request_body: dict):
+def _to_projects(team_id: str, projects: list[dict]):
 
     try:
-        projects: list[dict] = request_body["projects"]
-        return [
-            Project(
+        ret_projects = []
+
+        for project in projects:
+            project_id = generate_model_id(project.get(Project.Fields.ID, ""))
+            codebases: list[dict] = project["codebases"]
+            ret_project = Project(
                 team_id=team_id,
-                project_id=project.get("id", str(uuid.uuid4())),
-                name=project["name"],
+                project_id=project_id,
+                name=project.get(Project.Fields.NAME, "New Project"),
+                fisma=project.get(Project.Fields.FISMA),
+                codebases=_to_codebases(
+                    team_id=team_id, project_id=project_id, codebases=codebases
+                ),
             )
-            for project in projects
-        ]
-    except KeyError:
+
+            ret_projects.append(ret_project)
+
+        return ret_projects
+    except KeyError as ke:
+        print(f"KeyError trying to create Project: {ke}")
         return []
 
 
-def _to_members(team_id: str, request_body: dict) -> list[Member]:
+def _to_members(team_id: str, members: list[dict]) -> list[Member]:
 
     try:
-        members: list[dict] = request_body["members"]
         return [
             Member(
                 team_id=team_id,
-                member_id=str(uuid.uuid4()),
+                member_id=generate_model_id(member.get(Member.Fields.ID, "")),
                 email=member[Member.Fields.EMAIL],
                 is_team_lead=member[Member.Fields.IS_TEAM_LEAD],
             )
@@ -380,7 +387,8 @@ def _update_projects(team: Team, request_body: dict):
         )
 
         project_filter: filter = filter(
-            lambda p: p.entity_id == project_id, existing_projects
+            lambda p: p.entity_id == project_id,
+            existing_projects,
         )
         projects: list[HarborModel] = list(project_filter)
 
@@ -391,6 +399,7 @@ def _update_projects(team: Team, request_body: dict):
             project_item: dict = projects.pop().get_item()
 
             original_name: str = project_item.get(Project.Fields.NAME)
+            original_fisma_id: str = project_item.get(Project.Fields.FISMA)
 
             # replace only the data in the existing object with the
             # new data from the request body ignoring children
@@ -398,7 +407,14 @@ def _update_projects(team: Team, request_body: dict):
             project: Project = Project(
                 team_id=team.team_id,
                 project_id=project_id,
-                name=project_dict.get(Project.Fields.NAME, original_name),
+                name=project_dict.get(
+                    Project.Fields.NAME,
+                    original_name,
+                ),
+                fisma=project_dict.get(
+                    Project.Fields.FISMA,
+                    original_fisma_id,
+                ),
             )
 
             team.add_child(db_client.update(project))

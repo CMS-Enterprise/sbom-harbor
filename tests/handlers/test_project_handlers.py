@@ -49,15 +49,11 @@ def test_flow():
 
     # Create
     create_response: dict = create(team_id=team_id, handler=project_handler)
-    response_dict: dict = loads(create_response["body"])
+    project_dict: dict = loads(create_response["body"])
+    codebases_list: list = project_dict["codebases"]
+    assert len(codebases_list) == 2
 
-    project_id: str = list(response_dict.keys()).pop()
-    project_dict: dict = response_dict[project_id]
-    assert project_dict[HarborModel.Fields.ID] == project_id
-
-    codebases_dict: dict = project_dict["codebases"]
-    codebase_ids: list = list(codebases_dict.keys())
-    assert len(codebase_ids) == 2
+    project_id: str = project_dict["id"]
 
     # Get Test 1
     get_response: dict = get(
@@ -65,34 +61,25 @@ def test_flow():
         project_id=project_id,
         handler=project_handler,
     )
-    response_dict = loads(get_response["body"])
 
-    project_id: str = list(response_dict.keys()).pop()
-    project_dict: dict = response_dict[project_id]
-    assert project_dict[HarborModel.Fields.ID] == project_id
-
-    codebases_dict: dict = project_dict["codebases"]
-    codebase_ids: list = list(codebases_dict.keys())
-    assert len(codebase_ids) == 2
+    project_dict = loads(get_response["body"])
+    codebases_list: dict = project_dict["codebases"]
+    assert len(codebases_list) == 2
 
     # Get Test 2
     get_response: dict = get_all(
         team_id=team_id,
         handler=projects_handler,
     )
-    response_dict = loads(get_response["body"])
+    response_list: list = loads(get_response["body"])
 
-    project_id: str = list(response_dict.keys()).pop()
-    project_dict: dict = response_dict[project_id]
-    assert project_dict[HarborModel.Fields.ID] == project_id
-
-    codebases_dict: dict = project_dict["codebases"]
-    codebase_ids: list = list(codebases_dict.keys())
-    assert len(codebase_ids) == 2
+    project_dict: dict = response_list[0]
+    codebases_list: list = project_dict["codebases"]
+    assert len(codebases_list) == 2
 
     # Update
-    cb1_id: str = codebase_ids.pop()
-    cb2_id: str = codebase_ids.pop()
+    cb1_id: str = codebases_list[0]["id"]
+    cb2_id: str = codebases_list[1]["id"]
     new_cb1_name: str = "New Codebase 1 name"
     new_cb2_name: str = "New Codebase 2 name"
 

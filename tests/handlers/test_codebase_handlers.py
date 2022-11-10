@@ -101,10 +101,9 @@ def test_flow():
         team_id=team_id,
         handler=codebases_handler,
     )
-    response_dict = loads(get_response["body"])
+    response_list = loads(get_response["body"])
+    codebase_dict: list = response_list[0]
 
-    codebase_id: str = list(response_dict.keys()).pop()
-    codebase_dict: dict = response_dict[codebase_id]
     assert codebase_name == codebase_dict[CodeBase.Fields.NAME]
     assert codebase_dict[CodeBase.Fields.NAME] == codebase_name
     assert codebase_dict[CodeBase.Fields.LANGUAGE] == language

@@ -1,10 +1,6 @@
 """ Team Model Object. Represents a Team within the SBOM Harbor System. """
 
-from cyclonedx.model import (
-    HarborModel,
-    EntityKey,
-    EntityType,
-)
+from cyclonedx.model import EntityKey, EntityType, HarborModel
 from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.token import Token
@@ -195,20 +191,14 @@ class Team(HarborModel):
         -> json representation of a given model object
         """
 
-        projects: [HarborModel] = self._children[EntityType.PROJECT.value]
-        ret_projects = {}
-        for project in projects:
-            ret_projects[project.entity_id] = project.to_json()
+        projects: list[HarborModel] = self._children[EntityType.PROJECT.value]
+        ret_projects = [project.to_json() for project in projects]
 
-        members: [HarborModel] = self._children[EntityType.MEMBER.value]
-        ret_members = {}
-        for member in members:
-            ret_members[member.entity_id] = member.to_json()
+        members: list[HarborModel] = self._children[EntityType.MEMBER.value]
+        ret_members = [member.to_json() for member in members]
 
-        tokens: [HarborModel] = self._children[EntityType.TOKEN.value]
-        ret_tokens = {}
-        for token in tokens:
-            ret_tokens[token.entity_id] = token.to_json()
+        tokens: list[HarborModel] = self._children[EntityType.TOKEN.value]
+        ret_tokens = [token.to_json() for token in tokens]
 
         return {
             HarborModel.Fields.ID: self.entity_id,

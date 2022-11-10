@@ -56,13 +56,14 @@ def test_flow():
         name=token_name,
         handler=token_handler,
     )
-    response_dict: dict = loads(create_response["body"])
+    token_dict: dict = loads(create_response["body"])
 
-    print(dumps(response_dict, indent=2))
+    print(dumps(token_dict, indent=2))
 
-    token_id: str = list(response_dict.keys()).pop()
-    token_dict: dict = response_dict[token_id]
+    token_id: str = token_dict["id"]
+
     assert token_name == token_dict[Token.Fields.NAME]
+    assert token_dict[Token.Fields.ID]
     assert token_dict[Token.Fields.ENABLED]
     assert token_dict[Token.Fields.CREATED]
     assert token_dict[Token.Fields.EXPIRES]
@@ -75,9 +76,10 @@ def test_flow():
         token_id=token_id,
         handler=token_handler,
     )
-    response_dict = loads(get_response["body"])
-    token_dict: dict = response_dict[token_id]
+
+    token_dict: dict = loads(get_response["body"])
     assert token_name == token_dict[Token.Fields.NAME]
+    assert token_dict[Token.Fields.ID]
     assert token_dict[Token.Fields.ENABLED]
     assert token_dict[Token.Fields.CREATED]
     assert token_dict[Token.Fields.EXPIRES]
@@ -89,10 +91,10 @@ def test_flow():
         team_id=team_id,
         handler=tokens_handler,
     )
-    response_dict = loads(get_response["body"])
+    token_dict = loads(get_response["body"])
 
-    token_id: str = list(response_dict.keys()).pop()
-    token_dict: dict = response_dict[token_id]
+    token_id: str = list(token_dict.keys()).pop()
+    token_dict: dict = token_dict[token_id]
     assert token_name == token_dict[Token.Fields.NAME]
     assert token_dict[Token.Fields.ENABLED]
     assert token_dict[Token.Fields.CREATED]

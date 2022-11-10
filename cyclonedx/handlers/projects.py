@@ -2,8 +2,6 @@
 -> This module contains the handlers for CRUDing Projects
 """
 
-from json import dumps
-
 import boto3
 
 from cyclonedx.clients.db.dynamodb import HarborDBClient
@@ -44,14 +42,9 @@ def projects_handler(event: dict, context: dict) -> dict:
         recurse=True,
     )
 
-    # Declare a response dictionary
-    response: dict = {project.entity_id: project.to_json() for project in team.projects}
-
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps(response),
-    }
+    # Declare a response list
+    response: list = [project.to_json() for project in team.projects]
+    return harbor_response(200, response)
 
 
 def _do_get(event: dict, db_client: HarborDBClient) -> dict:
@@ -67,11 +60,7 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
         recurse=_should_process_children(event),
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({project_id: project.to_json()}),
-    }
+    return harbor_response(200, project.to_json())
 
 
 def _do_post(event: dict, db_client: HarborDBClient) -> dict:
@@ -81,24 +70,28 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
 
     request_body: dict = _get_request_body_as_dict(event)
     project_id: str = generate_model_id()
+    codebases_list: list[dict] = []
+
+    if request_body and "codebases" in request_body.keys():
+        codebases_list = request_body["codebases"]
+
+    codebases: list = _to_codebases(
+        team_id=team_id,
+        project_id=project_id,
+        codebases=codebases_list,
+    )
 
     project: Project = db_client.create(
         model=Project(
             team_id=team_id,
             project_id=project_id,
             name=request_body[Project.Fields.NAME],
-            codebases=_to_codebases(
-                team_id=team_id, project_id=project_id, request_body=request_body
-            ),
+            codebases=codebases,
         ),
         recurse=True,
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({project_id: project.to_json()}),
-    }
+    return harbor_response(200, project.to_json())
 
 
 def _do_put(event: dict, db_client: HarborDBClient) -> dict:
@@ -145,11 +138,7 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
         recurse=False,
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({project_id: project.to_json()}),
-    }
+    return harbor_response(200, project.to_json())
 
 
 def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
@@ -170,11 +159,7 @@ def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
         recurse=True,
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({project_id: project.to_json()}),
-    }
+    return harbor_response(200, project.to_json())
 
 
 def project_handler(event: dict, context: dict) -> dict:

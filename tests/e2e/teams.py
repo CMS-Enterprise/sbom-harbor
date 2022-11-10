@@ -35,7 +35,7 @@ def test_user_creating_team_is_member():
         recurse=True,
     )
 
-    member: Member = new_team.members.pop()
+    member: Member = new_team.members[0]
     assert member.email == "sbomadmin@aquia.io"
 
 
@@ -128,12 +128,12 @@ def test_get_teams():
         teams = teams_rsp.json()
         print_response(teams_rsp)
 
-        dp1 = teams["dawn-patrol"]
+        dp1 = [team for team in teams if team["name"] == "dawn-patrol"][0]
         assert not dp1["members"]
         assert not dp1["tokens"]
         assert not dp1["projects"]
 
-        dp2 = teams["dusk-patrol"]
+        dp2 = [team for team in teams if team["name"] == "dusk-patrol"][0]
         assert not dp2["members"]
         assert not dp2["tokens"]
         assert not dp2["projects"]
@@ -168,12 +168,12 @@ def test_get_teams_with_children():
         teams = teams_rsp.json()
         print_response(teams_rsp)
 
-        dp1 = teams["dawn-patrol"]
+        dp1 = [team for team in teams if team["name"] == "dawn-patrol"][0]
         assert dp1["members"]
         assert dp1["tokens"]
         assert dp1["projects"]
 
-        dp2 = teams["dusk-patrol"]
+        dp2 = [team for team in teams if team["name"] == "dusk-patrol"][0]
         assert dp2["members"]
         assert dp2["tokens"]
         assert dp2["projects"]
@@ -206,7 +206,7 @@ def test_get_team(team_id: str = None):
     print_response(team_rsp)
     team_dict: dict = team_rsp.json()
 
-    assert list(team_dict.keys()) == [team_id]
+    assert team_dict["id"] == team_id
 
 
 def test_get_team_with_children(team_id: str = None):
@@ -233,7 +233,7 @@ def test_get_team_with_children(team_id: str = None):
     print_response(team_rsp)
     team_dict: dict = team_rsp.json()
 
-    assert list(team_dict.keys()) == [team_id]
+    assert team_dict["id"] == team_id
 
     return team_dict
 
@@ -263,7 +263,7 @@ def test_create_team():
 
     print_response(team_rsp)
     team_dict: dict = team_rsp.json()
-    new_team_id: str = list(team_dict.keys())[0]
+    new_team_id: str = team_dict["id"]
 
     assert new_team_id != ""
 
@@ -303,9 +303,9 @@ def test_create_team_with_children():
 
     print_response(team_rsp)
     team_dict: dict = team_rsp.json()
-    new_team_id: str = list(team_dict.keys())[0]
-    project_data: dict = team_dict[new_team_id]["projects"]
-    project_ids: list[str] = list(project_data.keys())
+    new_team_id: str = team_dict["id"]
+    project_list: dict = team_dict["projects"]
+    project_ids: list[str] = [project["id"] for project in project_list]
 
     assert "" is not new_team_id
 
@@ -340,8 +340,7 @@ def test_update_team():
 
     print_response(team_rsp)
     team_dict: dict = team_rsp.json()
-    team_data: dict = team_dict["dawn-patrol"]
-    new_name_from_service: str = team_data["name"]
+    new_name_from_service: str = team_dict["name"]
 
     assert new_name == new_name_from_service
 
@@ -409,9 +408,8 @@ def test_delete_team():
 
     print_response(team_rsp)
     team_dict: dict = team_rsp.json()
-    team_id_after_delete: str = list(team_dict.keys())[0]
 
-    assert team_id == team_id_after_delete
+    assert len(team_dict) == 0
 
 
 def test_initial_token_created_when_team_created():
@@ -421,8 +419,7 @@ def test_initial_token_created_when_team_created():
     """
 
     _, team_id = test_create_team()
-    rsp: dict = test_get_team_with_children(team_id)
-    team: dict = list(rsp.values()).pop()
+    team: dict = test_get_team_with_children(team_id)
     tokens: dict = team["tokens"]
 
-    assert len(tokens.values()) == 1
+    assert len(tokens) == 1

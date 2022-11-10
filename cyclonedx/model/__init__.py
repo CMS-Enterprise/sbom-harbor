@@ -15,13 +15,16 @@ from cyclonedx.constants import (
 )
 
 
-def generate_model_id():
+def generate_model_id(model_id: str = ""):
 
     """
     -> This is the single location that model object IDs are created
     """
 
-    return str(uuid4())
+    if not model_id:
+        return str(uuid4())
+
+    return model_id
 
 
 class EntityType(Enum):
@@ -52,7 +55,7 @@ class EntityKey:
         self._entity_id = entity_id
 
     @staticmethod
-    def split_entity_key(entity_key: str) -> (str, str):
+    def split_entity_key(entity_key: str) -> tuple[str, str]:
 
         """
         The EntityKey is string form has a hash(#) which separates

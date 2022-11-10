@@ -2,11 +2,10 @@
 -> End-to-End Test for the tokens
 """
 import datetime
-from uuid import uuid4
 from datetime import datetime
+from uuid import uuid4
 
 import pytest
-
 import requests
 from dateutil.relativedelta import relativedelta
 from requests import Response
@@ -42,13 +41,11 @@ def test_tokens_use_iso_date_string():
     print(f"Expires: {expires}")
     print_response(rsp)
     json_dict: dict = rsp.json()
-    token_id: str = list(json_dict.keys()).pop()
-    values: dict = json_dict[token_id]
 
-    assert expires == values["expires"]
+    assert expires == json_dict["expires"]
 
     try:
-        datetime.fromisoformat(values["created"])
+        datetime.fromisoformat(json_dict["created"])
     except ValueError:
         pytest.fail()
 

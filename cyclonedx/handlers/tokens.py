@@ -51,11 +51,7 @@ def tokens_handler(event: dict, context: dict) -> dict:
     }
     # fmt: on
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps(response),
-    }
+    return harbor_response(200, response)
 
 
 def _do_get(event: dict, db_client: HarborDBClient) -> dict:
@@ -74,11 +70,7 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
         recurse=_should_process_children(event),
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({token_id: token.to_json()}),
-    }
+    return harbor_response(200, token.to_json())
 
 
 def _do_post(event: dict, db_client: HarborDBClient) -> dict:
@@ -123,11 +115,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
         ),
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({token_id: token.to_json()}),
-    }
+    return harbor_response(200, token.to_json())
 
 
 def _do_put(event: dict, db_client: HarborDBClient) -> dict:
@@ -166,11 +154,7 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
         recurse=False,
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({token_id: token.to_json()}),
-    }
+    return harbor_response(200, token.to_json())
 
 
 def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
@@ -192,11 +176,7 @@ def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
         model=token,
     )
 
-    return {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "body": dumps({token_id: token.to_json()}),
-    }
+    return harbor_response(200, token.to_json())
 
 
 def token_handler(event: dict, context: dict) -> dict:

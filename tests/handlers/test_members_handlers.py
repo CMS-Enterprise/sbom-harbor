@@ -53,20 +53,19 @@ def test_flow():
         is_team_lead=True,
         handler=member_handler,
     )
-    response_dict: dict = loads(create_response["body"])
+    member_dict: dict = loads(create_response["body"])
 
-    print(dumps(response_dict, indent=2))
+    print(dumps(member_dict, indent=2))
 
     cognito_client: HarborCognitoClient = HarborCognitoClient()
     cognito_user_data: CognitoUserData = cognito_client.get_user_data(email)
     actual_teams: set = set(cognito_user_data.teams.split(","))
     assert post_create_teams == actual_teams
 
-    member_id: str = list(response_dict.keys()).pop()
-    member_dict: dict = response_dict[member_id]
     assert email == member_dict[Member.Fields.EMAIL]
     assert member_dict[Member.Fields.IS_TEAM_LEAD]
-    assert member_dict[HarborModel.Fields.ID] == member_id
+
+    member_id: str = member_dict["id"]
 
     # Get Test 1
     get_response: dict = get(
@@ -74,8 +73,7 @@ def test_flow():
         member_id=member_id,
         handler=member_handler,
     )
-    response_dict = loads(get_response["body"])
-    member_dict: dict = response_dict[member_id]
+    member_dict = loads(get_response["body"])
     assert email == member_dict[Member.Fields.EMAIL]
     assert member_dict[Member.Fields.IS_TEAM_LEAD]
     assert member_dict[HarborModel.Fields.ID] == member_id
@@ -85,13 +83,14 @@ def test_flow():
         team_id=team_id,
         handler=members_handler,
     )
-    response_dict = loads(get_response["body"])
+    member_list: list = loads(get_response["body"])
 
-    member_id: str = list(response_dict.keys()).pop()
-    member_dict: dict = response_dict[member_id]
+    member_dict: dict = member_list[0]
     assert email == member_dict[Member.Fields.EMAIL]
     assert member_dict[Member.Fields.IS_TEAM_LEAD]
     assert member_dict[HarborModel.Fields.ID] == member_id
+
+    member_id: str = member_dict["id"]
 
     # Update
     new_email: str = "new@email.org"

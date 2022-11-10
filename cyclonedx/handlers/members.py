@@ -43,15 +43,9 @@ def members_handler(event: dict, context: dict) -> dict:
         recurse=True,
     )
 
-    # fmt: off
     # Declare a response dictionary
-    resp: dict = {
-        member.entity_id: member.to_json()
-        for member in team.members
-    }
-    # fmt: on
-
-    return harbor_response(200, resp)
+    response: list = [member.to_json() for member in team.members]
+    return harbor_response(200, response)
 
 
 def _do_get(event: dict, db_client: HarborDBClient) -> dict:
@@ -70,7 +64,7 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
         recurse=_should_process_children(event),
     )
 
-    return harbor_response(200, {member_id: member.to_json()})
+    return harbor_response(200, member.to_json())
 
 
 def _do_post(event: dict, db_client: HarborDBClient) -> dict:
@@ -104,7 +98,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
         member=member,
     )
 
-    return harbor_response(200, {member_id: member.to_json()})
+    return harbor_response(200, member.to_json())
 
 
 def _do_put(event: dict, db_client: HarborDBClient) -> dict:
@@ -150,7 +144,7 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
         recurse=False,
     )
 
-    return harbor_response(200, {member_id: member.to_json()})
+    return harbor_response(200, member.to_json())
 
 
 def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
@@ -178,7 +172,7 @@ def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
         member=member,
     )
 
-    return harbor_response(200, {member_id: member.to_json()})
+    return harbor_response(200, member.to_json())
 
 
 def member_handler(event: dict, context: dict) -> dict:

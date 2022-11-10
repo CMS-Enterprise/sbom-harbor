@@ -24,7 +24,6 @@ from cyclonedx.model.team import Team
 
 
 def codebases_handler(event: dict, context: dict) -> dict:
-
     """
     ->  "CodeBases" Handler. Handles requests to the /codebases endpoint.
     """
@@ -45,6 +44,7 @@ def codebases_handler(event: dict, context: dict) -> dict:
 
     # fmt: off
     # Declare a response dictionary
+    # Build a response list of codebases
     codebase_lists: list[list[CodeBase]] = [
         project.codebases
         for project in team.projects
@@ -56,17 +56,13 @@ def codebases_handler(event: dict, context: dict) -> dict:
         for codebase in
             codebase_list
     ]
-    resp: dict = {
-        codebase.entity_id: codebase.to_json()
-        for codebase in codebases
-    }
     # fmt: on
 
-    return harbor_response(200, resp)
+    response: list = [codebase.to_json() for codebase in codebases]
+    return harbor_response(200, response)
 
 
 def _do_get(event: dict, db_client: HarborDBClient) -> dict:
-
     # Get the codebase id from the path
     codebase_id: str = _extract_id_from_path("codebase", event)
 
@@ -90,7 +86,6 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
 
 
 def _do_post(event: dict, db_client: HarborDBClient) -> dict:
-
     """
     -> Handler that creates a codebase, puts it in
     -> DynamoDB and returns it to the requester
@@ -123,7 +118,6 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
 
 
 def _do_put(event: dict, db_client: HarborDBClient) -> dict:
-
     """
     -> The behavior of this function is that the objects in the request_body
     -> will be updated.
@@ -171,7 +165,6 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
 
 
 def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
-
     # Get the codebase id from the path
     codebase_id: str = _extract_id_from_path("codebase", event)
 
@@ -198,7 +191,6 @@ def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
 
 
 def codebase_handler(event: dict, context: dict) -> dict:
-
     """
     ->  "CodeBase" Handler.  Handles requests to the /codebase endpoint.
     """

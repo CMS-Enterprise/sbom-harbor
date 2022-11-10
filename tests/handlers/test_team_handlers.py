@@ -42,11 +42,10 @@ def test_create():
 
     # Create
     create_response: dict = create(team_handler, username=email)
-    response_dict: dict = loads(create_response["body"])
-    team_id: str = list(response_dict.keys()).pop()
-    team_dict: dict = response_dict[team_id]
-    members_dict: dict = team_dict["members"]
-    member: dict = list(members_dict.values()).pop()
+    team_dict: dict = loads(create_response["body"])
+    team_id: str = team_dict["id"]
+    members_list: list = team_dict["members"]
+    member: dict = members_list[0]
     assert member[Member.Fields.EMAIL] == EMAIL
 
     cognito_client: HarborCognitoClient = HarborCognitoClient()
@@ -68,27 +67,24 @@ def test_get():
 
     team_id, team_dict, username = test_create()
 
-    projects_dict: dict = team_dict["projects"]
-    projects_ids: list = list(projects_dict.keys())
+    projects_list: list = team_dict["projects"]
+    projects_ids: list = [project["id"] for project in projects_list]
 
     # Get Test
     get_response: dict = get(team_id, team_handler)
     response_dict = loads(get_response["body"])
 
-    res_team_id: str = list(response_dict.keys()).pop()
+    res_team_id: str = response_dict["id"]
     assert team_id == res_team_id
-
-    team: dict = list(response_dict.values()).pop()
-    assert team[HarborModel.Fields.ID] == team_id
+    assert response_dict[HarborModel.Fields.ID] == res_team_id
 
     # Test to verify that a single token is also
     # created when the team is: ISPGCASP-864
-    tokens: dict = team["tokens"]
-    assert len(tokens.values()) == 1
+    tokens: dict = response_dict["tokens"]
+    assert len(tokens) == 1
 
-    res_team_dict: dict = response_dict[res_team_id]
-    res_projects_dict: dict = res_team_dict["projects"]
-    res_projects_ids: list = list(res_projects_dict.keys())
+    res_projects_list: list = response_dict["projects"]
+    res_projects_ids: list = [project["id"] for project in res_projects_list]
 
     for pid in projects_ids:
         assert pid in res_projects_ids
@@ -173,9 +169,33 @@ def create(handler, username: str):
                 "projects": [
                     {
                         "name": "Initial Project Name 1",
+                        "codebases": [
+                            {
+                                "name": "Website",
+                                "language": "JAVASCRIPT",
+                                "buildTool": "NPM",
+                            },
+                            {
+                                "name": "Backend",
+                                "language": "PYTHON",
+                                "buildTool": "PIP",
+                            },
+                        ],
                     },
                     {
                         "name": "Initial Project Name 2",
+                        "codebases": [
+                            {
+                                "name": "Website",
+                                "language": "JAVASCRIPT",
+                                "buildTool": "NPM",
+                            },
+                            {
+                                "name": "Backend",
+                                "language": "PYTHON",
+                                "buildTool": "PIP",
+                            },
+                        ],
                     },
                 ],
             }

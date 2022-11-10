@@ -1,10 +1,6 @@
 """ Project Model Object. Represents a Project within the SBOM Harbor System. """
 
-from cyclonedx.model import (
-    EntityKey,
-    EntityType,
-    HarborModel,
-)
+from cyclonedx.model import EntityKey, EntityType, HarborModel
 from cyclonedx.model.codebase import CodeBase
 
 
@@ -21,6 +17,8 @@ class Project(HarborModel):
 
         # The Name of the Project
         NAME = "name"
+
+        # The FISMA ID for the Project
         FISMA = "fisma"
 
     @classmethod
@@ -139,10 +137,8 @@ class Project(HarborModel):
 
     def to_json(self):
 
-        codebases: [HarborModel] = self._children[EntityType.CODEBASE.value]
-        ret_codebases = {}
-        for codebase in codebases:
-            ret_codebases[codebase.entity_id] = codebase.to_json()
+        codebases: list[HarborModel] = self._children[EntityType.CODEBASE.value]
+        ret_codebases = [codebase.to_json() for codebase in codebases]
 
         return {
             HarborModel.Fields.ID: self.entity_id,

@@ -57,21 +57,22 @@ def teams_handler(event: dict, context: dict) -> dict:
         # Get the children if there are any
         get_children: bool = _should_process_children(event)
 
-        # Declare a response dictionary
-        response_dict: dict = {}
+        # Declare a response list
+        response: list = []
 
         # Iterate over the list of ids and get the teams.
         for team_id in team_ids_lst:
             team: Team = Team(team_id=team_id)
             team = db_client.get(team, recurse=get_children)
-            response_dict[team.team_id] = team.to_json()
+            # append the team to the response list
+            response.append(team.to_json())
 
     except DatabaseError as de:
         return harbor_response(400, {"error": str(de)})
     except KeyError as ke:
         return harbor_response(400, {"error": str(ke)})
 
-    return harbor_response(200, response_dict)
+    return harbor_response(200, response)
 
 
 def _do_get(event: dict, db_client: HarborDBClient) -> dict:
@@ -82,12 +83,7 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
         recurse=_should_process_children(event),
     )
 
-    return harbor_response(
-        200,
-        {
-            team_id: team.to_json(),
-        },
-    )
+    return harbor_response(200, team.to_json())
 
 
 def _add_creating_member(
@@ -122,7 +118,10 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
 
     user_email: str = extract_attrib_from_event(ContextKeys.EMAIL, event)
     username: str = extract_attrib_from_event(ContextKeys.USERNAME, event)
-    members: list[Member] = _to_members(team_id, request_body)
+
+    members: list[Member] = []
+    if "members" in request_body.keys():
+        members = _to_members(team_id, request_body["members"])
 
     # Create the Cognito Client
     cognito_client: HarborCognitoClient = HarborCognitoClient()
@@ -153,7 +152,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
             team_id=team_id,
             name=request_body[Team.Fields.NAME],
             members=members,
-            projects=_to_projects(team_id, request_body),
+            projects=_to_projects(team_id, request_body["projects"]),
             tokens=[
                 Token(
                     team_id=team_id,
@@ -171,9 +170,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
 
     return harbor_response(
         200,
-        {
-            team_id: team.to_json(),
-        },
+        team.to_json(),
     )
 
 
@@ -197,7 +194,10 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
     )
 
     # Extract the request body from the event
-    request_body: dict = loads(event["body"])
+    try:
+        request_body: dict = loads(event["body"])
+    except KeyError as ke:
+        raise ValueError("Missing request body. No team data to update") from ke
 
     # Replace the name of the team if there is a 'name' key in the request body
     try:
@@ -222,9 +222,7 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
 
     return harbor_response(
         200,
-        {
-            team_id: team.to_json(),
-        },
+        team.to_json(),
     )
 
 
@@ -256,12 +254,7 @@ def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
         recurse=True,
     )
 
-    return harbor_response(
-        200,
-        {
-            team_id: {},
-        },
-    )
+    return harbor_response(200, {})
 
 
 def team_handler(event: dict, context: dict) -> dict:

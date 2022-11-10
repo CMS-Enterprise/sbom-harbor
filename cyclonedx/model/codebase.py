@@ -102,12 +102,15 @@ class CodeBase(HarborModel):
 
         return {
             **super().get_item(),
-            CodeBase.Fields.NAME: self._name,
-            CodeBase.Fields.LANGUAGE: self._language,
-            CodeBase.Fields.BUILD_TOOL: self._build_tool,
+            CodeBase.Fields.NAME: self.name,
+            CodeBase.Fields.LANGUAGE: self.language,
+            CodeBase.Fields.BUILD_TOOL: self.build_tool,
         }
 
     def to_json(self):
+
+        """Get the JSON representation of the Codebase"""
+
         return {
             HarborModel.Fields.ID: self.entity_id,
             CodeBase.Fields.NAME: self.name,
