@@ -55,7 +55,7 @@ const TeamView = () => {
               </Typography>
             </Grid>
             {projects &&
-              projects.map((project) => (
+              Object.values(projects).map((project) => (
                 <Grid item xs={12} md={12} key={project.id}>
                   <TeamViewProjectCard project={project} />
                 </Grid>

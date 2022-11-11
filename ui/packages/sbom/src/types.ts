@@ -128,7 +128,7 @@ export type ProjectResponse = {
   id: string
   name: string
   fisma: string
-  codebases: Record<string, Codebase>
+  codebases: Codebase[]
 }
 
 export type Codebase = {

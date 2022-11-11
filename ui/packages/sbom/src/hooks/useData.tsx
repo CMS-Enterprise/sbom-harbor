@@ -8,9 +8,9 @@ import { useAuthState } from './useAuth'
 
 const INITIAL_STATE = {
   teams: [] as Team[],
+  setData: () => null,
   fetchTeams: () => Promise<null>,
   setTeams: () => null,
-  setData: () => null,
 } as AppState
 
 const DataContext = React.createContext<{
@@ -45,7 +45,7 @@ export const DataProvider = ({
 
   // dispatches update to the user data state in the context provider.
   const setTeams = React.useCallback((teams: Team[] = []) => {
-    setData({ teams })
+    setData({ ...data, teams })
   }, [])
 
   const fetchTeams = React.useCallback(

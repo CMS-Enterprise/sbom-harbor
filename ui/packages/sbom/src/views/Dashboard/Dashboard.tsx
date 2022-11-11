@@ -25,7 +25,12 @@ const DashboardContainer = (): JSX.Element => {
 
   // update teams in the data context from the route loader data
   // TODO: find a better way to do this or remove it and only use loader data
-  React.useEffect(() => setTeams(teams), [teams, setTeams])
+  /* eslint-disable react-hooks/exhaustive-deps */
+  // the dependency array for this useEffect does not need setTeams.
+  React.useEffect(() => {
+    setTeams(teams)
+  }, [teams])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Helper function that redirects the user to the new team creation view.
   const navigateToCreateTeam = React.useCallback(() => navigate('team/new'), [])

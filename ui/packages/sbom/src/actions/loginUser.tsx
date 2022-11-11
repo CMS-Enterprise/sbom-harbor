@@ -14,7 +14,6 @@ export default async function loginUser(
       .getJwtToken()
 
     if (jwtToken) {
-      console.debug(`Login successful for ${payload.email}`)
       const data = {
         jwtToken,
         email: user.attributes.email,

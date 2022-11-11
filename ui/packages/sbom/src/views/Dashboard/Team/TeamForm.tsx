@@ -20,7 +20,7 @@ import UserAutocomplete from '@/components/UserAutocomplete'
 import SubmitButton from '@/components/forms/SubmitButton'
 import { useAlert } from '@/hooks/useAlert'
 import { useAuthState } from '@/hooks/useAuth'
-import { CONFIG } from '@/utils/constants'
+import harborRequest from '@/utils/harborRequest'
 import { Project } from '@/types'
 import { FormState, FormTeamState } from './types'
 import { defaultFormState, defaultProject } from './constants'
@@ -35,21 +35,23 @@ import TeamViewProjectCreationCard from './components/TeamViewProjectCreationCar
  */
 const TeamForm = () => {
   const { setAlert } = useAlert()
+
+  // auth state hook for user info and token
   const { jwtToken, email } = useAuthState()
 
   // route loader hook to fetch team data
   const team = useLoaderData() as FormTeamState
 
-  // route match hook to determine if this is an edit or create form
-  const newTeamRouteMatch = useMatch('/team/new')
+  // route params hook to get team id
   const { teamId = '' } = useParams()
 
-  const [submitting, setSubmitting] = React.useState(false)
+  // route match hook to determine if this is an edit or create form
+  const newTeamRouteMatch = useMatch('/team/new')
 
-  const {
-    control,
-    // TODO: use commented out react-hook-form methods
-  } = useForm({
+  // component state for form data
+  const [isSubmitting, setSubmitting] = React.useState(false)
+
+  const { control } = useForm({
     mode: 'all',
     shouldUnregister: true,
   })
@@ -60,17 +62,10 @@ const TeamForm = () => {
     { ...defaultFormState, ...team }
   )
 
-  /* eslint-disable react-hooks/exhaustive-deps */
-  React.useEffect(() => {
-    if (!team || !formInput) return
-    setFormInput({ ...formInput, ...team })
-  }, [team])
-  /* eslint-enable react-hooks/exhaustive-deps */
-
   const admins = React.useMemo(() => {
     if (!formInput?.members) return []
     return formInput?.members.filter((m) => m.isTeamLead === true) || []
-  }, [formInput])
+  }, [formInput.members])
 
   /**
    * Handler for change events for the team member email inputs.
@@ -102,16 +97,18 @@ const TeamForm = () => {
   /**
    * Handler for adding a new project to the team
    */
-  const handleUpdateProject = (payload: Project) => {
-    // update the form state with the new projects object
-    return setFormInput({
-      ...formInput,
-      projects: {
-        ...formInput.projects,
-        [payload.id]: { ...payload },
-      },
-    })
-  }
+  const handleUpdateProject = React.useCallback(
+    (payload: Project) => {
+      return setFormInput({
+        ...formInput,
+        projects: {
+          ...formInput.projects,
+          [payload.id]: { ...payload },
+        },
+      })
+    },
+    [formInput]
+  )
 
   /**
    * Handler for removing a team member from the form state.
@@ -166,7 +163,7 @@ const TeamForm = () => {
   const handleAddTeamMember = () => handleAddMember(false)
 
   /**
-   * Handler for submitting the form to update a team.
+   * Handler for isSubmitting the form to update a team.
    * @param {React.FormEvent<HTMLFormElement>} event Form submit event.
    * @returns {Promise<void>} Promise that resolves to void when the submit
    * request completes, or resolves to an abort signal if the request fails.
@@ -178,7 +175,7 @@ const TeamForm = () => {
     event.preventDefault()
     const abortController = new AbortController()
 
-    if (!jwtToken || submitting) {
+    if (!jwtToken || isSubmitting) {
       return () => abortController.abort()
     }
 
@@ -191,57 +188,42 @@ const TeamForm = () => {
         tokens: tokenEntries = team.tokens,
       } = formInput
 
-      // filter out any empty email values from the projects object
-      const projectEntries = Object.entries(projects).filter(
-        ([, p]) => !!p.name
-      )
+      // filter out projects with empty name values from the projects object
+      // TODO: add project schema validation to the form to prevent this from happening
+      const projectEntries = Object.entries(projects)
+        .filter(([, p]) => !!p.name)
+        .map(([id, p]) => ({ ...p, id, codebases: Object.values(p.codebases) }))
 
-      // filter out any empty email values from the members object
+      // filter out any empty email values from the projects object
+      // TODO: add emailvalidation to the form to prevent this from happening
       const membersEntries = members.filter((m) => !!m.email)
 
-      // ensure that the current user is in the members list as an admin
-      // TODO: use team member endpoint instead of editing them directly
+      // ensure that the current user is in the members list as an admin with uuid.
+      // TODO: a user shouldn't be able to remove themselves from the team
       if (members.findIndex((m) => m.email === email) === -1) {
-        const id = uuidv4()
-        membersEntries.push({ id, email, isTeamLead: true })
+        membersEntries.push({ id: uuidv4(), email, isTeamLead: true })
       }
 
-      // create a final object representing the team and add it to the teams data.
-      const updatedTeamData = {
-        name: formInput.name,
-        members: Object.values(membersEntries),
-        projects: Object.values(projectEntries),
-        tokens: Object.values(tokenEntries),
-      }
-
-      // determine the endpoint to use based on if this is a create or edit form.
-      const url = newTeamRouteMatch
-        ? CONFIG.TEAM_API_URL
-        : `${CONFIG.TEAM_API_URL}/${teamId}`
-
-      // determine the request verb based on if this is a create or edit form.
-      const method = newTeamRouteMatch ? 'POST' : 'PUT'
-
-      // update teams data in the database
-      const response = await fetch(url, {
-        method,
-        body: JSON.stringify(updatedTeamData),
-        headers: {
-          Authorization: `${jwtToken}`,
-          'Content-Type': 'application/json',
+      // make request to update teams data in the database.
+      await harborRequest({
+        // determine the endpoint to use based on if this is a create or edit form.
+        path: newTeamRouteMatch ? '/teams' : `/team/${teamId}`,
+        // determine the request verb based on if this is a create or edit form.
+        method: newTeamRouteMatch ? 'POST' : 'PUT',
+        // pass the jwt token from the authLoader to the request to authenticate the user.
+        jwtToken,
+        // create a final object representing the team data to send to the server.
+        body: {
+          name: formInput.name,
+          members: Object.values(membersEntries),
+          projects: Object.values(projectEntries),
+          tokens: Object.values(tokenEntries),
         },
+        // pass the abort controller to the request to allow for cancelling the request.
         signal: abortController.signal,
       })
 
-      // if the request was unsuccessful, throw an error and go to catch block
-      if (response.status !== 200) {
-        throw new Error(response.statusText)
-      }
-
-      // update global app data with the new team since API call was successful
       setSubmitting(false)
-
-      // show a success message to the user
       setAlert({
         message: 'Team updated successfully',
         severity: 'success',
@@ -250,7 +232,7 @@ const TeamForm = () => {
       console.error(error)
       setSubmitting(false)
       setAlert({
-        message: 'Something went wrong, unable to update team!',
+        message: 'Something went wrong, please try again.',
         severity: 'error',
       })
     }
@@ -330,25 +312,24 @@ const TeamForm = () => {
           </Typography>
 
           <Grid container spacing={6} sx={{ mb: 6 }}>
-            <Grid item xs={12} md={12}>
-              <TeamViewProjectCreationCard onClick={handleAddProject} />
-            </Grid>
-            {/* FIXME: adding projects is not working */}
-            {Object.entries(formInput.projects).map(([key, project]) => (
-              <Grid item xs={12} md={12} key={key}>
+            {Object.values(formInput.projects).map((project) => (
+              <Grid item xs={12} md={12} key={project.id}>
                 <TeamViewProjectCreateCard
                   project={project}
                   onUpdate={handleUpdateProject}
                 />
               </Grid>
             ))}
+            <Grid item xs={12} md={12}>
+              <TeamViewProjectCreationCard onClick={handleAddProject} />
+            </Grid>
           </Grid>
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
             <Button sx={{ mt: 3, ml: 1 }} variant="outlined" color="error">
               Cancel
             </Button>
-            <SubmitButton disabled={submitting} />
+            <SubmitButton disabled={isSubmitting} />
           </Box>
         </Box>
       </Paper>

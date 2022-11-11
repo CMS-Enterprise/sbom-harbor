@@ -4,20 +4,21 @@
 import * as React from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import Box from '@mui/material/Box'
-import Card from '@mui/material/Card'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
-import Grid from '@mui/material/Grid'
-import MenuItem from '@mui/material/MenuItem'
+import Card from '@mui/material/Card'
+import CardActions from '@mui/material/CardActions'
+import CardContent from '@mui/material/CardContent'
+import CardHeader from '@mui/material/CardHeader'
 import FormControl from '@mui/material/FormControl'
-import Select from '@mui/material/Select'
+import Grid from '@mui/material/Grid'
+import IconButton from '@mui/material/IconButton'
 import InputLabel from '@mui/material/InputLabel'
+import MenuItem from '@mui/material/MenuItem'
+import Select from '@mui/material/Select'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
 import DotsVertical from 'mdi-material-ui/DotsVertical'
-import { Codebase, CodebaseLanguage, BuildTool, Project } from '@/types'
+import { BuildTool, Codebase, CodebaseLanguage, Project } from '@/types'
 import {
   defaultProject,
   defaultCodebase,
@@ -38,23 +39,27 @@ type FormState = {
   codebases: Record<string, Codebase>
 }
 
-const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
+const TeamViewProjectCreateCard = ({
+  project,
+  onUpdate,
+}: InputProps): JSX.Element => {
   // reducer for the form state
   const [formInput, setFormInput] = React.useReducer(
     (state: FormState, newState: FormState) => ({ ...state, ...newState }),
     {
       ...defaultProject,
-      id: uuidv4(),
+      id: project.id,
       name: project.name,
       codebases: project.codebases,
     }
   )
 
-  // reducer for the codebase state
-  const [newCodebase, setNewCodebase] = React.useReducer(
-    (state: Codebase, newState: Codebase) => ({ ...state, ...newState }),
-    defaultCodebase
-  )
+  /* eslint-disable react-hooks/exhaustive-deps */
+  // the dependency array for this useEffect does not need formInput.
+  React.useEffect(() => {
+    onUpdate(formInput)
+  }, [formInput])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // function that handles change events on form inputs.
   const handleInput = (
@@ -66,29 +71,48 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
   }
 
   // function that handles change events on form inputs for codebases.
-  const handleInputCodebase = (
-    evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = evt.currentTarget
-    setNewCodebase({ ...newCodebase, [name]: value })
-  }
-
-  // function that handles adding a new codebase to the project.
-  const handleAddCodebase = () => {
-    const id = uuidv4()
+  const handleInputCodebase = ({
+    name,
+    value,
+  }: {
+    name: string
+    value: Codebase
+  }) => {
     setFormInput({
       ...formInput,
       codebases: {
         ...formInput.codebases,
-        [id]: { ...defaultCodebase, id },
+        [name]: value,
+      },
+    })
+  }
+
+  // function that handles adding a new codebase to the project with a new id.
+  const handleAddCodebase = () => {
+    setFormInput({
+      ...formInput,
+      codebases: {
+        ...formInput.codebases,
+        // the temporary id is only used read the codebase data from the app
+        // state, and is not included in the data of the request to the server.
+        [uuidv4()]: { ...defaultCodebase },
       },
     })
   }
 
   return (
-    <Card>
+    <Card
+      sx={{
+        position: 'relative',
+        pt: 2,
+      }}
+    >
       <CardHeader
-        title={project.name}
+        sx={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+        }}
         titleTypographyProps={{
           sx: {
             lineHeight: '2rem !important',
@@ -106,25 +130,24 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
         }
       ></CardHeader>
       <CardContent>
-        <Typography component="h5" variant="caption" sx={{ mb: 5 }}>
-          <TextField
-            fullWidth
-            id="projectName"
-            label="Project Name"
-            name="name"
-            onChange={handleInput}
-            required
-            value={formInput?.name}
-            variant="standard"
-            InputProps={{
-              sx: {
-                '& .Mui-disabled': {
-                  color: 'text.primary',
-                },
+        <TextField
+          fullWidth
+          id="projectName"
+          label="Project Name"
+          name="name"
+          onChange={handleInput}
+          required
+          value={formInput?.name}
+          variant="standard"
+          InputProps={{
+            sx: {
+              '& .Mui-disabled': {
+                color: 'text.primary',
               },
-            }}
-          />
-        </Typography>
+            },
+          }}
+          sx={{ mb: 3 }}
+        />
         <Grid
           container
           spacing={2}
@@ -140,17 +163,6 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
             <Typography component="p" variant="caption" sx={{ mb: 0 }}>
               {Object.keys(project.codebases).length || 0} Codebases
             </Typography>
-          </Grid>
-          <Grid item>
-            <Button
-              sx={{ mt: 0, mb: 0, ml: 1 }}
-              variant="contained"
-              size="small"
-              color="secondary"
-              onClick={handleAddCodebase}
-            >
-              Add Codebase
-            </Button>
           </Grid>
         </Grid>
 
@@ -168,39 +180,45 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
                 >
                   <Box
                     sx={{
-                      ml: 3,
+                      ml: 2,
                       width: '100%',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
+                      spacing: 2,
                     }}
                   >
-                    <Box
-                      sx={{ mr: 2, display: 'flex', flexDirection: 'column' }}
+                    <Typography
+                      variant="h6"
+                      flexGrow={1}
+                      sx={{ mr: 4, fontWeight: 600, color: 'text.primary' }}
                     >
-                      <Typography
-                        variant="h6"
-                        sx={{ fontWeight: 600, color: 'text.primary' }}
-                      >
-                        <TextField
-                          fullWidth
-                          id="codebaseName"
-                          label="Codebase Name"
-                          name="name"
-                          onChange={handleInputCodebase}
-                          required
-                          value={codebase.name}
-                          variant="standard"
-                          InputProps={{
-                            sx: {
-                              '& .Mui-disabled': {
-                                color: 'text.primary',
-                              },
+                      <TextField
+                        fullWidth
+                        id="codebaseName"
+                        label="Codebase Name"
+                        name={`codebases[${key}].name`}
+                        onChange={(event) =>
+                          handleInputCodebase({
+                            name: key,
+                            value: { ...codebase, name: event.target.value },
+                          })
+                        }
+                        required
+                        value={codebase.name}
+                        variant="standard"
+                        InputProps={{
+                          sx: {
+                            '& .Mui-disabled': {
+                              color: 'text.primary',
                             },
-                          }}
-                        />
-                      </Typography>
-                    </Box>
+                          },
+                        }}
+                        sx={{
+                          width: '100%',
+                        }}
+                      />
+                    </Typography>
                     <Box
                       sx={{
                         display: 'flex',
@@ -220,6 +238,17 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
                               defaultValue=""
                               id="demo-simple-select-outlined"
                               labelId="demo-simple-select-outlined-label"
+                              name="language"
+                              onChange={(event) =>
+                                handleInputCodebase({
+                                  name: key,
+                                  value: {
+                                    ...codebase,
+                                    [event.target.name]: event.target
+                                      .value as CodebaseLanguage,
+                                  },
+                                })
+                              }
                             >
                               <MenuItem value="">
                                 <em>None</em>
@@ -242,6 +271,17 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
                               defaultValue=""
                               id="demo-simple-select-outlined"
                               labelId="demo-simple-select-outlined-label"
+                              name="buildTool"
+                              onChange={(event) =>
+                                handleInputCodebase({
+                                  name: key,
+                                  value: {
+                                    ...codebase,
+                                    [event.target.name]: event.target
+                                      .value as CodebaseLanguage,
+                                  },
+                                })
+                              }
                             >
                               <MenuItem value="">
                                 <em>None</em>
@@ -261,6 +301,25 @@ const TeamViewProjectCreateCard = ({ project }: InputProps): JSX.Element => {
               )
             }
           )}
+        <CardActions
+          sx={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'flex-end',
+            flexFlow: 'row',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <Button
+            sx={{ mt: 0, mb: 0, ml: 1 }}
+            variant="contained"
+            size="small"
+            color="secondary"
+            onClick={handleAddCodebase}
+          >
+            Add Codebase
+          </Button>
+        </CardActions>
       </CardContent>
     </Card>
   )

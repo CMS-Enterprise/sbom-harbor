@@ -5,7 +5,7 @@
 import * as React from 'react'
 import * as ReactDOMClient from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
-import { router } from '@/Routes'
+import router from '@/router/router'
 import { CONFIG } from '@/utils/constants'
 import configureCognito from '@/utils/configureCognito'
 import reportWebVitals from '@/utils/reportWebVitals'
