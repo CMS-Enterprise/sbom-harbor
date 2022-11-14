@@ -6,7 +6,12 @@
  * @module @cyclonedx/ui/sbom/views/Dashboard/Team/TeamEdit
  */
 import * as React from 'react'
-import { useLoaderData, useMatch, useParams } from 'react-router-dom'
+import {
+  useLoaderData,
+  useMatch,
+  useNavigate,
+  useParams,
+} from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { v4 as uuidv4 } from 'uuid'
 import Box from '@mui/material/Box'
@@ -47,6 +52,9 @@ const TeamForm = () => {
 
   // route match hook to determine if this is an edit or create form
   const newTeamRouteMatch = useMatch('/team/new')
+
+  // route navigate hook to redirect back to team view page on cancel
+  const navigate = useNavigate()
 
   // component state for form data
   const [isSubmitting, setSubmitting] = React.useState(false)
@@ -161,6 +169,16 @@ const TeamForm = () => {
    * @requires TeamForm#handleAddMember
    */
   const handleAddTeamMember = () => handleAddMember(false)
+
+  /**
+   * Handler for cancelling the form and returning to the team view page.
+   * @param {React.MouseEvent<HTMLButtonElement>} event The event triggered
+   * by clicking the cancel button.
+   */
+  const handleCancel = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    navigate(-1)
+  }
 
   /**
    * Handler for isSubmitting the form to update a team.
@@ -326,7 +344,12 @@ const TeamForm = () => {
           </Grid>
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Button sx={{ mt: 3, ml: 1 }} variant="outlined" color="error">
+            <Button
+              onClick={handleCancel}
+              color="error"
+              variant="outlined"
+              sx={{ mt: 3, ml: 1 }}
+            >
               Cancel
             </Button>
             <SubmitButton disabled={isSubmitting} />

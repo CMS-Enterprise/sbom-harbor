@@ -9,44 +9,32 @@ import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
-import { useData } from '@/hooks/useData'
+import { Team } from '@/types'
 
-type InputProps = {
-  teamId: string
-}
-
-const DashboardTeamCard = ({ teamId }: InputProps): JSX.Element => {
-  const { data: { teams } = {} } = useData()
-  const team = teams?.find((t) => t.id === teamId)
-
-  if (team) {
-    const { name = '', projects = {}, members = {} } = team
-    return (
-      <Card sx={{ position: 'relative' }}>
-        <CardContent>
-          <Typography variant="h5">
-            <Box
-              component="span"
-              sx={{ color: 'primary.main', fontWeight: 'bold' }}
-            >
-              {name}
-            </Box>
-          </Typography>
-          <Typography variant="h6">
-            <>{Object.keys(projects).length || 0} Projects</>
-          </Typography>
-          <Typography variant="body2" sx={{ mb: 3.25 }}>
-            <>{Object.keys(members).length || 0} Members</>
-          </Typography>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Link to={`teams/${teamId}`}>View</Link>
+const DashboardTeamCard = ({ team }: { team: Team }): JSX.Element =>
+  team ? (
+    <Card sx={{ position: 'relative' }}>
+      <CardContent>
+        <Typography variant="h5">
+          <Box
+            component="span"
+            sx={{ color: 'primary.main', fontWeight: 'bold' }}
+          >
+            {team?.name}
           </Box>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  return (
+        </Typography>
+        <Typography variant="h6">
+          <>{Object.keys(team?.projects).length || 0} Projects</>
+        </Typography>
+        <Typography variant="body2" sx={{ mb: 3.25 }}>
+          <>{team?.members?.length || 0} Members</>
+        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Link to={`teams/${team?.id}`}>View</Link>
+        </Box>
+      </CardContent>
+    </Card>
+  ) : (
     <Card sx={{ position: 'relative' }}>
       <CardContent>
         <Typography variant="h5">
@@ -67,6 +55,5 @@ const DashboardTeamCard = ({ teamId }: InputProps): JSX.Element => {
       </CardContent>
     </Card>
   )
-}
 
 export default DashboardTeamCard

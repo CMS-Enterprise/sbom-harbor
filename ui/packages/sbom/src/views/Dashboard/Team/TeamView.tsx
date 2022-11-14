@@ -15,7 +15,7 @@ import TeamViewProjectCard from './components/TeamViewProjectCard'
 import { Team } from '@/types'
 
 const TeamView = () => {
-  const { name = '', members = [], projects = [] } = useLoaderData() as Team
+  const { name = '', members = [], projects = {} } = useLoaderData() as Team
 
   return (
     <Container component="main" maxWidth="md" data-testid="team">

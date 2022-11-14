@@ -8,7 +8,6 @@ import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider } from '@mui/material/styles'
 import { AlertProvider } from '@/hooks/useAlert'
 import { AuthProvider } from '@/hooks/useAuth'
-import { DataProvider } from '@/hooks/useData'
 import theme from '@/utils/theme'
 
 /**
@@ -20,11 +19,9 @@ const Main = (): JSX.Element => (
   <ThemeProvider theme={theme}>
     <CssBaseline />
     <AuthProvider>
-      <DataProvider>
-        <AlertProvider>
-          <Outlet />
-        </AlertProvider>
-      </DataProvider>
+      <AlertProvider>
+        <Outlet />
+      </AlertProvider>
     </AuthProvider>
   </ThemeProvider>
 )

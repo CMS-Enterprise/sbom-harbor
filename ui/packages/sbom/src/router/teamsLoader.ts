@@ -3,19 +3,27 @@
  * @module @cyclonedx/ui/sbom/loaders/teamsLoader
  * @see {@link @cyclonedx/ui/sbom/Routes}
  */
-import { json } from 'react-router-dom'
-import { TeamApiResponse } from '@/types'
 import authLoader from '@/router/authLoader'
 import harborRequest from '@/utils/harborRequest'
+import teamsResponseToMappedProps from '@/selectors/teamsArrayToEntries'
+import { Team, TeamApiResponse } from '@/types'
 
-const teamsLoader = async ({ request }: { request: Request }) => {
-  return json<Promise<TeamApiResponse>>(
-    await harborRequest({
-      path: `teams`,
-      jwtToken: await authLoader(),
-      signal: request.signal,
-    })
-  )
-}
+const teamsLoader = ({
+  request: { signal = new AbortController().signal },
+}: {
+  request: Request
+}): Promise<Team[]> =>
+  authLoader()
+    .then(
+      (jwtToken: string): Promise<TeamApiResponse[]> =>
+        harborRequest({
+          jwtToken,
+          path: `teams`,
+          signal,
+        })
+    )
+    .then((teams: TeamApiResponse[]): Team[] =>
+      teamsResponseToMappedProps(teams)
+    )
 
 export default teamsLoader

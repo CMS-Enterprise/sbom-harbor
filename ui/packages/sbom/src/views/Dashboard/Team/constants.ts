@@ -1,4 +1,4 @@
-import { BuildTool, Codebase, CodebaseLanguage, Project } from '@/types'
+import { Codebase, Project } from '@/types'
 import { FormState, FormTeamState } from './types'
 
 export const defaultProject: Project = {
@@ -11,8 +11,8 @@ export const defaultProject: Project = {
 export const defaultCodebase: Codebase = {
   id: '',
   name: '',
-  language: CodebaseLanguage.NONE,
-  buildTool: BuildTool.NONE,
+  language: '',
+  buildTool: '',
 }
 
 export const defaultTeam: FormTeamState = {

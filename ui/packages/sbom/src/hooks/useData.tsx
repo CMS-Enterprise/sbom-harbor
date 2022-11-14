@@ -2,12 +2,12 @@
  * @module @cyclonedx/ui/sbom/hooks/useData
  */
 import * as React from 'react'
-import { AppState, Team } from '@/types'
+import { useAuthState } from '@/hooks/useAuth'
 import { CONFIG } from '@/utils/constants'
-import { useAuthState } from './useAuth'
+import { AppState, TeamApiResponse } from '@/types'
 
 const INITIAL_STATE = {
-  teams: [] as Team[],
+  teams: [] as TeamApiResponse[],
   setData: () => null,
   fetchTeams: () => Promise<null>,
   setTeams: () => null,
@@ -15,9 +15,9 @@ const INITIAL_STATE = {
 
 const DataContext = React.createContext<{
   data: AppState
-  fetchTeams: (controller: AbortController) => Promise<Team[]>
+  fetchTeams: (controller: AbortController) => Promise<TeamApiResponse[]>
   setData: (values: AppState) => void
-  setTeams: (teams: Team[]) => void
+  setTeams: (teams: TeamApiResponse[]) => void
 }>({
   data: INITIAL_STATE,
   fetchTeams: () => Promise.resolve([]),
@@ -44,7 +44,7 @@ export const DataProvider = ({
   }
 
   // dispatches update to the user data state in the context provider.
-  const setTeams = React.useCallback((teams: Team[] = []) => {
+  const setTeams = React.useCallback((teams: TeamApiResponse[] = []) => {
     setData({ ...data, teams })
   }, [])
 

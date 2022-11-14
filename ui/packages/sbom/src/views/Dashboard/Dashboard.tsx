@@ -9,31 +9,25 @@ import { useNavigate, useLoaderData } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Container from '@mui/material/Container'
 import Grid from '@mui/material/Grid'
-import { useData } from '@/hooks/useData'
-import { Team, TeamApiResponse } from '@/types'
 import DashboardTeamCard from './Team/components/DashboardTeamCard'
 import DashboardTeamCreationCard from './Team/components/DashboardTeamCreateCard'
+import { Team } from '@/types'
 
 const DashboardContainer = (): JSX.Element => {
+  // navigation hook
   const navigate = useNavigate()
-
-  // hook to get the helper method to update teams in the app data context
-  const { setTeams } = useData()
 
   // hook for getting the route loader data
   const teams = useLoaderData() as Team[]
 
-  // update teams in the data context from the route loader data
-  // TODO: find a better way to do this or remove it and only use loader data
+  // Callback function that redirects the user to the new team creation
+  // view. This callback does not depend on `navigate`, so it's not
+  // necessary to include it in the `useCallback` dependency array.
   /* eslint-disable react-hooks/exhaustive-deps */
-  // the dependency array for this useEffect does not need setTeams.
-  React.useEffect(() => {
-    setTeams(teams)
-  }, [teams])
+  const navigateToCreateTeam = React.useCallback(() => {
+    navigate('team/new')
+  }, [])
   /* eslint-enable react-hooks/exhaustive-deps */
-
-  // Helper function that redirects the user to the new team creation view.
-  const navigateToCreateTeam = React.useCallback(() => navigate('team/new'), [])
 
   return (
     <Box sx={{ display: 'flex' }} data-testid="Dashboard">
@@ -49,13 +43,11 @@ const DashboardContainer = (): JSX.Element => {
             <Grid item xs={12} md={4}>
               <DashboardTeamCreationCard onClick={navigateToCreateTeam} />
             </Grid>
-
-            {teams &&
-              teams.map((team: TeamApiResponse) => (
-                <Grid item xs={12} md={4} key={team.id}>
-                  <DashboardTeamCard teamId={team.id} />
-                </Grid>
-              ))}
+            {teams?.map((team: Team) => (
+              <Grid item xs={12} md={4} key={team.id}>
+                <DashboardTeamCard team={team} />
+              </Grid>
+            ))}
           </Grid>
         </Container>
       </Box>

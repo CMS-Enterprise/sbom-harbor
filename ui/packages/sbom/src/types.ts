@@ -22,7 +22,7 @@ export type AppStateSlice<P> = {
 }
 
 export type AppState = {
-  teams: Array<Team>
+  teams: Array<TeamApiResponse>
 }
 
 export type AppStateTeam = {
@@ -90,15 +90,15 @@ export type Team = {
   id: string
   name: string
   members: Array<TeamMember>
-  projects: Array<Project>
-  tokens: Array<Token>
+  projects: Record<string, Project>
+  tokens: Record<string, Token>
 }
 
 export type TeamApiResponse = {
   id: string
   name: string
   members: Array<TeamMember>
-  projects: Array<Project>
+  projects: Array<ProjectResponse>
   tokens: Array<Token>
 }
 
@@ -134,8 +134,8 @@ export type ProjectResponse = {
 export type Codebase = {
   id: string
   name: string
-  language: CodebaseLanguage
-  buildTool: BuildTool
+  language: CodebaseLanguage | ''
+  buildTool: BuildTool | ''
 }
 
 // TODO: some of these are frameworks, not languages
@@ -153,7 +153,6 @@ export enum CodebaseLanguage {
   RUBY = 'Ruby',
   RUST = 'Rust',
   OTHER = 'Other',
-  NONE = '',
 }
 
 export enum BuildTool {
@@ -165,5 +164,4 @@ export enum BuildTool {
   PIP = 'pip',
   VISUAL_STUDIO_BUILD_TOOLS = 'Visual Studio Build Tools',
   OTHER = 'Other',
-  NONE = '',
 }
