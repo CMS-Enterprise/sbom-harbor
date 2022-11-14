@@ -1,24 +1,20 @@
 """ This module is the start of the deployment for SBOM-API """
 from os import system
+
 import aws_cdk as cdk
-from aws_cdk import (
-    aws_cognito as cognito,
-    aws_events as eventbridge,
-)
-from deploy.constants import (
-    AWS_ACCOUNT_ID,
-    AWS_REGION,
-)
+from aws_cdk import aws_cognito as cognito
+from aws_cdk import aws_events as eventbridge
+
+from deploy.constants import AWS_ACCOUNT_ID, AWS_REGION
 from deploy.stacks import (
     SBOMEnrichmentPiplineStack,
+    SBOMGeneratorPipelineStack,
     SBOMSharedResourceStack,
     SBOMUserManagement,
     SBOMWebStack,
 )
 from deploy.stacks.SBOMIngressApiStack import SBOMIngressApiStack
-
 from deploy.util import DynamoTableManager
-
 from tests.data.create_cognito_users import test_create_cognito_users
 
 
@@ -69,6 +65,14 @@ def dodep() -> None:
     # The Web Stack has all the web oriented entities to manage the website
     web_stack = SBOMWebStack(app, env=env)
     web_stack.add_dependency(ingress_api_stack)
+
+    # The SBOM Generator Pipeline stack has the lambda to
+    # generate SBOMs by crawling GitHub repositories.
+    SBOMGeneratorPipelineStack(
+        app,
+        vpc,
+        env=env,
+    )
 
     # Synth the CDK app
     app.synth()

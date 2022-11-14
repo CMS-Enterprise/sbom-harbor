@@ -1,5 +1,6 @@
 .idea
 .vscode
+.vscode/*
 .coverage
 
 # outputs
@@ -38,3 +39,7 @@ ui/.yarn/*
 !ui/.yarn/releases
 !ui/.yarn/sdks
 !ui/.yarn/versions
+
+# Go generator
+harbor-sbom-generator/main
+harbor-sbom-generator/*.zip

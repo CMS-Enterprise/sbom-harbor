@@ -14,6 +14,7 @@ from .jwt_authorizer_handler import jwt_authorizer_handler
 from .login_handler import login_handler
 from .members import member_handler, members_handler
 from .projects import project_handler, projects_handler
+from .sbom_generate_handler import sbom_generate_handler
 from .summarizer_handler import summarizer_handler
 from .teams import team_handler, teams_handler
 from .tokens import token_handler, tokens_handler
