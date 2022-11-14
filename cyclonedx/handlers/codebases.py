@@ -24,6 +24,7 @@ from cyclonedx.model.team import Team
 
 
 def codebases_handler(event: dict, context: dict) -> dict:
+
     """
     ->  "CodeBases" Handler. Handles requests to the /codebases endpoint.
     """
@@ -77,12 +78,7 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
         recurse=_should_process_children(event),
     )
 
-    return harbor_response(
-        200,
-        {
-            codebase_id: codebase.to_json(),
-        },
-    )
+    return harbor_response(200, codebase.to_json())
 
 
 def _do_post(event: dict, db_client: HarborDBClient) -> dict:
@@ -109,12 +105,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
         ),
     )
 
-    return harbor_response(
-        200,
-        {
-            codebase_id: codebase.to_json(),
-        },
-    )
+    return harbor_response(200, codebase.to_json())
 
 
 def _do_put(event: dict, db_client: HarborDBClient) -> dict:
@@ -156,12 +147,7 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
         recurse=False,
     )
 
-    return harbor_response(
-        200,
-        {
-            codebase_id: codebase.to_json(),
-        },
-    )
+    return harbor_response(200, codebase.to_json())
 
 
 def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
@@ -178,19 +164,13 @@ def _do_delete(event: dict, db_client: HarborDBClient) -> dict:
         ),
     )
 
-    db_client.delete(
-        model=codebase,
-    )
+    db_client.delete(codebase)
 
-    return harbor_response(
-        200,
-        {
-            codebase_id: codebase.to_json(),
-        },
-    )
+    return harbor_response(200, codebase.to_json())
 
 
 def codebase_handler(event: dict, context: dict) -> dict:
+
     """
     ->  "CodeBase" Handler.  Handles requests to the /codebase endpoint.
     """

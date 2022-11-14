@@ -3,8 +3,10 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
+import boto3
 import pytest
 from dateutil.relativedelta import relativedelta
+from moto import mock_dynamodb
 
 from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.constants import (
@@ -18,6 +20,85 @@ from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
 from cyclonedx.model.token import Token
+from tests.conftest import create_mock_dynamodb_infra
+
+
+@mock_dynamodb
+def test_update_codebase():
+
+    """
+    -> Test updating the codebase
+    """
+
+    db_client: HarborDBClient = HarborDBClient(
+        dynamodb_resource=boto3.resource("dynamodb")
+    )
+
+    create_mock_dynamodb_infra(boto3.resource("dynamodb"))
+
+    team_id: str = str(uuid.uuid4())
+    project_id: str = str(uuid.uuid4())
+    codebase_id: str = str(uuid.uuid4())
+
+    init_codebase_name: str = "Smelly Towels"
+    init_language: str = "JAVA"
+    init_build_tool: str = "MAVEN"
+
+    new_codebase_name: str = "Clean Towels"
+    new_language: str = "PYTHON"
+    new_build_tool: str = "POETRY"
+
+    db_client.create(
+        Team(
+            team_id=team_id,
+            name="Test Team Name",
+            projects=[
+                Project(
+                    team_id=team_id,
+                    project_id=project_id,
+                    name="Test Project Name",
+                    codebases=[
+                        CodeBase(
+                            team_id=team_id,
+                            project_id=project_id,
+                            codebase_id=codebase_id,
+                            name=init_codebase_name,
+                            language=init_language,
+                            build_tool=init_build_tool,
+                        )
+                    ],
+                ),
+            ],
+        ),
+        recurse=True,
+    )
+
+    updated_codebase: CodeBase = db_client.update(
+        CodeBase(
+            team_id=team_id,
+            project_id=project_id,
+            codebase_id=codebase_id,
+            name=new_codebase_name,
+            language=new_language,
+            build_tool=new_build_tool,
+        )
+    )
+
+    assert new_codebase_name == updated_codebase.name
+    assert new_language == updated_codebase.language
+    assert new_build_tool == updated_codebase.build_tool
+
+    updated_cb_from_db: CodeBase = db_client.get(
+        CodeBase(
+            team_id=team_id,
+            project_id=project_id,
+            codebase_id=codebase_id,
+        )
+    )
+
+    assert new_codebase_name == updated_cb_from_db.name
+    assert new_language == updated_cb_from_db.language
+    assert new_build_tool == updated_cb_from_db.build_tool
 
 
 def get_ek(et: str, model_id: str):

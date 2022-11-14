@@ -2,20 +2,14 @@
 
 from os import path
 
-
-from aws_cdk import (
-    CfnOutput,
-    aws_apigatewayv2_alpha as apigwv2a,
-    aws_apigatewayv2 as apigwv2,
-    aws_ec2 as ec2,
-    aws_logs as logs,
-    aws_lambda as lambda_,
-    aws_cognito as cognito,
-    aws_s3 as s3,
-    RemovalPolicy,
-    Duration,
-    Stack,
-)
+from aws_cdk import CfnOutput, Duration, RemovalPolicy, Stack
+from aws_cdk import aws_apigatewayv2 as apigwv2
+from aws_cdk import aws_apigatewayv2_alpha as apigwv2a
+from aws_cdk import aws_cognito as cognito
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_logs as logs
+from aws_cdk import aws_s3 as s3
 from aws_cdk.aws_apigatewayv2_alpha import (
     CorsHttpMethod,
     CorsPreflightOptions,
@@ -30,8 +24,8 @@ from constructs import Construct
 from cyclonedx.constants import USER_POOL_CLIENT_ID_KEY, USER_POOL_ID_KEY
 from deploy.authorizers import AuthorizerLambdaFactory, SBOMUploadAPIKeyAuthorizerLambda
 from deploy.constants import (
-    API_STACK_ID,
     API_GW_ID_EXPORT_NAME,
+    API_STACK_ID,
     AUTHORIZATION_HEADER,
     PRIVATE,
     S3_BUCKET_ID,
@@ -40,7 +34,6 @@ from deploy.constants import (
 )
 from deploy.user import SBOMLoginLambda, SBOMUserSearchLambda
 from deploy.util import DynamoTableManager, SbomIngressLambda, create_asset
-
 
 
 class LambdaFactory:
@@ -79,7 +72,7 @@ class LambdaFactory:
                 vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
                 handler=handler,
                 code=create_asset(self),
-                timeout=Duration.seconds(10),
+                timeout=Duration.minutes(2),
                 memory_size=512,
                 environment={
                     USER_POOL_ID_KEY: user_pool_id,
@@ -162,7 +155,7 @@ class SBOMIngressApiStack(Stack):
             "AccessLogs",
             log_group_name="APIGWAccessLogs",
             retention=RetentionDays.ONE_DAY,
-            removal_policy=RemovalPolicy.DESTROY
+            removal_policy=RemovalPolicy.DESTROY,
         )
 
         stage.access_log_settings = apigwv2.CfnStage.AccessLogSettingsProperty(
@@ -281,7 +274,7 @@ class SBOMIngressApiStack(Stack):
         CfnOutput(
             self,
             API_GW_ID_EXPORT_NAME,
-            value=self.api.url.replace("https://","").replace("/",""),
+            value=self.api.url.replace("https://", "").replace("/", ""),
             export_name=API_GW_ID_EXPORT_NAME,
             description="URL Of the API Gateway",
         )

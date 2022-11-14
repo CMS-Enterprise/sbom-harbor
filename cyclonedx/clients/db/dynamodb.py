@@ -173,7 +173,8 @@ class HarborDBClient:
             entity_key_already_exists: Equals = sort_key_attr.eq(model.entity_key)
 
             self.table.put_item(
-                Item=model.get_item(), ConditionExpression=entity_key_already_exists
+                Item=model.get_item(),
+                ConditionExpression=entity_key_already_exists,
             )
         except ClientError as err:
             err_msg: str = get_error_message("update", model, err)

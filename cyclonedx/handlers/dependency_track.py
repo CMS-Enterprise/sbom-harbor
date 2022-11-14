@@ -231,9 +231,6 @@ def __get_body_from_event(event) -> dict:
     as a **string** that the POST body contained.
     """
 
-    print(f"Incoming Event: {event}")
-    print(f"Incoming Event Type: {type(event)}")
-
     event_dict: dict = {}
 
     if isinstance(event, dict):
@@ -246,8 +243,6 @@ def __get_body_from_event(event) -> dict:
 
     body = event_dict["body"]
     body = body.decode("utf-8") if isinstance(body, bytes) else body
-    print(f"Extracted Body: {body}")
-    print(f"Extracted Body Type: {type(body)}")
 
     return loads(body)
 

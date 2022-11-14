@@ -27,6 +27,7 @@ from cyclonedx.handlers.common import (
 )
 from cyclonedx.model import generate_model_id
 from cyclonedx.model.member import Member
+from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
 from cyclonedx.model.token import Token, generate_token
 
@@ -119,22 +120,19 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
     user_email: str = extract_attrib_from_event(ContextKeys.EMAIL, event)
     username: str = extract_attrib_from_event(ContextKeys.USERNAME, event)
 
-    members: list[Member] = []
-    if "members" in request_body.keys():
-        members = _to_members(team_id, request_body["members"])
-
     # Create the Cognito Client
     cognito_client: HarborCognitoClient = HarborCognitoClient()
 
+    members: list[Member] = _to_members(team_id, request_body.get("members", []))
+    projects: list[Project] = _to_projects(team_id, request_body.get("projects", []))
+
     # Add the team to all of the members in the request
     # pylint: disable = W0106
-    [
+    for member in members:
         cognito_client.add_team_to_member(
             team_id=team_id,
             member=member,
         )
-        for member in members
-    ]
 
     _add_creating_member(
         team_id=team_id,
@@ -152,7 +150,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
             team_id=team_id,
             name=request_body[Team.Fields.NAME],
             members=members,
-            projects=_to_projects(team_id, request_body["projects"]),
+            projects=projects,
             tokens=[
                 Token(
                     team_id=team_id,
@@ -168,10 +166,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
         recurse=True,
     )
 
-    return harbor_response(
-        200,
-        team.to_json(),
-    )
+    return harbor_response(200, team.to_json())
 
 
 def _do_put(event: dict, db_client: HarborDBClient) -> dict:

@@ -2,16 +2,20 @@
 -> Module to test the SBOM Upload
 """
 from importlib.resources import files
-from json import dumps, loads
+from json import loads
 
+import boto3
+import botocore.exceptions
+import pytest
+from botocore.waiter import Waiter
 from importlib_resources.abc import Traversable
 from requests import Response, post
 
 from cyclonedx.model import HarborModel
-from cyclonedx.model.codebase import CodeBase
 from tests import sboms
 from tests.e2e import (
     cleanup,
+    create_codebase,
     create_team_with_projects,
     get_cloudfront_url,
     get_team_url,
@@ -51,24 +55,12 @@ def test_sbom_ingress():
     token: dict = tokens[0]
     upload_token: str = token["token"]
 
-    codebase_url: str = f"{cf_url}/api/v1/codebase"
-    codebase_url = f"{codebase_url}?teamId={team_id}"
-    codebase_url = f"{codebase_url}&projectId={project_id}"
-    print(f"Sending To: POST:{codebase_url}")
-    create_codebase_rsp: Response = post(
-        codebase_url,
-        headers={
-            "Authorization": jwt,
-        },
-        json={
-            CodeBase.Fields.NAME: "Keycloak",
-            CodeBase.Fields.LANGUAGE: "JAVA",
-            CodeBase.Fields.BUILD_TOOL: "MAVEN",
-        },
+    codebase_id: str = create_codebase(
+        team_id=team_id,
+        project_id=project_id,
+        cf_url=cf_url,
+        jwt=jwt,
     )
-    print_response(create_codebase_rsp)
-    codebase_json: dict = create_codebase_rsp.json()
-    codebase_id: str = codebase_json.get(CodeBase.Fields.ID)
 
     sbom_upload_url: str = get_upload_url(
         cf_url=cf_url,
@@ -77,6 +69,8 @@ def test_sbom_ingress():
         codebase_id=codebase_id,
     )
 
+    # Sending the SBOM here
+    print(f"Sending To: POST:{sbom_upload_url}")
     sbom_upload_rsp: Response = post(
         sbom_upload_url,
         headers={
@@ -86,12 +80,58 @@ def test_sbom_ingress():
     )
     print_response(sbom_upload_rsp)
 
+    # Get the bucket and the name of the S3 object containing the SBOM
+    sbom_upload_rsp_json: dict = sbom_upload_rsp.json()
+    s3_bucket_name: str = sbom_upload_rsp_json.get("s3BucketName")
+    sbom_s3_object_key: str = sbom_upload_rsp_json.get("s3ObjectKey")
+
+    # Check to see if the SBOM Arrived
+    session = boto3.Session(profile_name="sandbox")
+    s3_client = session.client("s3")
+    s3_resource = session.resource("s3")
+    waiter: Waiter = s3_client.get_waiter("object_exists")
+
+    try:
+        waiter.wait(
+            Bucket=s3_bucket_name,
+            Key=sbom_s3_object_key,
+            WaiterConfig={
+                "Delay": 2,
+                "MaxAttempts": 5,
+            },
+        )
+    except botocore.exceptions.ClientError as ce:
+        print(f"No SBOM in S3 after 10 seconds: {ce}")
+        pytest.fail()
+
+    print(f"Found S3 object containing SBOM: {sbom_s3_object_key}")
+
+    dt_findings_s3_object_key: str = f"findings-dt-{sbom_s3_object_key}"
+
+    try:
+        waiter.wait(
+            Bucket=s3_bucket_name,
+            Key=dt_findings_s3_object_key,
+            WaiterConfig={
+                "Delay": 6,
+                "MaxAttempts": 10,
+            },
+        )
+    except botocore.exceptions.ClientError as ce:
+        print(f"No Dependency Track in S3 after one minute: {ce}")
+        pytest.fail()
+
+    print(
+        f"Found S3 object containing Dependency Track findings: {dt_findings_s3_object_key}"
+    )
+
+    # Delete the files in S3
+    s3_resource.Object(s3_bucket_name, sbom_s3_object_key).delete()
+    s3_resource.Object(s3_bucket_name, dt_findings_s3_object_key).delete()
+
+    # Clean up the database
     cleanup(
         team_id=team_id,
         team_url=get_team_url(cf_url),
         jwt=jwt,
     )
-
-    print("<CreateResponse>")
-    print(dumps(create_rsp, indent=2))
-    print("</CreateResponse>")

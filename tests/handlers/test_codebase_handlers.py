@@ -3,21 +3,12 @@
 """
 import uuid
 from json import dumps, loads
+from typing import Callable
 
 import boto3
 from moto import mock_dynamodb
 
 from cyclonedx.clients.db.dynamodb import HarborDBClient
-
-# TODO I'm testing moving this here to see
-#  if the @mock_dynamodb annotation still works.
-#  Pylint hates imports inside of functions, so
-#  we should try leaving it here. However, if this
-#  test fails, be highly suspicious of this
-#  and move it back into the test function.
-#  The Pylint error can be suppressed with:
-#  # pylint: disable=C0415
-#  over the imports inside the test function.
 from cyclonedx.handlers import codebase_handler, codebases_handler
 from cyclonedx.model import HarborModel
 from cyclonedx.model.codebase import CodeBase
@@ -27,17 +18,17 @@ from tests.conftest import create_mock_dynamodb_infra
 
 
 @mock_dynamodb
-def test_flow():
+def test_create():
 
     """
     -> Test the creation, updating and deletion of a codebase.
     """
 
-    db_client: HarborDBClient = HarborDBClient(
-        dynamodb_resource=boto3.resource("dynamodb")
-    )
+    dynamodb_resource = boto3.resource("dynamodb")
 
-    create_mock_dynamodb_infra(boto3.resource("dynamodb"))
+    db_client: HarborDBClient = HarborDBClient(dynamodb_resource=dynamodb_resource)
+
+    create_mock_dynamodb_infra(dynamodb_resource)
 
     team_id: str = str(uuid.uuid4())
     project_id: str = str(uuid.uuid4())
@@ -70,45 +61,201 @@ def test_flow():
         build_tool=build_tool,
         handler=codebase_handler,
     )
-    response_dict: dict = loads(create_response["body"])
 
-    print(dumps(response_dict, indent=2))
+    codebase_dict: dict = loads(create_response["body"])
+    codebase_id: str = codebase_dict.get(CodeBase.Fields.ID)
 
-    codebase_id: str = list(response_dict.keys()).pop()
-    codebase_dict: dict = response_dict[codebase_id]
     assert codebase_name == codebase_dict[CodeBase.Fields.NAME]
     assert codebase_dict[CodeBase.Fields.NAME] == codebase_name
     assert codebase_dict[CodeBase.Fields.LANGUAGE] == language
     assert codebase_dict[CodeBase.Fields.BUILD_TOOL] == build_tool
     assert codebase_dict[HarborModel.Fields.ID] == codebase_id
 
-    # Get Test 1
+
+@mock_dynamodb
+def test_get():
+
+    """
+    -> Test creating and then getting a codebase
+    """
+
+    dynamodb_resource = boto3.resource("dynamodb")
+
+    db_client: HarborDBClient = HarborDBClient(dynamodb_resource=dynamodb_resource)
+
+    create_mock_dynamodb_infra(dynamodb_resource)
+
+    team_id: str = str(uuid.uuid4())
+    project_id: str = str(uuid.uuid4())
+
+    codebase_name: str = str(uuid.uuid4())
+    language: str = "JAVA"
+    build_tool: str = "MAVEN"
+
+    db_client.create(
+        Team(
+            team_id=team_id,
+            name="Test Team Name",
+            projects=[
+                Project(
+                    team_id=team_id,
+                    project_id=project_id,
+                    name="Test Project Name",
+                ),
+            ],
+        ),
+        recurse=True,
+    )
+
+    create_response: dict = create(
+        team_id=team_id,
+        project_id=project_id,
+        name=codebase_name,
+        language=language,
+        build_tool=build_tool,
+        handler=codebase_handler,
+    )
+
+    codebase_dict: dict = loads(create_response["body"])
+    codebase_id: str = codebase_dict.get(CodeBase.Fields.ID)
+
     get_response: dict = get(
         team_id=team_id,
         codebase_id=codebase_id,
         handler=codebase_handler,
     )
-    response_dict = loads(get_response["body"])
-    codebase_dict: dict = response_dict[codebase_id]
+
+    codebase_dict = loads(get_response["body"])
+
     assert codebase_name == codebase_dict[CodeBase.Fields.NAME]
     assert codebase_dict[CodeBase.Fields.NAME] == codebase_name
     assert codebase_dict[CodeBase.Fields.LANGUAGE] == language
     assert codebase_dict[CodeBase.Fields.BUILD_TOOL] == build_tool
     assert codebase_dict[HarborModel.Fields.ID] == codebase_id
 
-    # Get Test 2
+
+@mock_dynamodb
+def test_get_all():
+
+    """
+    -> Test to get all codebases for a team
+    """
+
+    dynamodb_resource = boto3.resource("dynamodb")
+
+    db_client: HarborDBClient = HarborDBClient(dynamodb_resource=dynamodb_resource)
+
+    create_mock_dynamodb_infra(dynamodb_resource)
+
+    team_id: str = str(uuid.uuid4())
+    project_id: str = str(uuid.uuid4())
+
+    codebase_name: str = str(uuid.uuid4())
+    language: str = "JAVA"
+    build_tool: str = "MAVEN"
+
+    db_client.create(
+        Team(
+            team_id=team_id,
+            name="Test Team Name",
+            projects=[
+                Project(
+                    team_id=team_id,
+                    project_id=project_id,
+                    name="Test Project Name",
+                ),
+            ],
+        ),
+        recurse=True,
+    )
+
+    create(
+        team_id=team_id,
+        project_id=project_id,
+        name=codebase_name,
+        language=language,
+        build_tool=build_tool,
+        handler=codebase_handler,
+    )
+
+    create_response_1: dict = create(
+        team_id=team_id,
+        project_id=project_id,
+        name=codebase_name,
+        language=language,
+        build_tool=build_tool,
+        handler=codebase_handler,
+    )
+
+    response_dict_1: dict = loads(create_response_1["body"])
+    codebase_id_1: str = response_dict_1[CodeBase.Fields.ID]
+
     get_response: dict = get_all(
         team_id=team_id,
         handler=codebases_handler,
     )
-    response_list = loads(get_response["body"])
-    codebase_dict: list = response_list[0]
 
-    assert codebase_name == codebase_dict[CodeBase.Fields.NAME]
-    assert codebase_dict[CodeBase.Fields.NAME] == codebase_name
-    assert codebase_dict[CodeBase.Fields.LANGUAGE] == language
-    assert codebase_dict[CodeBase.Fields.BUILD_TOOL] == build_tool
-    assert codebase_dict[HarborModel.Fields.ID] == codebase_id
+    (codebase_dict_0, codebase_dict_1) = loads(get_response["body"])
+
+    if codebase_dict_0[HarborModel.Fields.ID] == codebase_id_1:
+        (codebase_dict_0, codebase_dict_1) = (codebase_dict_1, codebase_dict_0)
+
+    assert codebase_dict_0[CodeBase.Fields.NAME] == codebase_name
+    assert codebase_dict_0[CodeBase.Fields.LANGUAGE] == language
+    assert codebase_dict_0[CodeBase.Fields.BUILD_TOOL] == build_tool
+
+    assert codebase_dict_1[CodeBase.Fields.NAME] == codebase_name
+    assert codebase_dict_1[CodeBase.Fields.LANGUAGE] == language
+    assert codebase_dict_1[CodeBase.Fields.BUILD_TOOL] == build_tool
+
+
+@mock_dynamodb
+def test_update():
+
+    """
+    -> Special test to ensure the data in the codebases is updating
+    """
+
+    dynamodb_resource = boto3.resource("dynamodb")
+
+    db_client: HarborDBClient = HarborDBClient(dynamodb_resource=dynamodb_resource)
+
+    create_mock_dynamodb_infra(dynamodb_resource)
+
+    team_id: str = str(uuid.uuid4())
+    project_id: str = str(uuid.uuid4())
+
+    codebase_name: str = str(uuid.uuid4())
+    language: str = "JAVA"
+    build_tool: str = "MAVEN"
+
+    db_client.create(
+        Team(
+            team_id=team_id,
+            name="Test Team Name",
+            projects=[
+                Project(
+                    team_id=team_id,
+                    project_id=project_id,
+                    name="Test Project Name",
+                ),
+            ],
+        ),
+        recurse=True,
+    )
+
+    # Create
+    create_response: dict = create(
+        team_id=team_id,
+        project_id=project_id,
+        name=codebase_name,
+        language=language,
+        build_tool=build_tool,
+        handler=codebase_handler,
+    )
+
+    response_dict: dict = loads(create_response["body"])
+    codebase_id: str = response_dict[CodeBase.Fields.ID]
 
     # Update
     new_codebase_name: str = str(uuid.uuid4())
@@ -125,16 +272,65 @@ def test_flow():
         handler=codebase_handler,
     )
 
-    test_codebase: CodeBase = db_client.get(
-        CodeBase(
-            team_id=team_id,
-            codebase_id=codebase_id,
-        )
+    get_response: dict = get(
+        team_id=team_id,
+        codebase_id=codebase_id,
+        handler=codebase_handler,
     )
 
-    assert new_codebase_name == test_codebase.name
-    assert new_language == test_codebase.language
-    assert new_build_tool == test_codebase.build_tool
+    get_response_dict: dict = loads(get_response["body"])
+
+    assert new_codebase_name == get_response_dict.get(CodeBase.Fields.NAME)
+    assert new_language == get_response_dict.get(CodeBase.Fields.LANGUAGE)
+    assert new_build_tool == get_response_dict.get(CodeBase.Fields.BUILD_TOOL)
+
+
+@mock_dynamodb
+def test_delete():
+
+    """
+    -> Test creating and then getting a codebase
+    """
+
+    dynamodb_resource = boto3.resource("dynamodb")
+
+    db_client: HarborDBClient = HarborDBClient(dynamodb_resource=dynamodb_resource)
+
+    create_mock_dynamodb_infra(dynamodb_resource)
+
+    team_id: str = str(uuid.uuid4())
+    project_id: str = str(uuid.uuid4())
+
+    codebase_name: str = str(uuid.uuid4())
+    language: str = "JAVA"
+    build_tool: str = "MAVEN"
+
+    db_client.create(
+        Team(
+            team_id=team_id,
+            name="Test Team Name",
+            projects=[
+                Project(
+                    team_id=team_id,
+                    project_id=project_id,
+                    name="Test Project Name",
+                ),
+            ],
+        ),
+        recurse=True,
+    )
+
+    create_response: dict = create(
+        team_id=team_id,
+        project_id=project_id,
+        name=codebase_name,
+        language=language,
+        build_tool=build_tool,
+        handler=codebase_handler,
+    )
+
+    codebase_dict: dict = loads(create_response["body"])
+    codebase_id: str = codebase_dict.get(CodeBase.Fields.ID)
 
     # Delete
     delete(
@@ -305,8 +501,8 @@ def update(
     new_name: str,
     new_language: str,
     new_build_tool: str,
-    handler,
-):
+    handler: Callable,
+) -> dict:
     """
     -> Update a codebase's data
     """

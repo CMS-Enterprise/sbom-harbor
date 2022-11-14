@@ -185,9 +185,15 @@ def _extract_value_from_qs(key: str, event: dict):
 
     try:
         params: dict = event["queryStringParameters"]
+    except KeyError as ke:
+        msg: str = "Missing queryStringParameters entirely!"
+        msg: str = f"{msg} You have no query parameters"
+        raise ValueError(msg) from ke
+
+    try:
         return params[key]
     except KeyError as ke:
-        raise ValueError(f"Missing Project ID: {ke}") from ke
+        raise ValueError(f"Missing event key: {ke}") from ke
 
 
 def _should_process_children(event: dict) -> bool:
@@ -234,15 +240,18 @@ def _to_projects(team_id: str, projects: list[dict]):
         ret_projects = []
 
         for project in projects:
+
             project_id = generate_model_id(project.get(Project.Fields.ID, ""))
-            codebases: list[dict] = project["codebases"]
+
             ret_project = Project(
                 team_id=team_id,
                 project_id=project_id,
                 name=project.get(Project.Fields.NAME, "New Project"),
-                fisma=project.get(Project.Fields.FISMA),
+                fisma=project.get(Project.Fields.FISMA, "unknown"),
                 codebases=_to_codebases(
-                    team_id=team_id, project_id=project_id, codebases=codebases
+                    team_id=team_id,
+                    project_id=project_id,
+                    codebases=project.get("codebases", []),
                 ),
             )
 

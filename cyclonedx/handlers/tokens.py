@@ -2,7 +2,7 @@
 -> This module contains the handlers for CRUDing Tokens
 """
 from datetime import datetime
-from json import dumps, loads
+from json import loads
 
 import boto3
 from dateutil.relativedelta import relativedelta
@@ -143,18 +143,15 @@ def _do_put(event: dict, db_client: HarborDBClient) -> dict:
     request_body: dict = loads(event["body"])
 
     # Replace the name of the project if there is a 'name' key in the request body
-    try:
-        token.name = request_body.get(Token.Fields.NAME)
-        token.enabled = request_body.get(Token.Fields.ENABLED)
-    except KeyError:
-        ...
+    token.name = request_body.get(Token.Fields.NAME, token.name)
+    token.enabled = request_body.get(Token.Fields.ENABLED, token.enabled)
 
-    token = db_client.update(
+    updated_token: Token = db_client.update(
         model=token,
         recurse=False,
     )
 
-    return harbor_response(200, token.to_json())
+    return harbor_response(200, updated_token.to_json())
 
 
 def _do_delete(event: dict, db_client: HarborDBClient) -> dict:

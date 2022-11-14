@@ -41,7 +41,7 @@ def des_interface_handler(event: dict = None, context: dict = None):
         "d0844f1d-ff53-4a6b-82ab-3ee143198311",
     ]
 
-    for component in components[:100]:  # TODO Remove Slice
+    for component in components[:10]:  # TODO Remove Slice
 
         components_seen += 1
         print(f"Looking at component# {components_seen} of {len(components)}")

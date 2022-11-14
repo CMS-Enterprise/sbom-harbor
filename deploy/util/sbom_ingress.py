@@ -8,14 +8,8 @@ from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_s3 as i_bucket
 from constructs import Construct
 
-from cyclonedx.constants import (
-    SBOM_BUCKET_NAME_KEY
-)
-from deploy.constants import (
-    SBOM_INGRESS_LN,
-    SBOM_API_PYTHON_RUNTIME,
-    PRIVATE
-)
+from cyclonedx.constants import SBOM_BUCKET_NAME_KEY
+from deploy.constants import PRIVATE, SBOM_API_PYTHON_RUNTIME, SBOM_INGRESS_LN
 from deploy.util import create_asset
 
 
@@ -46,7 +40,7 @@ class SbomIngressLambda(Construct):
             environment={
                 SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name,
             },
-            timeout=Duration.seconds(10),
+            timeout=Duration.minutes(10),
             memory_size=512,
         )
 

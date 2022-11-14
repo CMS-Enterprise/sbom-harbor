@@ -7,6 +7,7 @@ from uuid import uuid4
 import boto3
 import requests
 from _pytest.outcomes import fail
+from requests import Response, get
 
 from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.model.member import Member
@@ -14,9 +15,13 @@ from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
 from tests.data.add_test_team_data_to_dynamodb import test_add_test_team
 from tests.data.create_cognito_users import test_create_cognito_users
-from tests.e2e import get_cloudfront_url, login, print_response
-
-cf_url: str = get_cloudfront_url()
+from tests.e2e import (
+    create_team_with_projects,
+    get_cloudfront_url,
+    get_team_url,
+    login,
+    print_response,
+)
 
 
 def test_user_creating_team_is_member():
@@ -49,7 +54,7 @@ def test_get_two_separate_endpoints():
     """
 
     resource = boto3.resource("dynamodb")
-
+    cf_url: str = get_cloudfront_url()
     team_id: str = str(uuid4())
     project_id: str = str(uuid4())
 
@@ -113,6 +118,7 @@ def test_get_teams():
     -> Get the teams
     """
 
+    cf_url: str = get_cloudfront_url()
     test_add_test_team()
     test_create_cognito_users()
 
@@ -148,6 +154,7 @@ def test_get_teams_with_children():
     -> Get Teams With Children
     """
 
+    cf_url: str = get_cloudfront_url()
     test_add_test_team()
     test_create_cognito_users()
 
@@ -188,6 +195,8 @@ def test_get_team(team_id: str = None):
     -> Get Team. The results of this query will not have children
     """
 
+    cf_url: str = get_cloudfront_url()
+
     if not team_id:
         jwt, team_id = test_create_team()
     else:
@@ -214,6 +223,8 @@ def test_get_team_with_children(team_id: str = None):
     """
     -> Get team with children
     """
+
+    cf_url: str = get_cloudfront_url()
 
     if not team_id:
         jwt, team_id = test_create_team()
@@ -243,6 +254,8 @@ def test_create_team():
     """
     -> Create Team
     """
+
+    cf_url: str = get_cloudfront_url()
 
     jwt = login(cf_url)
 
@@ -275,6 +288,8 @@ def test_create_team_with_children():
     """
     -> Create Team with Children
     """
+
+    cf_url: str = get_cloudfront_url()
 
     jwt = login(cf_url)
 
@@ -321,15 +336,40 @@ def test_update_team():
     -> Update Team
     """
 
-    jwt = login(cf_url)
+    cf_url: str = get_cloudfront_url()
+    jwt: str = login(cf_url)
 
-    new_name: str = "test_name_update"
+    # Create a team with 2 projects
+    team_name: str = "1Team1"
+    proj1_name: str = "1Project1"
+    proj2_name: str = "2Project2"
 
-    url = f"{cf_url}/api/v1/team/dawn-patrol"
+    team_url: str = get_team_url(cf_url)
+    create_json: dict = create_team_with_projects(
+        team_name=team_name,
+        project_names=[
+            proj1_name,
+            proj2_name,
+        ],
+        team_url=team_url,
+        jwt=jwt,
+    )
 
-    print(f"Sending To: PUT:{url}")
+    team_id: str = create_json.get("id")
+    print(f"Sending To: GET:{team_url}")
+    get_rsp: Response = get(
+        f"{team_url}/{team_id}?children=true",
+        headers={
+            "Authorization": jwt,
+        },
+    )
+    print_response(get_rsp)
+
+    new_name: str = "NEWTESTTEAMNAME"
+
+    print(f"Sending To: PUT:{team_url}/{team_id}?children=true")
     team_rsp = requests.put(
-        url,
+        f"{team_url}/{team_id}?children=true",
         headers={
             "Authorization": jwt,
         },
@@ -354,6 +394,8 @@ def test_update_team_with_children():
     -> We know the projects exist because the test_create_team_with_children test
     -> creates them.
     """
+
+    cf_url: str = get_cloudfront_url()
 
     jwt, ids = test_create_team_with_children()
 
@@ -397,6 +439,8 @@ def test_delete_team():
     """
 
     jwt, team_id = test_create_team()
+
+    cf_url: str = get_cloudfront_url()
 
     url = f"{cf_url}/api/v1/team/{team_id}"
 

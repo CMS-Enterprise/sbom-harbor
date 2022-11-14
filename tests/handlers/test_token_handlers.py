@@ -4,6 +4,7 @@
 import datetime
 import uuid
 from json import dumps, loads
+from typing import Callable
 
 import boto3
 from moto import mock_dynamodb
@@ -24,6 +25,62 @@ from cyclonedx.model import HarborModel
 from cyclonedx.model.team import Team
 from cyclonedx.model.token import Token
 from tests.conftest import create_mock_dynamodb_infra
+
+
+@mock_dynamodb
+def test_token_update():
+
+    """
+    -> Test the creation, updating and deletion of a token.
+    """
+
+    db_client: HarborDBClient = HarborDBClient(
+        dynamodb_resource=boto3.resource("dynamodb")
+    )
+
+    create_mock_dynamodb_infra(boto3.resource("dynamodb"))
+
+    team_id: str = str(uuid.uuid4())
+
+    db_client.create(
+        Team(
+            team_id=team_id,
+            name="Test Team Name",
+        ),
+    )
+
+    token_name: str = "TEST TOKEN NAME"
+    new_token_name: str = "NEW NAME FOR THE TOKEN"
+
+    create_response: dict = create(
+        team_id=team_id,
+        name=token_name,
+        handler=token_handler,
+    )
+    token_dict: dict = loads(create_response["body"])
+
+    print(dumps(token_dict, indent=2))
+
+    token_id: str = token_dict.get(HarborModel.Fields.ID)
+
+    update(
+        team_id=team_id,
+        token_id=token_id,
+        new_name=new_token_name,
+        expires=datetime.datetime.now().isoformat(),
+        enabled=False,
+        handler=token_handler,
+    )
+
+    test_token: Token = db_client.get(
+        Token(
+            team_id=team_id,
+            token_id=token_id,
+        )
+    )
+
+    assert new_token_name == test_token.name
+    assert not test_token.enabled
 
 
 @mock_dynamodb
@@ -48,7 +105,7 @@ def test_flow():
         ),
     )
 
-    token_name: str = str(uuid.uuid4())
+    token_name: str = "TEST TOKEN NAME"
 
     # Create
     create_response: dict = create(
@@ -173,7 +230,7 @@ def test_no_team_id():
         assert response["statusCode"] == 400
 
 
-def create(team_id: str, name: str, handler):
+def create(team_id: str, name: str, handler) -> dict:
 
     """
     -> Create a token
@@ -248,9 +305,9 @@ def update(
     team_id: str,
     token_id: str,
     new_name: str,
-    expires: float,
+    expires: str,
     enabled: bool,
-    handler,
+    handler: Callable,
 ):
     """
     -> Update a token's data

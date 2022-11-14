@@ -7,6 +7,7 @@ from .api_key_authorizer import api_key_authorizer_handler
 from .codebases import codebase_handler, codebases_handler
 from .des_interface_handler import des_interface_handler
 from .dt_interface_handler import dt_interface_handler
+from .enrichment_ingress_handler import enrichment_ingress_handler
 from .ingress import sbom_ingress_handler
 from .ion_channel_interface_handler import ic_interface_handler
 from .jwt_authorizer_handler import jwt_authorizer_handler
