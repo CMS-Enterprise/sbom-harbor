@@ -3,14 +3,7 @@ from os import getenv
 
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_lambda as lambda_
-from boto3 import session
-from dotenv import load_dotenv
 
-# load environment variables from .env file into os.environ
-load_dotenv(".env")
-
-ENVIRONMENT = getenv("ENVIRONMENT") or getenv("AWS_VAULT") or "sandbox"
-awsSession = session.Session()
 regionCodes = {
     "us-east-1": "use1",
     "us-east-2": "use2",
@@ -22,9 +15,10 @@ regionCodes = {
 SBOM_API_PYTHON_RUNTIME = lambda_.Runtime.PYTHON_3_9
 
 # AWS
-AWS_ACCOUNT_ID = awsSession.client("sts").get_caller_identity().get("Account")
-AWS_REGION = awsSession.region_name
+AWS_ACCOUNT_ID = getenv("CDK_DEFAULT_ACCOUNT")
+AWS_REGION = getenv("CDK_DEFAULT_REGION")
 AWS_REGION_SHORT = regionCodes.get(AWS_REGION)
+ENVIRONMENT = getenv("ENVIRONMENT") or "sandbox"
 
 # Cognito
 AUTHORIZATION_HEADER = "Authorization"
@@ -123,6 +117,13 @@ API_GW_ID_EXPORT_NAME = "apigwurl"
 
 # Cloudfront
 CLOUDFRONT_DIST_ID = "CloudFrontDistribution"
+
+# DevOps
+DEVOPS_STACK_ID = f"{ENVIRONMENT}-harbor-devops-{AWS_REGION_SHORT}"
+DEVOPS_OIDC_PROVIDER_ID = "DevopsOidcProvider"
+DEVOPS_GITHUB_ROLE_ID = "DevopsGithubRole"
+DEVOPS_GITHUB_ORG = "aquia-inc"
+DEVOPS_GITHUB_REPO = "cyclonedx-python"
 
 # GitHub
 # SBOM Generator

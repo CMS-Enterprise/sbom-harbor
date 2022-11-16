@@ -6,3 +6,4 @@ from .SBOMGeneratorPipelineStack import SBOMGeneratorPipelineStack
 from .SBOMSharedResourceStack import SBOMSharedResourceStack
 from .SBOMUserManagement import SBOMUserManagement
 from .SBOMWebStack import SBOMWebStack
+from .HarborDevOpsStack import HarborDevOpsStack

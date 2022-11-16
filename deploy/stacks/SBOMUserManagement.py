@@ -6,7 +6,6 @@ from aws_cdk import (
     aws_iam as iam,
     aws_cognito as cognito,
     Stack,
-    CfnOutput,
 )
 from constructs import Construct
 
@@ -35,39 +34,26 @@ class SBOMUserManagement(Stack):
         # Create the Cognito user pool
         user_pool = SBOMUserPool(self)
         self.cognito_user_pool = user_pool.get_cognito_user_pool()
-        CfnOutput(
-          self,
-          id="UserPoolID",
-          value=self.cognito_user_pool.user_pool_id,
-          description="Referenced by UI deployment"
-        )
 
         # Create the Cognito user pool app client
         user_pool_client = SBOMUserPoolClient(self, user_pool=user_pool)
         self.cognito_user_pool_client = user_pool_client.get_cognito_user_pool_client()
-        CfnOutput(
-          self,
-          id="UserPoolClientID",
-          value=self.cognito_user_pool_client.user_pool_client_id,
-          description="Referenced by UI deployment"
-        )
 
         # Create the role for the Cognito user pool group
         user_role = SBOMUserRole(self, user_pool=user_pool)
         self.cognito_user_role = user_role.get_cognito_user_role()
 
         # Create the Cognito "admin" user pool group
-        user_pool_group = SBOMUserPoolGroup(self, user_pool=user_pool, user_role=user_role)
+        user_pool_group = SBOMUserPoolGroup(
+            self, user_pool=user_pool, user_role=user_role)
         self.cognito_user_pool_group = user_pool_group.get_cognito_user_pool_group()
 
     def get_user_role(self) -> iam.Role:
-
         """Gets the user pool"""
 
         return self.cognito_user_role
 
     def get_user_pool(self) -> cognito.UserPool:
-
         """Gets the user pool"""
 
         return self.cognito_user_pool

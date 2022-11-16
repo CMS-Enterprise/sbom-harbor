@@ -1,0 +1,31 @@
+name: Generate SBOMS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Generate Frontend SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./ui
+          artifact-name: sbom-harbor-frontend.json
+          format: cyclonedx-json
+  
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Generate Backend SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./
+          artifact-name: sbom-harbor-backend.json
+          format: cyclonedx-json

@@ -1,0 +1,133 @@
+name: Deploy
+
+on:
+  push:
+    branches: 
+      - main
+
+jobs:
+  deploy:
+    environment: 
+      name: dev
+      url: ${{ steps.cloudformation.outputs.CF_DOMAIN }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      ENVIRONMENT: dev
+      AWS_REGION: us-east-2
+      AWS_DEFAULT_REGION: us-east-2
+      GH_FETCH_TOKEN: ${{ secrets.GH_FETCH_TOKEN }}
+      HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
+      HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      # aws cli & cdk
+      - name: INSTALL - AWS CLI, CDK, zip, jq
+        run: |
+          pip install awscli --upgrade --user    
+          npm install -g aws-cdk
+          sudo apt-get install zip jq -y
+      
+      - name: GET - AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v1.7.0
+        with:
+          role-to-assume: arn:aws:iam::476877758413:role/cicd-harbor-devops-use2-DevopsGithubRole28C732B7-1R3G4VHBE7NDB
+          aws-region: us-east-2
+      
+      - name: DEBUG - aws credentials
+        run: aws sts get-caller-identity
+      
+      - name: GET - cloudformation outputs
+        id: cloudformation
+        run: | 
+          USER_MANAGEMENT=$(aws cloudformation describe-stacks --stack-name "dev-harbor-user-management-use2" --query 'Stacks[0].Outputs')
+          echo USER_POOL_ID=$(echo $USER_MANAGEMENT | jq -r '.[] | select(.OutputKey|test("ExportsOutputRefCognitoUserPool"))| .OutputValue') >> $GITHUB_OUTPUT
+          echo USER_POOL_CLIENT_ID=$(echo $USER_MANAGEMENT | jq -r '.[] | select(.OutputKey|test("ExportsOutputRefUserPoolAppClient"))| .OutputValue') >> $GITHUB_OUTPUT
+          FRONTEND=$(aws cloudformation describe-stacks --stack-name "dev-harbor-frontend-use2" --query 'Stacks[0].Outputs')
+          echo ASSETS_BUCKET=$(echo $FRONTEND | jq -r '.[] | select(.OutputKey=="WebAssetsBucketName") | .OutputValue') >> $GITHUB_OUTPUT
+          echo CF_DOMAIN=https://$(echo $FRONTEND | jq -r '.[] | select(.OutputKey=="CloudFrontDomain") | .OutputValue') >> $GITHUB_OUTPUT
+      
+      - name: INSTALL - python@3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      - name: INSTALL - poetry
+        uses: snok/install-poetry@v1.3.3
+        with:
+          virtualenvs-create: false
+          installer-parallel: true
+          
+      # install your root project, if required
+      - name: INSTALL - project
+        run: poetry install --no-interaction
+
+      - name: BUILD - backend
+        run: poetry build
+
+      - name: PACKAGE - backend
+        run: |
+          pip install --upgrade -t tmp dist/*.whl
+          cd tmp
+          zip -q -r ../dist/lambda.zip . -x '*.pyc'
+        
+      - name: DIFF - CDK
+        run: cdk diff
+        env:
+          CF_DOMAIN: ${{ steps.cloudformation.outputs.CF_DOMAIN }}
+
+      - name: DEPLOY - CDK
+        run: cdk deploy --all --require-approval never --concurrency 4
+        env:
+          CF_DOMAIN: ${{ steps.cloudformation.outputs.CF_DOMAIN }}
+      
+      # ******************************************************************
+      # PUBLISH UI
+      # 
+
+      - name: INSTALL - node 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.0.0"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: DEBUG - node, npm, yarn versions
+        run: |
+          echo "node --version: $(node --version)"
+          echo "npm --version: $(npm --version)"
+          echo "yarn --version: $(yarn --version)"
+
+      - name: CACHE - .yarn/
+        id: cache-yarn-cache
+        uses: actions/cache@v3
+        with:
+          path: ui/.yarn/
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+
+      - name: CACHE - node_modules/
+        uses: actions/cache@v3
+        id: cache-node-modules
+        with:
+          path: ui/node_modules
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/yarn.lock') }}
+
+      - name: INSTALL - ui dependencies
+        working-directory: ui
+        run: CI=true yarn install
+
+      - name: BUILD - ui assets
+        working-directory: ui
+        run: CI=true yarn build
+        env:
+          NODE_ENV: development
+          CF_DOMAIN: ${{ steps.cloudformation.outputs.CF_DOMAIN }}
+          USER_POOL_ID: ${{ steps.cloudformation.outputs.USER_POOL_ID }}
+          USER_POOL_CLIENT_ID: ${{ steps.cloudformation.outputs.USER_POOL_CLIENT_ID }}
+
+      - name: PUBLISH - ui assets
+        working-directory: ui
+        run: aws s3 sync ./packages/sbom/build s3://${{ steps.cloudformation.outputs.ASSETS_BUCKET }}

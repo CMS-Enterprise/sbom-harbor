@@ -11,8 +11,22 @@ regionShortCodes[us-east-2]="use2"
 regionShortCodes[us-west-1]="usw1"
 regionShortCodes[us-west-2]="usw2"
 
+
+if [[ -z "${AWS_REGION}" ]]
+then
+  REGION=$(aws configure get region --output text)
+  export AWS_REGION=$REGION
+fi
+
+if [[ -z "${ENVIRONMENT}" ]]
+then
+  ENV="sandbox"
+  export ENVIRONMENT=ENV
+fi
+
+if [ $AWS_PROFILE = "default" ]; then PROFILE="sandbox"; else PROFILE=$AWS_PROFILE; fi;
+
 AWS_REGION_SHORT=${regionShortCodes[$AWS_REGION]}
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
 
-OUTPUTS="cdk-outputs-${AWS_VAULT}-${AWS_REGION_SHORT}.json"
-
-echo "Deploying into $AWS_VAULT $AWS_REGION and saving results to ${OUTPUTS}"
+echo "Using profile $PROFILE to deploy $ENVIRONMENT environment into $AWS_REGION for account $AWS_ACCOUNT_ID"
