@@ -15,7 +15,12 @@ import TeamViewProjectCard from './components/TeamViewProjectCard'
 import { Team } from '@/types'
 
 const TeamView = () => {
-  const { name = '', members = [], projects = {} } = useLoaderData() as Team
+  const {
+    id = '',
+    name = '',
+    members = [],
+    projects = {},
+  } = useLoaderData() as Team
 
   return (
     <Container component="main" maxWidth="md" data-testid="team">
@@ -57,7 +62,7 @@ const TeamView = () => {
             {projects &&
               Object.values(projects).map((project) => (
                 <Grid item xs={12} md={12} key={project.id}>
-                  <TeamViewProjectCard project={project} />
+                  <TeamViewProjectCard teamId={id} project={project} />
                 </Grid>
               ))}
           </Grid>

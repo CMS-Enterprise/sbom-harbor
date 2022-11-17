@@ -9,11 +9,15 @@ import IconButton from '@mui/material/IconButton'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
 import DotsVertical from 'mdi-material-ui/DotsVertical'
+import SbomUploadInput from '@/components/SbomUploadInput'
 import { Project } from '@/types'
 
-type InputProps = { project: Project }
+type InputProps = {
+  teamId: string
+  project: Project
+}
 
-const TeamViewProjectCard = ({ project }: InputProps): JSX.Element => {
+const TeamViewProjectCard = ({ teamId, project }: InputProps): JSX.Element => {
   const codebaseEntries = React.useMemo(() => {
     if (!project?.codebases) {
       return []
@@ -97,6 +101,11 @@ const TeamViewProjectCard = ({ project }: InputProps): JSX.Element => {
                       {item.buildTool}
                     </Typography>
                   </Box>
+                  <SbomUploadInput
+                    teamId={teamId}
+                    projectId={project.id}
+                    codebaseId={key}
+                  />
                 </Box>
               </Box>
             )

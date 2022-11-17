@@ -10,6 +10,7 @@ type Params = {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   path: string
   signal?: AbortSignal
+  children?: true | null
 }
 
 const harborRequest = async ({
@@ -18,12 +19,15 @@ const harborRequest = async ({
   method = 'GET',
   path,
   signal = new AbortController().signal,
+  children = true,
 }: Params) => {
   // ensure path doesn't contain double slashes
   const url = new URL(`${CONFIG.API_URL}/v1/${path}`.replace(/\/\//g, '/'))
 
-  // append the children=true query param to the url
-  url.searchParams.append('children', 'true')
+  if (children) {
+    // append the children=true query param to the url
+    url.searchParams.append('children', 'true')
+  }
 
   // make the request and wait for the response
   const response = await fetch(url, {

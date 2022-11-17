@@ -6,7 +6,7 @@ import { AlertColor } from '@mui/material/Alert'
 
 const DEFAULT_TIMEOUT = 3000
 
-type AlertProps = {
+export type AlertProps = {
   severity?: AlertColor
   message?: string
   autoHide?: boolean
