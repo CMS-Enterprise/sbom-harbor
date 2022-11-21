@@ -222,6 +222,19 @@ const TeamForm = () => {
         membersEntries.push({ id: uuidv4(), email, isTeamLead: true })
       }
 
+      // create the body of the request by removing any id params from all objects.
+      const body = {
+        name: formInput.name,
+        members: Object.values(membersEntries).map(({ id, ...rest }) => rest),
+        projects: Object.values(projectEntries).map(
+          ({ id, codebases, ...rest }) => ({
+            ...rest,
+            codebases: Object.values(codebases).map(({ id, ...rest }) => rest),
+          })
+        ),
+        tokens: Object.values(tokenEntries).map(({ id, ...rest }) => rest),
+      }
+
       // make request to update teams data in the database.
       await harborRequest({
         // determine the endpoint to use based on if this is a create or edit form.
@@ -230,13 +243,8 @@ const TeamForm = () => {
         method: newTeamRouteMatch ? 'POST' : 'PUT',
         // pass the jwt token from the authLoader to the request to authenticate the user.
         jwtToken,
-        // create a final object representing the team data to send to the server.
-        body: {
-          name: formInput.name,
-          members: Object.values(membersEntries),
-          projects: Object.values(projectEntries),
-          tokens: Object.values(tokenEntries),
-        },
+        // add the final object representing the team data to send to the server.
+        body,
         // pass the abort controller to the request to allow for cancelling the request.
         signal: abortController.signal,
       })

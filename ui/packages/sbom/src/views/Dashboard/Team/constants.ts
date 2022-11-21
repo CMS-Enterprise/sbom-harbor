@@ -25,11 +25,8 @@ export const defaultTeam: FormTeamState = {
 export const defaultFormState: FormState = {
   newAdminEmail: '',
   newMemberEmail: '',
-  newProjects: {},
   projects: {},
   members: [],
   tokens: [],
   name: '',
 }
-
-export const defaultFormStateNewProjects: FormState['newProjects'] = {}
