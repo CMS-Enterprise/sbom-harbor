@@ -46,8 +46,11 @@ This project depends on Python version: `3.9.10` and Node.js version: `^18.0.0`.
     - Start Poetry shell: `poetry shell`. This creates your virtual environment where your deps can be installed.
     - Install Python dependencies: `poetry install`.
     - Install pre-commit hooks: `pre-commit install`
+    
+5. [Configure gpg for git commit signing](https://docs.github.com/en/authentication/managing-commit-signature-verification)
+    
 
-5. Configure AWS Credentials
+6. Configure AWS Credentials
     
     AWS credentials are managed via SSO with GSuite integration which will provide _temporary_ credentials with a 12 hour expiration. `aws-vault` is a CLI tool that makes retrieving and refreshing these temporary credentials easy and more secure by storing them in an encrypted manner (e.g.: Keychain on macOS)
     - Install `aws-vault`
