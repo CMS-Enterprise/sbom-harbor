@@ -121,7 +121,7 @@ def generate_report_filename(data_type: str, metadata: dict, date_folder_path: s
 
     return (
         f"harbor-data-summary/{data_type}/{date_folder_path}/{project}"
-        f"-{project_model.fisma}-{timestamp}"
+        f"-{project_model.fisma}-{timestamp}.json"
     )
 
 
