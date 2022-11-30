@@ -58,7 +58,7 @@ SUMMARIZER_LN = "Summarizer"
 SBOM_GENERATOR_LN = "SBOMGenerator"
 
 # External bucket integration point
-EXTERNAL_BUCKET_NAME = "sbom-harbor-summary-share-test"
+EXTERNAL_BUCKET_NAME = "dev-harbor-sbom-summary-share-557147098836-use1"
 
 # Dependency Track
 DT_API_INTEGRATION = "DT_API_INT"

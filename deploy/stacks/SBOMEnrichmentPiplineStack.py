@@ -19,7 +19,6 @@ from deploy.constants import (
 )
 
 from deploy.enrichment import (
-    DefaultEnrichmentInterfaceLambda,
     EnrichmentIngressLambda
 )
 
@@ -29,7 +28,7 @@ from deploy.enrichment.dependency_track import (
     DependencyTrackInterfaceLambda,
     SummarizerLambda
 )
-from deploy.enrichment.ion_channel import IonChannelInterfaceLambda
+from deploy.util import DynamoTableManager
 
 
 class SBOMEnrichmentPiplineStack(Stack):
@@ -40,6 +39,7 @@ class SBOMEnrichmentPiplineStack(Stack):
             self,
             scope: Construct,
             vpc: ec2.Vpc,
+            table_mgr: DynamoTableManager,
             event_bus: eventbridge.EventBus,
             **kwargs) -> None:
 
@@ -109,22 +109,22 @@ class SBOMEnrichmentPiplineStack(Stack):
         #parallel: Parallel = parallel.branch(ic_task)
 
         # Default Enrichment Source
-        default_enrichment_lambda = DefaultEnrichmentInterfaceLambda(
-            self,
-            vpc=vpc,
-            s3_bucket=s3_bucket,
-            event_bus=event_bus,
-        ).get_lambda_function()
-
-        default_task = tasks.LambdaInvoke(
-            self, "ENRICHMENT_DEFAULT_TASK",
-            lambda_function=default_enrichment_lambda,
-            input_path="$.detail",
-            result_path="$.detail.results",
-            output_path="$.detail",
-        )
-
-        parallel: Parallel = parallel.branch(default_task)
+        # default_enrichment_lambda = DefaultEnrichmentInterfaceLambda(
+        #     self,
+        #     vpc=vpc,
+        #     s3_bucket=s3_bucket,
+        #     event_bus=event_bus,
+        # ).get_lambda_function()
+        #
+        # default_task = tasks.LambdaInvoke(
+        #     self, "ENRICHMENT_DEFAULT_TASK",
+        #     lambda_function=default_enrichment_lambda,
+        #     input_path="$.detail",
+        #     result_path="$.detail.results",
+        #     output_path="$.detail",
+        # )
+        #
+        # parallel: Parallel = parallel.branch(default_task)
 
         # Default Enrichment Source
         summarizer_lambda = SummarizerLambda(
@@ -133,6 +133,8 @@ class SBOMEnrichmentPiplineStack(Stack):
             s3_bucket=s3_bucket,
             event_bus=event_bus,
         ).get_lambda_function()
+
+        table_mgr.grant(summarizer_lambda)
 
         summarizer_task = tasks.LambdaInvoke(
             self, "ENRICHMENT_SUMMARIZER_TASK",

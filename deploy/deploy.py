@@ -64,20 +64,13 @@ def dodep() -> None:
             app,
             vpc,
             env=env,
+            table_mgr=table_manager,
             event_bus=event_bus,
         )
 
         # The Web Stack has all the web oriented entities to manage the website
         web_stack = SBOMWebStack(app, env=env)
         web_stack.add_dependency(ingress_api_stack)
-
-        # The SBOM Generator Pipeline stack has the lambda to
-        # generate SBOMs by crawling GitHub repositories.
-        SBOMGeneratorPipelineStack(
-            app,
-            vpc,
-            env=env,
-        )
 
     # Synth the CDK app
     app.synth()

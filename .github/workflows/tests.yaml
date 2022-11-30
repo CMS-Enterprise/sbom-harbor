@@ -2,34 +2,39 @@ name: Tests
 
 on:
   push:
-    branches: 
+    branches:
       - main
   pull_request:
     branches:
       - main
-    types: 
+    types:
       - opened
       - reopened
       - synchronize
+
+
+env:
+  AWS_REGION: us-east-1
+  AWS_DEFAULT_REGION: us-east-1
 
 jobs:
   backend:
     runs-on: ubuntu-latest
     steps:
-      
+
       - uses: actions/checkout@v3
-      
+
       - name: INSTALL - python@3.9
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      
+
       - name: INSTALL - poetry
         uses: snok/install-poetry@v1.3.3
         with:
           virtualenvs-create: false
           installer-parallel: true
-      
+
       - name: INSTALL - pylint
         run: pip install pylint==2.15.5
 
@@ -41,7 +46,7 @@ jobs:
 
       - name: TEST - unit
         run: python -m pytest -v --cov=cyclonedx/ tests/
-  
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
