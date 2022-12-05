@@ -32,7 +32,7 @@ const INITIAL_STATE = {
 /**
  * @type {AuthValuesType} The initial values provided by AuthContext.
  */
-const defaultProvider: AuthValuesType = {
+export const defaultProvider: AuthValuesType = {
   ...INITIAL_STATE,
   loading: false,
 }
@@ -87,9 +87,9 @@ export const AuthReducer = (
   }
 }
 
-const AuthStateContext = React.createContext(INITIAL_STATE)
+export const AuthStateContext = React.createContext(INITIAL_STATE)
 
-const AuthDispatchContext = React.createContext(
+export const AuthDispatchContext = React.createContext(
   ((value: AuthActionParams) => value) as React.Dispatch<AuthActionParams>
 )
 

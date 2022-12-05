@@ -16,14 +16,16 @@ import theme from '@/utils/theme'
  * @returns {JSX.Element}
  */
 const Main = (): JSX.Element => (
-  <ThemeProvider theme={theme}>
-    <CssBaseline />
-    <AuthProvider>
-      <AlertProvider>
-        <Outlet />
-      </AlertProvider>
-    </AuthProvider>
-  </ThemeProvider>
+  <main data-testid="main">
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AuthProvider>
+        <AlertProvider>
+          <Outlet />
+        </AlertProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  </main>
 )
 
 export default Main
