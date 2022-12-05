@@ -83,6 +83,15 @@ export type UserTableRowType = {
   username?: string
 }
 
+export type TokenRowType = {
+  id: string
+  name: string
+  created: string
+  expires: string
+  enabled: boolean
+  token: string
+}
+
 // ** Teams
 
 // a team as it is stored in the database

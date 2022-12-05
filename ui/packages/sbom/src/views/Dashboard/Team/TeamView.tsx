@@ -12,6 +12,7 @@ import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
 import TeamMembersTable from './components/TeamMembersTable'
 import TeamViewProjectCard from './components/TeamViewProjectCard'
+import TokensTable from './components/TokensTable'
 import { Team } from '@/types'
 
 const TeamView = () => {
@@ -20,6 +21,7 @@ const TeamView = () => {
     name = '',
     members = [],
     projects = {},
+    tokens = {},
   } = useLoaderData() as Team
 
   return (
@@ -49,6 +51,18 @@ const TeamView = () => {
             </Grid>
             <Grid item xs={12} md={12}>
               <TeamMembersTable members={members} />
+            </Grid>
+          </Grid>
+        </Box>
+        <Box>
+          <Grid container spacing={3} sx={{ mb: 6 }}>
+            <Grid item>
+              <Typography variant="h5" sx={{ mt: 2, mb: 0 }}>
+                Tokens
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={12}>
+              <TokensTable tokens={Object.values(tokens)} />
             </Grid>
           </Grid>
         </Box>
