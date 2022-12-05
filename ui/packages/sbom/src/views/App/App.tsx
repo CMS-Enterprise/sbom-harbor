@@ -47,7 +47,7 @@ const App = (): JSX.Element => {
             : theme.palette.grey[900],
         flexGrow: 1,
         height: '100vh',
-        overflow: 'auto',
+        overflow: 'hidden',
       }}
     >
       <AlertMessage />
@@ -102,7 +102,7 @@ const App = (): JSX.Element => {
       </AppDrawer>
 
       {/* main content outlet for child routes */}
-      <Container sx={{ mt: 8 }}>
+      <Container sx={{ mt: 8, overflow: 'scroll' }}>
         {/* @ts-ignore */}
         <Outlet />
       </Container>

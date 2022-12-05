@@ -14,6 +14,11 @@ const AppDrawer = styled(MuiDrawer, {
         ? theme.palette.grey[200]
         : theme.palette.grey[900],
   },
+  '& .MuiDrawer-root': {
+    overflow: 'auto',
+    height: '100%',
+    width: MuiDrawerWidth,
+  },
   '& .MuiDrawer-paper': {
     position: 'relative',
     whiteSpace: 'nowrap',
@@ -38,9 +43,13 @@ const AppDrawer = styled(MuiDrawer, {
   '& .MuiLink-root': {
     textDecoration: 'none',
   },
+  '& .MuiListItemButton-root': {},
   '& .MuiListItemIcon-root': {
-    marginRight: theme.spacing(1.5),
     minWidth: 'auto',
+    marginLeft: '9px',
+  },
+  '& .MuiListItemText-root': {
+    marginLeft: '-9px',
   },
 }))
 

@@ -35,7 +35,7 @@ const DashboardContainer = (): JSX.Element => {
         sx={{
           flexGrow: 1,
           height: 'auto',
-          overflow: 'auto',
+          overflow: 'scroll',
         }}
       >
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>

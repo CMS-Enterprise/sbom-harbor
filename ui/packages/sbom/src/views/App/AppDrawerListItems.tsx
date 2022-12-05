@@ -16,7 +16,7 @@ const MenuLink = ({
   icon?: JSX.Element
 }) => (
   <Link to={to} component={RouterLink}>
-    <ListItemButton>
+    <ListItemButton sx={{ margin: 'auto' }}>
       {icon && <ListItemIcon>{icon}</ListItemIcon>}
       <ListItemText primary={title} />
     </ListItemButton>
