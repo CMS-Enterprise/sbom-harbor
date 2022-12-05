@@ -294,6 +294,7 @@ const theme = createTheme({
           borderRadius: 8,
           '& .MuiAlertTitle-root': {
             marginBottom: '0.25rem',
+            fontWeight: 500,
           },
           '& a': {
             fontWeight: 500,
@@ -301,43 +302,43 @@ const theme = createTheme({
           },
         },
         standardSuccess: {
-          color: 'rgb(102, 202, 36)',
-          backgroundColor: 'rgba(114, 225, 40, 0.12)',
+          color: 'rgb(255,255,255)',
+          backgroundColor: 'rgba(114, 225, 40, 0.85)',
           '& .MuiAlertTitle-root': {
-            color: 'rgb(102, 202, 36)',
+            color: 'rgb(255,255,255)',
           },
           '& .MuiAlert-icon': {
-            color: 'rgb(102, 202, 36)',
+            color: 'rgb(255,255,255)',
           },
         },
         standardInfo: {
-          color: 'rgb(34, 178, 224)',
-          backgroundColor: 'rgba(38, 198, 249, 0.12)',
+          color: 'rgb(255,255,255)',
+          backgroundColor: 'rgba(38, 198, 249, 0.85)',
           '& .MuiAlertTitle-root': {
-            color: 'rgb(34, 178, 224)',
+            color: 'rgb(255,255,255)',
           },
           '& .MuiAlert-icon': {
-            color: 'rgb(34, 178, 224)',
+            color: 'rgb(255,255,255)',
           },
         },
         standardWarning: {
-          color: 'rgb(227, 162, 36)',
-          backgroundColor: 'rgba(253, 181, 40, 0.12)',
+          color: 'rgb(255,255,255)',
+          backgroundColor: 'rgba(253, 181, 40, 0.85)',
           '& .MuiAlertTitle-root': {
-            color: 'rgb(227, 162, 36)',
+            color: 'rgb(255,255,255)',
           },
           '& .MuiAlert-icon': {
-            color: 'rgb(227, 162, 36)',
+            color: 'rgb(255,255,255)',
           },
         },
         standardError: {
-          color: 'rgb(229, 69, 65)',
-          backgroundColor: 'rgba(255, 77, 73, 0.12)',
+          color: 'rgb(255,255,255)',
+          backgroundColor: 'rgba(255, 77, 73, 0.85)',
           '& .MuiAlertTitle-root': {
-            color: 'rgb(229, 69, 65)',
+            color: 'rgb(255,255,255)',
           },
           '& .MuiAlert-icon': {
-            color: 'rgb(229, 69, 65)',
+            color: 'rgb(255,255,255)',
           },
         },
         outlinedSuccess: {
