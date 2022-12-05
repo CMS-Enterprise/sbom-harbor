@@ -1,9 +1,6 @@
 /**
  * Prebuild script that sets environment variables for the build.
  */
-const path = require('path')
-const { execSync } = require('child_process')
-
 const CONFIG = {
   API_URL: `${process.env.CF_DOMAIN}/api`,
   CF_DOMAIN: process.env.CF_DOMAIN,
