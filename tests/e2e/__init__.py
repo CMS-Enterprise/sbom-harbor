@@ -21,6 +21,7 @@ class TestCodebaseValues:
     NAME = "Keycloak"
     LANGUAGE = "JAVA"
     BUILD_TOOL = "MAVEN"
+    CLONE_URL = "https://github.com/cmsgov/ab2d-lambdas"
 
 
 def cleanup(team_id: str, team_url: str, jwt: str):
@@ -173,6 +174,7 @@ def create_codebase(team_id: str, project_id: str, cf_url: str, jwt: str):
             CodeBase.Fields.NAME: TestCodebaseValues.NAME,
             CodeBase.Fields.LANGUAGE: TestCodebaseValues.LANGUAGE,
             CodeBase.Fields.BUILD_TOOL: TestCodebaseValues.BUILD_TOOL,
+            CodeBase.Fields.CLONE_URL: TestCodebaseValues.CLONE_URL,
         },
     )
     print_response(create_codebase_rsp)

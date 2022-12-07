@@ -40,6 +40,7 @@ class Project(HarborModel):
             codebases=children.get(EntityType.CODEBASE.value, []),
         )
 
+    # pylint:disable =  R0913
     def __init__(
         self: "Project",
         team_id: str,
@@ -113,6 +114,7 @@ class Project(HarborModel):
                 name=codebase.get_item().get(CodeBase.Fields.NAME),
                 language=codebase.get_item().get(CodeBase.Fields.LANGUAGE),
                 build_tool=codebase.get_item().get(CodeBase.Fields.BUILD_TOOL),
+                clone_url=codebase.get_item().get(CodeBase.Fields.CLONE_URL),
             )
             for codebase in codebases
         ]

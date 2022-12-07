@@ -43,10 +43,12 @@ def test_update_codebase():
     init_codebase_name: str = "Smelly Towels"
     init_language: str = "JAVA"
     init_build_tool: str = "MAVEN"
+    init_clone_url = "https://github.com/cmsgov/ab2d-lambdas"
 
     new_codebase_name: str = "Clean Towels"
     new_language: str = "PYTHON"
     new_build_tool: str = "POETRY"
+    new_clone_url: str = "https://github.com/cmsgov/xy3z-lambdas"
 
     db_client.create(
         Team(
@@ -65,6 +67,7 @@ def test_update_codebase():
                             name=init_codebase_name,
                             language=init_language,
                             build_tool=init_build_tool,
+                            clone_url=init_clone_url,
                         )
                     ],
                 ),
@@ -81,12 +84,14 @@ def test_update_codebase():
             name=new_codebase_name,
             language=new_language,
             build_tool=new_build_tool,
+            clone_url=new_clone_url,
         )
     )
 
     assert new_codebase_name == updated_codebase.name
     assert new_language == updated_codebase.language
     assert new_build_tool == updated_codebase.build_tool
+    assert new_clone_url == updated_codebase.clone_url
 
     updated_cb_from_db: CodeBase = db_client.get(
         CodeBase(
@@ -99,6 +104,7 @@ def test_update_codebase():
     assert new_codebase_name == updated_cb_from_db.name
     assert new_language == updated_cb_from_db.language
     assert new_build_tool == updated_cb_from_db.build_tool
+    assert new_clone_url == updated_cb_from_db.clone_url
 
 
 def get_ek(et: str, model_id: str):
@@ -269,6 +275,9 @@ def test_update_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
     build_tool = "MAVEN"
     new_build_tool = "GRADLE"
 
+    clone_url = "https://github.com/cmsgov/ab2d-lambdas"
+    new_clone_url = "https://github.com/cmsgov/xh3z-lambdas"
+
     try:
 
         HarborDBClient(test_dynamo_db_resource).update(
@@ -296,6 +305,7 @@ def test_update_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
             CodeBase.Fields.NAME: codebase_name,
             CodeBase.Fields.LANGUAGE: language,
             CodeBase.Fields.BUILD_TOOL: build_tool,
+            CodeBase.Fields.CLONE_URL: clone_url,
             CodeBase.Fields.PARENT_ID: project_id,
         }
     )
@@ -313,6 +323,7 @@ def test_update_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
     assert codebase_name == item[CodeBase.Fields.NAME]
     assert project_id == item[CodeBase.Fields.PARENT_ID]
     assert build_tool == item[CodeBase.Fields.BUILD_TOOL]
+    assert clone_url == item[CodeBase.Fields.CLONE_URL]
     assert language == item[CodeBase.Fields.LANGUAGE]
 
     HarborDBClient(test_dynamo_db_resource).update(
@@ -323,6 +334,7 @@ def test_update_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
             name=new_codebase_name,
             language=language,
             build_tool=new_build_tool,
+            clone_url=new_clone_url,
         )
     )
 
@@ -339,6 +351,7 @@ def test_update_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
     assert new_codebase_name == item[CodeBase.Fields.NAME]
     assert project_id == item[CodeBase.Fields.PARENT_ID]
     assert new_build_tool == item[CodeBase.Fields.BUILD_TOOL]
+    assert new_clone_url == item[CodeBase.Fields.CLONE_URL]
     assert language == item[CodeBase.Fields.LANGUAGE]
 
 
@@ -546,6 +559,7 @@ def test_update_team_with_a_child_of_each_type(
     new_language = "JAVA"
 
     build_tool = "YARN"
+    clone_url = "https://github.com/cmsgov/ab2d-lambdas"
 
     created = Decimal(507482179.234)
     expires = Decimal(507492179.234)
@@ -582,6 +596,7 @@ def test_update_team_with_a_child_of_each_type(
             CodeBase.Fields.NAME: codebase_name,
             CodeBase.Fields.LANGUAGE: language,
             CodeBase.Fields.BUILD_TOOL: build_tool,
+            CodeBase.Fields.CLONE_URL: clone_url,
         }
     )
 
@@ -628,6 +643,7 @@ def test_update_team_with_a_child_of_each_type(
                             name=new_codebase_name,
                             language=new_language,
                             build_tool=build_tool,
+                            clone_url=clone_url,
                         )
                     ],
                 )
@@ -711,6 +727,7 @@ def test_update_team_with_a_child_of_each_type(
     assert new_codebase_name == codebase_item[CodeBase.Fields.NAME]
     assert new_language == codebase_item[CodeBase.Fields.LANGUAGE]
     assert build_tool == codebase_item[CodeBase.Fields.BUILD_TOOL]
+    assert clone_url == codebase_item[CodeBase.Fields.CLONE_URL]
 
     member_item = member["Item"]
     assert team_id == member_item[HARBOR_TEAMS_TABLE_PARTITION_KEY]
