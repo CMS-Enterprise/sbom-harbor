@@ -46,7 +46,7 @@ class CodeBase(HarborModel):
             language=item[CodeBase.Fields.LANGUAGE],
             build_tool=item[CodeBase.Fields.BUILD_TOOL],
             project_id=item[CodeBase.Fields.PARENT_ID],
-            clone_url=item[CodeBase.Fields.CLONE_URL],
+            clone_url=item.get(CodeBase.Fields.CLONE_URL, ""),
         )
 
     # pylint: disable = R0913
