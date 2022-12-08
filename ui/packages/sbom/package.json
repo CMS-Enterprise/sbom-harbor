@@ -3,13 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "analyze": "source-map-explorer 'build/static/js/*.js'",
-    "clean": "rimraf dist",
     "start": "craco start",
     "build": "craco build",
-    "test": "craco test --watchAll=false --collect-coverage",
-    "watch": "craco test --watchAll=true",
-    "eject": "craco eject"
+    "test": "craco test  --collectCoverage --maxWorkers=50% --watchAll=false",
+    "watch": "craco test  --collectCoverage --maxWorkers=25% --watch",
+    "check": "source-map-explorer 'build/static/js/*.js'",
+    "clean": "rimraf build coverage"
   },
   "browserslist": {
     "production": [
