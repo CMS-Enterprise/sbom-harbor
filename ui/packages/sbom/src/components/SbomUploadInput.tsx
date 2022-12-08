@@ -19,27 +19,17 @@ const SbomUploadInput = ({ teamId, projectId, codebaseId }: Props) => {
   const uploadFile = async (fileContents: string) => {
     try {
       const [{ token = '' } = {}] = Object.values(tokens) as Token[]
-
-      if (!token) {
-        throw new Error('No token available for this team.')
-      }
-
-      const res = await harborRequest({
+      await harborRequest({
         path: `${teamId}/${projectId}/${codebaseId}/sbom`,
         method: 'POST',
         body: JSON.parse(fileContents),
         jwtToken: token,
         children: null,
       })
-
-      if (res.status === 200) {
-        setAlert({
-          severity: 'success',
-          message: 'File uploaded successfully',
-        })
-      } else {
-        throw new Error('Error uploading file')
-      }
+      setAlert({
+        severity: 'success',
+        message: 'File uploaded successfully',
+      })
     } catch (err) {
       console.error(err)
       setAlert({
@@ -50,27 +40,24 @@ const SbomUploadInput = ({ teamId, projectId, codebaseId }: Props) => {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e?.target?.files) {
-      setAlert({
-        severity: 'warning',
-        message: 'No file selected.',
-      })
-      return
-    }
-    // get the first file
+    // get the file input
     const file = e.target.files?.[0]
+    // verify that the file exist
     if (!file) {
       setAlert({
         severity: 'warning',
         message: 'No file selected.',
       })
+      // return early if the file does not exist
       return
     }
-    // read the file contents as text
     const fileReader = new FileReader()
+    // read the file contents as text
     fileReader.readAsText(file, 'UTF-8')
+    // event handler for when the file is loaded
     fileReader.onload = (e) => {
       const contents = e.target?.result
+      // validate the file contents
       if (!contents || typeof contents !== 'string') {
         setAlert({
           severity: 'error',
@@ -78,7 +65,7 @@ const SbomUploadInput = ({ teamId, projectId, codebaseId }: Props) => {
         })
         return
       }
-      // upload the file
+      // upload the file contents
       uploadFile(contents as string)
     }
   }
@@ -86,10 +73,12 @@ const SbomUploadInput = ({ teamId, projectId, codebaseId }: Props) => {
   const fileInputId = `${teamId}-${projectId}-${codebaseId}-file-input`
 
   return (
-    <Container className="file-select">
+    <Container className="file-select" role="section">
       <Grid container spacing={1} sx={{ flexFlow: 'column' }}>
         <Grid item>
-          <label htmlFor={fileInputId}>Upload SBOM</label>
+          <label htmlFor={fileInputId} role="heading">
+            Upload SBOM
+          </label>
         </Grid>
         <Grid item>
           <input
@@ -98,6 +87,8 @@ const SbomUploadInput = ({ teamId, projectId, codebaseId }: Props) => {
             type="file"
             onChange={handleChange}
             accept=".json"
+            role="button"
+            data-testid="file-input"
           />
         </Grid>
       </Grid>

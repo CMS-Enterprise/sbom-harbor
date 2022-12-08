@@ -24,13 +24,13 @@ const harborRequest = async ({
   // ensure path doesn't contain double slashes
   const url = new URL(`${CONFIG.API_URL}/v1/${path}`.replace(/\/\//g, '/'))
 
+  // append the children=true query param to the url
   if (children) {
-    // append the children=true query param to the url
     url.searchParams.append('children', 'true')
   }
 
   // make the request and wait for the response
-  const response = await fetch(url, {
+  const response = await fetch(url.toString(), {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -42,7 +42,7 @@ const harborRequest = async ({
 
   // if the response is not ok, throw an error
   if (!response.ok) {
-    throw new Response(response.statusText, { status: response.status })
+    throw new Error(response.statusText)
   }
 
   // return the response body

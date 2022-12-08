@@ -17,13 +17,34 @@ process.env.NODE_ENV = 'test'
 /**
  * Set the CONFIG environment variable to the prebuild configuration.
  */
-process.env.CONFIG = JSON.stringify(require('./prebuild.js'))
+process.env.CONFIG = JSON.stringify({
+  API_URL: 'https://localhost:3000/api',
+  COGNITO_USER_POOL_ID: 'us-east-1_123456789',
+  COGNITO_USER_POOL_CLIENT_ID: '1234567890123456789012',
+})
 
 /**
- * Mock `window.fetch` for tests
- * @see {@link https://jestjs.io/docs/en/manual-mocks}
+ * Create a mock fetch response per endpoint.
+ * @param {URL | string} url the fetch request url
+ * @param {Object} config the fetch request configuration
+ * @returns  {Promise<Object>} the mocked fetch response per endpoint
  */
-// assuming jest's resetMocks is configured to "true"
-// so we don't need to worry about cleanup. also assumes
-// that a fetch polyfill like `whatwg-fetch` is loaded.
-jest.spyOn(window, 'fetch')
+async function mockFetch(url, config) {
+  // sbom upload endpoint
+  if (url.includes('/sbom')) {
+    return {
+      json: async () => ({}),
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+    }
+  }
+}
+
+beforeAll(() => {
+  jest.spyOn(global, 'fetch')
+})
+
+beforeEach(() => {
+  fetch.mockImplementation(mockFetch)
+})
