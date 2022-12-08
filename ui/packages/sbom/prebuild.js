@@ -9,6 +9,10 @@ const CONFIG = {
   AWS_REGION: process.env.AWS_REGION,
 }
 
-console.log('CONFIG:', CONFIG)
+// Ouput the global app config to the shell during builds except
+// for when running tests to avoid polluting the test output.
+if (process.env.NODE_ENV !== 'test' || process.env.CI === 'true') {
+  console.log('CONFIG:', CONFIG)
+}
 
 module.exports = CONFIG

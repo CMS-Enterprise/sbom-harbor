@@ -5,8 +5,14 @@
  */
 import { AppConfig } from '@/types'
 
+let envConfig: AppConfig
+
 // parse `CONFIG` from environment variables
-const envConfig = JSON.parse(JSON.stringify(process.env.CONFIG))
+if (process.env.NODE_ENV !== 'test') {
+  envConfig = JSON.parse(JSON.stringify(process.env.CONFIG))
+} else {
+  envConfig = JSON.parse(process.env.CONFIG || '{}')
+}
 
 /**
  * Set global configuration for the application provided by webpack (craco) at build time.

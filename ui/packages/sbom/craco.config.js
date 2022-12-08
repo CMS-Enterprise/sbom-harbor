@@ -2,6 +2,8 @@
  * Craco config that overrides the default webpack config.
  */
 const path = require('path')
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') })
+
 const { DefinePlugin } = require('webpack')
 
 // get the app config by importing the prebuild script
@@ -30,7 +32,8 @@ module.exports = {
       },
       roots: ['<rootDir>/src/'],
       testMatch: ['<rootDir>/src/**/?(*.)+(spec|test).[jt]s?(x)'],
-      setupFilesAfterEnv: '<rootDir>/src/utils/setupTests.ts',
+      setupFilesAfterEnv: '<rootDir>/jest.setup.js',
+      coverageReporters: ['json', 'lcov', ['text', { skipFull: true }]],
     },
   },
   eslint: {
