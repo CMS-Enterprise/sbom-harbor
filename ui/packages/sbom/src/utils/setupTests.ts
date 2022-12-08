@@ -1,15 +1,20 @@
 /**
  * @module @cyclone-dx/ui/sbom/utils/setupTests
  */
-// jest-dom adds custom jest matchers for asserting on DOM nodes.
-// allows you to do things like:
-// expect(element).toHaveTextContent(/react/i)
-// learn more: https://github.com/testing-library/jest-dom
+// jest-dom adds custom matchers for asserting on DOM nodes.
+// see https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom'
 import path from 'path'
 
 /**
- * Mock `process.env.CONFIG`
+ * Set the NODE_ENV to test to use the test NODE_ENV.
+ * This disables logging in the prebuild script:
+ * @see {@link @cyclone-dx/ui-sbom/prebuild.js}.
+ */
+process.env.NODE_ENV = 'test'
+
+/**
+ * Mock `process.env.CONFIG` for tests
  * @type {string}
  * @see {@link @cyclone-dx/ui-sbom/prebuild.js}
  * @see {@link @cyclone-dx/ui-sbom/craco.config.js}

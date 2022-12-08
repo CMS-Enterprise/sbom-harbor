@@ -2,8 +2,8 @@
  * Helper function that returns user details from Cognito Auth.
  * @module @cyclonedx/ui/sbom/utils/get-cognito-user
  */
-import { Auth, CognitoUser } from '@aws-amplify/auth'
-import { CognitoUserSession } from 'amazon-cognito-identity-js'
+import { Auth } from 'aws-amplify'
+import { CognitoUser, CognitoUserSession } from 'amazon-cognito-identity-js'
 import { UserState, CognitoUserInfo } from '@/types'
 
 export const getUserData = async (): Promise<UserState> => {

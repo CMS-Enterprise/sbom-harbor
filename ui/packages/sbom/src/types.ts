@@ -1,8 +1,11 @@
 /**
  * @module @cyclone-dx/ui/sbom/utils/types
  */
-import { CognitoUser } from '@aws-amplify/auth'
-import { CognitoIdToken, CognitoUserSession } from 'amazon-cognito-identity-js'
+import {
+  CognitoIdToken,
+  CognitoUser,
+  CognitoUserSession,
+} from 'amazon-cognito-identity-js'
 
 // ** App
 

@@ -7,14 +7,14 @@ import {
   screen,
 } from '@testing-library/react'
 import { BrowserRouter as Router } from 'react-router-dom'
-import { Auth } from '@aws-amplify/auth'
+import { Auth } from 'aws-amplify'
 import Main from './Main'
 
 /**
  * Mock Auth from @aws-amplify/auth
  * @see {@link @cyclone-dx/ui-sbom/utils/configureCognito.js}
  */
-jest.mock('@aws-amplify/auth')
+jest.mock('aws-amplify')
 jest.mocked(Auth.configure).mockImplementation(() => ({}))
 
 /**

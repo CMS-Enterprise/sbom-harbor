@@ -3,7 +3,7 @@
  * @module @cyclonedx/ui/sbom/loaders/authLoader
  * @see {@link @cyclonedx/ui/sbom/Routes}
  */
-import { Auth } from '@aws-amplify/auth'
+import { Auth } from 'aws-amplify'
 
 const authLoader = async () => {
   const session = await Auth.currentSession()

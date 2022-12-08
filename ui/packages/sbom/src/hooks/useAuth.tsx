@@ -8,7 +8,7 @@
  */
 import * as React from 'react'
 import { useMatch, useNavigate, useLocation } from 'react-router-dom'
-import { Auth } from '@aws-amplify/auth'
+import { Auth } from 'aws-amplify'
 import { AuthValuesType } from './types'
 
 type AuthProviderProps = {

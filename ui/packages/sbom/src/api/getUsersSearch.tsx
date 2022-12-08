@@ -1,4 +1,4 @@
-import { Auth } from '@aws-amplify/auth'
+import { Auth } from 'aws-amplify'
 import { CONFIG } from '@/utils/constants'
 
 const { API_URL } = CONFIG
