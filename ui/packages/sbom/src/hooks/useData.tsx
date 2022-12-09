@@ -4,10 +4,10 @@
 import * as React from 'react'
 import { useAuthState } from '@/hooks/useAuth'
 import { CONFIG } from '@/utils/constants'
-import { AppState, TeamApiResponse } from '@/types'
+import { AppState, TeamModel } from '@/types'
 
 const INITIAL_STATE = {
-  teams: [] as TeamApiResponse[],
+  teams: [] as TeamModel[],
   setData: () => null,
   fetchTeams: () => Promise<null>,
   setTeams: () => null,
@@ -15,9 +15,9 @@ const INITIAL_STATE = {
 
 const DataContext = React.createContext<{
   data: AppState
-  fetchTeams: (controller: AbortController) => Promise<TeamApiResponse[]>
+  fetchTeams: (controller: AbortController) => Promise<TeamModel[]>
   setData: (values: AppState) => void
-  setTeams: (teams: TeamApiResponse[]) => void
+  setTeams: (teams: TeamModel[]) => void
 }>({
   data: INITIAL_STATE,
   fetchTeams: () => Promise.resolve([]),
@@ -44,7 +44,7 @@ export const DataProvider = ({
   }
 
   // dispatches update to the user data state in the context provider.
-  const setTeams = React.useCallback((teams: TeamApiResponse[] = []) => {
+  const setTeams = React.useCallback((teams: TeamModel[] = []) => {
     setData({ ...data, teams })
   }, [])
 

@@ -4,10 +4,10 @@
  * @see {@link @cyclonedx/ui/sbom/Routes}
  */
 import { Params } from 'react-router-dom'
-import { Team, TeamApiResponse } from '@/types'
+import { Team, TeamModel } from '@/types'
 import authLoader from '@/router/authLoader'
 import harborRequest from '@/utils/harborRequest'
-import projectsArrayToEntries from '@/selectors/projectsArrayToEntries'
+import reduceProjectsArrayToMap from '@/selectors/reduceProjectsArrayToMap'
 import reduceArrayToMap from '@/selectors/reduceArrayToMap'
 
 const teamLoader = ({
@@ -19,7 +19,7 @@ const teamLoader = ({
 }): Promise<Team> =>
   authLoader()
     .then(
-      (jwtToken: string): Promise<TeamApiResponse> =>
+      (jwtToken: string): Promise<TeamModel> =>
         harborRequest({
           jwtToken,
           path: `team/${teamId}`,
@@ -27,11 +27,11 @@ const teamLoader = ({
         })
     )
     .then(
-      ({ members, tokens, projects, ...rest }: TeamApiResponse): Team => ({
+      ({ members, tokens, projects, ...rest }: TeamModel): Team => ({
         ...rest,
-        members: members,
+        members: reduceArrayToMap(members),
         tokens: reduceArrayToMap(tokens),
-        projects: projectsArrayToEntries(projects),
+        projects: reduceProjectsArrayToMap(projects),
       })
     )
 

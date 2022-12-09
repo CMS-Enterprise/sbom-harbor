@@ -1,9 +1,9 @@
-import { Project, TeamMember, Token } from '@/types'
+import { Project, User, Token } from '@/types'
 
 export type FormTeamState = {
   projects: Record<string, Project>
-  members: Array<TeamMember>
-  tokens: Array<Token>
+  members: Record<string, User>
+  tokens: Record<string, Token>
   name: string
 }
 

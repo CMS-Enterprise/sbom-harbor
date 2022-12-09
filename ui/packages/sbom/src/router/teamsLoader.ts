@@ -5,8 +5,8 @@
  */
 import authLoader from '@/router/authLoader'
 import harborRequest from '@/utils/harborRequest'
-import teamsResponseToMappedProps from '@/selectors/teamsArrayToEntries'
-import { Team, TeamApiResponse } from '@/types'
+import teamsResponseToMappedProps from '@/selectors/mapTeamsPropertiesToObjects'
+import { Team, TeamModel } from '@/types'
 
 const teamsLoader = ({
   request: { signal = new AbortController().signal },
@@ -15,15 +15,13 @@ const teamsLoader = ({
 }): Promise<Team[]> =>
   authLoader()
     .then(
-      (jwtToken: string): Promise<TeamApiResponse[]> =>
+      (jwtToken: string): Promise<TeamModel[]> =>
         harborRequest({
           jwtToken,
           path: `teams`,
           signal,
         })
     )
-    .then((teams: TeamApiResponse[]): Team[] =>
-      teamsResponseToMappedProps(teams)
-    )
+    .then((teams: TeamModel[]): Team[] => teamsResponseToMappedProps(teams))
 
 export default teamsLoader

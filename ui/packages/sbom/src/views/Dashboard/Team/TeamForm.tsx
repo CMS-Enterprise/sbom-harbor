@@ -21,11 +21,12 @@ import Grid from '@mui/material/Grid'
 import Paper from '@mui/material/Paper'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
+import updateTeam from '@/api/updateTeam'
 import UserAutocomplete from '@/components/UserAutocomplete'
 import SubmitButton from '@/components/forms/SubmitButton'
 import { useAlert } from '@/hooks/useAlert'
 import { useAuthState } from '@/hooks/useAuth'
-import harborRequest from '@/utils/harborRequest'
+import reduceArrayToMap from '@/selectors/reduceArrayToMap'
 import { Project } from '@/types'
 import { FormState, FormTeamState } from './types'
 import { defaultFormState, defaultProject } from './constants'
@@ -42,7 +43,7 @@ const TeamForm = () => {
   const { setAlert } = useAlert()
 
   // auth state hook for user info and token
-  const { jwtToken, email } = useAuthState()
+  const { jwtToken } = useAuthState()
 
   // route loader hook to fetch team data
   const team = useLoaderData() as FormTeamState
@@ -59,6 +60,7 @@ const TeamForm = () => {
   // component state for form data
   const [isSubmitting, setSubmitting] = React.useState(false)
 
+  // react-hook-form hook to manage form state
   const { control } = useForm({
     mode: 'all',
     shouldUnregister: true,
@@ -70,9 +72,19 @@ const TeamForm = () => {
     { ...defaultFormState, ...team }
   )
 
-  const admins = React.useMemo(() => {
-    if (!formInput?.members) return []
-    return formInput?.members.filter((m) => m.isTeamLead === true) || []
+  // memoize separating admins and regular members from the team members.
+  const [admins, members] = React.useMemo(() => {
+    // if there are no members, return empty arrays for both admins and members
+    if (!formInput?.members) {
+      return [[], []]
+    }
+    // get an array of values from the members map
+    const values = Object.values(formInput.members)
+    // return filtered arrays of admins and members
+    return [
+      values.filter((m) => m.isTeamLead === true),
+      values.filter((m) => m.isTeamLead === false),
+    ]
   }, [formInput.members])
 
   /**
@@ -91,7 +103,6 @@ const TeamForm = () => {
    */
   const handleAddProject = () => {
     const id = uuidv4()
-
     // update the form state with the new projects object
     setFormInput({
       ...formInput,
@@ -106,15 +117,14 @@ const TeamForm = () => {
    * Handler for adding a new project to the team
    */
   const handleUpdateProject = React.useCallback(
-    (payload: Project) => {
-      return setFormInput({
+    (payload: Project) =>
+      setFormInput({
         ...formInput,
         projects: {
           ...formInput.projects,
           [payload.id]: { ...payload },
         },
-      })
-    },
+      }),
     [formInput]
   )
 
@@ -127,8 +137,12 @@ const TeamForm = () => {
     event: React.MouseEvent<HTMLButtonElement>
   ) => {
     const email = event.currentTarget.dataset.value
-    const nextData = formInput.members.filter((m) => m.email !== email)
-    setFormInput({ ...formInput, members: nextData })
+    setFormInput({
+      ...formInput,
+      members: reduceArrayToMap(
+        Object.values(formInput.members).filter((m) => m.email !== email)
+      ),
+    })
   }
 
   /**
@@ -139,13 +153,14 @@ const TeamForm = () => {
     // get the email of the user to add, either as an admin or a member.
     const email = admin ? formInput.newAdminEmail : formInput.newMemberEmail
     // return early if there is no email defined in the form state.
+    // TODO: add email validation to the form
     if (!email) {
       console.warn('Tried to add a new member without an email')
       return
     }
-    // get the list of members already in the form state, and add the
-    // new member to the form state if they are not already in the list.
-    const nextData = [...formInput.members]
+    // get the list of members already in the form state
+    const nextData = Object.values(formInput.members)
+    // add the new member to the form state if not already in the list.
     if (!nextData.find((m) => m.email === email)) {
       const id = uuidv4()
       nextData.push({ id, email, isTeamLead: admin })
@@ -154,7 +169,7 @@ const TeamForm = () => {
     setFormInput({
       ...formInput,
       ...(admin ? { newAdminEmail: '' } : { newMemberEmail: '' }),
-      members: nextData,
+      members: reduceArrayToMap(nextData),
     })
   }
 
@@ -192,63 +207,22 @@ const TeamForm = () => {
   ): Promise<() => void> => {
     event.preventDefault()
     const abortController = new AbortController()
-
-    if (!jwtToken || isSubmitting) {
+    // if already submitting or there's no token, return early.
+    if (isSubmitting === true || !jwtToken) {
       return () => abortController.abort()
     }
 
     try {
       setSubmitting(true)
-
-      const {
-        members = team.members,
-        projects = team.projects,
-        tokens: tokenEntries = team.tokens,
-      } = formInput
-
-      // filter out projects with empty name values from the projects object
-      // TODO: add project schema validation to the form to prevent this from happening
-      const projectEntries = Object.entries(projects)
-        .filter(([, p]) => !!p.name)
-        .map(([id, p]) => ({ ...p, id, codebases: Object.values(p.codebases) }))
-
-      // filter out any empty email values from the projects object
-      // TODO: add emailvalidation to the form to prevent this from happening
-      const membersEntries = members.filter((m) => !!m.email)
-
-      // ensure that the current user is in the members list as an admin with uuid.
-      // TODO: a user shouldn't be able to remove themselves from the team
-      if (members.findIndex((m) => m.email === email) === -1) {
-        membersEntries.push({ id: uuidv4(), email, isTeamLead: true })
-      }
-
-      // create the body of the request by removing any id params from all objects.
-      const body = {
-        name: formInput.name,
-        members: Object.values(membersEntries).map(({ id, ...rest }) => rest),
-        projects: Object.values(projectEntries).map(
-          ({ id, codebases, ...rest }) => ({
-            ...rest,
-            codebases: Object.values(codebases).map(({ id, ...rest }) => rest),
-          })
-        ),
-        tokens: Object.values(tokenEntries).map(({ id, ...rest }) => rest),
-      }
-
-      // make request to update teams data in the database.
-      await harborRequest({
-        // determine the endpoint to use based on if this is a create or edit form.
-        path: newTeamRouteMatch ? '/teams' : `/team/${teamId}`,
-        // determine the request verb based on if this is a create or edit form.
-        method: newTeamRouteMatch ? 'POST' : 'PUT',
-        // pass the jwt token from the authLoader to the request to authenticate the user.
+      await updateTeam({
         jwtToken,
-        // add the final object representing the team data to send to the server.
-        body,
-        // pass the abort controller to the request to allow for cancelling the request.
-        signal: abortController.signal,
+        newTeamRouteMatch: !!newTeamRouteMatch,
+        teamId,
+        formInput,
+        members,
+        admins,
+        abortController,
       })
-
       setSubmitting(false)
       setAlert({
         message: 'Team updated successfully',
@@ -320,7 +294,7 @@ const TeamForm = () => {
                 handleAdd={handleAddTeamMember}
                 handleChange={handleInputFieldChange}
                 handleRemove={handleRemoveTeamMember}
-                members={formInput.members.filter((m) => !m.isTeamLead)}
+                members={members}
                 newEmail={formInput.newMemberEmail}
               />
             </Grid>

@@ -13,16 +13,26 @@ import Typography from '@mui/material/Typography'
 import TeamMembersTable from './components/TeamMembersTable'
 import TeamViewProjectCard from './components/TeamViewProjectCard'
 import TokensTable from './components/TokensTable'
-import { Team } from '@/types'
+import { Team, UserRole } from '@/types'
 
 const TeamView = () => {
   const {
     id = '',
     name = '',
-    members = [],
+    members = {},
     projects = {},
     tokens = {},
   } = useLoaderData() as Team
+
+  const [membersTableRows] = React.useState(() =>
+    Object.values(members).map(({ id, email, isTeamLead }) => ({
+      id,
+      email,
+      isTeamLead,
+      role: (isTeamLead ? 'admin' : 'member') as UserRole,
+      username: id,
+    }))
+  )
 
   return (
     <Container component="main" maxWidth="md" data-testid="team">
@@ -50,7 +60,7 @@ const TeamView = () => {
               </Typography>
             </Grid>
             <Grid item xs={12} md={12}>
-              <TeamMembersTable members={members} />
+              <TeamMembersTable members={membersTableRows} />
             </Grid>
           </Grid>
         </Box>

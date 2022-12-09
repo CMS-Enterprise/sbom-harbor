@@ -11,10 +11,10 @@ import InputLabel from '@mui/material/InputLabel'
 import Typography from '@mui/material/Typography'
 import AddCircleIcon from '@mui/icons-material/AddCircleOutline'
 import TeamMemberReadOnlyField from '@/views/Dashboard/Team/components/TeamMemberReadOnlyField'
-import { TeamMember } from '@/types'
+import { User } from '@/types'
 
 type TeamMembersSectionProps = {
-  members?: TeamMember[]
+  members?: User[]
   // TODO: add email field validation
   newEmail?: string
   title: string
@@ -28,7 +28,7 @@ type TeamMembersSectionProps = {
  * A component that renders a read-only field for a team member
  * with button to remove the member from the team on the right.
  * @param {TeamMembersSectionProps} props
- * @param {TeamMember[]} props.members a list of objects representing team
+ * @param {User[]} props.members a list of objects representing team
  *  members to be included in the team once the form is submitted to update it.
  * @param {string} props.newEmail the email of a new member to be added
  * @param {string} props.title the title of the section (e.g. 'Admins' or 'Members')

@@ -18,15 +18,12 @@ export const defaultCodebase: Codebase = {
 export const defaultTeam: FormTeamState = {
   name: '',
   projects: {},
-  members: [],
-  tokens: [],
+  members: {},
+  tokens: {},
 }
 
 export const defaultFormState: FormState = {
+  ...defaultTeam,
   newAdminEmail: '',
   newMemberEmail: '',
-  projects: {},
-  members: [],
-  tokens: [],
-  name: '',
 }

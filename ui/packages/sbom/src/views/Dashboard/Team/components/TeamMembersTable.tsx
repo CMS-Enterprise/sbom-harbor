@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography'
 import { DataGrid, GridColDef } from '@mui/x-data-grid'
 import CogIcon from 'mdi-material-ui/Cog'
 import AccountIcon from 'mdi-material-ui/AccountOutline'
-import { UserTableRowType } from '@/types'
+import { UserRole, UserTableRowType } from '@/types'
 import UserAvatar from '@/components/UserAvatar'
 
 type UserRoleToIconObject = {
@@ -76,7 +76,10 @@ const columns: GridColDef[] = [
     renderCell: ({
       // if the user's "isTeamLead" property is true, then set the user's
       // role to "admin". otherwise, set the user's role to "member".
-      row: { isTeamLead = false, role = isTeamLead ? 'admin' : 'member' },
+      row: {
+        isTeamLead = false,
+        role = (isTeamLead ? 'admin' : 'member') as UserRole,
+      },
     }: RenderCellProps) => (
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         {roleIcons[role]}

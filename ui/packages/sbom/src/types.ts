@@ -25,12 +25,12 @@ export type AppStateSlice<P> = {
 }
 
 export type AppState = {
-  teams: Array<TeamApiResponse>
+  teams: Array<TeamModel>
 }
 
 export type AppStateTeam = {
   name: string
-  members: TeamMember[]
+  members: User[]
   projects: Project[]
   tokens: Token[]
   memberTableRows: UserTableRowType[]
@@ -76,13 +76,16 @@ export type UserDataType =
       })
   | null
 
-export type UserTableRowType = {
+export type User = {
   id: string
   email: string
   isTeamLead: boolean
+}
+
+export type UserTableRowType = User & {
   avatarSrc?: string
   name?: string
-  role?: 'admin' | 'member'
+  role?: UserRole
   username?: string
 }
 
@@ -95,40 +98,36 @@ export type TokenRowType = {
   token: string
 }
 
+/**
+ * List of user roles to display in a table of members
+ * @see {@link @cyclone-dx/ui/sbom/components/TeamMembersTable}
+ */
+export enum UserRole {
+  ADMIN = 'admin',
+  MEMBER = 'member',
+}
+
 // ** Teams
 
-// a team as it is stored in the database
+// a team as it is set in the app state
 export type Team = {
   id: string
   name: string
-  members: Array<TeamMember>
+  members: Record<string, User>
   projects: Record<string, Project>
   tokens: Record<string, Token>
 }
 
-export type TeamApiResponse = {
+// a team as it is returned from the API
+export type TeamModel = {
   id: string
   name: string
-  members: Array<TeamMember>
-  projects: Array<ProjectResponse>
+  members: Array<User>
+  projects: Array<ProjectModel>
   tokens: Array<Token>
 }
 
-export type TeamMember = {
-  id: string
-  email: string
-  isTeamLead: boolean
-}
-
-export type Token = {
-  id: string
-  name: string
-  created: string | number
-  expires: string | number
-  enabled: boolean
-  token: string
-}
-
+// a project as it is set in the app state
 export type Project = {
   id: string
   name: string
@@ -136,18 +135,30 @@ export type Project = {
   codebases: Record<string, Codebase>
 }
 
-export type ProjectResponse = {
+// a project as it is returned from the API
+export type ProjectModel = {
   id: string
   name: string
   fisma: string
   codebases: Codebase[]
 }
 
+// a codebase as it is returned from the API and set in the app state
 export type Codebase = {
   id: string
   name: string
   language: CodebaseLanguage | ''
   buildTool: BuildTool | ''
+}
+
+// a token as it is returned from the API and set in the app state
+export type Token = {
+  id: string
+  name: string
+  created: string | number
+  expires: string | number
+  enabled: boolean
+  token: string
 }
 
 // TODO: some of these are frameworks, not languages
