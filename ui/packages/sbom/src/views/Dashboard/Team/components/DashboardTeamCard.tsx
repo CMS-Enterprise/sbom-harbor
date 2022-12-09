@@ -20,17 +20,17 @@ const DashboardTeamCard = ({ team }: { team: Team }): JSX.Element =>
             component="span"
             sx={{ color: 'primary.main', fontWeight: 'bold' }}
           >
-            {team?.name}
+            {team.name}
           </Box>
         </Typography>
         <Typography variant="h6">
-          <>{Object.keys(team?.projects).length || 0} Projects</>
+          <>{Object.values(team.projects).length || 0} Projects</>
         </Typography>
         <Typography variant="body2" sx={{ mb: 3.25 }}>
-          <>{team?.members?.length || 0} Members</>
+          <>{Object.values(team.members).length || 0} Members</>
         </Typography>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Link to={`teams/${team?.id}`}>View</Link>
+          <Link to={`teams/${team.id}`}>View</Link>
         </Box>
       </CardContent>
     </Card>
