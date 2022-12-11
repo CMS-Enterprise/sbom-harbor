@@ -1,55 +1,110 @@
 import harborRequest from '@/utils/harborRequest'
 import { FormState } from '@/views/Dashboard/Team/types'
-import { User } from '@/types'
 
 type UpdateTeamParams = {
   abortController?: AbortController
-  admins: User[]
   formInput: FormState
   jwtToken: string
-  members: User[]
   newTeamRouteMatch: boolean
   teamId: string
 }
 
 const updateTeam = async ({
-  abortController = new AbortController(),
-  admins,
   formInput,
-  jwtToken,
-  members,
-  newTeamRouteMatch,
   teamId,
+  jwtToken,
+  newTeamRouteMatch,
+  abortController = new AbortController(),
 }: UpdateTeamParams) => {
-  // filter out projects with empty name values from the projects and
-  // then map the codebases of each project to an array of codebases.
-  // TODO: add project schema validation to the form to prevent this from happening
-  const projectValues = Object.values(formInput.projects)
-    .filter((p) => !!p.name)
-    .map(({ codebases, ...rest }) => ({
-      ...rest,
-      codebases: Object.values(codebases),
-    }))
-
-  // filter out any empty email values from the projects object
-  // TODO: add emailvalidation to the form to prevent this from happening
-  const membersValues = [...admins, ...members].filter((m) => !!m.email)
-
-  // make request to update teams data in the database.
   return harborRequest({
-    // determine the endpoint to use based on if this is a create or edit form.
-    path: newTeamRouteMatch ? '/teams' : `/team/${teamId}`,
-    // determine the request verb based on if this is a create or edit form.
+    /**
+     * The path of the request.
+     * @type {string}
+     *
+     * The path is /team if this is a new team, otherwise it is /team/:teamId.
+     * This is determined by the newTeamRouteMatch boolean, which is a truthy
+     * value if the route matches the new team route. Otherwise, it is null.
+     *
+     * @see @/views/Dashboard/Team/TeamForm.tsx for the route match.
+     * @see @/router/router.tsx for the route definitions.
+     * @see https://reactrouter.com/web/api/match
+     */
+    path: newTeamRouteMatch ? '/team' : `/team/${teamId}`,
+
+    /**
+     * The method of the request.
+     * @type {string}
+     *
+     * The method is POST if this is a new team, otherwise it is PUT.
+     * This is determined by the newTeamRouteMatch boolean, which is a truthy
+     *  value if the route matches the new team route. Otherwise, it is null.
+     *
+     * @see @/views/Dashboard/Team/TeamForm.tsx for the route match.
+     * @see @/router/router.tsx for the route definitions.
+     * @see https://reactrouter.com/web/api/match
+     */
     method: newTeamRouteMatch ? 'POST' : 'PUT',
-    // pass the jwt token from the authLoader to the request to authenticate the user.
-    jwtToken,
-    // add the final object representing the team data to send to the server.
+
+    /**
+     * The body of the request.
+     * @type {Object} body
+     * @property {string} body.name The name of the team.
+     * @property {Member[]} body.members List of team members.
+     * @property {Project[]} body.projects List of team projects.
+     * @property {Token[]} body.tokens List of team tokens.
+     */
     body: {
+      /**
+       * The name of the team.
+       * @type {string}
+       */
       name: formInput.name,
-      members: membersValues,
-      projects: projectValues,
+
+      /**
+       * List of team members.
+       * @type {Member[]}
+       *
+       * This maps the members object to an array of members.
+       *
+       * Any members without an email are filtered out.
+       * TODO: add email validation to the form instead of filtering here.
+       */
+      members: Object.values(formInput.members).filter((m) => !!m.email),
+
+      /**
+       * List of team projects.
+       * @type {Project[]}
+       *
+       * This maps the projects object to an array of projects and maps
+       *  the codebases object of each project to an array of codebases.
+       *
+       * Any projects without a name are filtered out.
+       * TODO: add project validation to the form instead of filtering here.
+       */
+      projects: Object.values(formInput.projects)
+        .filter((p) => !!p.name)
+        .map(({ codebases, ...rest }) => ({
+          ...rest,
+          codebases: Object.values(codebases),
+        })),
+
+      /**
+       * List of team tokens.
+       * @type {Token[]}
+       *
+       * This maps the tokens object to an array of tokens.
+       * TODO: add token validation to the form.
+       */
       tokens: Object.values(formInput.tokens),
     },
+
+    /**
+     * The JWT token to use for authentication.
+     * @type {string}
+     * @see @/router/authLoader
+     */
+    jwtToken,
+
     // pass the abort controller to the request to allow for cancelling the request.
     signal: abortController.signal,
   })

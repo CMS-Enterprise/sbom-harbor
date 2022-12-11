@@ -52,7 +52,7 @@ const TeamForm = () => {
   const { teamId = '' } = useParams()
 
   // route match hook to determine if this is an edit or create form
-  const newTeamRouteMatch = useMatch('/team/new')
+  const newTeamRouteMatch = useMatch('/app/team/new')
 
   // route navigate hook to redirect back to team view page on cancel
   const navigate = useNavigate()
@@ -192,6 +192,7 @@ const TeamForm = () => {
    */
   const handleCancel = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
+    // go back to the previous route.
     navigate(-1)
   }
 
@@ -207,6 +208,7 @@ const TeamForm = () => {
   ): Promise<() => void> => {
     event.preventDefault()
     const abortController = new AbortController()
+
     // if already submitting or there's no token, return early.
     if (isSubmitting === true || !jwtToken) {
       return () => abortController.abort()
@@ -215,13 +217,11 @@ const TeamForm = () => {
     try {
       setSubmitting(true)
       await updateTeam({
+        abortController,
+        formInput,
         jwtToken,
         newTeamRouteMatch: !!newTeamRouteMatch,
         teamId,
-        formInput,
-        members,
-        admins,
-        abortController,
       })
       setSubmitting(false)
       setAlert({
