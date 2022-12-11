@@ -20,6 +20,14 @@ export type AppConfig = {
   USER_POOL_CLIENT_ID: string
 }
 
+export enum RouteIds {
+  MAIN = 'main',
+  LOGIN = 'login',
+  LOGOUT = 'logout',
+  TEAM = 'team',
+  TEAM_EDIT = 'team-edit',
+}
+
 export type AppStateSlice<P> = {
   [k: string]: P
 }

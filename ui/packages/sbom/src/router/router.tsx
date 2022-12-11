@@ -1,10 +1,11 @@
 /**
  * Component that renders all routes in the application.
- * @module @cyclonedx/ui/sbom/Routes
+ * @module @cyclonedx/ui/sbom/router
  * @see {@link @cyclonedx/ui/sbom/Main} for usage.
  */
 import * as React from 'react'
 import { createHashRouter } from 'react-router-dom'
+import { RouteIds } from '@/types'
 
 // ** Public Views
 import SignIn from '@/views/SignIn/SignIn'
@@ -29,6 +30,7 @@ import configureCognito from '@/utils/configureCognito'
 
 const router = createHashRouter([
   {
+    id: RouteIds.MAIN,
     path: '/',
     element: <Main />,
     loader: configureCognito,
@@ -38,10 +40,12 @@ const router = createHashRouter([
         element: <NavigateToLogin />,
       },
       {
+        id: RouteIds.LOGIN,
         path: 'login',
         element: <SignIn />,
       },
       {
+        id: RouteIds.LOGOUT,
         path: 'logout',
         element: <SignOut />,
       },
@@ -71,6 +75,7 @@ const router = createHashRouter([
             ],
           },
           {
+            id: RouteIds.TEAM,
             path: 'teams/:teamId',
             loader: teamLoader,
             errorElement: <ErrorBoundary />,
@@ -82,6 +87,7 @@ const router = createHashRouter([
                 errorElement: <ErrorBoundary />,
               },
               {
+                id: RouteIds.TEAM_EDIT,
                 path: 'edit',
                 element: <TeamForm />,
                 loader: teamLoader,
