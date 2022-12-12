@@ -1,12 +1,12 @@
 import reduceArrayToMap from '@/selectors/reduceArrayToMap'
-import { Project, ProjectModel } from '@/types'
+import { Project, ProjectEntity } from '@/types'
 
 const reduceProjectsArrayToMap = (
-  projects: ProjectModel[]
+  projects: ProjectEntity[]
 ): Record<string, Project> =>
   reduceArrayToMap(
     projects.map(
-      ({ codebases, ...rest }: ProjectModel): Project => ({
+      ({ codebases, ...rest }: ProjectEntity): Project => ({
         ...rest,
         codebases: reduceArrayToMap(codebases),
       })

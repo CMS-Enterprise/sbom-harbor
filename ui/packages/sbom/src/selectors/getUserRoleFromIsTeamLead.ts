@@ -1,6 +1,8 @@
-import { User, UserRole } from '@/types'
+import { TeamMember, TeamMemberRole } from '@/types'
 
-const getUserRoleFromIsTeamLead = ({ isTeamLead = false }: User): UserRole =>
-  isTeamLead ? UserRole.ADMIN : UserRole.MEMBER
+const getUserRoleFromIsTeamLead = ({
+  isTeamLead = false,
+}: TeamMember): TeamMemberRole =>
+  isTeamLead ? TeamMemberRole.TEAM_LEAD : TeamMemberRole.MEMBER
 
 export default getUserRoleFromIsTeamLead

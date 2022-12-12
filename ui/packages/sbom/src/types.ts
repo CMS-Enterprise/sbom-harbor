@@ -7,8 +7,13 @@ import {
   CognitoUserSession,
 } from 'amazon-cognito-identity-js'
 
-// ** App
+//* Application Types
+//*--------------------------------------------------------/
 
+/**
+ * The shape of the global CONFIG object provided by craco (webpack).
+ * @see {@link @cyclonedx/ui-sbom/craco.config.js}
+ */
 export type AppConfig = {
   AWS_REGION: string | 'us-east-1'
   CF_DOMAIN: string
@@ -28,31 +33,8 @@ export enum RouteIds {
   TEAM_EDIT = 'team-edit',
 }
 
-export type AppStateSlice<P> = {
-  [k: string]: P
-}
-
-export type AppState = {
-  teams: Array<TeamModel>
-}
-
-export type AppStateTeam = {
-  name: string
-  members: User[]
-  projects: Project[]
-  tokens: Token[]
-  memberTableRows: UserTableRowType[]
-}
-
-export type ThemeColor =
-  | 'primary'
-  | 'secondary'
-  | 'error'
-  | 'warning'
-  | 'info'
-  | 'success'
-
-// ** Users
+//* User (Cognito)
+//*--------------------------------------------------------/
 
 export type CognitoUserInfo = {
   attributes: {
@@ -84,20 +66,72 @@ export type UserDataType =
       })
   | null
 
-export type User = {
+//* Teams
+//*--------------------------------------------------------/
+
+/**
+ * A team as it is set in the app state
+ */
+export type Team = {
+  id: string
+  name: string
+  members: Record<string, TeamMember>
+  projects: Record<string, Project>
+  tokens: Record<string, Token>
+}
+
+/**
+ * A team as it is returned from the API
+ */
+export type TeamEntity = {
+  id: string
+  name: string
+  members: Array<TeamMember>
+  projects: Array<ProjectEntity>
+  tokens: Array<Token>
+}
+
+//* Team Members
+//*--------------------------------------------------------/
+
+/**
+ * A user object representing a member of a team
+ */
+export type TeamMember = {
   id: string
   email: string
   isTeamLead: boolean
 }
 
-export type UserTableRowType = User & {
+/**
+ * The possible roles a team member can be assigned.
+ * @see {@link @cyclonedx/ui-sbom/components/TeamMembersTable}
+ */
+export enum TeamMemberRole {
+  MEMBER = 'member',
+  TEAM_LEAD = 'team lead',
+}
+
+/**
+ * Schema for a row representing a TeamMember in `TeamMembersTable`.
+ * @see {@link @cyclonedx/ui-sbom/views/Dashboard/Team/components/TeamMembersTable}
+ */
+export type TeamMemberTableRow = TeamMember & {
   avatarSrc?: string
   name?: string
-  role?: UserRole
+  role?: TeamMemberRole
   username?: string
 }
 
-export type TokenRowType = {
+//* Tokens
+//*--------------------------------------------------------/
+
+/**
+ * A token as it is returned by the API and consumed in the app.
+ * Also the schema for a row representing a codebase in `TokensTable`.
+ * @see {@link @cyclonedx/ui-sbom/views/Dashboard/Team/components/TokensTable}
+ */
+export type Token = {
   id: string
   name: string
   created: string
@@ -106,36 +140,12 @@ export type TokenRowType = {
   token: string
 }
 
+//* Projects
+//*--------------------------------------------------------/
+
 /**
- * List of user roles to display in a table of members
- * @see {@link @cyclone-dx/ui/sbom/components/TeamMembersTable}
+ * A project as it is set in the app state
  */
-export enum UserRole {
-  ADMIN = 'admin',
-  MEMBER = 'member',
-}
-
-// ** Teams
-
-// a team as it is set in the app state
-export type Team = {
-  id: string
-  name: string
-  members: Record<string, User>
-  projects: Record<string, Project>
-  tokens: Record<string, Token>
-}
-
-// a team as it is returned from the API
-export type TeamModel = {
-  id: string
-  name: string
-  members: Array<User>
-  projects: Array<ProjectModel>
-  tokens: Array<Token>
-}
-
-// a project as it is set in the app state
 export type Project = {
   id: string
   name: string
@@ -143,15 +153,22 @@ export type Project = {
   codebases: Record<string, Codebase>
 }
 
-// a project as it is returned from the API
-export type ProjectModel = {
+/**
+ * A project as it is returned from the API
+ */
+export type ProjectEntity = {
   id: string
   name: string
   fisma: string
   codebases: Codebase[]
 }
 
-// a codebase as it is returned from the API and set in the app state
+//* Codebases
+//*--------------------------------------------------------/
+
+/**
+ * A codebase as it is returned from the API and consumed in the app.
+ */
 export type Codebase = {
   id: string
   name: string
@@ -159,17 +176,9 @@ export type Codebase = {
   buildTool: BuildTool | ''
 }
 
-// a token as it is returned from the API and set in the app state
-export type Token = {
-  id: string
-  name: string
-  created: string | number
-  expires: string | number
-  enabled: boolean
-  token: string
-}
-
-// TODO: some of these are frameworks, not languages
+/**
+ * The list of possible languages a codebase can be written in.
+ */
 export enum CodebaseLanguage {
   C = 'C',
   CPP = 'C++',
@@ -186,6 +195,9 @@ export enum CodebaseLanguage {
   OTHER = 'Other',
 }
 
+/**
+ * The list of possible build tools a codebase can use.
+ */
 export enum BuildTool {
   ANT = 'ant',
   GRADLE = 'gradle',
@@ -196,3 +208,16 @@ export enum BuildTool {
   VISUAL_STUDIO_BUILD_TOOLS = 'Visual Studio Build Tools',
   OTHER = 'Other',
 }
+
+//* Theme
+//*--------------------------------------------------------/
+
+export type ThemeColor =
+  | 'primary'
+  | 'secondary'
+  | 'error'
+  | 'warning'
+  | 'info'
+  | 'success'
+
+export type ThemeSkin = 'filled' | 'light' | 'light-static'

@@ -5,12 +5,12 @@
 import * as React from 'react'
 import MuiAvatar, { AvatarProps } from '@mui/material/Avatar'
 import { lighten, useTheme } from '@mui/material/styles'
-import { ThemeColor } from '@/types'
 import useBgColor, { UseBgColorType } from '@/hooks/useBgColor'
+import { ThemeColor, ThemeSkin } from '@/types'
 
 type InputProps = AvatarProps & {
   color?: ThemeColor
-  skin?: 'filled' | 'light' | 'light-static'
+  skin?: ThemeSkin
 }
 
 const Avatar = React.forwardRef((props: InputProps, ref: React.Ref<any>) => {
@@ -19,7 +19,7 @@ const Avatar = React.forwardRef((props: InputProps, ref: React.Ref<any>) => {
   const bgColors: UseBgColorType = useBgColor()
 
   const getAvatarStyles = (
-    skin: 'filled' | 'light' | 'light-static' | undefined,
+    skin: ThemeSkin | undefined,
     skinColor: ThemeColor
   ) => {
     if (skin === 'light') {

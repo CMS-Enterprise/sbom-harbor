@@ -1,9 +1,9 @@
-import { Team, TeamModel } from '@/types'
+import { Team, TeamEntity } from '@/types'
 import reduceProjectsArrayToMap from '@/selectors/reduceProjectsArrayToMap'
 import reduceArrayToMap from '@/selectors/reduceArrayToMap'
 
-const mapTeamsPropertiesToObjects = (teams: TeamModel[]): Team[] =>
-  teams.map(({ members, projects, tokens, ...rest }: TeamModel) => ({
+const mapTeamsPropertiesToObjects = (teams: TeamEntity[]): Team[] =>
+  teams.map(({ members, projects, tokens, ...rest }: TeamEntity) => ({
     ...rest,
     members: reduceArrayToMap(members),
     projects: reduceProjectsArrayToMap(projects),

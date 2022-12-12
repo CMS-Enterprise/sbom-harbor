@@ -6,7 +6,7 @@ import * as React from 'react'
 import { styled } from '@mui/material/styles'
 import Avatar from '@/components/mui/Avatar'
 import { getInitials } from '@/utils/get-initials'
-import { UserTableRowType } from '@/types'
+import { TeamMemberTableRow } from '@/types'
 
 const StyledAvatar = styled(Avatar, {
   name: 'Avatar',
@@ -31,7 +31,7 @@ const StyledAvatar = styled(Avatar, {
  * @param {string} props.name The user's full name.
  * @returns {JSX.Element} A component that renders a table row.
  */
-const UserAvatar = ({ avatarSrc, email, name }: UserTableRowType) => {
+const UserAvatar = ({ avatarSrc, email, name }: TeamMemberTableRow) => {
   // if there is a source url for the avatar image, render it.
   if (avatarSrc) {
     return <StyledAvatar src={avatarSrc} />

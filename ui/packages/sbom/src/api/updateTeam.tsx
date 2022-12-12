@@ -1,19 +1,22 @@
 import harborRequest from '@/utils/harborRequest'
 import { FormState } from '@/views/Dashboard/Team/types'
+import { TeamMember } from '@/types'
 
 type UpdateTeamParams = {
-  abortController?: AbortController
-  formInput: FormState
-  jwtToken: string
   newTeamRouteMatch: boolean
   teamId: string
+  jwtToken: string
+  formInput: FormState
+  admins: TeamMember[]
+  members: TeamMember[]
+  abortController?: AbortController
 }
 
 const updateTeam = async ({
-  formInput,
+  newTeamRouteMatch,
   teamId,
   jwtToken,
-  newTeamRouteMatch,
+  formInput,
   abortController = new AbortController(),
 }: UpdateTeamParams) => {
   return harborRequest({

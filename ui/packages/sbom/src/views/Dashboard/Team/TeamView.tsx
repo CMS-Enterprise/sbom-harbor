@@ -13,7 +13,7 @@ import Typography from '@mui/material/Typography'
 import TeamMembersTable from './components/TeamMembersTable'
 import TeamViewProjectCard from './components/TeamViewProjectCard'
 import TokensTable from './components/TokensTable'
-import { Team, UserRole } from '@/types'
+import { Team, TeamMemberRole } from '@/types'
 
 const TeamView = () => {
   const {
@@ -29,7 +29,7 @@ const TeamView = () => {
       id,
       email,
       isTeamLead,
-      role: (isTeamLead ? 'admin' : 'member') as UserRole,
+      role: (isTeamLead ? 'admin' : 'member') as TeamMemberRole,
       username: id,
     }))
   )

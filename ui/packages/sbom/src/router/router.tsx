@@ -28,6 +28,12 @@ import teamLoader from '@/router/teamLoader'
 import teamsLoader from '@/router/teamsLoader'
 import configureCognito from '@/utils/configureCognito'
 
+/**
+ * The hash router for the application that defines routes
+ *  and specifies the loaders for routes with dynamic data.
+ * @see {@link https://reactrouter.com/web/api/HashRouter HashRouter}
+ * @see {@link https://reactrouter.com/en/main/route/loader loader}
+ */
 const router = createHashRouter([
   {
     id: RouteIds.MAIN,

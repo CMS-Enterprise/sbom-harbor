@@ -4,20 +4,24 @@
 import * as React from 'react'
 import { useAuthState } from '@/hooks/useAuth'
 import { CONFIG } from '@/utils/constants'
-import { AppState, TeamModel } from '@/types'
+import { TeamEntity } from '@/types'
+
+type DataState = {
+  teams: Array<TeamEntity>
+}
 
 const INITIAL_STATE = {
-  teams: [] as TeamModel[],
+  teams: [] as TeamEntity[],
   setData: () => null,
   fetchTeams: () => Promise<null>,
   setTeams: () => null,
-} as AppState
+} as DataState
 
 const DataContext = React.createContext<{
-  data: AppState
-  fetchTeams: (controller: AbortController) => Promise<TeamModel[]>
-  setData: (values: AppState) => void
-  setTeams: (teams: TeamModel[]) => void
+  data: DataState
+  fetchTeams: (controller: AbortController) => Promise<TeamEntity[]>
+  setData: (values: DataState) => void
+  setTeams: (teams: TeamEntity[]) => void
 }>({
   data: INITIAL_STATE,
   fetchTeams: () => Promise.resolve([]),
@@ -31,12 +35,12 @@ export const DataProvider = ({
   initialState = INITIAL_STATE,
 }: {
   children: JSX.Element
-  initialState?: AppState
+  initialState?: DataState
 }) => {
   const { jwtToken } = useAuthState()
-  const [data, dispatchSetData] = React.useState<AppState>(initialState)
+  const [data, dispatchSetData] = React.useState<DataState>(initialState)
 
-  const setData = (values: AppState) => {
+  const setData = (values: DataState) => {
     dispatchSetData((prevData) => ({
       ...prevData,
       ...values,
@@ -44,7 +48,7 @@ export const DataProvider = ({
   }
 
   // dispatches update to the user data state in the context provider.
-  const setTeams = React.useCallback((teams: TeamModel[] = []) => {
+  const setTeams = React.useCallback((teams: TeamEntity[] = []) => {
     setData({ ...data, teams })
   }, [])
 

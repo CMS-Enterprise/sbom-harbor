@@ -2,7 +2,7 @@
  * Factory to create a function that will make a request to the Harbor API
  * @module @cyclonedx/ui/sbom/utils/harborRequest
  */
-import { CONFIG } from './constants'
+import { CONFIG } from '@/utils/constants'
 
 type Params = {
   body?: Record<string, unknown>

@@ -1,14 +1,14 @@
 import getUserRoleFromIsTeamLead from '../getUserRoleFromIsTeamLead'
-import { User, UserRole } from '@/types'
+import { TeamMember, TeamMemberRole } from '@/types'
 
 const user = {
   id: 'user-0',
   isTeamLead: true,
   email: 'user-0@gmail.com',
-} as User
+} as TeamMember
 
 describe('getUserRoleFromIsTeamLead', () => {
   it('returns the correct user role', () => {
-    expect(getUserRoleFromIsTeamLead(user)).toBe(UserRole.ADMIN)
+    expect(getUserRoleFromIsTeamLead(user)).toBe(TeamMemberRole.TEAM_LEAD)
   })
 })

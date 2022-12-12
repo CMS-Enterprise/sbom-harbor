@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography'
 import { DataGrid, GridColDef } from '@mui/x-data-grid'
 import CogIcon from 'mdi-material-ui/Cog'
 import AccountIcon from 'mdi-material-ui/AccountOutline'
-import { UserRole, UserTableRowType } from '@/types'
+import { TeamMemberRole, TeamMemberTableRow } from '@/types'
 import UserAvatar from '@/components/UserAvatar'
 
 type UserRoleToIconObject = {
@@ -25,7 +25,7 @@ const roleIcons: UserRoleToIconObject = Object.freeze({
 })
 
 type RenderCellProps = {
-  row: UserTableRowType
+  row: TeamMemberTableRow
 }
 
 /**
@@ -78,7 +78,7 @@ const columns: GridColDef[] = [
       // role to "admin". otherwise, set the user's role to "member".
       row: {
         isTeamLead = false,
-        role = (isTeamLead ? 'admin' : 'member') as UserRole,
+        role = (isTeamLead ? 'admin' : 'member') as TeamMemberRole,
       },
     }: RenderCellProps) => (
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -94,13 +94,13 @@ const columns: GridColDef[] = [
 ]
 
 type InputProps = {
-  members: UserTableRowType[]
+  members: TeamMemberTableRow[]
 }
 
 /**
  * A component that renders a table of team members with their details.
  * @param {InputProps} props Input props for the TeamMembersTable component.
- * @param {UserTableRowType[]} props.members - The list of team members.
+ * @param {TeamMemberTableRow[]} props.members - The list of team members.
  * @returns {JSX.Element} A component that renders a datagrid table of team members.
  */
 const TeamMembersTable = ({ members }: InputProps) => (

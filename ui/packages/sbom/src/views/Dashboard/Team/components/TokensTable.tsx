@@ -6,10 +6,10 @@ import * as React from 'react'
 import Card from '@mui/material/Card'
 import Typography from '@mui/material/Typography'
 import { DataGrid, GridColDef } from '@mui/x-data-grid'
-import { Token, TokenRowType } from '@/types'
+import { Token } from '@/types'
 
 type RenderCellProps = {
-  row: TokenRowType
+  row: Token
 }
 
 const DateRow = ({ date }: { date: Date }) => (
