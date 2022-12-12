@@ -7,8 +7,6 @@ const user = {
   email: 'user-0@gmail.com',
 } as TeamMember
 
-describe('getUserRoleFromIsTeamLead', () => {
-  it('returns the correct user role', () => {
-    expect(getUserRoleFromIsTeamLead(user)).toBe(TeamMemberRole.TEAM_LEAD)
-  })
+test('returns the correct user role', () => {
+  expect(getUserRoleFromIsTeamLead(user)).toBe(TeamMemberRole.TEAM_LEAD)
 })

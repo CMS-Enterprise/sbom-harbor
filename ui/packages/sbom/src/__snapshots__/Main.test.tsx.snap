@@ -1,10 +1,24 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Main matches snapshot 1`] = `
+exports[`matches snapshot 1`] = `
 Object {
   "asFragment": [Function],
-  "baseElement": <body />,
-  "container": <div />,
+  "baseElement": <body>
+    <div>
+      <main
+        data-testid="main"
+      >
+        <div />
+      </main>
+    </div>
+  </body>,
+  "container": <div>
+    <main
+      data-testid="main"
+    >
+      <div />
+    </main>
+  </div>,
   "debug": [Function],
   "findAllByAltText": [Function],
   "findAllByDisplayValue": [Function],
@@ -59,4 +73,12 @@ Object {
 }
 `;
 
-exports[`Main matches snapshot 2`] = `<div />`;
+exports[`matches snapshot 2`] = `
+<div>
+  <main
+    data-testid="main"
+  >
+    <div />
+  </main>
+</div>
+`;

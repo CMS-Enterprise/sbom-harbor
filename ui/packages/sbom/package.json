@@ -5,8 +5,8 @@
   "scripts": {
     "start": "craco start",
     "build": "craco build",
-    "test": "craco test  --collectCoverage --maxWorkers=50% --watchAll=false",
-    "watch": "craco test  --collectCoverage --maxWorkers=25% --watch",
+    "test": "craco test  --coverage --maxWorkers=50% --watchAll=false --all",
+    "watch": "craco test  --coverage --maxWorkers=25% --watch",
     "check": "source-map-explorer 'build/static/js/*.js'",
     "clean": "rimraf build coverage"
   },

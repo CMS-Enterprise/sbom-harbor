@@ -27,30 +27,27 @@ jest.mock('./hooks/useAuth', () => ({
   ),
 }))
 
-describe('Main', () => {
-  let component: RenderResult
+let component: RenderResult
 
-  beforeAll(() => {
-    act(() => {
-      component = render(
-        <Router>
-          <Main />
-        </Router>
-      )
-    })
+beforeEach(() => {
+  act(() => {
+    component = render(
+      <Router>
+        <Main />
+      </Router>
+    )
   })
+})
 
-  afterAll(() => {
-    cleanup()
-    jest.resetAllMocks()
-  })
+afterEach(() => cleanup())
 
-  it('renders', () => {
-    expect(screen.getByRole('main')).toBeVisible()
-  })
+afterAll(() => jest.resetAllMocks())
 
-  it('matches snapshot', () => {
-    expect(component).toMatchSnapshot()
-    expect(component.container).toMatchSnapshot()
-  })
+test('renders', () => {
+  expect(screen.getByRole('main')).toBeVisible()
+})
+
+test('matches snapshot', () => {
+  expect(component).toMatchSnapshot()
+  expect(component.container).toMatchSnapshot()
 })

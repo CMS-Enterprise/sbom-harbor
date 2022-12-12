@@ -2,6 +2,8 @@
  * Mock Auth from @aws-amplify/auth
  * @see {@link @cyclone-dx/ui-sbom/utils/configureCognito.js}
  */
+import { Amplify } from 'aws-amplify'
+import configureCognito from '../configureCognito'
 
 // Mock the Amplify module to spy on the Auth.configure method
 jest.mock('aws-amplify', () => ({
@@ -10,26 +12,16 @@ jest.mock('aws-amplify', () => ({
   },
 }))
 
-import { Amplify } from 'aws-amplify'
-import configureCognito from '../configureCognito'
+beforeEach(() => jest.resetAllMocks())
 
-describe('configureAuth', () => {
-  let result: null
+afterAll(() => jest.clearAllMocks())
 
-  beforeEach(() => {
-    jest.resetAllMocks()
-    result = configureCognito()
-  })
+test('should call Auth.configure', () => {
+  configureCognito()
+  expect(Amplify.configure).toHaveBeenCalled()
+})
 
-  afterAll(() => {
-    jest.clearAllMocks()
-  })
-
-  it('should call Auth.configure', () => {
-    expect(Amplify.configure).toHaveBeenCalled()
-  })
-
-  it('returns null', () => {
-    expect(result).toBeNull()
-  })
+test('returns null', () => {
+  const result = configureCognito()
+  expect(result).toBeNull()
 })
