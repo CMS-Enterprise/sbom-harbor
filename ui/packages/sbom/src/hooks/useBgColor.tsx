@@ -3,7 +3,7 @@
  * @module @cyclonedx/ui-sbom/hooks/useBgColor
  */
 import { useTheme } from '@mui/material/styles'
-import { hexToRGBA } from '@/utils/hex-to-rgba'
+import { hexToRGBA } from '@/utils/hexToRGBA'
 
 export type UseBgColorType = {
   [key: string]: {

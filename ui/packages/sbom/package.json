@@ -35,7 +35,6 @@
     "aws-amplify": "5.0.4",
     "classnames": "2.3.2",
     "clipboard-copy": "4.0.1",
-    "date-fns": "2.29.3",
     "lodash": "4.17.21",
     "mdi-material-ui": "7.6.0",
     "react": "18.2.0",

@@ -5,7 +5,7 @@
 import * as React from 'react'
 import { styled } from '@mui/material/styles'
 import Avatar from '@/components/mui/Avatar'
-import { getInitials } from '@/utils/get-initials'
+import { getInitials } from '@/utils/getInitials'
 import { TeamMemberTableRow } from '@/types'
 
 const StyledAvatar = styled(Avatar, {
