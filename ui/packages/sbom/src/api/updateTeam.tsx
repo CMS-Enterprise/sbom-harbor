@@ -1,14 +1,11 @@
 import harborRequest from '@/utils/harborRequest'
 import { FormState } from '@/views/Dashboard/Team/types'
-import { TeamMember } from '@/types'
 
 type UpdateTeamParams = {
   newTeamRouteMatch: boolean
   teamId: string
   jwtToken: string
   formInput: FormState
-  admins: TeamMember[]
-  members: TeamMember[]
   abortController?: AbortController
 }
 
