@@ -42,9 +42,6 @@ class HarborCognitoClient:
 
         response = self.cognito_client.list_users(
             UserPoolId=self.user_pool_id,
-            AttributesToGet=[
-                "username",
-            ],
             Limit=1,
             Filter=f'email ^= "{user_email}"',
         )

@@ -305,12 +305,25 @@ def test_create_team_with_children():
         headers={"Authorization": jwt},
         json={
             "name": name,
+            "members": [
+                {"email": "sbomadmin@aquia.io", "isTeamLead": "true"},
+            ],
             "projects": [
                 {
                     "name": proj1_name,
+                    "codebases": [
+                        {
+                            "name": proj1_name,
+                        }
+                    ],
                 },
                 {
                     "name": proj2_name,
+                    "codebases": [
+                        {
+                            "name": proj2_name,
+                        }
+                    ],
                 },
             ],
         },
