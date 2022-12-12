@@ -3,7 +3,10 @@
  * @module @cyclonedx/ui/sbom/views/Dashboard/Team/TokensTable
  */
 import * as React from 'react'
+import AddIcon from '@mui/icons-material/Add'
+import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
+import Fab from '@mui/material/Fab'
 import Typography from '@mui/material/Typography'
 import {
   DataGrid,
@@ -12,12 +15,14 @@ import {
   GridRowId,
   GridRowParams,
 } from '@mui/x-data-grid'
-import DateLocaleString from '@/components/DateLocaleString'
-import authLoader from '@/router/authLoader'
 import deleteToken from '@/api/deleteToken'
-import useAlert from '@/hooks/useAlert'
-import { Token } from '@/types'
 import updateToken from '@/api/updateToken'
+import useAlert from '@/hooks/useAlert'
+import authLoader from '@/router/authLoader'
+import DateLocaleString from '@/components/DateLocaleString'
+import TokenCreateDialog from './TokenCreateDialog'
+import { Token } from '@/types'
+import { useDialog } from '@/hooks/useDialog'
 
 type InputProps = {
   teamId: string
@@ -42,14 +47,13 @@ type TokenUpdatePayload = {
  */
 const TokensTable = ({ teamId, tokens }: InputProps) => {
   const { setAlert } = useAlert()
+  const [openDialog] = useDialog()
 
   // set the initial state of the rows to the tokens passed in as props.
   const [rows, setRows] = React.useState<Token[]>(() => tokens)
 
   // update the rows state if the tokens prop changes.
-  React.useEffect(() => {
-    setRows(tokens)
-  }, [tokens])
+  React.useEffect(() => setRows(tokens), [tokens])
 
   /**
    * Callback that makes a request API to delete a token from the team. If the
@@ -270,16 +274,39 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
   )
 
   return (
-    <Card>
-      <DataGrid
-        rows={rows}
-        columns={columns}
-        pagination={undefined}
-        autoHeight
-        disableSelectionOnClick
-        hideFooter
-      />
-    </Card>
+    <>
+      <Card>
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          pagination={undefined}
+          autoHeight
+          disableSelectionOnClick
+          hideFooter
+        />
+      </Card>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          width: '100%',
+          mt: -2,
+          '& > :not(style)': { m: 1 },
+        }}
+      >
+        <Fab
+          color="primary"
+          aria-label="add"
+          onClick={() => {
+            openDialog({
+              children: <TokenCreateDialog teamId={teamId} />,
+            })
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      </Box>
+    </>
   )
 }
 
