@@ -43,3 +43,6 @@ ui/.yarn/*
 # Go generator
 harbor-sbom-generator/main
 harbor-sbom-generator/*.zip
+
+# api documentation
+harbor-documentation/openapi.json

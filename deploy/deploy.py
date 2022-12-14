@@ -7,12 +7,11 @@ from aws_cdk import aws_events as eventbridge
 
 from deploy.constants import AWS_ACCOUNT_ID, AWS_REGION, ENVIRONMENT
 from deploy.stacks import (
+    HarborDevOpsStack,
     SBOMEnrichmentPiplineStack,
-    SBOMGeneratorPipelineStack,
     SBOMSharedResourceStack,
     SBOMUserManagement,
     SBOMWebStack,
-    HarborDevOpsStack,
 )
 from deploy.stacks.SBOMIngressApiStack import SBOMIngressApiStack
 from deploy.util import DynamoTableManager

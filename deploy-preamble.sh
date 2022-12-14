@@ -3,7 +3,7 @@
 # DO NOT EXECUTE THIS DIRECTLY!
 # It is intended to be sourced by other deploy scripts
 
-cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd 
+cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd
 
 declare -A regionShortCodes
 regionShortCodes[us-east-1]="use1"
@@ -21,7 +21,7 @@ fi
 if [[ -z "${ENVIRONMENT}" ]]
 then
   ENV="sandbox"
-  export ENVIRONMENT=ENV
+  export ENVIRONMENT=$ENV
 fi
 
 if [ $AWS_PROFILE = "default" ]; then PROFILE="sandbox"; else PROFILE=$AWS_PROFILE; fi;

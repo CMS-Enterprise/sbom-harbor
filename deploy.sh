@@ -28,8 +28,11 @@ cd ./tmp
 zip -q -r ../dist/lambda.zip . -x '*.pyc'
 cd ..
 
-cdk deploy --require-approval never --concurrency 5 ${ENVIRONMENT}-harbor-shared-resources-${AWS_REGION_SHORT} ${ENVIRONMENT}-harbor-user-management-${AWS_REGION_SHORT} ${ENVIRONMENT}-harbor-backend-${AWS_REGION_SHORT} ${ENVIRONMENT}-harbor-frontend-${AWS_REGION_SHORT} {$ENRICHMENTS}
+cdk deploy --require-approval never --concurrency 6 ${ENVIRONMENT}-harbor-shared-resources-${AWS_REGION_SHORT} ${ENVIRONMENT}-harbor-user-management-${AWS_REGION_SHORT} ${ENVIRONMENT}-harbor-backend-${AWS_REGION_SHORT} ${ENVIRONMENT}-harbor-frontend-${AWS_REGION_SHORT} {$ENRICHMENTS}
+
+./upload-swagger-docs.sh
 
 if [ $UI -eq 1 ]; then
   ./deploy-ui.sh
 fi
+

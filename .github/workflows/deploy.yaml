@@ -84,6 +84,15 @@ jobs:
         run: cdk deploy --all --require-approval never --concurrency 4
         env:
           CF_DOMAIN: ${{ steps.cloudformation.outputs.CF_DOMAIN }}
+
+      - name: GENERATE - open api docs
+        run: | 
+          API_GW_ID=$(aws cloudformation describe-stacks --stack-name "dev-harbor-backend-use2" --query 'Stacks[0].Outputs[?OutputKey==`apigwid`].OutputValue' --output text)
+          CF_DOMAIN=$(aws cloudformation describe-stacks --stack-name "dev-harbor-frontend-use2" --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDomain`].OutputValue' --output text)
+          aws apigatewayv2 export-api --api-id $API_GW_ID --stage-name '$default' --output-type JSON --specification OAS30 ./harbor-documentation/tmp.json
+          cat ./harbor-documentation/tmp.json | jq ".servers[0].url=\"https://$CF_DOMAIN/{basePath}\"" > ./harbor-documentation/openapi.json
+          rm ./harbor-documentation/tmp.json
+          aws s3 sync ./harbor-documentation s3://dev-harbor-web-assets-476877758413-use2/docs/ --delete
       
       # ******************************************************************
       # PUBLISH UI

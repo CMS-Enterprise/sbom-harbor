@@ -1,17 +1,14 @@
+"""This Stack deploys the Web Stack Pipeline"""
+
 import os
 
 import constructs
-from aws_cdk import (
-    aws_cloudfront as cf,
-    aws_iam as iam,
-    aws_s3 as s3,
-    CfnOutput,
-    Duration,
-    Fn,
-    RemovalPolicy,
-    Stack,
-)
+from aws_cdk import CfnOutput, Duration, Fn, RemovalPolicy, Stack
+from aws_cdk import aws_cloudfront as cf
+from aws_cdk import aws_iam as iam
+from aws_cdk import aws_s3 as s3
 from constructs import Construct
+
 from deploy.constants import (
     API_GW_ID_EXPORT_NAME,
     AUTHORIZATION_HEADER,
@@ -22,32 +19,76 @@ from deploy.constants import (
 )
 from deploy.util.SBOMHarborCertificate import Cert as SBOMHarborCert
 
+
 class SBOMWebStack(Stack):
+    """This Stack deploys the Web Stack Pipeline"""
 
     __cwd = os.path.dirname(__file__)
     # TODO: make the UI build output path configurable
     __ui_loc = f"{__cwd}/../../ui/packages/sbom/build"
 
-    def __get_cloudfront_distribution(
-            self: constructs.Construct,
-            apigw_url: str,
-            harbor_cert: SBOMHarborCert,
-            oai: cf.OriginAccessIdentity,
-            website_bucket: s3.Bucket
-    ):
+    def __get_logging_configuration(self):
+        return cf.LoggingConfiguration(
+            bucket=s3.Bucket(
+                self,
+                "cloudfront.logging.bucket",
+                bucket_name="sbom.harbor.cf",
+                public_read_access=False,
+                auto_delete_objects=True,
+                removal_policy=RemovalPolicy.DESTROY,
+            ),
+            include_cookies=False,
+            prefix="prefix",
+        )
 
-        kw_args = {}
-        if harbor_cert.enabled:
-            kw_args["viewer_certificate"] = harbor_cert.get_viewer_cert()
+    def __init__(
+        self,
+        scope: Construct,
+        **kwargs,
+    ) -> None:
 
-        return cf.CloudFrontWebDistribution(
-            self, CLOUDFRONT_DIST_ID,
-            **kw_args,
+        super().__init__(scope, WEB_STACK_ID, **kwargs)
+
+        website_bucket = s3.Bucket(
+            self,
+            S3_WS_BUCKET_ID,
+            bucket_name=S3_WS_BUCKET_NAME,
+            public_read_access=False,
+            auto_delete_objects=True,
+            removal_policy=RemovalPolicy.DESTROY,
+            website_index_document="index.html",
+        )
+
+        oai = cf.OriginAccessIdentity(
+            self,
+            "WebsiteOriginAccessIdentity",
+            comment="Website Origin Access Identity",
+        )
+
+        website_bucket.add_to_resource_policy(
+            iam.PolicyStatement(
+                actions=["s3:GetObject"],
+                resources=[f"{website_bucket.bucket_arn}/*"],
+                principals=[oai.grant_principal],
+            )
+        )
+
+        # Create a Certificate to read the environment
+        # and decide if we should be deploying the harbor with
+        # a public domain.
+        harbor_cert = SBOMHarborCert(self)
+
+        distribution = cf.CloudFrontWebDistribution(
+            self,
+            CLOUDFRONT_DIST_ID,
+            viewer_certificate=harbor_cert.get_viewer_cert()
+            if harbor_cert.enabled
+            else None,
             origin_configs=[
                 cf.SourceConfiguration(
                     custom_origin_source=cf.CustomOriginConfig(
-                        domain_name=apigw_url,
-                        origin_path=""
+                        domain_name=Fn.import_value(API_GW_ID_EXPORT_NAME),
+                        origin_path="",
                     ),
                     behaviors=[
                         cf.Behavior(
@@ -83,75 +124,23 @@ class SBOMWebStack(Stack):
                         ),
                     ],
                 ),
-            ]
-        )
-
-    def __get_logging_configuration(self):
-        return cf.LoggingConfiguration(
-            bucket=s3.Bucket(
-                self, "cloudfront.logging.bucket",
-                bucket_name="sbom.harbor.cf",
-                public_read_access=False,
-                auto_delete_objects=True,
-                removal_policy=RemovalPolicy.DESTROY,
-            ),
-            include_cookies=False,
-            prefix="prefix"
-        )
-
-    def __init__(
-        self,
-        scope: Construct,
-        **kwargs,
-    ) -> None:
-
-        super().__init__(scope, WEB_STACK_ID, **kwargs)
-
-        website_bucket = s3.Bucket(
-            self, S3_WS_BUCKET_ID,
-            bucket_name=S3_WS_BUCKET_NAME,
-            public_read_access=False,
-            auto_delete_objects=True,
-            removal_policy=RemovalPolicy.DESTROY,
-            website_index_document="index.html",
-        )
-
-        oai = cf.OriginAccessIdentity(
-            self, "HarborOriginAccessIdentity",
-            comment="Harbor Origin Access Identity"
-        )
-
-        website_bucket.add_to_resource_policy(
-            iam.PolicyStatement(
-                actions=["s3:GetObject"],
-                resources=[f"{website_bucket.bucket_arn}/*"],
-                principals=[oai.grant_principal],
-            )
-        )
-
-        # referenced by UI deployment script
-        CfnOutput(
-            self, "WebAssetsBucketName",
-            description="Source for CloudFront to serve frontend UI assets",
-            value=website_bucket.bucket_name
-        )
-
-        # Create a Certificate to read the environment
-        # and decide if we should be deploying the harbor with
-        # a public domain.
-        harbor_cert = SBOMHarborCert(self)
-
-        distribution = self.__get_cloudfront_distribution(
-            website_bucket=website_bucket, oai=oai,
-            apigw_url=Fn.import_value(API_GW_ID_EXPORT_NAME),
-            harbor_cert=harbor_cert,
-        )
-
-        # referenced by UI deployment script
-        CfnOutput(
-            self, "CloudFrontDomain",
-            description="CloudFront Distribution domain name",
-            value=distribution.distribution_domain_name
+            ],
         )
 
         harbor_cert.create_host_record(distribution)
+
+        # referenced by UI deployment script
+        CfnOutput(
+            self,
+            "WebAssetsBucketName",
+            description="Source for CloudFront to serve frontend UI assets",
+            value=website_bucket.bucket_name,
+        )
+
+        # referenced by UI deployment script
+        CfnOutput(
+            self,
+            "CloudFrontDomain",
+            description="CloudFront Distribution domain name",
+            value=distribution.distribution_domain_name,
+        )

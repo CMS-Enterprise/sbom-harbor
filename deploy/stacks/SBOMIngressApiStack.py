@@ -24,6 +24,7 @@ from constructs import Construct
 from cyclonedx.constants import USER_POOL_CLIENT_ID_KEY, USER_POOL_ID_KEY
 from deploy.authorizers import AuthorizerLambdaFactory, SBOMUploadAPIKeyAuthorizerLambda
 from deploy.constants import (
+    API_GW_URL_EXPORT_NAME,
     API_GW_ID_EXPORT_NAME,
     API_STACK_ID,
     AUTHORIZATION_HEADER,
@@ -273,10 +274,18 @@ class SBOMIngressApiStack(Stack):
 
         CfnOutput(
             self,
-            API_GW_ID_EXPORT_NAME,
+            API_GW_URL_EXPORT_NAME,
             value=self.api.url.replace("https://", "").replace("/", ""),
-            export_name=API_GW_ID_EXPORT_NAME,
+            export_name=API_GW_URL_EXPORT_NAME,
             description="URL Of the API Gateway",
+        )
+
+        CfnOutput(
+            self,
+            API_GW_ID_EXPORT_NAME,
+            value=self.api.api_id,
+            export_name=API_GW_ID_EXPORT_NAME,
+            description="ID Of the API Gateway",
         )
 
     def __add_team_routes(

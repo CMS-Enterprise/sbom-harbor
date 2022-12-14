@@ -82,12 +82,10 @@ S3_BUCKET_NAME = (
 )
 
 # S3 - UI
+S3_WS_BUCKET_ID = "WebAssetsBucket"
 S3_WS_BUCKET_NAME = (
     f"{ENVIRONMENT}-harbor-web-assets-{AWS_ACCOUNT_ID}-{AWS_REGION_SHORT}"
 )
-S3_WS_BUCKET_ID = "WebAssetsBucket"
-UI_DEPLOYMENT_ID = "UiDeployment"
-
 
 # Stacks
 STACK_ID_PREFIX = f"{ENVIRONMENT}-harbor"
@@ -113,7 +111,8 @@ PUBLIC = ec2.SubnetType.PUBLIC
 PUBLIC_SUBNET_NAME = "Public"
 
 # API Gateway
-API_GW_ID_EXPORT_NAME = "apigwurl"
+API_GW_URL_EXPORT_NAME = "apigwurl"
+API_GW_ID_EXPORT_NAME = "apigwid"
 
 # Cloudfront
 CLOUDFRONT_DIST_ID = "CloudFrontDistribution"
