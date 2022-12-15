@@ -1,0 +1,934 @@
+{
+  "uuid": "386faa41-648e-4bb7-ae45-3a85bcea7d72",
+  "lastMigration": 24,
+  "name": "Harbor",
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 3000,
+  "hostname": "0.0.0.0",
+  "routes": [
+    {
+      "uuid": "81214fe5-c5c4-4c09-a31e-029ef5ff9960",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "api/v1/codebase/:codebase",
+      "responses": [
+        {
+          "uuid": "e9e0195c-7a76-481a-96b3-d9ae3c2ce089",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for GET /api/v1/codebase/{codebase}",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "b48361c3-326d-455f-80f4-7df7d3fff1ae",
+      "documentation": "",
+      "method": "put",
+      "endpoint": "api/v1/codebase/:codebase",
+      "responses": [
+        {
+          "uuid": "e93efa38-0642-4706-9f63-614e5317facc",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for PUT /api/v1/codebase/{codebase}",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "6158f8fd-57c4-4f33-ae11-97515c71798b",
+      "documentation": "",
+      "method": "delete",
+      "endpoint": "api/v1/codebase/:codebase",
+      "responses": [
+        {
+          "uuid": "16801a87-b7b6-437b-983f-965a3a21befa",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for DELETE /api/v1/codebase/{codebase}",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "135eb186-f2df-484c-879b-805e2b2c882d",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "api/v1/member/:member",
+      "responses": [
+        {
+          "uuid": "c6fa0468-f530-4188-9ca9-af75e95d1a87",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for GET /api/v1/member/{member}",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "0d1b778f-8705-4cd0-9f57-4dac032693ec",
+      "documentation": "",
+      "method": "put",
+      "endpoint": "api/v1/member/:member",
+      "responses": [
+        {
+          "uuid": "87146035-f215-41d1-a696-2111e7601643",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for PUT /api/v1/member/{member}",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "37164de1-fae1-4c47-9372-bec0e1a91592",
+      "documentation": "",
+      "method": "delete",
+      "endpoint": "api/v1/member/:member",
+      "responses": [
+        {
+          "uuid": "981dc630-dab1-4f7a-b370-4696407e80b6",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for DELETE /api/v1/member/{member}",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "0c85db28-de40-472b-8783-2f1a4f57aca6",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "api/v1/project/:project",
+      "responses": [
+        {
+          "uuid": "e9c9c19b-aa3b-4e46-8d3d-3bb01dfac855",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for GET /api/v1/project/{project}",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "79e95fb8-ffa2-416e-9085-7113a6a0aed6",
+      "documentation": "",
+      "method": "put",
+      "endpoint": "api/v1/project/:project",
+      "responses": [
+        {
+          "uuid": "46d50427-3d6f-4020-8fec-ff520735abbe",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for PUT /api/v1/project/{project}",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "56f4fa2c-f188-4b39-98c3-64841497d4a6",
+      "documentation": "",
+      "method": "delete",
+      "endpoint": "api/v1/project/:project",
+      "responses": [
+        {
+          "uuid": "205bfef4-77b8-4093-a035-71330caa6a7b",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for DELETE /api/v1/project/{project}",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "c01c7d0a-6d49-413e-b551-03e2713b2444",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "api/v1/team/:team",
+      "responses": [
+        {
+          "uuid": "364df554-0d57-438d-b490-d18d095843ba",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for GET /api/v1/team/{team}",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "1fc30059-9073-4601-8d7d-60944db42f63",
+      "documentation": "",
+      "method": "put",
+      "endpoint": "api/v1/team/:team",
+      "responses": [
+        {
+          "uuid": "7ce6667c-a35c-4a8f-96bb-545463c4e661",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for PUT /api/v1/team/{team}",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "3ac7e857-030e-4d4f-bdba-1fdcfbec1491",
+      "documentation": "",
+      "method": "delete",
+      "endpoint": "api/v1/team/:team",
+      "responses": [
+        {
+          "uuid": "f5f59923-3357-4f8b-9af5-7616b0e6c06c",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for DELETE /api/v1/team/{team}",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "681cb747-b9f1-4ad5-afce-f38d394ece3e",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "api/v1/token/:token",
+      "responses": [
+        {
+          "uuid": "f8cc3c42-5402-4c9d-8d6d-efaedc2f2722",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for GET /api/v1/token/{token}",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "a92651f9-666f-4fd7-9994-9f562141d664",
+      "documentation": "",
+      "method": "put",
+      "endpoint": "api/v1/token/:token",
+      "responses": [
+        {
+          "uuid": "ad966784-4cdb-43cd-a0eb-880c5997df69",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for PUT /api/v1/token/{token}",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "29bbd656-fd23-42d3-aec3-f95f4522659c",
+      "documentation": "",
+      "method": "delete",
+      "endpoint": "api/v1/token/:token",
+      "responses": [
+        {
+          "uuid": "8b177690-ce81-457e-b256-9bde4baae33c",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for DELETE /api/v1/token/{token}",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "0ec02aaf-0ba4-49a8-bfdb-03420f23bd18",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "api/v1/codebases",
+      "responses": [
+        {
+          "uuid": "df71b137-a683-4e52-9387-c1be42ffe2df",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for GET /api/v1/codebases",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "6e5848f6-a0b3-41a7-9cc7-d236b102c6fe",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "api/v1/members",
+      "responses": [
+        {
+          "uuid": "380dc77e-85ac-46c4-aef7-ac2c9924dd4a",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for GET /api/v1/members",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "6e050615-638c-4463-b26f-320e8bbfe59c",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "api/v1/projects",
+      "responses": [
+        {
+          "uuid": "6054b50e-e562-42ee-85a4-6474f9517481",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for GET /api/v1/projects",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "997d750b-40aa-4563-853f-0902efd7d919",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "api/v1/teams",
+      "responses": [
+        {
+          "uuid": "4fcbc49c-a341-4a3f-956a-0ac27c2ef6b4",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for GET /api/v1/teams",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "224bd199-3b5e-4d98-a8ac-810befc4d7c9",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "api/v1/tokens",
+      "responses": [
+        {
+          "uuid": "4b307e3c-3e38-48b5-af39-258e274247fd",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for GET /api/v1/tokens",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "1f6e68eb-3c09-456d-a9be-249c622a7e55",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "api/v1/user/search",
+      "responses": [
+        {
+          "uuid": "699dde35-536a-41c0-90a4-b3dbc947910a",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for GET /api/v1/user/search",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "4390354d-bdd2-4408-ad93-2bc13d407210",
+      "documentation": "",
+      "method": "post",
+      "endpoint": "api/v1/codebase",
+      "responses": [
+        {
+          "uuid": "1c0cd1f2-ea27-45f6-ad31-249f09a551ba",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for POST /api/v1/codebase",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "818ad673-c8c1-4e08-bc27-5618128c460c",
+      "documentation": "",
+      "method": "post",
+      "endpoint": "api/v1/login",
+      "responses": [
+        {
+          "uuid": "f7b66223-cc25-4cab-b7bc-c8e9fc0cd687",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for POST /api/v1/login",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "737ba350-c4f1-4ed9-9f8e-d682585c0f97",
+      "documentation": "",
+      "method": "post",
+      "endpoint": "api/v1/member",
+      "responses": [
+        {
+          "uuid": "040787b8-884e-4e50-8afd-fb4f2d72aa21",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for POST /api/v1/member",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "b2c5556a-7d92-4bad-8a25-ace7cbca80da",
+      "documentation": "",
+      "method": "post",
+      "endpoint": "api/v1/project",
+      "responses": [
+        {
+          "uuid": "ca9ee785-bd85-4056-84a5-e2faebb0c588",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for POST /api/v1/project",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "a7df3c95-6662-4b4c-a858-e48fbdcda139",
+      "documentation": "",
+      "method": "post",
+      "endpoint": "api/v1/team",
+      "responses": [
+        {
+          "uuid": "af2c1db2-bf48-4e92-af19-b05e82365f51",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for POST /api/v1/team",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "4b8b4073-b39f-4f74-b8df-0e05e40b11ff",
+      "documentation": "",
+      "method": "post",
+      "endpoint": "api/v1/token",
+      "responses": [
+        {
+          "uuid": "1e2dac4d-b427-424b-8c18-1178e9575f75",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for POST /api/v1/token",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    },
+    {
+      "uuid": "5b466146-31bb-4dad-9eec-2d9f127c54d9",
+      "documentation": "",
+      "method": "post",
+      "endpoint": "api/v1/:team/:project/:codebase/sbom",
+      "responses": [
+        {
+          "uuid": "2721ef04-cbb4-4d59-a981-2f5461e48044",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default response for POST /api/v1/{team}/{project}/{codebase}/sbom",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
+    }
+  ],
+  "proxyMode": false,
+  "proxyHost": "",
+  "proxyRemovePrefix": false,
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "cors": true,
+  "headers": [],
+  "proxyReqHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "proxyResHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "data": []
+}

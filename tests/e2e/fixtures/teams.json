@@ -1,0 +1,77 @@
+{
+  "create-team": {
+    "id": "",
+    "name": "create-team",
+    "members": [],
+    "projects": []
+  },
+  "create-team-with-members": {
+    "id": "",
+    "name": "Child Codebase Test",
+    "members": [
+      {
+        "id": "",
+        "email": "sbomadmin@aquia.io",
+        "isTeamLead": "true"
+      }
+    ]
+  },
+  "create-team-with-projects": {
+    "id": "",
+    "name": "create-team-with-projects",
+    "members": [],
+    "projects": [
+      {
+        "id": "",
+        "name": "create-team-with-projects",
+        "fisma": "",
+        "codebases": []
+      }
+    ]
+  },
+  "create-team-with-projects-and-codebases": {
+    "name": "create-team-with-projects-and-codebases",
+    "members": [],
+    "projects": [
+      {
+        "id": "",
+        "name": "create-team-with-projects-and-codebases",
+        "fisma": "",
+        "codebases": [
+          {
+            "id": "",
+            "name": "Child Codebase Test",
+            "language": "",
+            "buildTool": ""
+          }
+        ]
+      }
+    ]
+  },
+  "create-team-with-members-projects-and-codebases": {
+    "id": "",
+    "name": "create-team-with-members-projects-and-codebases",
+    "members": [
+      {
+        "id": "",
+        "email": "sbomadmin@aquia.io",
+        "isTeamLead": "true"
+      }
+    ],
+    "projects": [
+      {
+        "id": "",
+        "name": "create-team-with-members-projects-and-codebases",
+        "fisma": "",
+        "codebases": [
+          {
+            "id": "",
+            "name": "create-team-with-members-projects-and-codebases",
+            "language": "",
+            "buildTool": ""
+          }
+        ]
+      }
+    ]
+  }
+}

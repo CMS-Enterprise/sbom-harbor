@@ -57,3 +57,6 @@ harbor-rs/tests/fixtures/debug.log
 harbor-rs/tests/fixtures/pilot-request.json
 harbor-rs/tests/fixtures/HARBOR_PILOT_REQUEST
 
+# OpenAPI generator
+.openapi-generator/
+

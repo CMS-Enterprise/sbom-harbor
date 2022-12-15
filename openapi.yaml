@@ -1,0 +1,1034 @@
+openapi: 3.0.1
+info:
+  title: Harbor
+  description: Harbor SBOM Management API
+  version: 2022-11-01 20:31:02UTC
+servers: # https://h9qncyju17.execute-api.us-west-2.amazonaws.com
+  - url: https://d1gl1c9nl92jjp.cloudfront.net
+    variables:
+      basePath:
+        default: ''
+tags:
+  - name: aws:cloudformation:stack-id
+    x-amazon-apigateway-tag-value: arn:aws:cloudformation:us-west-2:393419659647:stack/sandbox-harbor-backend-usw2/6d429a30-5a23-11ed-a7d8-02d69603ca53
+  - name: aws:cloudformation:stack-name
+    x-amazon-apigateway-tag-value: sandbox-harbor-backend-usw2
+  - name: aws:cloudformation:logical-id
+    x-amazon-apigateway-tag-value: SBOMManagementApiA8AAF085
+paths:
+  /api/v1/login:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/login'
+      responses:
+        "200":
+            $ref: '#/components/responses/login'
+        "400":
+            $ref: '#/components/responses/badRequest'
+        "403":
+            $ref: '#/components/responses/forbidden'
+        "500":
+            $ref: '#/components/responses/internalServerError'
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:SBOMLoginLambda-v1/invocations
+        connectionType: INTERNET
+
+  /api/v1/team:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/team'
+      responses:
+        "200":
+          $ref: '#/components/responses/team'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/childrenQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Team_POST_Lambda/invocations
+        connectionType: INTERNET
+  /api/v1/team/{teamId}:
+    get:
+      responses:
+        "200":
+          $ref: '#/components/responses/team'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+        - $ref: '#/components/parameters/childrenQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Team_Lambda/invocations
+        connectionType: INTERNET
+    put:
+      requestBody:
+        $ref: '#/components/requestBodies/team'
+      responses:
+        "200":
+          $ref: '#/components/responses/team'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+        - $ref: '#/components/parameters/childrenQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Team_Lambda/invocations
+        connectionType: INTERNET
+    delete:
+      responses:
+        "200":
+          $ref: '#/components/responses/team'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+        - $ref: '#/components/parameters/childrenQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Team_Lambda/invocations
+        connectionType: INTERNET
+  /api/v1/teams:
+    get:
+      responses:
+        "200":
+          $ref: '#/components/responses/teamList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+          - $ref: '#/components/parameters/childrenQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: GET
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Teams_Lambda/invocations
+        connectionType: INTERNET
+
+  /api/v1/member:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/member'
+      responses:
+        "200":
+            $ref: '#/components/responses/member'
+        "400":
+            $ref: '#/components/responses/badRequest'
+        "403":
+            $ref: '#/components/responses/forbidden'
+        "500":
+            $ref: '#/components/responses/internalServerError'
+      parameters:
+        -   $ref: '#/components/parameters/teamIdQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Member_POST_Lambda/invocations
+        connectionType: INTERNET
+  /api/v1/member/{memberId}:
+    get:
+      responses:
+        "200":
+          $ref: '#/components/responses/member'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/memberId'
+        - $ref: '#/components/parameters/teamIdQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: GET
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Member_Lambda/invocations
+        connectionType: INTERNET
+    put:
+      requestBody:
+        $ref: '#/components/requestBodies/member'
+      responses:
+        "200":
+          $ref: '#/components/responses/member'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/memberId'
+        - $ref: '#/components/parameters/teamIdQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Member_Lambda/invocations
+        connectionType: INTERNET
+    delete:
+      responses:
+        "200":
+          $ref: '#/components/responses/member'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/memberId'
+        - $ref: '#/components/parameters/teamIdQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Member_Lambda/invocations
+        connectionType: INTERNET
+  /api/v1/members:
+    get:
+      responses:
+        "200":
+          $ref: '#/components/responses/memberList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+          - $ref: '#/components/parameters/teamIdQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: GET
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Members_Lambda/invocations
+        connectionType: INTERNET
+
+  /api/v1/project:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/project'
+      responses:
+        "200":
+          $ref: '#/components/responses/project'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamIdQuery'
+        - $ref: '#/components/parameters/childrenQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Project_POST_Lambda/invocations
+        connectionType: INTERNET
+  /api/v1/project/{projectId}:
+    get:
+      responses:
+        "200":
+          $ref: '#/components/responses/project'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/teamIdQuery'
+        - $ref: '#/components/parameters/childrenQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Project_Lambda/invocations
+        connectionType: INTERNET
+    put:
+      requestBody:
+        $ref: '#/components/requestBodies/project'
+      responses:
+        "200":
+          $ref: '#/components/responses/project'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/teamIdQuery'
+        - $ref: '#/components/parameters/childrenQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Project_Lambda/invocations
+        connectionType: INTERNET
+    delete:
+      responses:
+        "200":
+          $ref: '#/components/responses/project'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/teamIdQuery'
+        - $ref: '#/components/parameters/childrenQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Project_Lambda/invocations
+        connectionType: INTERNET
+  /api/v1/projects:
+    get:
+      responses:
+        "200":
+          $ref: '#/components/responses/projectList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+          - $ref: '#/components/parameters/teamIdQuery'
+          - $ref: '#/components/parameters/childrenQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: GET
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Projects_Lambda/invocations
+        connectionType: INTERNET
+
+  /api/v1/codebase:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/codebase'
+      responses:
+        "200":
+            $ref: '#/components/responses/codebase'
+        "400":
+            $ref: '#/components/responses/badRequest'
+        "403":
+            $ref: '#/components/responses/forbidden'
+        "500":
+            $ref: '#/components/responses/internalServerError'
+      parameters:
+        -   $ref: '#/components/parameters/teamIdQuery'
+        -   $ref: '#/components/parameters/projectIdQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Codebase_POST_Lambda/invocations
+        connectionType: INTERNET
+  /api/v1/codebase/{codebaseId}:
+    get:
+      responses:
+        "200":
+          $ref: '#/components/responses/codebase'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+          - $ref: '#/components/parameters/codebaseId'
+          - $ref: '#/components/parameters/teamIdQuery'
+          - $ref: '#/components/parameters/projectIdQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: GET
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Codebase_Lambda/invocations
+        connectionType: INTERNET
+    put:
+      requestBody:
+        $ref: '#/components/requestBodies/codebase'
+      responses:
+        "200":
+          $ref: '#/components/responses/codebase'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/codebaseId'
+        - $ref: '#/components/parameters/teamIdQuery'
+        - $ref: '#/components/parameters/projectIdQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: PUT
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Codebase_Lambda/invocations
+        connectionType: INTERNET
+    delete:
+      responses:
+        "200":
+          $ref: '#/components/responses/codebase'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/codebaseId'
+        - $ref: '#/components/parameters/teamIdQuery'
+        - $ref: '#/components/parameters/projectIdQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: DELETE
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Codebase_Lambda/invocations
+        connectionType: INTERNET
+  /api/v1/codebases:
+    get:
+      responses:
+        "200":
+          $ref: '#/components/responses/codebaseList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+          - $ref: '#/components/parameters/teamIdQuery'
+          - $ref: '#/components/parameters/projectIdQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: GET
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Codebases_Lambda/invocations
+        connectionType: INTERNET
+
+  /api/v1/token:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/token'
+      responses:
+        "200":
+          $ref: '#/components/responses/token'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Token_POST_Lambda/invocations
+        connectionType: INTERNET
+  /api/v1/token/{tokenId}:
+    get:
+      responses:
+        "200":
+          $ref: '#/components/responses/token'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/tokenId'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Token_Lambda/invocations
+        connectionType: INTERNET
+    put:
+      requestBody:
+        $ref: '#/components/requestBodies/token'
+      responses:
+        "200":
+          $ref: '#/components/responses/token'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/tokenId'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Token_Lambda/invocations
+        connectionType: INTERNET
+    delete:
+      responses:
+        "200":
+          $ref: '#/components/responses/token'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/tokenId'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Token_Lambda/invocations
+        connectionType: INTERNET
+  /api/v1/tokens:
+    get:
+      responses:
+        "200":
+          $ref: '#/components/responses/tokenList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+          - $ref: '#/components/parameters/teamIdQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: GET
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Tokens_Lambda/invocations
+        connectionType: INTERNET
+
+  /api/v1/user/search:
+    get:
+      responses:
+        "200":
+            $ref: '#/components/responses/userSearchResult'
+        "400":
+            $ref: '#/components/responses/badRequest'
+        "403":
+            $ref: '#/components/responses/forbidden'
+        "500":
+            $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/filterQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:SBOMUserSearchLambda/invocations
+        connectionType: INTERNET
+
+  /api/v1/{teamId}/{projectId}/{codebaseId}/sbom:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/sbom'
+      responses:
+        "200":
+            $ref: '#/components/responses/uploadResult'
+        "400":
+            $ref: '#/components/responses/badRequest'
+        "403":
+            $ref: '#/components/responses/forbidden'
+        "500":
+            $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/codebaseId'
+        - $ref: '#/components/parameters/teamId'
+        - $ref: '#/components/parameters/projectId'
+      security:
+        - UPLOAD_SBOM_HttpLambdaAuthorizer: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:SbomIngressLambda/invocations
+        connectionType: INTERNET
+
+components:
+  securitySchemes:
+    SBOMApi_HttpLambdaAuthorizer_NAME:
+      type: apiKey
+      name: Authorization
+      in: header
+      x-amazon-apigateway-authorizer:
+        identitySource: $request.header.Authorization
+        authorizerUri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:SBOMAPIAuthorizer_Authorizer/invocations
+        authorizerPayloadFormatVersion: '1.0'
+        authorizerResultTtlInSeconds: 300
+        type: request
+        enableSimpleResponses: false
+    UPLOAD_SBOM_HttpLambdaAuthorizer:
+      type: apiKey
+      name: Authorization
+      in: header
+      x-amazon-apigateway-authorizer:
+        identitySource: $request.header.Authorization
+        authorizerUri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:APIKeyAuthorizer/invocations
+        authorizerPayloadFormatVersion: '1.0'
+        authorizerResultTtlInSeconds: 300
+        type: request
+        enableSimpleResponses: false
+  schemas:
+    login:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+    team:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/member'
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/project'
+      required:
+        - name
+    member:
+      type: object
+      properties:
+        email:
+          type: string
+        isTeamLead:
+          type: boolean
+      required:
+        - email
+        - isTeamLead
+    project:
+      type: object
+      properties:
+        id:
+         type: string
+        name:
+          type: string
+        fisma:
+          type: string
+        codebases:
+          type: array
+          items:
+            $ref: '#/components/schemas/codebase'
+      required:
+        - name
+    codebase:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        language:
+          type: string
+        buildTool:
+          type: string
+      required:
+        - name
+    token:
+      type: object
+      properties:
+        name:
+          type: string
+        created:
+          type: string
+          format: date-time
+        enabled:
+          type: boolean
+        expires:
+          type: string
+          format: date-time
+        token:
+          type: string
+      required:
+        - name
+        - enabled
+    uploadResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        s3BucketName:
+          type: string
+        s3ObjectKey:
+          type: string
+    userSearchResult:
+      type: array
+      items:
+        type: string
+  parameters:
+    teamId:
+      required: true
+      description: Unique identifier for a team.
+      in: path
+      name: teamId
+      schema:
+        type: string
+    memberId:
+      required: true
+      description: Unique identifier for a member.
+      in: path
+      name: memberId
+      schema:
+        type: string
+    projectId:
+      required: true
+      description: Unique identifier for a project.
+      in: path
+      name: projectId
+      schema:
+        type: string
+    codebaseId:
+      required: true
+      description: Unique identifier for a codebase.
+      in: path
+      name: codebaseId
+      schema:
+        type: string
+    tokenId:
+      required: true
+      description: Unique identifier for a token.
+      in: path
+      name: tokenId
+      schema:
+        type: string
+    teamIdQuery:
+      description: Unique identifier for a team.
+      in: query
+      name: teamId
+      schema:
+        type: string
+    projectIdQuery:
+      description: Unique identifier for a project.
+      in: query
+      name: projectId
+      schema:
+        type: string
+    childrenQuery:
+      description: Flag indicating whether operation should consider types nested in the primary type.
+      in: query
+      name: children
+      schema:
+        type: boolean
+    filterQuery:
+      description: Starts with text filter.
+      in: query
+      name: filter
+      schema:
+        type: string
+  requestBodies:
+    login:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/login'
+
+    team:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/team'
+    teamList:
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/team'
+            type: array
+
+    member:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/member'
+    memberList:
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/member'
+            type: array
+
+    project:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/project'
+    projectList:
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/project'
+            type: array
+
+    codebase:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/codebase'
+    codebaseList:
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/codebase'
+            type: array
+
+    token:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/token'
+    tokenList:
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/token'
+            type: array
+
+    sbom:
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.3/schema/bom-1.3.schema.json'
+              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.2/schema/bom-1.2.schema.json'
+  responses:
+    badRequest:
+      description: 'Bad Request'
+    forbidden:
+      description: 'Authorization Failure'
+    internalServerError:
+      description: "Internal Server Error"
+
+    login:
+      description: 'Result of the login operation.'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+
+    team:
+      description: 'An organization made up of members, projects, codebases, and tokens.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/team'
+    teamList:
+      description: 'A list of teams.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/team'
+            type: array
+
+
+    member:
+      description: 'Members of a team.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/member'
+    memberList:
+      description: 'A list of members.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/member'
+            type: array
+
+    project:
+      description: 'An initiative within an organization that includes one or more codebases.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/project'
+    projectList:
+      description: 'A list of projects.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/project'
+            type: array
+
+    codebase:
+      description: 'A collection of assets used to produce one or more software products, tools, or utilities. Usually maps to a source control repository.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/codebase'
+    codebaseList:
+      description: 'A list of codebases.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/codebase'
+            type: array
+
+    token:
+      description: 'A secret use to authenticate, authorize, and track SBOM upload operations.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/token'
+    tokenList:
+      description: 'A list of tokens.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/token'
+            type: array
+
+    uploadResult:
+      description: 'The result of an SBOM upload operation.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/uploadResult'
+
+
+    userSearchResult:
+      description: 'The user search matches. Queries members by email address.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/userSearchResult'
+
+x-amazon-apigateway-cors:
+  allowMethods:
+    - DELETE
+    - GET
+    - HEAD
+    - OPTIONS
+    - POST
+    - PUT
+  allowHeaders:
+    - authorization
+    - content-type
+    - x-amz-date
+    - x-api-key
+  maxAge: -42
+  allowCredentials: false
+  allowOrigins:
+    - '*'
+x-amazon-apigateway-importexport-version: '1.0'
