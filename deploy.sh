@@ -1,34 +1,42 @@
 #!/usr/bin/env bash
-# set -euxo pipefail
+set -eo pipefail
+
 source ./deploy-preamble.sh
 
 ENRICHMENTS=""
-BACKEND=""
 UI=0
+DEPLOY_ONLY=0
 
-while getopts "eu" arg; do
+while getopts "eud" arg; do
   case "${arg}" in
-    e) ENRICHMENTS="${ENVIRONMENT}-harbor-enrichment-${AWS_REGION_SHORT}"
+    e) ENRICHMENTS="$ENVIRONMENT-harbor-enrichment-$AWS_REGION_SHORT"
        ;;
     u) UI=1
        ;;
+    d) DEPLOY_ONLY=1
+       ;;
     ?)
-      echo "Invalid option: -${OPTARG}."
-      echo
-      usage
+      echo "Invalid option: -$OPTARG"
       ;;
   esac
 done
 
-poetry run clean > /dev/null 2>&1
-poetry -q install
-poetry build
-pip install --upgrade -t tmp dist/*.whl
-cd ./tmp
-zip -q -r ../dist/lambda.zip . -x '*.pyc'
-cd ..
+echo "    ENRICHMENTS: $ENRICHMENTS
+    UI: $UI
+    DEPLOY ONLY: $DEPLOY_ONLY
+    "
 
-cdk deploy --require-approval never --concurrency 6 ${ENVIRONMENT}-harbor-shared-resources-${AWS_REGION_SHORT} ${ENVIRONMENT}-harbor-user-management-${AWS_REGION_SHORT} ${ENVIRONMENT}-harbor-backend-${AWS_REGION_SHORT} ${ENVIRONMENT}-harbor-frontend-${AWS_REGION_SHORT} {$ENRICHMENTS}
+if [[ $DEPLOY_ONLY == 0 ]]; then
+  poetry run clean > /dev/null 2>&1
+  poetry -q install
+  poetry build
+  pip install --upgrade -t tmp dist/*.whl
+  cd ./tmp
+  zip -q -r ../dist/lambda.zip . -x '*.pyc'
+  cd ..
+fi
+
+cdk deploy $CDK_ROLE_ARN --require-approval never --concurrency 5 $ENVIRONMENT-harbor-shared-resources-$AWS_REGION_SHORT $ENVIRONMENT-harbor-user-management-$AWS_REGION_SHORT $ENVIRONMENT-harbor-backend-$AWS_REGION_SHORT $ENVIRONMENT-harbor-frontend-$AWS_REGION_SHORT $ENRICHMENTS
 
 ./upload-swagger-docs.sh
 

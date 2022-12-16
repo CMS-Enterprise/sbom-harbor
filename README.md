@@ -130,3 +130,9 @@ Generates a dependency graph of the built production bundle.
 `./deploy-ui.sh` will use `yarn` to install dependencies, build static assets, and upload them to the `web-assets` S3 bucket.
 
 These scripts will _default_ to `ENVIRONMENT=sandbox` using AWS credentials for your personal sandbox account. To deploy to `harbor-dev` you can execute the scripts like so `ENVIRONMENT=dev AWS_PROFILE=harbor-dev ./deploy.sh`
+
+### Deploying to CMS
+
+To deploy to CMS accounts, `aws-cms-oit-sbom-dev` or `aws-cms-oit-sbom-prod`, you will need access to the `sbom-application-admin` role. You will also need the [ctkey cli tool](https://cloud.cms.gov/getting-started-access-key-cli-tool) for retrieving temporary credentials, and the [AWS configuration](https://aquia.atlassian.net/wiki/spaces/SBOM/pages/772276225/AWS+Config+and+Usage).
+
+>Note: The link above to ctkey cli must be viewed over CMS vpn.

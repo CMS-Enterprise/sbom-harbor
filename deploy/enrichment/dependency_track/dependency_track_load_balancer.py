@@ -56,7 +56,6 @@ class DependencyTrackLoadBalancer(Construct):
             self,
             DT_LB_LOGGING_ID,
             removal_policy=RemovalPolicy.DESTROY,
-            auto_delete_objects=True,
         )
         load_balancer.log_access_logs(logs_s3_bucket)
 

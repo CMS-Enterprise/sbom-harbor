@@ -15,10 +15,15 @@ regionCodes = {
 SBOM_API_PYTHON_RUNTIME = lambda_.Runtime.PYTHON_3_9
 
 # AWS
+AWS_PROFILE = getenv("AWS_PROFILE")
 AWS_ACCOUNT_ID = getenv("CDK_DEFAULT_ACCOUNT")
 AWS_REGION = getenv("CDK_DEFAULT_REGION")
 AWS_REGION_SHORT = regionCodes.get(AWS_REGION)
 ENVIRONMENT = getenv("ENVIRONMENT") or "sandbox"
+
+# CMS
+CMS_PERMISSION_BOUNDARY_ARN = f"arn:aws:iam::{AWS_ACCOUNT_ID}:policy/cms-cloud-admin/ct-ado-poweruser-permissions-boundary-policy"
+CMS_ROLE_PATH = "/delegatedadmin/developer/"
 
 # Cognito
 AUTHORIZATION_HEADER = "Authorization"

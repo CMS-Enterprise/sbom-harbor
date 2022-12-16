@@ -38,7 +38,6 @@ class SBOMSharedResourceStack(Stack):
         self.s3_bucket = s3.Bucket(
             self,
             S3_BUCKET_ID,
-            auto_delete_objects=True,
             bucket_name=S3_BUCKET_NAME,
             public_read_access=False,
             removal_policy=RemovalPolicy.DESTROY,
