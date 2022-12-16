@@ -2,7 +2,6 @@
 
 import os
 
-import constructs
 from aws_cdk import CfnOutput, Duration, Fn, RemovalPolicy, Stack
 from aws_cdk import aws_cloudfront as cf
 from aws_cdk import aws_iam as iam
@@ -10,7 +9,7 @@ from aws_cdk import aws_s3 as s3
 from constructs import Construct
 
 from deploy.constants import (
-    API_GW_ID_EXPORT_NAME,
+    API_GW_URL_EXPORT_NAME,
     AUTHORIZATION_HEADER,
     CLOUDFRONT_DIST_ID,
     S3_WS_BUCKET_ID,
@@ -87,7 +86,7 @@ class SBOMWebStack(Stack):
             origin_configs=[
                 cf.SourceConfiguration(
                     custom_origin_source=cf.CustomOriginConfig(
-                        domain_name=Fn.import_value(API_GW_ID_EXPORT_NAME),
+                        domain_name=Fn.import_value(API_GW_URL_EXPORT_NAME),
                         origin_path="",
                     ),
                     behaviors=[
