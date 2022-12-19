@@ -15,7 +15,12 @@ import TeamViewProjectCard from './components/TeamViewProjectCard'
 import TokensTable from './components/TokensTable'
 import { Team, TeamMemberRole } from '@/types'
 
-const TeamView = () => {
+/**
+ * The view that renders a team at the path `/team/:teamId`.
+ * @see {@link @cyclonedx/ui/sbom/router}
+ * @returns {JSX.Element} A component that renders a team.
+ */
+const TeamView = (): JSX.Element => {
   const {
     id = '',
     name = '',
@@ -29,7 +34,7 @@ const TeamView = () => {
       id,
       email,
       isTeamLead,
-      role: (isTeamLead ? 'admin' : 'member') as TeamMemberRole,
+      role: isTeamLead ? TeamMemberRole.TEAM_LEAD : TeamMemberRole.MEMBER,
       username: id,
     }))
   )
@@ -72,7 +77,7 @@ const TeamView = () => {
               </Typography>
             </Grid>
             <Grid item xs={12} md={12}>
-              <TokensTable tokens={Object.values(tokens)} />
+              <TokensTable tokens={Object.values(tokens)} teamId={id} />
             </Grid>
           </Grid>
         </Box>

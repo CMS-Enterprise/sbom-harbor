@@ -6,11 +6,11 @@ import * as React from 'react'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import Typography from '@mui/material/Typography'
-import { DataGrid, GridColDef } from '@mui/x-data-grid'
 import CogIcon from 'mdi-material-ui/Cog'
 import AccountIcon from 'mdi-material-ui/AccountOutline'
-import { TeamMemberRole, TeamMemberTableRow } from '@/types'
+import { DataGrid, GridColDef } from '@mui/x-data-grid'
 import UserAvatar from '@/components/UserAvatar'
+import { TeamMemberRole, TeamMemberTableRow } from '@/types'
 
 type UserRoleToIconObject = {
   [key: string]: React.ReactElement
@@ -20,8 +20,10 @@ type UserRoleToIconObject = {
  * @constant {RoleIconsObject} roleIcons Mapping of user roles to their icons.
  */
 const roleIcons: UserRoleToIconObject = Object.freeze({
-  admin: <CogIcon sx={{ mr: 2, color: 'error.main' }} />,
-  member: <AccountIcon sx={{ mr: 2, color: 'primary.main' }} />,
+  [TeamMemberRole.TEAM_LEAD]: <CogIcon sx={{ mr: 1, color: 'error.main' }} />,
+  [TeamMemberRole.MEMBER]: (
+    <AccountIcon sx={{ mr: 1, color: 'primary.main' }} />
+  ),
 })
 
 type RenderCellProps = {
@@ -78,7 +80,7 @@ const columns: GridColDef[] = [
       // role to "admin". otherwise, set the user's role to "member".
       row: {
         isTeamLead = false,
-        role = (isTeamLead ? 'admin' : 'member') as TeamMemberRole,
+        role = isTeamLead ? TeamMemberRole.TEAM_LEAD : TeamMemberRole.MEMBER,
       },
     }: RenderCellProps) => (
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
