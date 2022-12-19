@@ -2,6 +2,7 @@
 Stacks necessary to deploy the application """
 
 from .HarborDevOpsStack import HarborDevOpsStack
+from .PilotStack import PilotStack
 from .SBOMEnrichmentPiplineStack import SBOMEnrichmentPiplineStack
 from .SBOMGeneratorPipelineStack import SBOMGeneratorPipelineStack
 from .SBOMSharedResourceStack import SBOMSharedResourceStack

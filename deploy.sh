@@ -6,14 +6,17 @@ source ./deploy-preamble.sh
 ENRICHMENTS=""
 UI=0
 DEPLOY_ONLY=0
+PILOT=0
 
-while getopts "eud" arg; do
+while getopts "eudp" arg; do
   case "${arg}" in
     e) ENRICHMENTS="$ENVIRONMENT-harbor-enrichment-$AWS_REGION_SHORT"
        ;;
     u) UI=1
        ;;
     d) DEPLOY_ONLY=1
+       ;;
+    p) PILOT=1
        ;;
     ?)
       echo "Invalid option: -$OPTARG"
@@ -23,6 +26,7 @@ done
 
 echo "    ENRICHMENTS: $ENRICHMENTS
     UI: $UI
+    PILOT: $PILOT
     DEPLOY ONLY: $DEPLOY_ONLY
     "
 
@@ -40,7 +44,10 @@ cdk deploy $CDK_ROLE_ARN --require-approval never --concurrency 5 $ENVIRONMENT-h
 
 ./upload-swagger-docs.sh
 
-if [ $UI -eq 1 ]; then
+if [[ $UI == 1 ]]; then
   ./deploy-ui.sh
 fi
 
+if [[ $PILOT == 1 ]]; then
+  ./deploy-pilot.sh
+fi

@@ -1,4 +1,4 @@
-.idea
+**/.idea/
 .vscode
 .vscode/*
 .coverage
@@ -46,3 +46,14 @@ harbor-sbom-generator/*.zip
 
 # api documentation
 harbor-documentation/openapi.json
+
+# rust
+**/target/
+**/.cargo/
+**/Cargo.lock
+
+# harbor-rs
+harbor-rs/tests/fixtures/debug.log
+harbor-rs/tests/fixtures/pilot-request.json
+harbor-rs/tests/fixtures/HARBOR_PILOT_REQUEST
+

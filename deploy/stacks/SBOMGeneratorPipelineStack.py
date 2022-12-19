@@ -7,6 +7,7 @@ from deploy.constants import SBOM_GENERATOR_STACK_ID
 from deploy.util import SBOMGeneratorLambda
 
 
+# TODO: Delete this once pilot stack has importer.
 class SBOMGeneratorPipelineStack(Stack):
 
     """This Stack deploys the SBOM Generator Pipeline"""

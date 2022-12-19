@@ -61,6 +61,7 @@ TOKEN_AUTHORIZER_LN = "APITokenAuthorizer"
 API_KEY_AUTHORIZER_LN = "APIKeyAuthorizer"
 SUMMARIZER_LN = "Summarizer"
 SBOM_GENERATOR_LN = "SBOMGenerator"
+PILOT_LN = "Pilot"
 
 # External bucket integration point
 EXTERNAL_BUCKET_NAME = "dev-harbor-sbom-summary-share-557147098836-use1"
@@ -100,6 +101,7 @@ SHARED_RESOURCE_STACK_ID = f"{STACK_ID_PREFIX}-shared-resources-{AWS_REGION_SHOR
 USER_MANAGEMENT_STACK_ID = f"{STACK_ID_PREFIX}-user-management-{AWS_REGION_SHORT}"
 WEB_STACK_ID = f"{STACK_ID_PREFIX}-frontend-{AWS_REGION_SHORT}"
 SBOM_GENERATOR_STACK_ID = f"{STACK_ID_PREFIX}-sbom-generator-{AWS_REGION_SHORT}"
+PILOT_STACK_ID = f"{STACK_ID_PREFIX}-pilot-{AWS_REGION_SHORT}"
 
 # VPC
 VPC_ID = "HarborNetworkVpc"

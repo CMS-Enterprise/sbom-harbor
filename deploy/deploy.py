@@ -7,14 +7,16 @@ from aws_cdk import aws_events as eventbridge
 
 from deploy.constants import (
     AWS_ACCOUNT_ID,
-    AWS_REGION,
-    ENVIRONMENT,
     AWS_PROFILE,
+    AWS_REGION,
     CMS_PERMISSION_BOUNDARY_ARN,
     CMS_ROLE_PATH,
+    ENVIRONMENT,
 )
+from deploy.role_aspect import RoleAspect
 from deploy.stacks import (
     HarborDevOpsStack,
+    PilotStack,
     SBOMEnrichmentPiplineStack,
     SBOMSharedResourceStack,
     SBOMUserManagement,
@@ -23,7 +25,6 @@ from deploy.stacks import (
 from deploy.stacks.SBOMIngressApiStack import SBOMIngressApiStack
 from deploy.util import DynamoTableManager
 from tests.data.create_cognito_users import test_create_cognito_users
-from deploy.role_aspect import RoleAspect
 
 
 def dodep() -> None:
@@ -84,6 +85,15 @@ def dodep() -> None:
         web_stack = SBOMWebStack(app, env=env)
         stacks.append(web_stack)
         web_stack.add_dependency(ingress_api_stack)
+
+        # Pilot stack includes Rust-based ci endpoint
+        pilot_stack = PilotStack(
+            app,
+            env=env,
+        )
+        stacks.append(pilot_stack)
+        pilot_stack.add_dependency(ingress_api_stack)
+        pilot_stack.add_pilot_route(ingress_api_stack.api)
 
         if AWS_PROFILE in ("cms-dev", "cms-prod"):
             print(

@@ -1,13 +1,13 @@
 name: Deploy
 
-on:
-  push:
-    branches: 
-      - main
+#on:
+#  push:
+#    branches:
+#      - main
 
 jobs:
   deploy:
-    environment: 
+    environment:
       name: dev
       url: ${{ steps.cloudformation.outputs.CF_DOMAIN }}
     runs-on: ubuntu-latest
@@ -24,44 +24,44 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      
+
       # aws cli & cdk
       - name: INSTALL - AWS CLI, CDK, zip, jq
         run: |
-          pip install awscli --upgrade --user    
+          pip install awscli --upgrade --user
           npm install -g aws-cdk
           sudo apt-get install zip jq -y
-      
+
       - name: GET - AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v1.7.0
         with:
           role-to-assume: arn:aws:iam::476877758413:role/cicd-harbor-devops-use2-DevopsGithubRole28C732B7-1R3G4VHBE7NDB
           aws-region: us-east-2
-      
+
       - name: DEBUG - aws credentials
         run: aws sts get-caller-identity
-      
+
       - name: GET - cloudformation outputs
         id: cloudformation
-        run: | 
+        run: |
           USER_MANAGEMENT=$(aws cloudformation describe-stacks --stack-name "dev-harbor-user-management-use2" --query 'Stacks[0].Outputs')
           echo USER_POOL_ID=$(echo $USER_MANAGEMENT | jq -r '.[] | select(.OutputKey|test("ExportsOutputRefCognitoUserPool"))| .OutputValue') >> $GITHUB_OUTPUT
           echo USER_POOL_CLIENT_ID=$(echo $USER_MANAGEMENT | jq -r '.[] | select(.OutputKey|test("ExportsOutputRefUserPoolAppClient"))| .OutputValue') >> $GITHUB_OUTPUT
           FRONTEND=$(aws cloudformation describe-stacks --stack-name "dev-harbor-frontend-use2" --query 'Stacks[0].Outputs')
           echo ASSETS_BUCKET=$(echo $FRONTEND | jq -r '.[] | select(.OutputKey=="WebAssetsBucketName") | .OutputValue') >> $GITHUB_OUTPUT
           echo CF_DOMAIN=https://$(echo $FRONTEND | jq -r '.[] | select(.OutputKey=="CloudFrontDomain") | .OutputValue') >> $GITHUB_OUTPUT
-      
+
       - name: INSTALL - python@3.9
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      
+
       - name: INSTALL - poetry
         uses: snok/install-poetry@v1.3.3
         with:
           virtualenvs-create: false
           installer-parallel: true
-          
+
       # install your root project, if required
       - name: INSTALL - project
         run: poetry install --no-interaction
@@ -74,7 +74,7 @@ jobs:
           pip install --upgrade -t tmp dist/*.whl
           cd tmp
           zip -q -r ../dist/lambda.zip . -x '*.pyc'
-        
+
       - name: DIFF - CDK
         run: cdk diff
         env:
@@ -86,17 +86,17 @@ jobs:
           CF_DOMAIN: ${{ steps.cloudformation.outputs.CF_DOMAIN }}
 
       - name: GENERATE - open api docs
-        run: | 
+        run: |
           API_GW_ID=$(aws cloudformation describe-stacks --stack-name "dev-harbor-backend-use2" --query 'Stacks[0].Outputs[?OutputKey==`apigwid`].OutputValue' --output text)
           CF_DOMAIN=$(aws cloudformation describe-stacks --stack-name "dev-harbor-frontend-use2" --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDomain`].OutputValue' --output text)
           aws apigatewayv2 export-api --api-id $API_GW_ID --stage-name '$default' --output-type JSON --specification OAS30 ./harbor-documentation/tmp.json
           cat ./harbor-documentation/tmp.json | jq ".servers[0].url=\"https://$CF_DOMAIN/{basePath}\"" > ./harbor-documentation/openapi.json
           rm ./harbor-documentation/tmp.json
           aws s3 sync ./harbor-documentation s3://dev-harbor-web-assets-476877758413-use2/docs/ --delete
-      
+
       # ******************************************************************
       # PUBLISH UI
-      # 
+      #
 
       - name: INSTALL - node 18
         uses: actions/setup-node@v3
