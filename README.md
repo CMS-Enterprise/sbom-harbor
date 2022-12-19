@@ -136,3 +136,8 @@ These scripts will _default_ to `ENVIRONMENT=sandbox` using AWS credentials for 
 To deploy to CMS accounts, `aws-cms-oit-sbom-dev` or `aws-cms-oit-sbom-prod`, you will need access to the `sbom-application-admin` role. You will also need the [ctkey cli tool](https://cloud.cms.gov/getting-started-access-key-cli-tool) for retrieving temporary credentials, and the [AWS configuration](https://aquia.atlassian.net/wiki/spaces/SBOM/pages/772276225/AWS+Config+and+Usage).
 
 >Note: The link above to ctkey cli must be viewed over CMS vpn.
+
+In cases where it is necessary to manually initiate deployments to CMS, execute the deploy script like so:
+
+CMS dev `ENVIRONMENT=dev AWS_PROFILE=cms-dev ./deploy.sh -e -u -p`
+CMS prod `ENVIRONMENT=prod AWS_PROFILE=cms-prod ./deploy.sh -e -u -p`
