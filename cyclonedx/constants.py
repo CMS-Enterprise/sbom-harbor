@@ -5,6 +5,7 @@ from deploy.constants import DT_API_PORT, environize
 PYTHON_LOGGING_CONFIG = path.join(
     path.dirname(path.dirname(__file__)), "python_logging.conf"
 )
+from deploy.constants import ENVIRONMENT, AWS_ACCOUNT_ID, AWS_REGION_SHORT
 
 APP_PORT = 433
 
