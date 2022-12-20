@@ -159,16 +159,33 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
    */
   const handleDisableToken = React.useCallback(
     (id: GridRowId) => () => handleUpdateToken(id, { enabled: false }),
+    /* eslint-disable react-hooks/exhaustive-deps */
     []
+    /* eslint-enable react-hooks/exhaustive-deps */
   )
 
   /**
    * Callback that makes a request API to enable a disabled token.
-
    */
   const handleEnableToken = React.useCallback(
     (id: GridRowId) => () => handleUpdateToken(id, { enabled: true }),
+    /* eslint-disable react-hooks/exhaustive-deps */
     []
+    /* eslint-enable react-hooks/exhaustive-deps */
+  )
+
+  /**
+   * Callback that displays the pop-up dialog to create a new token.
+   */
+  const openTokenDialog = React.useCallback(
+    () => {
+      openDialog({
+        children: <TokenCreateDialog teamId={teamId} />,
+      })
+    },
+    /* eslint-disable react-hooks/exhaustive-deps */
+    []
+    /* eslint-enable react-hooks/exhaustive-deps */
   )
 
   const columns = React.useMemo<GridColumns<Token>>(
@@ -294,15 +311,7 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
           '& > :not(style)': { m: 1 },
         }}
       >
-        <Fab
-          color="primary"
-          aria-label="add"
-          onClick={() => {
-            openDialog({
-              children: <TokenCreateDialog teamId={teamId} />,
-            })
-          }}
-        >
+        <Fab color="primary" aria-label="add" onClick={openTokenDialog}>
           <AddIcon />
         </Fab>
       </Box>
