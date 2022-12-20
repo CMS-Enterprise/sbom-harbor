@@ -11,14 +11,39 @@ import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Select, { SelectChangeEvent } from '@mui/material/Select'
 import TextField from '@mui/material/TextField'
+import { useDialog } from '@/hooks/useDialog'
+import TokenViewDialog from '@/views/Dashboard/Team/components/TokenViewDialog'
+import createToken from '@/api/createToken'
+import authLoader from '@/router/authLoader'
+import useAlert from '@/hooks/useAlert'
 
 enum ExpirationOptions {
   SEVEN_DAYS = '7 days',
   THIRTY_DAYS = '30 days',
   SIXTY_DAYS = '60 days',
   NINETY_DAYS = '90 days',
-  CUSTOM = 'Custom',
-  NEVER = 'Never',
+  SIX_MONTHS = '6 months',
+  ONE_YEAR = '1 year',
+  // TODO: implement datepicker for custom expiration
+  // CUSTOM = 'Custom',
+}
+
+// FIXME: copy pasta shame
+const ExpirationValues = {
+  SEVEN_DAYS: (date: Date = new Date()) =>
+    new Date(date.setDate(date.getDate() + 7)).toISOString(),
+  THIRTY_DAYS: (date: Date = new Date()) =>
+    new Date(date.setDate(date.getDate() + 30)).toISOString(),
+  SIXTY_DAYS: (date: Date = new Date()) =>
+    new Date(date.setDate(date.getDate() + 60)).toISOString(),
+  NINETY_DAYS: (date: Date = new Date()) =>
+    new Date(date.setDate(date.getDate() + 90)).toISOString(),
+  SIX_MONTHS: (date: Date = new Date()) =>
+    new Date(date.setDate(date.getDate() + 182)).toISOString(),
+  ONE_YEAR: (date: Date = new Date()) =>
+    new Date(date.setDate(date.getDate() + 365)).toISOString(),
+  // TODO: implement datepicker for custom expiration
+  // CUSTOM = 'Custom',
 }
 
 const expirationOptionsList = Object.values(ExpirationOptions)
@@ -39,6 +64,12 @@ type InputProps = {
 }
 
 const TokenCreateDialog = ({ setOpen, teamId }: InputProps) => {
+  const [openDialog] = useDialog()
+  const { setAlert } = useAlert()
+
+  /**
+   * React reducer hook to manage the form input state.
+   */
   const [formInput, setFormInput] = React.useReducer(
     (state: DialogFormState, newState: DialogFormState) => ({
       ...state,
@@ -51,6 +82,9 @@ const TokenCreateDialog = ({ setOpen, teamId }: InputProps) => {
     if (setOpen) setOpen(false)
   }, [])
 
+  /**
+   * React callback hook to handle the expiration select change.
+   */
   const handleExpiresChange = React.useCallback(
     (event: SelectChangeEvent<typeof formInput.expires>) => {
       setFormInput({
@@ -61,6 +95,9 @@ const TokenCreateDialog = ({ setOpen, teamId }: InputProps) => {
     [formInput]
   )
 
+  /**
+   * React callback hook to handle the form input change.
+   */
   const handleFormChange = React.useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setFormInput({
@@ -71,10 +108,61 @@ const TokenCreateDialog = ({ setOpen, teamId }: InputProps) => {
     [formInput]
   )
 
+  /**
+   * React callback hook to handle the submission of the form.
+   */
   const handleSubmit = React.useCallback(
     (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault()
-      console.log('Submit TokenCreateDialog', 'formInput', formInput)
+      // create an abort controller to cancel the
+      // request if the user closes the dialog.
+      const abortController = new AbortController()
+      /**
+       * Async function to submit the form.
+       * @type {() => Promise<void>}
+       */
+      const doSubmit = async () => {
+        try {
+          // get the jwt token from the auth loader
+          const jwtToken = await authLoader()
+          /**
+           * Calculate the expiration date for the token.
+           * @type {TDateISOString}
+           */
+          const expires =
+            ExpirationValues[
+              Object.entries(ExpirationOptions).find(
+                ([, value]) => value === formInput.expires
+              )?.[0] as keyof typeof ExpirationValues
+            ]()
+          // make the create token request
+          const response = await createToken({
+            teamId,
+            jwtToken,
+            expires: expires,
+            name: formInput.name,
+          })
+          console.log('New token response', response)
+          // show a success message
+          setAlert({
+            message: 'Token created successfully!',
+            severity: 'success',
+          })
+          // open the next dialog window to show the token
+          // to let the user to copy it to the clipboard.
+          openDialog({ children: <TokenViewDialog token={response.token} /> })
+        } catch (error) {
+          console.error('Error creating token', error)
+          setAlert({
+            message: 'Failed to create a token',
+            severity: 'error',
+          })
+        }
+      }
+      // actually submit the form asyncronously.
+      doSubmit()
+      // return a cleanup function to abort the submit request.
+      return () => abortController.abort()
     },
     [formInput]
   )

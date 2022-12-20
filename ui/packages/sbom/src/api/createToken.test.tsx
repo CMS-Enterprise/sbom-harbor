@@ -1,4 +1,4 @@
-import updateToken from './updateToken'
+import createToken from './createToken'
 
 test('calls makes a fetch request', () => {
   // @ts-ignore
@@ -7,15 +7,14 @@ test('calls makes a fetch request', () => {
     json: async () => ({}),
   })
 
-  updateToken({
+  createToken({
+    name: 'some-name',
+    expires: 'some-expires',
     jwtToken: 'some-token',
     teamId: 'some-team',
-    tokenId: 'some-token',
-    token: {
-      name: 'some-name',
-      enabled: true,
-    },
   })
 
   expect(window.fetch).toHaveBeenCalledTimes(1)
+
+  // TODO: add a test to verify the request verb and path
 })
