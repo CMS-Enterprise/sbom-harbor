@@ -10,7 +10,7 @@ regionCodes = {
     "us-west-1": "usw1",
     "us-west-2": "usw2",
 }
-
+print(getenv("ION_CHANNEL_TOKEN"))
 # General
 SBOM_API_PYTHON_RUNTIME = lambda_.Runtime.PYTHON_3_9
 PYTHON_LOGGING_CONFIG = path.join(
@@ -22,7 +22,7 @@ AWS_PROFILE = getenv("AWS_PROFILE")
 AWS_ACCOUNT_ID = getenv("CDK_DEFAULT_ACCOUNT")
 AWS_REGION = getenv("CDK_DEFAULT_REGION")
 AWS_REGION_SHORT = regionCodes.get(AWS_REGION)
-ENVIRONMENT = getenv("ENVIRONMENT") or "sandbox"
+ENVIRONMENT = getenv("ENVIRONMENT").lower() or "sandbox"
 
 # CMS
 CMS_PERMISSION_BOUNDARY_ARN = (
