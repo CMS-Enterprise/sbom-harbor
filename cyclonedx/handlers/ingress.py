@@ -9,18 +9,17 @@ from uuid import uuid4
 from boto3 import resource
 from jsonschema.exceptions import ValidationError
 
-from cyclonedx.constants import (
-    SBOM_BUCKET_NAME_KEY,
-    S3_META_TEAM_KEY,
-    S3_META_PROJECT_KEY,
-    S3_META_CODEBASE_KEY,
-    S3_META_TIMESTAMP_KEY,
-)
-from cyclonedx.handlers.dependency_track import (
+from cyclonedx.clients.dependency_track.dependency_track import (
     __create_pristine_response_obj,
     __get_body_from_event,
 )
-
+from cyclonedx.constants import (
+    S3_META_CODEBASE_KEY,
+    S3_META_PROJECT_KEY,
+    S3_META_TEAM_KEY,
+    S3_META_TIMESTAMP_KEY,
+    SBOM_BUCKET_NAME_KEY,
+)
 from cyclonedx.core import CycloneDxCore
 
 

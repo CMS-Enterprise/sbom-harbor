@@ -6,6 +6,7 @@ from json import dumps
 import boto3
 from jsonschema.exceptions import ValidationError
 
+from cyclonedx.clients.dependency_track.dependency_track import __get_records_from_event
 from cyclonedx.constants import (
     EVENT_BUS_DETAIL_TYPE,
     EVENT_BUS_NAME,
@@ -13,7 +14,6 @@ from cyclonedx.constants import (
     SBOM_BUCKET_NAME_KEY,
     SBOM_S3_KEY,
 )
-from cyclonedx.handlers.dependency_track import __get_records_from_event
 
 
 def enrichment_ingress_handler(event: dict = None, context: dict = None):

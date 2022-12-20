@@ -1,33 +1,26 @@
 """This Stack deploys the Enrichment Pipeline"""
 
 import aws_cdk.aws_stepfunctions as stepfunctions
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_stepfunctions_tasks as tasks,
-    aws_events as eventbridge,
-    aws_events_targets as targets,
-    aws_s3 as s3,
-    Stack,
-)
+from aws_cdk import Stack
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_events as eventbridge
+from aws_cdk import aws_events_targets as targets
+from aws_cdk import aws_s3 as s3
+from aws_cdk import aws_stepfunctions_tasks as tasks
 from aws_cdk.aws_stepfunctions import Chain, Parallel
 from constructs import Construct
 
 from cyclonedx.constants import EVENT_BUS_SOURCE
-from deploy.constants import (
-    ENRICHMENT_STACK_ID,
-    S3_BUCKET_NAME,
-)
 
-from deploy.enrichment import (
-    EnrichmentIngressLambda
-)
-
+from deploy.constants import ENRICHMENT_STACK_ID, S3_BUCKET_NAME
+from deploy.enrichment import EnrichmentIngressLambda
 from deploy.enrichment.dependency_track import (
-    DependencyTrackLoadBalancer,
     DependencyTrackFargateInstance,
     DependencyTrackInterfaceLambda,
-    SummarizerLambda
+    DependencyTrackLoadBalancer,
+    SummarizerLambda,
 )
+from deploy.enrichment.ion_channel import IonChannelInterfaceLambda
 from deploy.util import DynamoTableManager
 
 
@@ -46,9 +39,7 @@ class SBOMEnrichmentPiplineStack(Stack):
         # Run the constructor of the Stack superclass.
         super().__init__(scope, ENRICHMENT_STACK_ID, **kwargs)
 
-        s3_bucket = s3.Bucket.from_bucket_name(
-            self, "DATA_LAKE", S3_BUCKET_NAME
-        )
+        s3_bucket = s3.Bucket.from_bucket_name(self, "DATA_LAKE", S3_BUCKET_NAME)
 
         dt_lb = DependencyTrackLoadBalancer(
             self,
@@ -80,7 +71,8 @@ class SBOMEnrichmentPiplineStack(Stack):
         ).get_lambda_function()
 
         dt_task = tasks.LambdaInvoke(
-            self, "ENRICHMENT_DT_TASK",
+            self,
+            "ENRICHMENT_DT_TASK",
             lambda_function=dt_lambda,
             input_path="$.detail",
             result_path="$.detail.results",
@@ -90,23 +82,24 @@ class SBOMEnrichmentPiplineStack(Stack):
         parallel: Parallel = parallel.branch(dt_task)
 
         # Ion Channel Enrichment Source
-        # ic_lambda = IonChannelInterfaceLambda(
-        #     self,
-        #     vpc=vpc,
-        #     s3_bucket=s3_bucket,
-        #     event_bus=event_bus,
-        # ).get_lambda_function()
-        #
-        # ic_task = tasks.LambdaInvoke(
-        #     self, "ENRICHMENT_IC_TASK",
-        #     lambda_function=ic_lambda,
-        #     input_path="$.detail",
-        #     result_path="$.detail.results",
-        #     output_path="$.detail",
-        # )
+        ic_lambda = IonChannelInterfaceLambda(
+            self,
+            vpc=vpc,
+            s3_bucket=s3_bucket,
+            event_bus=event_bus,
+        ).get_lambda_function()
+
+        ic_task = tasks.LambdaInvoke(
+            self,
+            "ENRICHMENT_IC_TASK",
+            lambda_function=ic_lambda,
+            input_path="$.detail",
+            result_path="$.detail.results",
+            output_path="$.detail",
+        )
 
         # Uncommenting this will turn Ion Channel Enrichment on.
-        #parallel: Parallel = parallel.branch(ic_task)
+        parallel: Parallel = parallel.branch(ic_task)
 
         # Default Enrichment Source
         # default_enrichment_lambda = DefaultEnrichmentInterfaceLambda(
@@ -137,7 +130,8 @@ class SBOMEnrichmentPiplineStack(Stack):
         table_mgr.grant(summarizer_lambda)
 
         summarizer_task = tasks.LambdaInvoke(
-            self, "ENRICHMENT_SUMMARIZER_TASK",
+            self,
+            "ENRICHMENT_SUMMARIZER_TASK",
             lambda_function=summarizer_lambda,
         )
 
@@ -145,14 +139,16 @@ class SBOMEnrichmentPiplineStack(Stack):
 
         # Create State Machine
         enrichment_machine = stepfunctions.StateMachine(
-            self, "ENRICHMENT_STATE_MACHINE",
+            self,
+            "ENRICHMENT_STATE_MACHINE",
             state_machine_name="ENRICHMENT_STATE_MACHINE",
             state_machine_type=stepfunctions.StateMachineType.STANDARD,
-            definition=chain
+            definition=chain,
         )
 
         eventbridge.Rule(
-            self, "ENRICHMENT_EVENTBRIDGE_RULE",
+            self,
+            "ENRICHMENT_EVENTBRIDGE_RULE",
             rule_name="ENRICHMENT_EVENTBRIDGE_RULE",
             enabled=True,
             event_pattern=eventbridge.EventPattern(
@@ -163,4 +159,3 @@ class SBOMEnrichmentPiplineStack(Stack):
             ],
             event_bus=event_bus,
         )
-

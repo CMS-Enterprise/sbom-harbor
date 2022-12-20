@@ -181,7 +181,11 @@ def create_codebase(team_id: str, project_id: str, cf_url: str, jwt: str):
 
 
 def get_entity_by_id(
-    team_id: str, entity_key: str, entity_id: str, cf_url: str, jwt: str
+    team_id: str,
+    entity_key: str,
+    entity_id: str,
+    cf_url: str,
+    jwt: str,
 ) -> dict:
 
     """
@@ -198,3 +202,27 @@ def get_entity_by_id(
     )
 
     return get_rsp.json()
+
+
+def get_upload_token(
+    cf_url: str,
+    jwt: str,
+    team_id: str,
+):
+
+    """
+    -> Get the first upload token in a team
+    """
+
+    url: str = f"{cf_url}/api/v1/tokens"
+    url = f"{url}?teamId={team_id}"
+    get_rsp: Response = get(
+        url,
+        headers={
+            "Authorization": jwt,
+        },
+    )
+
+    token_json: dict = get_rsp.json()
+
+    return token_json[0]["token"]

@@ -3,14 +3,24 @@
 """
 
 import importlib.resources as pr
+from io import StringIO
 from json import dumps, loads
 from typing import Union
 
 import boto3
+from boto3 import resource
 
 import cyclonedx.schemas as schemas
 from cyclonedx.clients import HarborDBClient
-from cyclonedx.model import EntityType, HarborModel, generate_model_id
+from cyclonedx.model import generate_model_id
+from cyclonedx.constants import (
+    S3_META_CODEBASE_KEY,
+    S3_META_PROJECT_KEY,
+    S3_META_TEAM_KEY,
+    SBOM_BUCKET_NAME_KEY,
+    SBOM_S3_KEY,
+)
+from cyclonedx.model import EntityType, HarborModel
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
@@ -96,7 +106,7 @@ def allow_policy(
     -> Policy to allow access to the specified resource
     """
 
-    resource: str = _wildcardize(method_arn)
+    wc_method_arn: str = _wildcardize(method_arn)
 
     return {
         "principalId": "apigateway.amazonaws.com",
@@ -111,12 +121,12 @@ def allow_policy(
                 {
                     "Action": "execute-api:Invoke",
                     "Effect": "Allow",
-                    "Resource": resource,
+                    "Resource": wc_method_arn,
                 },
                 {
                     "Action": "cognito-idp:ListUsers",
                     "Effect": "Allow",
-                    "Resource": resource,
+                    "Resource": wc_method_arn,
                 },
             ],
         },
@@ -485,3 +495,40 @@ def _update_members(team: Team, request_body: dict):
             team.add_child(db_client.update(member))
 
     return team
+
+
+def _get_sbom(event: dict):
+
+    """
+    -> Extracts the Data and Metadata from
+    -> the S3 Object containing the SBOM
+    """
+
+    s3 = resource("s3")
+
+    # EventBridge 'detail' key has the data we need.
+    bucket_name: str = event[SBOM_BUCKET_NAME_KEY]
+    key: str = event[SBOM_S3_KEY]
+
+    # Get the SBOM from the bucket and stick it
+    # into a string based file handle.
+    s3_obj_wrapper = s3.Object(bucket_name, key)
+
+    # Extract the Metadata from the sbom object in S3.
+    metadata: dict = s3_obj_wrapper.metadata
+
+    # Get the SBOM's actual data out of the S3 Object
+    # and put it into a file handle
+    s3_object: dict = s3_obj_wrapper.get()
+    sbom = s3_object["Body"].read()
+    d_sbom = sbom.decode("utf-8")
+    sbom_str_file: StringIO = StringIO(d_sbom)
+
+    return {
+        "data": sbom_str_file,
+        "s3_obj_name": key,
+        "bucket_name": bucket_name,
+        "team": metadata[S3_META_TEAM_KEY],
+        "project": metadata[S3_META_PROJECT_KEY],
+        "codebase": metadata[S3_META_CODEBASE_KEY],
+    }

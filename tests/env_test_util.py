@@ -9,9 +9,6 @@ from json import dumps
 import boto3
 import requests
 from requests import Response, get, put
-from deploy.constants import (
-    S3_BUCKET_NAME,
-)
 
 from cyclonedx.clients.ion_channel.ion_channel import IonChannelClient
 from cyclonedx.constants import (
@@ -21,6 +18,7 @@ from cyclonedx.constants import (
 )
 from cyclonedx.dtendpoints import DTEndpoints
 from cyclonedx.handlers import des_interface_handler
+from deploy.constants import S3_BUCKET_NAME
 
 
 def test_add_team_to_teams_custom_attribute():
@@ -133,7 +131,9 @@ def test_get_analysis_id():
     try:
         name: str = "TEST STeam-SProject-SCodebase"
         ic_client = IonChannelClient(name, True)
-        response = ic_client.get_analysis_id("6c4ce5c9-fcf4-43af-9c8e-f42f06267cd4")
+
+        # pylint: disable = W0212
+        response = ic_client.__get_analysis_id("6c4ce5c9-fcf4-43af-9c8e-f42f06267cd4")
 
         print(dumps(response, indent=2))
 

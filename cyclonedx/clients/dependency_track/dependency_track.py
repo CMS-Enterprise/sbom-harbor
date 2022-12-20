@@ -1,11 +1,10 @@
 """ This Module has all the utility functions
 necessary to interoperate with Dependency Track."""
-from io import StringIO
 from json import dumps, loads
 from time import sleep
 from uuid import uuid4
 
-from boto3 import client, resource
+from boto3 import client
 from botocore.client import BaseClient
 from jsonschema.exceptions import ValidationError
 from requests import Response, get, post, put
@@ -16,11 +15,6 @@ from cyclonedx.constants import (
     DT_DEFAULT_ADMIN_PWD,
     DT_ROOT_PWD,
     EMPTY_VALUE,
-    S3_META_CODEBASE_KEY,
-    S3_META_PROJECT_KEY,
-    S3_META_TEAM_KEY,
-    SBOM_BUCKET_NAME_KEY,
-    SBOM_S3_KEY,
 )
 from cyclonedx.dtendpoints import DTEndpoints
 
@@ -571,41 +565,3 @@ def __set_initial_api_key_in_ssm():
     )
 
     return api_key
-
-
-def __get_all_s3_obj_data(event: dict):
-
-    """Extracts the Data and Metadata from
-    the S3 Object containing the SBOM"""
-
-    s3 = resource("s3")
-
-    # Currently making sure it isn't empty
-    __validate(event)
-
-    # EventBridge 'detail' key has the data we need.
-    bucket_name: str = event[SBOM_BUCKET_NAME_KEY]
-    key: str = event[SBOM_S3_KEY]
-
-    # Get the SBOM from the bucket and stick it
-    # into a string based file handle.
-    s3_obj_wrapper = s3.Object(bucket_name, key)
-
-    # Extract the Metadata from the sbom object in S3.
-    metadata: dict = s3_obj_wrapper.metadata
-
-    # Get the SBOM's actual data out of the S3 Object
-    # and put it into a file handle
-    s3_object: dict = s3_obj_wrapper.get()
-    sbom = s3_object["Body"].read()
-    d_sbom = sbom.decode("utf-8")
-    sbom_str_file: StringIO = StringIO(d_sbom)
-
-    return {
-        "data": sbom_str_file,
-        "s3_obj_name": key,
-        "bucket_name": bucket_name,
-        "team": metadata[S3_META_TEAM_KEY],
-        "project": metadata[S3_META_PROJECT_KEY],
-        "codebase": metadata[S3_META_CODEBASE_KEY],
-    }

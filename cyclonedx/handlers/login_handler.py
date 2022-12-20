@@ -3,9 +3,11 @@
 """
 
 from cyclonedx.clients.ciam import HarborCognitoClient
+from cyclonedx.clients.dependency_track.dependency_track import (
+    __get_body_from_first_record,
+)
 from cyclonedx.exceptions.ciam_exception import HarborCiamError
 from cyclonedx.handlers.common import harbor_response, print_values
-from cyclonedx.handlers.dependency_track import __get_body_from_first_record
 
 
 def login_handler(event: dict, context: dict):

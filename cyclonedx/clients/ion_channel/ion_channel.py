@@ -2,18 +2,60 @@
 -> A module to house the Ion Channel Client and supporting functions
 """
 from time import sleep
-from typing import IO
+from typing import IO, Union
 
 import boto3
 import requests
 from botocore.client import BaseClient
+from botocore.exceptions import ClientError
 from requests import Response
-from urllib3.exceptions import ResponseError
 
-from cyclonedx.constants import IC_API_BASE, IC_API_KEY, IC_RULESET_TEAM_ID
-
+from cyclonedx.constants import IC_API_KEY, IC_RULESET_TEAM_ID
 
 # pylint: disable = R0902
+from cyclonedx.exceptions.ion_channel import IonChannelError
+
+# pylint: disable = E1136
+
+
+def get_ic_urls() -> tuple:
+
+    """
+    -> All the Ion Channel Endpoints
+    """
+
+    export: list = []
+
+    api_base: str = "api.ionchannel.io"
+    api_base_url: str = f"https://{api_base}"
+
+    org_path: str = f"{api_base_url}/v1/organizations"
+    export.append(f"{org_path}/getOwnOrganizations")
+
+    ruleset_path = f"{api_base_url}/v1/ruleset"
+    export.append(f"{ruleset_path}/getRulesets")
+
+    project_path: str = f"{api_base_url}/v1/project"
+    export.append(f"{project_path}/getSBOMs")
+    export.append(f"{project_path}/createSBOM")
+    export.append(f"{project_path}/importSBOM")
+    export.append(f"{project_path}/saveConfirmSBOM")
+    export.append(f"{project_path}/updateProjects")
+
+    report_path: str = f"{api_base_url}/v1/report"
+    export.append(f"{report_path}/getProjects")
+    export.append(f"{report_path}/getAnalysis")
+    export.append(f"{report_path}/getVulnerabilityList")
+
+    scanner_path: str = f"{api_base_url}/v1/scanner"
+    export.append(f"{scanner_path}/getAnalysisStatus")
+
+    animal_path: str = f"{api_base_url}/v1/animal"
+    export.append(f"{animal_path}/getLatestAnalysis")
+
+    return tuple(export)
+
+
 class IonChannelClient:
 
     """
@@ -22,49 +64,141 @@ class IonChannelClient:
     """
 
     @staticmethod
-    def __get_parameter(parameter_name: str):
+    def __get_parameter(parameter_name: str) -> str:
 
-        """Extracts a value from AWS Parameter Store"""
+        """
+        -> Extracts a value from AWS Parameter Store
+        """
 
-        ssm: BaseClient = boto3.client("ssm")
+        ssm_client: BaseClient = boto3.client("ssm")
 
-        return ssm.get_parameter(Name=parameter_name, WithDecryption=False,)[
-            "Parameter"
-        ]["Value"]
+        try:
+            gp_resp: dict = ssm_client.get_parameter(
+                Name=parameter_name,
+                WithDecryption=False,
+            )
+            return gp_resp["Parameter"]["Value"]
+        except ClientError as ce:
+            err: str = "Error talking to AWS to get parameters"
+            raise IonChannelError(err) from ce
+        except KeyError as ke:
+            err: str = f"Error extracting parameter values for {parameter_name}"
+            raise IonChannelError(err) from ke
+
+    def __get(self, url: str) -> dict:
+
+        """
+        -> Execute an http get request
+        """
+
+        print(f"Sending To: GET:{url}")
+        response: Response = requests.get(
+            url,
+            headers=self.headers,
+        )
+
+        return response.json()
+
+    def __put(self, url: str, json: dict) -> dict:
+
+        """
+        -> Execute an http put request
+        """
+
+        print(f"Sending To: PUT:{url}")
+        response: Response = requests.put(
+            url,
+            headers=self.headers,
+            json=json,
+        )
+
+        return response.json()
+
+    def __post(
+        self,
+        url: str,
+        json: Union[list, dict] = None,
+        files: dict = None,
+    ) -> dict:
+
+        """
+        -> Execute an http post request
+        """
+
+        print(f"Sending To: POST:{url}")
+        if json:
+            response: Response = requests.post(
+                url,
+                headers=self.headers,
+                json=json,
+            )
+        elif files:
+            response: Response = requests.post(
+                url,
+                headers=self.headers,
+                files=files,
+            )
+        else:
+            response: Response = requests.post(
+                url,
+                headers=self.headers,
+            )
+
+        return response.json()
+
+    def __create_ic_urls(self):
+
+        """
+        -> All the Ion Channel Endpoints
+        """
+
+        (
+            self.get_own_org_url,
+            self.get_rulesets_url,
+            self.get_sboms_url,
+            self.create_sbom_url,
+            self.import_sbom_url,
+            self.save_sbom_url,
+            self.update_projects_url,
+            self.get_projects_url,
+            self.get_analysis_url,
+            self.get_vuln_list_url,
+            self.get_analysis_status_url,
+            self.get_last_analysis_url,
+            *self.nothing,
+        ) = get_ic_urls()
 
     def __get_ssm_parameters(self):
 
         """Extracts the Ion Channel parameters in the AWS Parameter Store"""
 
-        # The URL that we use for all Ion Channel REST calls
-        self.api_base: dict = self.__get_parameter(IC_API_BASE)
-
-        # Get the API key we defined inIon Channel so we can
+        # Get the API key we defined in Ion Channel, so we can
         # make authorized RESTful calls.
-        self.api_key: dict = self.__get_parameter(IC_API_KEY)
+        self.api_key: str = self.__get_parameter(IC_API_KEY)
 
         # Get the team id we use to get the ruleset
         # we use for requests
-        self.ruleset_team_id: dict = self.__get_parameter(IC_RULESET_TEAM_ID)
+        self.ruleset_team_id: str = self.__get_parameter(IC_RULESET_TEAM_ID)
 
-    def __get_ic_request_headers(self):
+    def __set_ic_request_headers(self):
 
         """Create the headers we will use when making RESTful Calls to Ion Channel
         The headers need the JWT token we created initially.
         """
 
-        self.headers = {"Authorization": f"Bearer {self.api_key}"}
+        self.headers = {
+            "Authorization": f"Bearer {self.api_key}",
+        }
 
     def __get_org_id(self):
 
-        """Get the Organization id from Ion Channel."""
+        """
+        -> Get the Organization id from Ion Channel.
+        """
 
-        ic_org_api_path = f"{self.api_base}/v1/organizations"
-        goo_path = f"{ic_org_api_path}/getOwnOrganizations"
-        goo_url = f"https://{goo_path}"
         self.org_id: str = self.__get_id(
             obj_name="organization",
-            url=goo_url,
+            url=self.get_own_org_url,
         )
 
     def __get_ruleset_id(self):
@@ -74,99 +208,172 @@ class IonChannelClient:
         but for now this default ruleset works.
         """
 
-        ic_ruleset_api_path = f"{self.api_base}/v1/ruleset"
-        get_rs_url = (
-            f"https://{ic_ruleset_api_path}/getRulesets?team_id={self.ruleset_team_id}"
-        )
         self.ruleset_id: str = self.__get_id(
-            url=get_rs_url,
+            url=f"{self.get_rulesets_url}?team_id={self.ruleset_team_id}",
         )
 
-    def __get_sbom_id(self, team_name: str, create_if_missing: bool):
+    def __get_sbom_data(self, team_name: str, create_if_missing: bool):
 
-        project_path = f"{self.api_base}/v1/project"
-        get_sboms_url = f"https://{project_path}/getSBOMs?org_id={self.org_id}"
+        # Get all of our existing SBOMs in Ion Channel
+        get_sboms_rsp: dict = self.__get(self.get_sboms_url)
 
-        print(f"Sending To: GET:{get_sboms_url}")
-        get_sboms_rsp = requests.get(
-            get_sboms_url,
-            headers=self.headers,
-        )
-
-        response: dict = get_sboms_rsp.json()
-
-        print(f"<__get_sbom_id response={response} />")
-
-        response_data = response["data"]
-        software_lists = response_data["softwareLists"]
-
-        def filter_func(item):  # TODO Change it back to the Lambda
-            print(f"<(SBOM|TEAM) item={item} looking for: name={team_name} />")
-            return item["name"] == team_name
+        response_data: dict = get_sboms_rsp["data"]
+        software_lists: list = response_data["softwareLists"]
 
         ic_sbom_list = list(
             filter(
-                # TODO Change it back to the Lambda
-                # lambda item: item['name'] == team_name,
-                filter_func,
+                lambda item: item["name"] == team_name,
                 software_lists,
             )
         )
 
-        if len(ic_sbom_list) == 1:
-            ic_sbom = ic_sbom_list.pop()
-            (self.sbom_id, self.sbom_team_id) = (ic_sbom["id"], ic_sbom["team_id"])
-        elif create_if_missing:
-            (self.sbom_id, self.sbom_team_id) = self.create_sbom(team_name)
+        if len(ic_sbom_list) == 0:
+            self._already_exists: bool = False
+            if create_if_missing:
+                self.sbom_data = self.create_sbom(team_name)
+        elif len(ic_sbom_list) == 1:
+            self._already_exists: bool = True
+            self.sbom_data = ic_sbom_list.pop()
         else:
-            self.sbom_id = "ERROR"
-            raise ValueError(f"Team: {team_name} does not exist in Ion Channel")
-
-        # print(dumps(ic_sbom_list, indent=2, sort_keys=True))
+            self.sbom_data = "ERROR"
+            raise ValueError(f"Team: {team_name} exists more than once in Ion Channel")
 
     def __get_id(self, url: str, obj_name: str = None):
 
-        rsp = requests.get(
-            url,
-            headers=self.headers,
-        )
-
-        rsp_json = rsp.json()
+        rsp_json = self.__get(url)
         data_arr = rsp_json["data"]
 
+        if len(data_arr) < 1:
+            raise IonChannelError(
+                f"The user used to log in has no teams in ion channel: {data_arr}"
+            )
+
         if len(data_arr) > 1:
-            raise ResponseError(f"Too many data(s), should only be one: {data_arr}")
+            raise IonChannelError(
+                f"The user used to log in has too many teams in ion channel: {data_arr}"
+            )
 
         obj = data_arr[0][obj_name] if obj_name else data_arr[0]
 
         return obj["id"]
 
-    def __get_all_active_project_ids(self):
+    def __get_projects_ids(self):
 
         # Get Projects
-        ic_project_api_path = f"{self.api_base}/v1/report"
-        get_projects_url = (
-            f"https://{ic_project_api_path}/getProjects?team_id={self.sbom_team_id}"
+        team_id: str = self.sbom_data["team_id"]
+        get_projects_url: str = f"{self.get_projects_url}?team_id={team_id}"
+        get_projects_json: dict = self.__get(get_projects_url)
+        response_data: list[dict] = get_projects_json["data"]
+
+        active_projects: list[dict] = list(
+            filter(
+                lambda project: project["active"],
+                response_data,
+            )
         )
 
-        print(f"Sending To: GET:{get_projects_url}")
-        get_projects_rsp: Response = requests.get(
-            get_projects_url,
-            headers=self.headers,
-        )
+        project_ids: list[dict] = []
+        for active_project in active_projects:
+            team_id: str = active_project["team_id"]
+            project_id: str = active_project["id"]
+            analysis_summary = active_project["analysis_summary"]
+            analysis_id: str = (
+                "" if analysis_summary is None else analysis_summary["analysis_id"]
+            )
+            project_ids.append(
+                {
+                    "team_id": team_id,
+                    "project_id": project_id,
+                    "analysis_id": analysis_id,
+                }
+            )
 
-        response = get_projects_rsp.json()
-        response_data = response["data"]
+        return project_ids
 
-        return [p["id"] for p in filter(lambda p: p["active"], response_data)]
+    def __get_analysis_id(self, project_id: str):
+
+        """
+        -> Get the analysis ID from Ion Channel
+        """
+
+        # The team ID is from the initial request
+        team_id: str = self.sbom_data["team_id"]
+
+        # Add the Team ID to the URL
+        la_url_plus_team_id: str = f"{self.get_last_analysis_url}?team_id={team_id}"
+
+        # Add the project ID
+        la_url_complete: str = f"{la_url_plus_team_id}&project_id={project_id}"
+
+        # Make the request
+        project_history_rsp: dict = self.__get(la_url_complete)
+
+        try:
+            data: dict = project_history_rsp["data"]
+            return data["analysis_id"]
+        except KeyError as ke:
+            raise ValueError("Unable to get analysis id") from ke
+
+    def __get_analysis(self, project_id: str):
+
+        analysis_id: str = self.__get_analysis_id(project_id)
+
+        # The team ID is from the initial request
+        team_id: str = self.sbom_data["team_id"]
+
+        analysis_url_pti: str = f"{self.get_analysis_url}?team_id={team_id}"
+        analysis_url_ppi: str = f"{analysis_url_pti}&project_id={project_id}"
+        analysis_url_final: str = f"{analysis_url_ppi}&analysis_id={analysis_id}"
+        report_json: dict = self.__get(analysis_url_final)
+
+        try:
+            report_data: dict = report_json["data"]
+            report_analysis: dict = report_data["analysis"]
+            component_name: str = report_analysis["name"]
+            sbom_source: str = report_analysis["source"]
+            passing: bool = report_analysis["passed"]
+
+            results: list = [
+                [analysis["results"]["type"], analysis["results"]["data"]]
+                for analysis in report_analysis["scan_summaries"]
+            ]
+
+            return {
+                "name": component_name,
+                "source": sbom_source,
+                "passing": passing,
+                "results": results,
+            }
+        except KeyError as ke:
+            print(f"ERROR, no 'name' key: {report_json} {ke}")
+            return (
+                f"Error:analysis_id({analysis_id})",
+                f"Error:project_id({project_id})",
+            )
 
     def __init__(self, team_name: str, create_if_missing: bool = False):
 
-        self.__get_ssm_parameters()
-        self.__get_ic_request_headers()
+        # The URL that we use for all Ion Channel REST calls
+        self.__create_ic_urls()
+
+        try:
+            self.__get_ssm_parameters()
+        except ClientError as ce:
+            raise IonChannelError from ce
+
+        self.__set_ic_request_headers()
         self.__get_org_id()
         self.__get_ruleset_id()
-        self.__get_sbom_id(team_name, create_if_missing)
+        self.__get_sbom_data(team_name, create_if_missing)
+
+    @property
+    def already_exists(self):
+
+        """
+        -> True if already exists
+        """
+
+        return self._already_exists
 
     def archive_existing_projects(self):
 
@@ -175,28 +382,17 @@ class IonChannelClient:
         -> SBOM to be uploaded and create new projects of the same name.
         """
 
-        project_ids = self.__get_all_active_project_ids()
-        print(f"<NumIds order='1' value='{len(project_ids)}' />")
+        project_ids = [pid["project_id"] for pid in self.__get_projects_ids()]
 
-        # Report API
-        update_projects_path = f"{self.api_base}/v1/project"
-        update_projects_url = (
-            f"https://{update_projects_path}/updateProjects?archive=true"
+        response: dict = self.__put(
+            f"{self.update_projects_url}?archive=true",
+            {
+                "project_ids": project_ids,
+            },
         )
 
-        print(f"Sending To: PUT:{update_projects_url}")
-        update_projects_rsp = requests.put(
-            update_projects_url, headers=self.headers, json={"project_ids": project_ids}
-        )
-
-        response = update_projects_rsp.json()
         response_data = response["data"]
         failures = response_data["failed"]
-
-        print(
-            f"<UpdateProjectsResponse #succeeded='{len(response_data['succeeded'])}' />"
-        )
-        print(f"<UpdateProjectsResponse #failed='{len(response_data['failed'])}' />")
 
         return len(failures) == 0
 
@@ -210,18 +406,13 @@ class IonChannelClient:
         -> SBOMs into that team using the import endpoint.
         """
 
-        ic_proj_api_path = f"{self.api_base}/v1/project"
-        create_sbom_url = f"https://{ic_proj_api_path}/createSBOM"
-
-        print(f"Sending To: POST:{create_sbom_url}")
-        create_rsp = requests.post(
-            create_sbom_url,
-            headers=self.headers,
-            json={
+        create_rsp_json = self.__post(
+            self.create_sbom_url,
+            {
                 "name": name,
-                "version": "0.0.1",  # TODO
-                "supplier_name": "aquia",  # TODO
-                "contact_name": "qtpeters",  # TODO
+                "version": "0.0.1",
+                "supplier_name": "CMS",
+                "contact_name": "Quinn Peters",  # TODO
                 "contact_email": "quinn.peters@aquia.io",  # TODO
                 "monitor_frequency": "daily",
                 "org_id": self.org_id,
@@ -229,34 +420,7 @@ class IonChannelClient:
             },
         )
 
-        create_rsp_json = create_rsp.json()
-        print(f"Create Response: {create_rsp_json}")
-
-        sbom_id = create_rsp_json["data"]["id"]
-        sbom_team_id = create_rsp_json["data"]["team_id"]
-
-        return sbom_id, sbom_team_id
-
-    def get_analysis_id(self, project_id: str):
-
-        """
-        -> Get the analysis ID from Ion Channel
-        """
-
-        # /?team_id=[TEAM_ID]&project_id=[PROJECT_ID]
-        ic_ruleset_api_path = f"{self.api_base}/v1/animal"
-        url: str = f"https://{ic_ruleset_api_path}/getLatestAnalysis"
-        latest_analysis_url = (
-            f"{url}?team_id={self.sbom_team_id}&project_id={project_id}"
-        )
-
-        print(f"Sending To: GET:{latest_analysis_url}")
-        project_history_rsp = requests.get(
-            latest_analysis_url,
-            headers=self.headers,
-        )
-
-        return project_history_rsp.json()
+        return create_rsp_json["data"]
 
     def import_sbom(self, sbom_fh: IO):
 
@@ -264,128 +428,64 @@ class IonChannelClient:
         -> Import an SBOM into Ion Channel
         """
 
-        ic_proj_api_path = f"{self.api_base}/v1/project"
-        import_sbom_url = (
-            f"https://{ic_proj_api_path}/importSBOM?sbom_id={self.sbom_id}"
-        )
+        sbom_id: str = self.sbom_data["id"]
 
-        print(f"Sending To: POST:{import_sbom_url}")
-        import_rsp = requests.post(
-            import_sbom_url,
-            headers=self.headers,
+        self.__post(
+            f"{self.import_sbom_url}?sbom_id={sbom_id}",
             files={"file": sbom_fh},
         )
 
-        irj = import_rsp.json()
-        irj_data = irj["data"]
+        self.__post(f"{self.save_sbom_url}?id={sbom_id}")
 
-        print(f"<SBOMImportResponse sbom-id='{irj_data['id']}' />")
-        print(f"<SBOMImportResponse sbom-name='{irj_data['name']}' />")
-
-        save_sbom_url = f"https://{ic_proj_api_path}/saveConfirmSBOM?id={self.sbom_id}"
-
-        print(f"Sending To: POST:{save_sbom_url}")
-        save_rsp = requests.post(
-            save_sbom_url,
-            headers=self.headers,
-        )
-
-        save_rsp_json = save_rsp.json()
-        print(f"Save Response: {save_rsp_json}")
-
-    def analyze_sbom(self):
+    def monitor_sbom_analysis(self):
 
         """
-        -> Tell Ion Channel to get to work analyzing the SBOM
+        -> Observe when Ion Channel is finished analyzing the SBOM
         """
 
-        project_ids = self.__get_all_active_project_ids()
-        individually_wrapped_project_ids = list(
-            map(lambda p_id: {"project_id": p_id}, project_ids)
-        )
-
-        # # Scanner API
-        ic_scanner_api_path = f"{self.api_base}/v1/scanner"
-
-        print(f"<NumIds order='2' value='{len(project_ids)}' />")
-
-        analyze_proj_url = f"https://{ic_scanner_api_path}/analyzeProjects"
-        print(f"Sending To: POST:{analyze_proj_url}")
-        analyze_projects_rsp: Response = requests.post(
-            analyze_proj_url,
-            headers=self.headers,
-            json=individually_wrapped_project_ids,
-        )
-
-        response_dict: dict = analyze_projects_rsp.json()
-        print(
-            f"<AnalysisRequestStatusCode response={analyze_projects_rsp.status_code} />"
-        )
-        print(f"<AnalysisRequestResponse response={response_dict} />")
-
-        analysis_successes: list = response_dict["data"]["succeeded"]
-        analysis_status_url = f"https://{ic_scanner_api_path}/getAnalysisStatus"
+        analyses: list[dict] = self.__get_projects_ids()
 
         complete = False
-
+        finished_projects: list[str] = []
+        errored_projects: list[str] = []
         while not complete:
 
             # We hope it's done.
             complete = True
 
-            for analysis in analysis_successes:
+            analysis: dict
+            for analysis in analyses:
 
-                analysis_id: str = analysis["id"]
                 team_id: str = analysis["team_id"]
                 project_id: str = analysis["project_id"]
+                analysis_id: str = analysis["analysis_id"]
 
-                url_with_static_qp = (
-                    f"{analysis_status_url}?id={analysis_id}&team_id={team_id}"
+                # Do not analyze this project if it has
+                # already completed or failed
+                if project_id in finished_projects or project_id in errored_projects:
+                    continue
+
+                gas_url_add_aid: str = (
+                    f"{self.get_analysis_status_url}?id={analysis_id}"
                 )
-                url = f"{url_with_static_qp}&project_id={project_id}"
-                print(f"Sending To: POST:{url}")
-                status_rsp: Response = requests.get(
-                    url,
-                    headers=self.headers,
-                )
-
-                status_rsp_dict: dict = status_rsp.json()
-
-                print(f"<GetAnalysisStatus value='{status_rsp_dict}' />")
-
-                # Can at least be 'finished' or 'queued'
+                gas_url_add_tid = f"{gas_url_add_aid}&team_id={team_id}"
+                gas_url_complete = f"{gas_url_add_tid}&project_id={project_id}"
+                status_rsp_dict: dict = self.__get(gas_url_complete)
                 analysis: str = status_rsp_dict["data"]["status"]
 
-                if analysis == "queued":
-
-                    # We find out that it isn't done
+                if analysis == "finished":
+                    finished_projects.append(project_id)
+                elif analysis == "errored":
+                    errored_projects.append(project_id)
+                else:
                     complete = False
+                    print(status_rsp_dict["data"]["message"])
 
-            if not complete:
-                print(
-                    "Not complete.  Queued projects exist, sleeping for 3s before checking again"
-                )
-                sleep(3)
+                    # Try not to hammer the Ion Channel API
+                    sleep(1)
 
-        print(f"Analysis Response: {response_dict}")
-
-    def report_ready(self):
-
-        """
-        -> Verify whether a report is ready in Ion Channel
-        """
-
-        # Report API
-        ic_report_api_path = f"{self.api_base}/v1/report"
-        analyze_proj_url = f"https://{ic_report_api_path}/getAnalysis"
-
-        print(f"Sending To: GET:{analyze_proj_url}")
-        get_projects_rsp = requests.get(
-            analyze_proj_url,
-            headers=self.headers,
-        )
-
-        print(get_projects_rsp.json())
+            print(f"Extracting data from {len(finished_projects)} projects")
+            print(f"{len(errored_projects)} projects are failing")
 
     def get_report(self):
 
@@ -393,14 +493,19 @@ class IonChannelClient:
         -> Extract the report from Ion Channel
         """
 
-        # Report API
-        ic_report_api_path = f"{self.api_base}/v1/report"
-        analyze_proj_url = f"https://{ic_report_api_path}/getAnalysis"
+        analyses: list = [
+            self.__get_analysis(project_id)
+            for project_id in [pid["project_id"] for pid in self.__get_projects_ids()]
+        ]
 
-        print(f"Sending To: GET:{analyze_proj_url}")
-        get_projects_rsp = requests.get(
-            analyze_proj_url,
-            headers=self.headers,
-        )
+        team_id: str = self.sbom_data["team_id"]
 
-        print(get_projects_rsp.json())
+        vuln_url: str = f"{self.get_vuln_list_url}?id={team_id}"
+        vuln_data: dict = self.__get(vuln_url)
+
+        report: dict = {
+            "analyses": analyses,
+            "vulnerabilities": vuln_data,
+        }
+
+        return report

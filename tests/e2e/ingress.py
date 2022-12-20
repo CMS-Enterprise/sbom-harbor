@@ -19,24 +19,18 @@ from tests.e2e import (
     create_team_with_projects,
     get_cloudfront_url,
     get_team_url,
+    get_upload_token,
     get_upload_url,
     login,
     print_response,
 )
 
 
-def test_sbom_ingress():
+def create_infrastructure(cf_url: str, jwt: str):
 
     """
-    -> Main Test
+    -> Create the infrastructure to support an upload
     """
-
-    sbom_folder: Traversable = files(sboms)
-    keycloak_sbom_obj: Traversable = sbom_folder.joinpath("keycloak.json")
-    keycloak_sbom: dict = loads(keycloak_sbom_obj.read_text())
-
-    cf_url: str = get_cloudfront_url()
-    jwt: str = login(cf_url)
 
     create_rsp: dict = create_team_with_projects(
         team_name="test_sbom_ingress Team",
@@ -62,6 +56,51 @@ def test_sbom_ingress():
         jwt=jwt,
     )
 
+    return team_id, project_id, codebase_id, upload_token
+
+
+# pylint: disable = R0915
+def test_sbom_ingress():
+
+    """
+    -> Main Test
+    """
+
+    retest: bool = True
+    retest_team_id: str = ""
+    retest_project_id: str = ""
+    retest_codebase_id: str = ""
+
+    missing_ids: bool = "" in (
+        retest_team_id,
+        retest_project_id,
+        retest_codebase_id,
+    )
+
+    if retest:
+        if missing_ids:
+            raise ValueError("Need all the ids for a retest")
+
+    sbom_folder: Traversable = files(sboms)
+    sbom_obj: Traversable = sbom_folder.joinpath("panther_python.json")
+    sbom: dict = loads(sbom_obj.read_text())
+
+    cf_url: str = get_cloudfront_url()
+    jwt: str = login(cf_url)
+
+    if not retest:
+        (
+            team_id,
+            project_id,
+            codebase_id,
+            upload_token,
+        ) = create_infrastructure(cf_url, jwt)
+    else:
+        team_id: str = retest_team_id
+        project_id: str = retest_project_id
+        codebase_id: str = retest_codebase_id
+        upload_token: str = get_upload_token(cf_url, jwt, team_id)
+
     sbom_upload_url: str = get_upload_url(
         cf_url=cf_url,
         team_id=team_id,
@@ -76,7 +115,7 @@ def test_sbom_ingress():
         headers={
             "Authorization": upload_token,
         },
-        json=keycloak_sbom,
+        json=sbom,
     )
     print_response(sbom_upload_rsp)
 
@@ -88,7 +127,6 @@ def test_sbom_ingress():
     # Check to see if the SBOM Arrived
     session = boto3.Session(profile_name="sandbox")
     s3_client = session.client("s3")
-    s3_resource = session.resource("s3")
     waiter: Waiter = s3_client.get_waiter("object_exists")
 
     try:
@@ -125,13 +163,39 @@ def test_sbom_ingress():
         f"Found S3 object containing Dependency Track findings: {dt_findings_s3_object_key}"
     )
 
+    ic_findings_s3_object_key: str = f"findings-ic-{sbom_s3_object_key}"
+
+    try:
+        waiter.wait(
+            Bucket=s3_bucket_name,
+            Key=ic_findings_s3_object_key,
+            WaiterConfig={
+                "Delay": 64,
+                "MaxAttempts": 10,
+            },
+        )
+    except botocore.exceptions.ClientError as ce:
+        print(f"No Ion Channel findings in S3 after 15 minutes: {ce}")
+        pytest.fail()
+
+    print(
+        f"Found S3 object containing Ion Channel findings: {dt_findings_s3_object_key}"
+    )
+
+    s3_resource = session.resource("s3")
+
     # Delete the files in S3
     s3_resource.Object(s3_bucket_name, sbom_s3_object_key).delete()
     s3_resource.Object(s3_bucket_name, dt_findings_s3_object_key).delete()
+    s3_resource.Object(s3_bucket_name, ic_findings_s3_object_key).delete()
 
     # Clean up the database
     cleanup(
         team_id=team_id,
         team_url=get_team_url(cf_url),
         jwt=jwt,
+    )
+
+    print(
+        f"IDS for retest: team_id({team_id}), project_id({project_id}), codebase_id({codebase_id})"
     )

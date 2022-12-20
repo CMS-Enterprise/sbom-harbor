@@ -113,19 +113,19 @@ def test_flow():
         name=token_name,
         handler=token_handler,
     )
-    token_dict: dict = loads(create_response["body"])
+    tokens: dict = loads(create_response["body"])
 
-    print(dumps(token_dict, indent=2))
+    print(dumps(tokens, indent=2))
 
-    token_id: str = token_dict["id"]
+    token_id: str = tokens["id"]
 
-    assert token_name == token_dict[Token.Fields.NAME]
-    assert token_dict[Token.Fields.ID]
-    assert token_dict[Token.Fields.ENABLED]
-    assert token_dict[Token.Fields.CREATED]
-    assert token_dict[Token.Fields.EXPIRES]
-    assert token_dict[Token.Fields.TOKEN]
-    assert token_dict[HarborModel.Fields.ID] == token_id
+    assert token_name == tokens[Token.Fields.NAME]
+    assert tokens[Token.Fields.ID]
+    assert tokens[Token.Fields.ENABLED]
+    assert tokens[Token.Fields.CREATED]
+    assert tokens[Token.Fields.EXPIRES]
+    assert tokens[Token.Fields.TOKEN]
+    assert tokens[HarborModel.Fields.ID] == token_id
 
     # Get Test 1
     get_response: dict = get(
@@ -134,30 +134,30 @@ def test_flow():
         handler=token_handler,
     )
 
-    token_dict: dict = loads(get_response["body"])
-    assert token_name == token_dict[Token.Fields.NAME]
-    assert token_dict[Token.Fields.ID]
-    assert token_dict[Token.Fields.ENABLED]
-    assert token_dict[Token.Fields.CREATED]
-    assert token_dict[Token.Fields.EXPIRES]
-    assert token_dict[Token.Fields.TOKEN]
-    assert token_dict[HarborModel.Fields.ID] == token_id
+    tokens: dict = loads(get_response["body"])
+    assert token_name == tokens[Token.Fields.NAME]
+    assert tokens[Token.Fields.ID]
+    assert tokens[Token.Fields.ENABLED]
+    assert tokens[Token.Fields.CREATED]
+    assert tokens[Token.Fields.EXPIRES]
+    assert tokens[Token.Fields.TOKEN]
+    assert tokens[HarborModel.Fields.ID] == token_id
 
     # Get Test 2
     get_response: dict = get_all(
         team_id=team_id,
         handler=tokens_handler,
     )
-    token_dict = loads(get_response["body"])
+    tokens: list = loads(get_response["body"])
 
-    token_id: str = list(token_dict.keys()).pop()
-    token_dict: dict = token_dict[token_id]
-    assert token_name == token_dict[Token.Fields.NAME]
-    assert token_dict[Token.Fields.ENABLED]
-    assert token_dict[Token.Fields.CREATED]
-    assert token_dict[Token.Fields.EXPIRES]
-    assert token_dict[Token.Fields.TOKEN]
-    assert token_dict[HarborModel.Fields.ID] == token_id
+    token: dict = tokens[0]
+    token_id: str = token[Token.Fields.ID]
+    assert token_name == token[Token.Fields.NAME]
+    assert token[Token.Fields.ENABLED]
+    assert token[Token.Fields.CREATED]
+    assert token[Token.Fields.EXPIRES]
+    assert token[Token.Fields.TOKEN]
+    assert token[HarborModel.Fields.ID] == token_id
 
     # Update
     new_name: str = str(uuid.uuid4())

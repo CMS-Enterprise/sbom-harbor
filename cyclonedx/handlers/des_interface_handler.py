@@ -7,7 +7,7 @@ from time import sleep
 import requests
 from boto3 import resource
 
-from cyclonedx.handlers.dependency_track import __get_all_s3_obj_data
+from cyclonedx.handlers.common import _get_sbom
 
 
 def des_interface_handler(event: dict = None, context: dict = None):
@@ -19,7 +19,7 @@ def des_interface_handler(event: dict = None, context: dict = None):
     s3_resource = resource("s3")
 
     print(f"<event value='{event}' />")
-    all_data = __get_all_s3_obj_data(event)
+    all_data = _get_sbom(event)
     sbom = loads(all_data["data"].read())
     sbom_name = all_data["s3_obj_name"]
     bucket_name = all_data["bucket_name"]

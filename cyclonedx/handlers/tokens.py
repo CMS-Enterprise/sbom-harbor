@@ -43,15 +43,7 @@ def tokens_handler(event: dict, context: dict) -> dict:
         recurse=True,
     )
 
-    # fmt: off
-    # Declare a response dictionary
-    response: dict = {
-        token.entity_id: token.to_json()
-        for token in team.tokens
-    }
-    # fmt: on
-
-    return harbor_response(200, response)
+    return harbor_response(200, [token.to_json() for token in team.tokens])
 
 
 def _do_get(event: dict, db_client: HarborDBClient) -> dict:
