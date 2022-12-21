@@ -1,0 +1,15 @@
+# File is used by the openapi-generator cli to generate a rust client.
+generatorName: rust
+gitUserId: CMS-Enterprise
+gitRepoId: sbom-harbor/openapi/client
+inputSpec: /local/openapi/spec.yaml
+outputDir: /local/openapi/client/gen
+packageName: harbor-client
+packageVersion: 0.1.0
+library: hyper
+withAWSV4Signature: true
+#templateDir: /local/openapi/client
+#files:
+#  client.mustache:
+#    templateType: SupportingFiles
+#    destinationFilename: README.md

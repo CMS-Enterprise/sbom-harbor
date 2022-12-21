@@ -1,0 +1,138 @@
+{{>licenseInfo}}
+
+import http from "k6/http";
+import { group, check, sleep } from "k6";
+
+const BASE_URL = "{{baseURL}}";
+// Sleep duration between successive requests.
+// You might want to edit the value of this variable or remove calls to the sleep function on the script.
+const SLEEP_DURATION = 0.1;
+// Global variables should be initialized.
+{{#extra}}
+let {{{key}}} = "TODO_EDIT_THE_{{{value}}}";
+{{/extra}}
+
+class TestContext {
+    constructor() {
+    }
+
+    login() {
+        let url = BASE_URL + `/login`;
+        let body = `{"username": "${__ENV.ADMIN_USERNAME}", "password": "${__ENV.ADMIN_PASSWORD}"}`;
+        let params = {headers: {"Content-Type": "application/json", "Accept": "application/json"}};
+        let response = http.post(url, JSON.stringify(body), params);
+
+        if (response.status !== 200) {
+            console.log(`TestContext.login failed with ${response.status} - ${response.body}`)
+            this.jwt = undefined;
+            return false;
+        }
+
+        this.jwt = response.body["token"];
+    }
+
+    build() {
+        if (!this.login()) {
+            return false;
+        }
+
+        this.teamName = `e2e-${uuidv4()}`;
+
+        let url = BASE_URL + `/api/v1/team?children=true`;
+        let body = {"id": "", "name": this.teamName, "members": [], "projects": []};
+        let params = {headers: {"Content-Type": "application/json", "Accept": "application/json"}};
+        let response = http.post(url, JSON.stringify(body), params);
+
+        if (response.status !== 200) {
+            console.log(`TestContext.build failed with ${response.status} - ${response.body}`)
+            return false;
+        }
+
+        this.team = JSON.parse(response.body);
+
+        if (this.team.name != this.teamName) {
+            console.log(`TestContext.build failed name check: ${JSON.stringify(this)}`)
+            return false;
+        }
+
+        return true;
+    }
+
+    teardown() {
+        let url = BASE_URL + `/api/v1/team/${this.team.id}?children=true`;
+        let response = http.del(url);
+
+        if (response.status !== 200) {
+            console.log(`TestContext.teardown failed with ${response.status} - ${response.body}`)
+        }
+    }
+
+}
+
+export default function() {
+    const ctx = new TestContext()
+
+    if (!ctx.build()) {
+        console.error("failed to build TestContext");
+    }
+
+    console.info(`initiating e2e tests with ctx: ${ctx}`)
+
+
+}
+
+export function tests () {
+// export default function() {
+    {{#requestGroups}}
+    group("{{{groupName}}}", () => {
+        {{#variables}}
+        let {{{key}}} = {{#lambda.handleParamValue}}{{value}}{{/lambda.handleParamValue}}
+        {{/variables}}
+        {{#requests}}
+
+        // Request No. {{-index}}
+        {
+            let url = BASE_URL + `{{{path}}}{{=<% %>=}}<%#query%><%#-first%>?<%/-first%><%& key%>=<%& value%><%^-last%>&<%/-last%><%/query%><%={{ }}=%>`;
+            {{#body}}
+            {{^hasBodyExample}}
+            // TODO: edit the parameters of the request body.
+            {{/hasBodyExample}}
+            let body = {{#body}}{{=<% %>=}}{<%#parameters%>"<%& key%>": <%& value%><%^-last%>, <%/-last%><%/parameters%>}<%={{ }}=%>{{/body}};
+            {{/body}}
+            {{#params}}
+            let params = {{#params}}{{=<% %>=}}{headers: {<%# headers%>"<%& key%>": <%& value%><%^-last%>, <%/-last%><%/headers%><%#responseType%>, "Accept": <%& responseType%><%/responseType%>}<%# auth%>, auth: "<%& auth%>"<%/auth%>}<%={{ }}=%>{{/params}};
+            {{/params}}
+            {{#isDelete}}
+            {{#params}}
+            // this is a DELETE method request - if params are also set, empty body must be passed
+            let request = http.{{method}}(url, {} {{#params}}, params{{/params}});
+            {{/params}}
+            {{^params}}
+            let request = http.{{method}}(url);
+            {{/params}}
+            {{/isDelete}}
+            {{^isDelete}}
+            let request = http.{{method}}(url{{#body}}, JSON.stringify(body){{/body}}{{#params}}, params{{/params}});
+            {{/isDelete}}
+
+            {{#k6Checks}}
+            {{=<% %>=}}
+            check(request, {
+                "<%& description%>": (r) => r.status === <%& status%>
+            });
+            <%={{ }}=%>
+            {{/k6Checks}}
+            {{#dataExtract}}
+
+            {{{paramName}}} = JSON.parse(request.body).{{{valuePath}}}; // extract data for subsequent use
+            {{/dataExtract}}
+            {{^-last}}
+
+            sleep(SLEEP_DURATION);
+            {{/-last}}
+        }
+        {{/requests}}
+    });
+
+    {{/requestGroups}}
+}

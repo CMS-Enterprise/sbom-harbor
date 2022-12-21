@@ -1,0 +1,10 @@
+generatorName: k6
+gitUserId: CMS-Enterprise
+gitRepoId: sbom-harbor/openapi/tests
+inputSpec: /local/openapi/spec.yaml
+outputDir: /local/openapi/tests/gen
+templateDir: /local/openapi/tests
+files:
+  script.mustache:
+    templateType: SupportingFiles
+    destinationFilename: e2e.js
