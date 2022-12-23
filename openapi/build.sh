@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Used to generate code from the openapi spec.yaml file found in this directory.
+# All paths are relative so this script must be run from the openapi directory.
 set -eo pipefail
 
 TESTS=0
@@ -35,15 +37,15 @@ if [[ $TESTS == 1 ]]; then
 #    -g k6 \
 #    -o /local/.openapi-generator/
     echo "Generating Tests"
-    $GENERATE /local/openapi/tests/config.yaml
+    $GENERATE /local/tests/config.yaml
 fi
 
 if [[ $CLIENT == 1 ]]; then
   echo "Generating API Client"
-  $GENERATE /local/openapi/client/config.yaml
+  $GENERATE /local/client/config.yaml
 fi
 
 if [[ $SERVER == 1 ]]; then
   echo "Generating API Server"
-  $GENERATE /local/openapi/server/config.yaml
+  $GENERATE /local/server/config.yaml
 fi

@@ -2,27 +2,36 @@ openapi: 3.0.1
 info:
   title: Harbor
   description: Harbor SBOM Management API
-  version: 2022-11-01 20:31:02UTC
-servers: # https://h9qncyju17.execute-api.us-west-2.amazonaws.com
-  - url: https://d1gl1c9nl92jjp.cloudfront.net
+  version: 0.1.0
+servers:
+  - url: https://d3qet91h5q7sf6.cloudfront.net
     variables:
       basePath:
         default: ''
 tags:
-  - name: aws:cloudformation:stack-id
-    x-amazon-apigateway-tag-value: arn:aws:cloudformation:us-west-2:393419659647:stack/sandbox-harbor-backend-usw2/6d429a30-5a23-11ed-a7d8-02d69603ca53
-  - name: aws:cloudformation:stack-name
-    x-amazon-apigateway-tag-value: sandbox-harbor-backend-usw2
-  - name: aws:cloudformation:logical-id
-    x-amazon-apigateway-tag-value: SBOMManagementApiA8AAF085
+    - name: auth
+      description: Operations related to authentication concerns of the system.
+    - name: team
+      description: Operations related to the team entity.
+    - name: member
+      description: Operations related to the member entity.
+    - name: project
+      description: Operations related to the project entity.
+    - name: codebase
+      description: Operations related to the codebase entity.
+    - name: token
+      description: Operations related to the token entity.
 paths:
   /api/v1/login:
     post:
+      summary: Authenticate with a username and password.
+      tags:
+        - auth
       requestBody:
         $ref: '#/components/requestBodies/login'
       responses:
         "200":
-            $ref: '#/components/responses/login'
+            $ref: '#/components/responses/apiKey'
         "400":
             $ref: '#/components/responses/badRequest'
         "403":
@@ -35,9 +44,36 @@ paths:
         httpMethod: POST
         uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:SBOMLoginLambda-v1/invocations
         connectionType: INTERNET
+  /api/v1/user/search:
+    get:
+      summary: Search for members by email.
+      tags:
+        - auth
+      responses:
+        "200":
+            $ref: '#/components/responses/userList'
+        "400":
+            $ref: '#/components/responses/badRequest'
+        "403":
+            $ref: '#/components/responses/forbidden'
+        "500":
+            $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/filterQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:SBOMUserSearchLambda/invocations
+        connectionType: INTERNET
 
   /api/v1/team:
     post:
+      summary: Create a new team.
+      tags:
+        - team
       requestBody:
         $ref: '#/components/requestBodies/team'
       responses:
@@ -61,6 +97,9 @@ paths:
         connectionType: INTERNET
   /api/v1/team/{teamId}:
     get:
+      summary: Get an existing team.
+      tags:
+        - team
       responses:
         "200":
           $ref: '#/components/responses/team'
@@ -82,6 +121,9 @@ paths:
         uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Team_Lambda/invocations
         connectionType: INTERNET
     put:
+      summary: Modify an existing team.
+      tags:
+        - team
       requestBody:
         $ref: '#/components/requestBodies/team'
       responses:
@@ -105,6 +147,9 @@ paths:
         uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Team_Lambda/invocations
         connectionType: INTERNET
     delete:
+      summary: Delete an existing team.
+      tags:
+        - team
       responses:
         "200":
           $ref: '#/components/responses/team'
@@ -127,6 +172,9 @@ paths:
         connectionType: INTERNET
   /api/v1/teams:
     get:
+      summary: Get all existing teams.
+      tags:
+        - team
       responses:
         "200":
           $ref: '#/components/responses/teamList'
@@ -149,6 +197,9 @@ paths:
 
   /api/v1/member:
     post:
+      summary: Add a member to a team. Creates member if they do not exist.
+      tags:
+        - member
       requestBody:
         $ref: '#/components/requestBodies/member'
       responses:
@@ -172,6 +223,9 @@ paths:
         connectionType: INTERNET
   /api/v1/member/{memberId}:
     get:
+      summary: Get an existing member.
+      tags:
+        - member
       responses:
         "200":
           $ref: '#/components/responses/member'
@@ -193,6 +247,9 @@ paths:
         uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Member_Lambda/invocations
         connectionType: INTERNET
     put:
+      summary: Modify an existing member.
+      tags:
+        - member
       requestBody:
         $ref: '#/components/requestBodies/member'
       responses:
@@ -216,6 +273,9 @@ paths:
         uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Member_Lambda/invocations
         connectionType: INTERNET
     delete:
+      summary: Delete an existing member from a team.
+      tags:
+        - member
       responses:
         "200":
           $ref: '#/components/responses/member'
@@ -238,6 +298,9 @@ paths:
         connectionType: INTERNET
   /api/v1/members:
     get:
+      summary: Get all existing members for a team.
+      tags:
+        - member
       responses:
         "200":
           $ref: '#/components/responses/memberList'
@@ -260,6 +323,9 @@ paths:
 
   /api/v1/project:
     post:
+      summary: Create a project for a team.
+      tags:
+        - project
       requestBody:
         $ref: '#/components/requestBodies/project'
       responses:
@@ -284,6 +350,9 @@ paths:
         connectionType: INTERNET
   /api/v1/project/{projectId}:
     get:
+      summary: Get an existing project.
+      tags:
+        - project
       responses:
         "200":
           $ref: '#/components/responses/project'
@@ -306,6 +375,9 @@ paths:
         uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Project_Lambda/invocations
         connectionType: INTERNET
     put:
+      summary: Modify an existing project.
+      tags:
+        - project
       requestBody:
         $ref: '#/components/requestBodies/project'
       responses:
@@ -330,6 +402,9 @@ paths:
         uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Project_Lambda/invocations
         connectionType: INTERNET
     delete:
+      summary: Delete an existing project.
+      tags:
+        - project
       responses:
         "200":
           $ref: '#/components/responses/project'
@@ -353,6 +428,9 @@ paths:
         connectionType: INTERNET
   /api/v1/projects:
     get:
+      summary: Get all projects for a team.
+      tags:
+        - project
       responses:
         "200":
           $ref: '#/components/responses/projectList'
@@ -376,6 +454,9 @@ paths:
 
   /api/v1/codebase:
     post:
+      summary: Create a codebase for a project.
+      tags:
+        - codebase
       requestBody:
         $ref: '#/components/requestBodies/codebase'
       responses:
@@ -400,6 +481,9 @@ paths:
         connectionType: INTERNET
   /api/v1/codebase/{codebaseId}:
     get:
+      summary: Get an existing codebase.
+      tags:
+        - codebase
       responses:
         "200":
           $ref: '#/components/responses/codebase'
@@ -422,6 +506,9 @@ paths:
         uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Codebase_Lambda/invocations
         connectionType: INTERNET
     put:
+      summary: Modify an existing codebase.
+      tags:
+        - codebase
       requestBody:
         $ref: '#/components/requestBodies/codebase'
       responses:
@@ -446,6 +533,9 @@ paths:
         uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Codebase_Lambda/invocations
         connectionType: INTERNET
     delete:
+      summary: Delete an existing codebase.
+      tags:
+        - codebase
       responses:
         "200":
           $ref: '#/components/responses/codebase'
@@ -469,6 +559,9 @@ paths:
         connectionType: INTERNET
   /api/v1/codebases:
     get:
+      summary: Get all codebases for a project.
+      tags:
+        - codebase
       responses:
         "200":
           $ref: '#/components/responses/codebaseList'
@@ -492,6 +585,9 @@ paths:
 
   /api/v1/token:
     post:
+      summary: Create a token for a team.
+      tags:
+        - token
       requestBody:
         $ref: '#/components/requestBodies/token'
       responses:
@@ -513,6 +609,9 @@ paths:
         connectionType: INTERNET
   /api/v1/token/{tokenId}:
     get:
+      summary: Get an existing token.
+      tags:
+        - token
       responses:
         "200":
           $ref: '#/components/responses/token'
@@ -533,6 +632,9 @@ paths:
         uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Token_Lambda/invocations
         connectionType: INTERNET
     put:
+      summary: Modify an existing token.
+      tags:
+        - token
       requestBody:
         $ref: '#/components/requestBodies/token'
       responses:
@@ -555,6 +657,9 @@ paths:
         uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Token_Lambda/invocations
         connectionType: INTERNET
     delete:
+      summary: Delete an existing token.
+      tags:
+        - token
       responses:
         "200":
           $ref: '#/components/responses/token'
@@ -576,6 +681,9 @@ paths:
         connectionType: INTERNET
   /api/v1/tokens:
     get:
+      summary: Get all tokens for a team.
+      tags:
+        - token
       responses:
         "200":
           $ref: '#/components/responses/tokenList'
@@ -596,30 +704,11 @@ paths:
         uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Tokens_Lambda/invocations
         connectionType: INTERNET
 
-  /api/v1/user/search:
-    get:
-      responses:
-        "200":
-            $ref: '#/components/responses/userSearchResult'
-        "400":
-            $ref: '#/components/responses/badRequest'
-        "403":
-            $ref: '#/components/responses/forbidden'
-        "500":
-            $ref: '#/components/responses/internalServerError'
-      parameters:
-        - $ref: '#/components/parameters/filterQuery'
-      security:
-        - SBOMApi_HttpLambdaAuthorizer_NAME: []
-      x-amazon-apigateway-integration:
-        payloadFormatVersion: '2.0'
-        type: aws_proxy
-        httpMethod: POST
-        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:SBOMUserSearchLambda/invocations
-        connectionType: INTERNET
-
   /api/v1/{teamId}/{projectId}/{codebaseId}/sbom:
     post:
+      summary: Upload an SBOM to the Enrichment Engine.
+      tags:
+        - enrichment
       requestBody:
         $ref: '#/components/requestBodies/sbom'
       responses:
@@ -761,7 +850,7 @@ components:
           type: string
         s3ObjectKey:
           type: string
-    userSearchResult:
+    userList:
       type: array
       items:
         type: string
@@ -902,9 +991,10 @@ components:
       content:
         application/json:
           schema:
-            oneOf:
-              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.3/schema/bom-1.3.schema.json'
-              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.2/schema/bom-1.2.schema.json'
+              type: string
+#            oneOf:
+#              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.3/schema/bom-1.3.schema.json'
+#              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.2/schema/bom-1.2.schema.json'
   responses:
     badRequest:
       description: 'Bad Request'
@@ -913,7 +1003,7 @@ components:
     internalServerError:
       description: "Internal Server Error"
 
-    login:
+    apiKey:
       description: 'Result of the login operation.'
       content:
         application/json:
@@ -1007,12 +1097,12 @@ components:
             $ref: '#/components/schemas/uploadResult'
 
 
-    userSearchResult:
+    userList:
       description: 'The user search matches. Queries members by email address.'
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/userSearchResult'
+            $ref: '#/components/schemas/userList'
 
 x-amazon-apigateway-cors:
   allowMethods:

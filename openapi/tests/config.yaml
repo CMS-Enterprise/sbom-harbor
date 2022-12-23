@@ -1,10 +1,10 @@
 generatorName: k6
 gitUserId: CMS-Enterprise
 gitRepoId: sbom-harbor/openapi/tests
-inputSpec: /local/openapi/spec.yaml
-outputDir: /local/openapi/tests/gen
-templateDir: /local/openapi/tests
+inputSpec: /local/spec.yaml
+outputDir: /local/tests/gen
+templateDir: /local/tests
 files:
   script.mustache:
     templateType: SupportingFiles
-    destinationFilename: e2e.js
+    destinationFilename: script.js
