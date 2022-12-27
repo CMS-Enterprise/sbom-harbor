@@ -599,6 +599,8 @@ paths:
           $ref: '#/components/responses/forbidden'
         "500":
           $ref: '#/components/responses/internalServerError'
+      parameters:
+          - $ref: '#/components/parameters/teamIdQuery'
       security:
         - SBOMApi_HttpLambdaAuthorizer_NAME: []
       x-amazon-apigateway-integration:
@@ -623,6 +625,7 @@ paths:
           $ref: '#/components/responses/internalServerError'
       parameters:
         - $ref: '#/components/parameters/tokenId'
+        - $ref: '#/components/parameters/teamIdQuery'
       security:
         - SBOMApi_HttpLambdaAuthorizer_NAME: []
       x-amazon-apigateway-integration:
@@ -648,6 +651,7 @@ paths:
           $ref: '#/components/responses/internalServerError'
       parameters:
         - $ref: '#/components/parameters/tokenId'
+        - $ref: '#/components/parameters/teamIdQuery'
       security:
         - SBOMApi_HttpLambdaAuthorizer_NAME: []
       x-amazon-apigateway-integration:
@@ -671,6 +675,7 @@ paths:
           $ref: '#/components/responses/internalServerError'
       parameters:
         - $ref: '#/components/parameters/tokenId'
+        - $ref: '#/components/parameters/teamIdQuery'
       security:
         - SBOMApi_HttpLambdaAuthorizer_NAME: []
       x-amazon-apigateway-integration:

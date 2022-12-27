@@ -72,7 +72,7 @@ class TestContext {
 export default function() {
     const ctx = new TestContext()
 
-    if (!ctx.build()) {
+    if (!ctx.buildUp()) {
         console.error("failed to build TestContext");
     }
 
@@ -81,7 +81,7 @@ export default function() {
 
 }
 
-export function tests () {
+export default function () {
 // export default function() {
     {{#requestGroups}}
     group("{{{groupName}}}", () => {
