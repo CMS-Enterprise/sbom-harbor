@@ -22,7 +22,10 @@ AWS_REGION_SHORT = regionCodes.get(AWS_REGION)
 ENVIRONMENT = getenv("ENVIRONMENT") or "sandbox"
 
 # CMS
-CMS_PERMISSION_BOUNDARY_ARN = f"arn:aws:iam::{AWS_ACCOUNT_ID}:policy/cms-cloud-admin/ct-ado-poweruser-permissions-boundary-policy"
+CMS_PERMISSION_BOUNDARY_ARN = (
+    f"arn:aws:iam::{AWS_ACCOUNT_ID}:policy/cms-cloud-admin/ct-ado-poweruser-"
+    f"permissions-boundary-policy"
+)
 CMS_ROLE_PATH = "/delegatedadmin/developer/"
 
 # Cognito
@@ -54,6 +57,7 @@ LOGIN_LN = "Login"
 SBOM_ENRICHMENT_LN = "SBOMEnrichmentIngress"
 DT_INTERFACE_LN = "DependencyTrackInterface"
 IC_INTERFACE_LN = "IonChannelInterface"
+OPENSSF_SCORECARD_LN = "OpenSSFScorecardInterface"
 DEFAULT_INTERFACE_LN = "DefaultEnrichmentInterface"
 ENRICHMENT_EGRESS_LN = "EnrichmentEgress"
 AUTHORIZER_LN = "JwtTokenAuthorizer"
@@ -80,6 +84,19 @@ DT_SBOM_QUEUE_NAME = f"{ENVIRONMENT}-DT_SBOMQueue-{AWS_REGION_SHORT}"
 DT_TASK_DEF_ID = "dtTaskDefinition"
 EFS_MOUNT_ID = "dtApiStorage"
 FARGATE_CLUSTER_ID = "DTFargateCluster"
+
+OPENSSF_CONTAINER_ID = "openssfContainer"
+OPENSSF_DOCKER_ID = "openssfscorecard/apiserver"
+OPENSSF_FARGATE_SVC_NAME = (
+    f"{ENVIRONMENT}-OSSFScorecardFargateService-{AWS_REGION_SHORT}"
+)
+OPENSSF_FARGATE_CLUSTER_ID = "OpenssfFargateCluster"
+OPENSSF_LB_ID = "OPENSSF-SCORECARD-LOAD-BALANCER"
+OPENSSF_LB_LOGGING_ID = "OPENSSF-SCORECARD-LOAD-BALANCER-LOGGING"
+OPENSSF_LB_SG_ID = "OPENSSF-SCORECARD-LOAD-BALANCER-SECURITY-GROUP"
+OPENSSF_MOUNT_ID = "openssfApiStorage"
+OPENSSF_TASK_DEF_ID = "openssfTaskDefinition"
+
 
 # S3 - SBOMs
 S3_BUCKET_ID = "UploadsEnrichmentBucket"

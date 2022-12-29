@@ -11,7 +11,6 @@ from aws_cdk.aws_stepfunctions import Chain, Parallel
 from constructs import Construct
 
 from cyclonedx.constants import EVENT_BUS_SOURCE
-
 from deploy.constants import ENRICHMENT_STACK_ID, S3_BUCKET_NAME
 from deploy.enrichment import EnrichmentIngressLambda
 from deploy.enrichment.dependency_track import (
@@ -21,6 +20,7 @@ from deploy.enrichment.dependency_track import (
     SummarizerLambda,
 )
 from deploy.enrichment.ion_channel import IonChannelInterfaceLambda
+from deploy.enrichment.openssf_scorecard import OpenssfScorecardInterfaceLambda
 from deploy.util import DynamoTableManager
 
 
@@ -29,12 +29,13 @@ class SBOMEnrichmentPiplineStack(Stack):
     """This Stack deploys the Enrichment Pipeline"""
 
     def __init__(
-            self,
-            scope: Construct,
-            vpc: ec2.Vpc,
-            table_mgr: DynamoTableManager,
-            event_bus: eventbridge.EventBus,
-            **kwargs) -> None:
+        self,
+        scope: Construct,
+        vpc: ec2.Vpc,
+        table_mgr: DynamoTableManager,
+        event_bus: eventbridge.EventBus,
+        **kwargs
+    ) -> None:
 
         # Run the constructor of the Stack superclass.
         super().__init__(scope, ENRICHMENT_STACK_ID, **kwargs)
@@ -100,6 +101,24 @@ class SBOMEnrichmentPiplineStack(Stack):
 
         # Uncommenting this will turn Ion Channel Enrichment on.
         parallel: Parallel = parallel.branch(ic_task)
+
+        # Openssf Scorecard Enrichment Source
+        ossf_lambda = OpenssfScorecardInterfaceLambda(
+            self,
+            vpc=vpc,
+            s3_bucket=s3_bucket,
+            event_bus=event_bus,
+        ).get_lambda_function()
+
+        ossf_task = tasks.LambdaInvoke(
+            self,
+            "ENRICHMENT_OSSF_TASK",
+            lambda_function=ossf_lambda,
+            input_path="$.detail",
+            result_path="$.detail.results",
+            output_path="$.detail",
+        )
+        parallel: Parallel = parallel.branch(ossf_task)
 
         # Default Enrichment Source
         # default_enrichment_lambda = DefaultEnrichmentInterfaceLambda(
