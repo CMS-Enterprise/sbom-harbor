@@ -93,6 +93,7 @@ def test_create_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
 
     language = "JAVASCRIPT"
     build_tool = "YARN"
+    clone_url = "https://github.com/cmsgov/ab2d-lambdas"
 
     HarborDBClient(test_dynamo_db_resource).create(
         CodeBase(
@@ -102,6 +103,7 @@ def test_create_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
             name=codebase_id,
             language=language,
             build_tool=build_tool,
+            clone_url=clone_url,
         )
     )
 
@@ -266,6 +268,7 @@ def test_create_team_with_a_child_of_each_type(
 
     language = "JAVASCRIPT"
     build_tool = "YARN"
+    clone_url = "https://github.com/cmsgov/ab2d-lambdas"
 
     created = Decimal(507482179.234)
     expires = Decimal(507492179.234)
@@ -289,6 +292,7 @@ def test_create_team_with_a_child_of_each_type(
                             name=codebase_id,
                             language=language,
                             build_tool=build_tool,
+                            clone_url=clone_url,
                         )
                     ],
                 )
@@ -372,6 +376,7 @@ def test_create_team_with_a_child_of_each_type(
     assert codebase_id == codebase_item[CodeBase.Fields.NAME]
     assert language == codebase_item[CodeBase.Fields.LANGUAGE]
     assert build_tool == codebase_item[CodeBase.Fields.BUILD_TOOL]
+    assert clone_url == codebase_item[CodeBase.Fields.CLONE_URL]
 
     member_item = member["Item"]
     assert team_id == member_item[HARBOR_TEAMS_TABLE_PARTITION_KEY]

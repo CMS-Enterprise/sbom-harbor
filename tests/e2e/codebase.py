@@ -61,10 +61,12 @@ def test_codebase_update():
     assert (
         codebase_json.get(CodeBase.Fields.BUILD_TOOL) == TestCodebaseValues.BUILD_TOOL
     )
+    assert codebase_json.get(CodeBase.Fields.CLONE_URL) == TestCodebaseValues.CLONE_URL
 
     new_test_name: str = "UPDATE TEST NAME"
     new_test_language: str = "UPDATE TEST LANGUAGE"
     new_test_build_tool: str = "UPDATE TEST BUILD TOOL"
+    new_test_clone_url: str = "UPDATE TEST CLONE URL"
 
     codebase_url: str = f"{cf_url}/api/v1/codebase/{codebase_id}"
     codebase_url = f"{codebase_url}?projectId={project_id}"
@@ -78,6 +80,7 @@ def test_codebase_update():
             CodeBase.Fields.NAME: new_test_name,
             CodeBase.Fields.LANGUAGE: new_test_language,
             CodeBase.Fields.BUILD_TOOL: new_test_build_tool,
+            CodeBase.Fields.CLONE_URL: new_test_clone_url,
         },
     )
 
@@ -98,6 +101,7 @@ def test_codebase_update():
     assert codebase_json.get(CodeBase.Fields.NAME) == new_test_name
     assert codebase_json.get(CodeBase.Fields.LANGUAGE) == new_test_language
     assert codebase_json.get(CodeBase.Fields.BUILD_TOOL) == new_test_build_tool
+    assert codebase_json.get(CodeBase.Fields.CLONE_URL) == new_test_clone_url
 
     cleanup(
         team_id=team_id,

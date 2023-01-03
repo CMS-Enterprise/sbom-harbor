@@ -359,6 +359,7 @@ def update_codebase_data(
     original_name: str = codebase_item.get(CodeBase.Fields.NAME)
     original_language: str = codebase_item.get(CodeBase.Fields.LANGUAGE)
     original_build_tool: str = codebase_item.get(CodeBase.Fields.BUILD_TOOL)
+    original_clone_url: str = codebase_item.get(CodeBase.Fields.CLONE_URL)
 
     # replace only the data in the existing object with the
     # new data from the request body ignoring children
@@ -373,6 +374,7 @@ def update_codebase_data(
             CodeBase.Fields.BUILD_TOOL,
             original_build_tool,
         ),
+        clone_url=codebase_dict.get(CodeBase.Fields.CLONE_URL, original_clone_url),
     )
 
 
