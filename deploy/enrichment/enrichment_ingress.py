@@ -39,7 +39,7 @@ class EnrichmentIngressLambda(Construct):
         self.func = lambda_.Function(
             self,
             SBOM_ENRICHMENT_LN,
-            function_name="EnrichmentIngressLambda",
+            function_name=SBOM_ENRICHMENT_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),

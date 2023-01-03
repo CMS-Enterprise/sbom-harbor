@@ -51,7 +51,7 @@ class DependencyTrackInterfaceLambda(Construct):
         self.func = lambda_.Function(
             self,
             DT_INTERFACE_LN,
-            function_name="DependencyTrackInterfaceLambda",
+            function_name=DT_INTERFACE_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),

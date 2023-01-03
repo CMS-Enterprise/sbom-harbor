@@ -16,7 +16,7 @@ from deploy.util import DynamoTableManager
 
 class SBOMCreateTokenLambda(Construct):
 
-    """ Lambda to create an API token """
+    """Lambda to create an API token"""
 
     def __init__(
         self,
@@ -29,8 +29,9 @@ class SBOMCreateTokenLambda(Construct):
         super().__init__(scope, CREATE_TOKEN_LN)
 
         self.func = lambda_.Function(
-            self, CREATE_TOKEN_LN,
-            function_name="SBOMCreateTokenLambda",
+            self,
+            CREATE_TOKEN_LN,
+            function_name=CREATE_TOKEN_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),

@@ -38,7 +38,7 @@ class SBOMGeneratorLambda(Construct):
         self.func = lambda_.Function(
             self,
             SBOM_GENERATOR_LN,
-            function_name="SBOMGeneratorLambda",
+            function_name=SBOM_GENERATOR_LN,
             runtime=lambda_.Runtime.FROM_IMAGE,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),

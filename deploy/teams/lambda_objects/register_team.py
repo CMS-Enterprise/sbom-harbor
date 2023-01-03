@@ -16,7 +16,7 @@ from deploy.util import DynamoTableManager
 
 class SBOMRegisterTeamLambda(Construct):
 
-    """ Lambda to register a team """
+    """Lambda to register a team"""
 
     def __init__(
         self,
@@ -29,8 +29,9 @@ class SBOMRegisterTeamLambda(Construct):
         super().__init__(scope, REGISTER_TEAM_LN)
 
         self.func = lambda_.Function(
-            self, REGISTER_TEAM_LN,
-            function_name="SBOMRegisterTeamLambda",
+            self,
+            REGISTER_TEAM_LN,
+            function_name=REGISTER_TEAM_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),

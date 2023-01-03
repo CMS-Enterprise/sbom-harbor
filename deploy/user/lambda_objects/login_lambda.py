@@ -32,7 +32,6 @@ class SBOMLoginLambda(Construct):
         vpc: ec2.Vpc,
         user_pool_id: str,
         user_pool_client_id: str,
-        function_name: str,
     ):
 
         super().__init__(scope, LOGIN_LN)
@@ -40,7 +39,7 @@ class SBOMLoginLambda(Construct):
         self.login_func = lambda_.Function(
             self,
             LOGIN_LN,
-            function_name=function_name,
+            function_name=LOGIN_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
