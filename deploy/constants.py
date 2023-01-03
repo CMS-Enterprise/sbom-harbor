@@ -10,7 +10,7 @@ regionCodes = {
     "us-west-1": "usw1",
     "us-west-2": "usw2",
 }
-print(getenv("ION_CHANNEL_TOKEN"))
+
 # General
 SBOM_API_PYTHON_RUNTIME = lambda_.Runtime.PYTHON_3_9
 PYTHON_LOGGING_CONFIG = path.join(
