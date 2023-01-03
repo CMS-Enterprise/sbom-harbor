@@ -1,7 +1,14 @@
 """
 -> Module to house the CognitoUserData class
 """
+import logging
+from logging import config
 from typing import Callable
+
+from cyclonedx.constants import PYTHON_LOGGING_CONFIG
+
+config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 
 class CognitoUserData:
@@ -63,5 +70,5 @@ class CognitoUserData:
 
             return "" if teams == "," else teams
         except KeyError as ke:
-            print(f"KeyError while getting teams: {ke}")
+            logger.info("KeyError while getting teams %s", ke)
             return ""

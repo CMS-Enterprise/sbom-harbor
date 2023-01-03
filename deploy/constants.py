@@ -1,5 +1,5 @@
 """ This module has constants throughout the build code """
-from os import getenv
+from os import getenv, path
 
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_lambda as lambda_
@@ -13,6 +13,9 @@ regionCodes = {
 
 # General
 SBOM_API_PYTHON_RUNTIME = lambda_.Runtime.PYTHON_3_9
+PYTHON_LOGGING_CONFIG = path.join(
+    path.dirname(path.dirname(__file__)), "python_logging.conf"
+)
 
 # AWS
 AWS_PROFILE = getenv("AWS_PROFILE")
@@ -22,7 +25,10 @@ AWS_REGION_SHORT = regionCodes.get(AWS_REGION)
 ENVIRONMENT = getenv("ENVIRONMENT") or "sandbox"
 
 # CMS
-CMS_PERMISSION_BOUNDARY_ARN = f"arn:aws:iam::{AWS_ACCOUNT_ID}:policy/cms-cloud-admin/ct-ado-poweruser-permissions-boundary-policy"
+CMS_PERMISSION_BOUNDARY_ARN = (
+    f"arn:aws:iam::{AWS_ACCOUNT_ID}:policy/cms-cloud-admin/"
+    f"ct-ado-poweruser-permissions-boundary-policy"
+)
 CMS_ROLE_PATH = "/delegatedadmin/developer/"
 
 # Cognito

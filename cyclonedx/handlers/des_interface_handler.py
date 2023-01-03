@@ -1,13 +1,19 @@
 """
 -> Module for the Default Enrichment Source Handler
 """
+import logging
 from json import dumps, loads
+from logging import config
 from time import sleep
 
 import requests
 from boto3 import resource
 
+from cyclonedx.constants import PYTHON_LOGGING_CONFIG
 from cyclonedx.handlers.common import _get_sbom
+
+config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 
 def des_interface_handler(event: dict = None, context: dict = None):
@@ -18,7 +24,7 @@ def des_interface_handler(event: dict = None, context: dict = None):
 
     s3_resource = resource("s3")
 
-    print(f"<event value='{event}' />")
+    logger.info("event value= %s", event)
     all_data = _get_sbom(event)
     sbom = loads(all_data["data"].read())
     sbom_name = all_data["s3_obj_name"]
@@ -44,14 +50,14 @@ def des_interface_handler(event: dict = None, context: dict = None):
     for component in components[:10]:  # TODO Remove Slice
 
         components_seen += 1
-        print(f"Looking at component# {components_seen} of {len(components)}")
+        logger.info("Looking at component# %s of %s", components_seen, len(components))
 
         vendor = "*"
         product = component["name"]
         version = component["version"]
 
         key = api_keys[components_seen % len(api_keys)]
-        print(f"Request Key: {key}")
+        logger.info("Request Key: %s", key)
         cpe_search_str = f"cpe:2.3:a:{vendor}:{product}:{version}"
         nvd_query_params = f"?addOns=cves&cpeMatchString={cpe_search_str}&apiKey={key}"
         nvd_url = f"{nvd_base_url}/{nvd_api_path}/{nvd_query_params}"
@@ -59,7 +65,7 @@ def des_interface_handler(event: dict = None, context: dict = None):
         nvd_response = requests.get(nvd_url)
 
         if nvd_response.status_code == 403:
-            print("Hit NVD Administrative limit, backing off for 10 seconds.")
+            logger.info("Hit NVD Administrative limit, backing off for 10 seconds.")
             components.append(component)
             sleep(10)
             continue
@@ -68,14 +74,14 @@ def des_interface_handler(event: dict = None, context: dict = None):
         num_results = nvd_rsp_json["totalResults"]
 
         if num_results > 0:
-            print(f"# Results: {num_results}")
+            logger.info("Results: %s", num_results)
             findings.append(nvd_rsp_json)
         else:
-            print("No Results")
+            logger.info("No Results")
 
-    print("Made it out of the loop!!!")
+    logger.info("Made it out of the loop!!!")
 
-    # print(dumps(response.json(), indent=2))
+    # logger.info(dumps(response.json(), indent=2))
     # Dump the findings into a byte array and store them
     # in the S3 bucket along with the SBOM the findings
     # came from.

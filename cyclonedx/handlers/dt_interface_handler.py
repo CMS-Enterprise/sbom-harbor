@@ -1,8 +1,10 @@
 """
 -> Module for the Dependency Track Interface Handler
 """
+import logging
 from io import StringIO
 from json import dumps
+from logging import config
 
 from boto3 import resource
 
@@ -13,7 +15,10 @@ from cyclonedx.clients.dependency_track.dependency_track import (
     __upload_sbom,
     __validate,
 )
-from cyclonedx.constants import SBOM_BUCKET_NAME_KEY, SBOM_S3_KEY
+from cyclonedx.constants import PYTHON_LOGGING_CONFIG, SBOM_BUCKET_NAME_KEY, SBOM_S3_KEY
+
+config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 
 def dt_interface_handler(event: dict = None, context: dict = None):
@@ -26,7 +31,7 @@ def dt_interface_handler(event: dict = None, context: dict = None):
 
     s3_resource = resource("s3")
 
-    print(f"<Event event='{event}' />")
+    logger.info("Event event= %s", event)
 
     # Currently making sure it isn't empty
     __validate(event)
@@ -64,6 +69,6 @@ def dt_interface_handler(event: dict = None, context: dict = None):
         Body=findings_bytes,
     )
 
-    print(f"Findings are in the s3 bucket: {bucket_name}/{findings_key}")
+    logger.info("Findings are in the s3 bucket: %s, %s", bucket_name, findings_key)
 
     return findings_key

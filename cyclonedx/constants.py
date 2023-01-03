@@ -1,4 +1,9 @@
 """ Constants to be used throughout the system"""
+from os import path
+
+PYTHON_LOGGING_CONFIG = path.join(
+    path.dirname(path.dirname(__file__)), "python_logging.conf"
+)
 
 DT_API_PORT = 8080
 APP_PORT = 433
