@@ -6,7 +6,7 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import Grid from '@mui/material/Grid'
-import useCopyToClipboard from '@/hooks/useCopyToClupboard'
+import useCopyToClipboard from '@/hooks/useCopyToClipboard'
 import Icon from '@mui/material/Icon'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 
