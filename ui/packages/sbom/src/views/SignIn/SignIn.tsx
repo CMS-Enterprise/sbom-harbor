@@ -4,13 +4,12 @@
  */
 import * as React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import * as yup from 'yup'
 import { useForm, Controller } from 'react-hook-form'
+import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Checkbox from '@mui/material/Checkbox'
-import Divider from '@mui/material/Divider'
 import FormControl from '@mui/material/FormControl'
 import FormHelperText from '@mui/material/FormHelperText'
 import IconButton from '@mui/material/IconButton'
@@ -24,9 +23,10 @@ import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import EyeOutline from 'mdi-material-ui/EyeOutline'
 import EyeOffOutline from 'mdi-material-ui/EyeOffOutline'
-import SocialLoginButtons from '@/components/SocialLoginButtons'
-import useAlert from '@/hooks/useAlert'
+import loginUser from '@/actions/loginUser'
+import LinearIndeterminate from '@/components/mui/LinearLoadingBar'
 import { useAuthDispatch } from '@/hooks/useAuth'
+import useAlert from '@/hooks/useAlert'
 import BlankLayout from '@/layouts/BlankLayout'
 import {
   BoxWrapper,
@@ -35,7 +35,7 @@ import {
   RightWrapper,
   TypographyStyled,
 } from '@/views/SignIn/SignIn.components'
-import loginUser from '@/actions/loginUser'
+import SignInGraphic from '@/views/SignIn/SignInGraphic'
 
 const defaultValues = {
   email: '',
@@ -63,11 +63,10 @@ const LoginPage = () => {
 
   const navigate = useNavigate()
   const { setAlert } = useAlert()
-
-  // auth state hooks
   const dispatch = useAuthDispatch()
 
   // local state
+  const [loading, setLoading] = React.useState<boolean>(false)
   const [showPassword, setShowPassword] = React.useState<boolean>(false)
 
   const {
@@ -82,10 +81,13 @@ const LoginPage = () => {
 
   const onSubmit = async (data: FormData) => {
     const { email, password } = data
+    setLoading(true)
     try {
       await loginUser(dispatch, { email, password })
+      setLoading(false)
       navigate('/app')
     } catch (error) {
+      setLoading(false)
       setAlert({
         message: 'There was an error logging in. Please try again.',
         severity: 'error',
@@ -135,82 +137,7 @@ const LoginPage = () => {
                 justifyContent: 'center',
               }}
             >
-              <svg
-                width={47}
-                fill="none"
-                height={26}
-                viewBox="0 0 268 150"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect
-                  rx="25.1443"
-                  width="50.2886"
-                  height="143.953"
-                  fill={theme.palette.primary.main}
-                  transform="matrix(-0.865206 0.501417 0.498585 0.866841 195.571 0)"
-                />
-                <rect
-                  rx="25.1443"
-                  width="50.2886"
-                  height="143.953"
-                  fillOpacity="0.4"
-                  fill="url(#paint0_linear_7821_79167)"
-                  transform="matrix(-0.865206 0.501417 0.498585 0.866841 196.084 0)"
-                />
-                <rect
-                  rx="25.1443"
-                  width="50.2886"
-                  height="143.953"
-                  fill={theme.palette.primary.main}
-                  transform="matrix(0.865206 0.501417 -0.498585 0.866841 173.147 0)"
-                />
-                <rect
-                  rx="25.1443"
-                  width="50.2886"
-                  height="143.953"
-                  fill={theme.palette.primary.main}
-                  transform="matrix(-0.865206 0.501417 0.498585 0.866841 94.1973 0)"
-                />
-                <rect
-                  rx="25.1443"
-                  width="50.2886"
-                  height="143.953"
-                  fillOpacity="0.4"
-                  fill="url(#paint1_linear_7821_79167)"
-                  transform="matrix(-0.865206 0.501417 0.498585 0.866841 94.1973 0)"
-                />
-                <rect
-                  rx="25.1443"
-                  width="50.2886"
-                  height="143.953"
-                  fill={theme.palette.primary.main}
-                  transform="matrix(0.865206 0.501417 -0.498585 0.866841 71.7728 0)"
-                />
-                <defs>
-                  <linearGradient
-                    y1="0"
-                    x1="25.1443"
-                    x2="25.1443"
-                    y2="143.953"
-                    id="paint0_linear_7821_79167"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop />
-                    <stop offset="1" stopOpacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    y1="0"
-                    x1="25.1443"
-                    x2="25.1443"
-                    y2="143.953"
-                    id="paint1_linear_7821_79167"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop />
-                    <stop offset="1" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-              </svg>
+              <SignInGraphic />
               <Typography
                 variant="h6"
                 sx={{
@@ -327,41 +254,13 @@ const LoginPage = () => {
                 size="large"
                 type="submit"
                 variant="contained"
-                // disabled={loading}
+                disabled={loading}
                 sx={{ mb: 5 }}
               >
                 Login
               </Button>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{ mr: 2, color: 'text.secondary' }}
-                >
-                  New to SBOM Harbor?
-                </Typography>
-                <MuiLink
-                  component={Link}
-                  to="/register"
-                  variant="subtitle2"
-                  sx={{ color: 'primary.main' }}
-                >
-                  Create an account
-                </MuiLink>
-              </Box>
-              <Divider
-                sx={{ mt: 5, mb: 7.5, '& .MuiDivider-wrapper': { px: 4 } }}
-              >
-                or
-              </Divider>
-              <SocialLoginButtons />
             </form>
+            {loading && <LinearIndeterminate />}
           </BoxWrapper>
         </Box>
       </RightWrapper>

@@ -9,7 +9,7 @@ import { Token } from '@/types'
  * @param {string} teamId - the id of the team to delete the token from.
  * @returns {Promise} - the response from the Harbor API.
  */
-const update = async ({
+const updateToken = async ({
   abortController = new AbortController(),
   jwtToken,
   tokenId,
@@ -25,7 +25,7 @@ const update = async ({
     enabled?: boolean
     expires?: string
   }
-}): Promise<Record<string, never>> =>
+}): Promise<Response> =>
   harborRequest({
     path: `/token/${tokenId}?teamId=${teamId}`,
     method: 'PUT',
@@ -34,4 +34,4 @@ const update = async ({
     signal: abortController.signal,
   })
 
-export default update
+export default updateToken

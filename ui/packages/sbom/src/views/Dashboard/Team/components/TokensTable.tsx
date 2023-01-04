@@ -17,12 +17,12 @@ import {
 } from '@mui/x-data-grid'
 import deleteToken from '@/api/deleteToken'
 import updateToken from '@/api/updateToken'
-import useAlert from '@/hooks/useAlert'
-import authLoader from '@/router/authLoader'
 import DateLocaleString from '@/components/DateLocaleString'
-import TokenCreateDialog from './TokenCreateDialog'
-import { Token } from '@/types'
+import useAlert from '@/hooks/useAlert'
 import { useDialog } from '@/hooks/useDialog'
+import { useAuthState } from '@/hooks/useAuth'
+import { Token } from '@/types'
+import TokenCreateDialog from './TokenCreateDialog'
 
 type InputProps = {
   teamId: string
@@ -47,6 +47,7 @@ type TokenUpdatePayload = {
  */
 const TokensTable = ({ teamId, tokens }: InputProps) => {
   const { setAlert } = useAlert()
+  const { jwtToken } = useAuthState()
   const [openDialog] = useDialog()
 
   // set the initial state of the rows to the tokens passed in as props.
@@ -69,13 +70,15 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
       // define async function to delete the token
       const fetchDelete = async () => {
         try {
-          const jwtToken = await authLoader()
-          await deleteToken({
+          const response = await deleteToken({
             tokenId: id as string,
             teamId,
             jwtToken,
             abortController,
           })
+          if (!response.ok) {
+            throw new Error('Failed to delete token')
+          }
           // remove the token row from the table
           setRows((prevRows) => prevRows.filter((row) => row.id !== id))
           setAlert({
@@ -111,8 +114,7 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
     // define async function to update the token
     const fetchUpdate = async () => {
       try {
-        const jwtToken = await authLoader()
-        await updateToken({
+        const response = await updateToken({
           tokenId: id as string,
           teamId,
           jwtToken,
@@ -123,6 +125,9 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
             expires,
           },
         })
+        if (!response.ok) {
+          throw new Error('Failed to update token')
+        }
         // update the token row in the table
         setRows((prevRows) => {
           const index = prevRows.findIndex((row) => row.id === id)

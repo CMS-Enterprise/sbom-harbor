@@ -20,7 +20,7 @@ const harborRequest = async ({
   path,
   signal = new AbortController().signal,
   children = true,
-}: Params) => {
+}: Params): Promise<Response> => {
   // ensure path doesn't contain double slashes
   const url = new URL(`${CONFIG.API_URL}/v1/${path}`.replace(/\/\//g, '/'))
 
@@ -30,7 +30,7 @@ const harborRequest = async ({
   }
 
   // make the request and wait for the response
-  const response = await fetch(url.toString(), {
+  return fetch(url.toString(), {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -39,14 +39,6 @@ const harborRequest = async ({
     signal,
     body: body ? JSON.stringify(body) : null,
   })
-
-  // if the response is not ok, throw an error
-  if (!response.ok) {
-    throw new Error(response.statusText)
-  }
-
-  // return the response body
-  return response.json()
 }
 
 export default harborRequest

@@ -4,14 +4,19 @@
  * @see {@link @cyclonedx/ui/sbom/Routes}
  */
 import { Auth } from 'aws-amplify'
+import { defer } from 'react-router-dom'
 
 const authLoader = async () => {
-  const session = await Auth.currentSession()
-  const jwtToken = session.getAccessToken().getJwtToken()
-  if (!jwtToken) {
-    throw new Response('Invalid Session', { status: 401 })
-  }
-  return jwtToken
+  const session = Auth.currentSession()
+  return defer({
+    jwtToken: session.then((session) => {
+      const jwtToken = session.getAccessToken().getJwtToken()
+      if (!jwtToken) {
+        throw new Response('Invalid Session', { status: 401 })
+      }
+      return jwtToken
+    }),
+  })
 }
 
 export default authLoader

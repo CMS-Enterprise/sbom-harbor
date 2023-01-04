@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { useAsyncValue } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import DialogActions from '@mui/material/DialogActions'
@@ -14,10 +15,9 @@ import TextField from '@mui/material/TextField'
 import createToken from '@/api/createToken'
 import useAlert from '@/hooks/useAlert'
 import { useDialog } from '@/hooks/useDialog'
-import authLoader from '@/router/authLoader'
-import { Token } from '@/types'
 import dateAsISOWithoutZ from '@/utils/dateAsISOWithoutZ'
 import TokenViewDialog from '@/views/Dashboard/Team/components/TokenViewDialog'
+import { Token } from '@/types'
 
 enum ExpirationOptions {
   SEVEN_DAYS = '7 days',
@@ -66,6 +66,7 @@ type InputProps = {
 }
 
 const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
+  const jwtToken = useAsyncValue() as string
   const [openDialog] = useDialog()
   const { setAlert } = useAlert()
   const [loading, setLoading] = React.useState(false)
@@ -128,19 +129,13 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
         try {
           // set the loading state to true
           setLoading(true)
-          // get the jwt token from the auth loader
-          const jwtToken = await authLoader()
-          /**
-           * Calculate the expiration date for the token.
-           * @type {TDateISOStringWithoutZ}
-           */
+          // calculate the expiration date for the token.
           const expires =
             ExpirationValues[
               Object.entries(ExpirationOptions).find(
                 ([, value]) => value === formInput.expires
               )?.[0] as keyof typeof ExpirationValues
             ]()
-
           // make the create token request
           const response = await createToken({
             teamId,
@@ -148,8 +143,14 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
             expires,
             name: formInput.name,
           })
+          // throw an error if the request failed
+          if (!response.ok) {
+            throw new Error('Failed to create token')
+          }
+          // parse the response as json
+          const data = await response.json()
           // add the token to the list of tokens in the table
-          onTokenAdded(response)
+          onTokenAdded(data)
           // show a success message
           setAlert({
             message: 'Token created successfully!',
@@ -160,7 +161,7 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
           // open the next dialog window to show the token
           // to let the user to copy it to the clipboard.
           openDialog({
-            children: <TokenViewDialog token={response.token} />,
+            children: <TokenViewDialog token={data.token} />,
           })
         } catch (error) {
           console.error('Error creating token', error)

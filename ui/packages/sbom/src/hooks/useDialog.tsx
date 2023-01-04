@@ -21,7 +21,6 @@ const DialogProvider = ({ children }: { children: React.ReactNode }) => {
   const [open, setOpen] = React.useState(false)
 
   const openDialog = React.useCallback((dialog: DialogState) => {
-    console.log('openDialog', dialog)
     setDialog(dialog)
     setOpen(true)
   }, [])

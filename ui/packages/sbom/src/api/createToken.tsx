@@ -20,7 +20,7 @@ const createToken = async ({
   teamId: string
   name: string
   expires: TDateISOWithoutZ
-}): Promise<Token> =>
+}): Promise<Response> =>
   harborRequest({
     path: `/token?teamId=${teamId}`,
     method: 'POST',
