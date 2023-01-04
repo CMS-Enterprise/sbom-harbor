@@ -202,7 +202,7 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
   const columns = React.useMemo<GridColumns<Token>>(
     () => [
       {
-        flex: 0.2,
+        flex: 0.35,
         field: 'name',
         headerName: 'Description',
         renderCell: ({ row: { name, id } }: RenderCellProps): JSX.Element => (
@@ -255,17 +255,6 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
           >
             {enabled ? 'Enabled' : 'Disabled'}
           </Typography>
-        ),
-      },
-      {
-        flex: 0.5,
-        minWidth: 130,
-        field: 'token',
-        headerName: 'Secret',
-        renderCell: ({
-          row: { token = '********' },
-        }: RenderCellProps): JSX.Element => (
-          <Typography variant="caption">{token}</Typography>
         ),
       },
       {

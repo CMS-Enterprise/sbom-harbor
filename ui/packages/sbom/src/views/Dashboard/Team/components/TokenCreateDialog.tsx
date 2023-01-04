@@ -68,6 +68,7 @@ type InputProps = {
 const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
   const [openDialog] = useDialog()
   const { setAlert } = useAlert()
+  const [loading, setLoading] = React.useState(false)
 
   /**
    * React reducer hook to manage the form input state.
@@ -125,11 +126,13 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
        */
       const doSubmit = async () => {
         try {
+          // set the loading state to true
+          setLoading(true)
           // get the jwt token from the auth loader
           const jwtToken = await authLoader()
           /**
            * Calculate the expiration date for the token.
-           * @type {TDateISOString}
+           * @type {TDateISOStringWithoutZ}
            */
           const expires =
             ExpirationValues[
@@ -138,24 +141,22 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
               )?.[0] as keyof typeof ExpirationValues
             ]()
 
-          const params = {
+          // make the create token request
+          const response = await createToken({
             teamId,
             jwtToken,
             expires,
             name: formInput.name,
-          }
-
-          // make the create token request
-          const response = await createToken(params)
-
+          })
           // add the token to the list of tokens in the table
           onTokenAdded(response)
-
           // show a success message
           setAlert({
             message: 'Token created successfully!',
             severity: 'success',
           })
+          // set the loading state to false
+          setLoading(false)
           // open the next dialog window to show the token
           // to let the user to copy it to the clipboard.
           openDialog({
@@ -163,6 +164,7 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
           })
         } catch (error) {
           console.error('Error creating token', error)
+          setLoading(false)
           setAlert({
             message: 'Failed to create a token',
             severity: 'error',
@@ -243,7 +245,7 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
             </Grid>
           </Grid>
           <DialogActions>
-            <Button variant="contained" type="submit">
+            <Button variant="contained" type="submit" disabled={loading}>
               Generate Token
             </Button>
             <Button variant="outlined" onClick={handleClose}>
