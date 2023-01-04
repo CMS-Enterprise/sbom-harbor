@@ -16,17 +16,11 @@ type AuthProviderProps = {
 }
 
 type UserData = {
-  jwtToken?: string
-  email: string
-  username?: string
-  teams: string[]
+  jwtToken: string
 }
 
 const INITIAL_STATE = {
-  jwtToken: undefined,
-  email: '',
-  username: '',
-  teams: [],
+  jwtToken: '',
 } as UserData
 
 /**
@@ -34,7 +28,6 @@ const INITIAL_STATE = {
  */
 export const defaultProvider: AuthValuesType = {
   ...INITIAL_STATE,
-  loading: false,
 }
 
 enum AuthActions {
@@ -47,7 +40,7 @@ enum AuthActions {
 interface AuthActionParams {
   type: AuthActions
   payload: AuthValuesType
-  error?: Error
+  error: Error | null
 }
 
 export const AuthReducer = (
@@ -58,28 +51,22 @@ export const AuthReducer = (
     case AuthActions.REQUEST_LOGIN:
       return {
         ...initialState,
-        loading: true,
       }
     case AuthActions.LOGIN_SUCCESS:
       return {
         ...initialState,
-        email: action.payload.email,
         jwtToken: action.payload.jwtToken,
-        teams: action.payload.teams,
-        username: action.payload.username,
-        loading: false,
       }
     case AuthActions.LOGOUT:
       return {
         ...initialState,
-        jwtToken: undefined,
+        jwtToken: '',
       }
 
     case AuthActions.LOGIN_ERROR:
       return {
         ...initialState,
         error: action.error,
-        loading: false,
       }
 
     default:
@@ -156,13 +143,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       const payload = {
         jwtToken,
-        email: user.attributes.email,
-        teams: user.attributes['custom:teams'].split(','),
-        username: user.getUsername(),
-        loading: false,
       }
 
-      dispatch({ type: AuthActions.LOGIN_SUCCESS, payload })
+      dispatch({ type: AuthActions.LOGIN_SUCCESS, payload, error: null })
 
       // if the unauthenticated user is trying to navigate to a
       // protected app routue, redirect them to the login page.

@@ -6,18 +6,18 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import FormControl from '@mui/material/FormControl'
-import Grid from '@mui/material/Grid'
+import Grid2 from '@mui/material/Unstable_Grid2'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Select, { SelectChangeEvent } from '@mui/material/Select'
 import TextField from '@mui/material/TextField'
 import createToken from '@/api/createToken'
 import useAlert from '@/hooks/useAlert'
+import { useAuthState } from '@/hooks/useAuth'
 import { useDialog } from '@/hooks/useDialog'
-import authLoader from '@/router/authLoader'
-import { Token } from '@/types'
-import dateAsISOWithoutZ from '@/utils/dateAsISOWithoutZ'
+import formatTimestampForServer from '@/utils/formatTimestampForServer'
 import TokenViewDialog from '@/views/Dashboard/Team/components/TokenViewDialog'
+import { Token } from '@/types'
 
 enum ExpirationOptions {
   SEVEN_DAYS = '7 days',
@@ -29,25 +29,6 @@ enum ExpirationOptions {
   // TODO: implement datepicker for custom expiration
   // CUSTOM = 'Custom',
 }
-
-const getExpirationDate = (daysToAdd: number): TDateISOWithoutZ => {
-  const date = new Date()
-  return dateAsISOWithoutZ(new Date(date.setDate(date.getDate() + daysToAdd)))
-}
-
-// FIXME: copy pasta shame
-const ExpirationValues = {
-  SEVEN_DAYS: () => getExpirationDate(7),
-  THIRTY_DAYS: () => getExpirationDate(30),
-  SIXTY_DAYS: () => getExpirationDate(60),
-  NINETY_DAYS: () => getExpirationDate(90),
-  SIX_MONTHS: () => getExpirationDate(182),
-  ONE_YEAR: () => getExpirationDate(365),
-  // TODO: implement datepicker for custom expiration
-  // CUSTOM = 'Custom',
-}
-
-const expirationOptionsList = Object.values(ExpirationOptions)
 
 type DialogFormState = {
   name: string
@@ -66,8 +47,9 @@ type InputProps = {
 }
 
 const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
-  const [openDialog] = useDialog()
+  const { jwtToken } = useAuthState()
   const { setAlert } = useAlert()
+  const [openDialog] = useDialog()
   const [loading, setLoading] = React.useState(false)
 
   /**
@@ -81,9 +63,14 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
     { ...defaultFormState }
   )
 
-  const handleClose = React.useCallback(() => {
-    if (setOpen) setOpen(false)
-  }, [])
+  const handleClose = React.useCallback(
+    () => {
+      if (setOpen) setOpen(false)
+    },
+    /* eslint-disable react-hooks/exhaustive-deps */
+    []
+    /* eslint-enable react-hooks/exhaustive-deps */
+  )
 
   /**
    * React callback hook to handle the expiration select change.
@@ -117,9 +104,8 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
   const handleSubmit = React.useCallback(
     (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault()
-      // create an abort controller to cancel the
-      // request if the user closes the dialog.
       const abortController = new AbortController()
+
       /**
        * Async function to submit the form.
        * @type {() => Promise<void>}
@@ -128,19 +114,13 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
         try {
           // set the loading state to true
           setLoading(true)
-          // get the jwt token from the auth loader
-          const jwtToken = await authLoader()
-          /**
-           * Calculate the expiration date for the token.
-           * @type {TDateISOStringWithoutZ}
-           */
+          // calculate the expiration date for the token.
           const expires =
             ExpirationValues[
               Object.entries(ExpirationOptions).find(
                 ([, value]) => value === formInput.expires
               )?.[0] as keyof typeof ExpirationValues
             ]()
-
           // make the create token request
           const response = await createToken({
             teamId,
@@ -148,8 +128,14 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
             expires,
             name: formInput.name,
           })
+          // throw an error if the request failed
+          if (!response.ok) {
+            throw new Error('Failed to create token')
+          }
+          // parse the response as json
+          const data = await response.json()
           // add the token to the list of tokens in the table
-          onTokenAdded(response)
+          onTokenAdded(data)
           // show a success message
           setAlert({
             message: 'Token created successfully!',
@@ -160,7 +146,7 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
           // open the next dialog window to show the token
           // to let the user to copy it to the clipboard.
           openDialog({
-            children: <TokenViewDialog token={response.token} />,
+            children: <TokenViewDialog token={data.token} />,
           })
         } catch (error) {
           console.error('Error creating token', error)
@@ -176,7 +162,28 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
       // return a cleanup function to abort the submit request.
       return () => abortController.abort()
     },
+    /* eslint-disable react-hooks/exhaustive-deps */
     [formInput]
+    /* eslint-enable react-hooks/exhaustive-deps */
+  )
+
+  const ExpirationValues = React.useMemo(
+    () => ({
+      SEVEN_DAYS: () => formatTimestampForServer(7),
+      THIRTY_DAYS: () => formatTimestampForServer(30),
+      SIXTY_DAYS: () => formatTimestampForServer(60),
+      NINETY_DAYS: () => formatTimestampForServer(90),
+      SIX_MONTHS: () => formatTimestampForServer(182),
+      ONE_YEAR: () => formatTimestampForServer(365),
+      // TODO: implement datepicker for custom expiration
+      // CUSTOM = 'Custom',
+    }),
+    []
+  )
+
+  const expirationDropdownItems = React.useMemo(
+    () => Object.entries(ExpirationOptions),
+    []
   )
 
   return (
@@ -194,15 +201,15 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
           onSubmit={handleSubmit}
           sx={{ mt: 4, width: '100%' }}
         >
-          <Grid
+          <Grid2
             container
             spacing={0}
             direction="row"
             alignItems="flex-end"
             sx={{ mb: 4 }}
           >
-            <Grid item xs={1}></Grid>
-            <Grid item xs={6}>
+            <Grid2 xs={1}></Grid2>
+            <Grid2 xs={6}>
               <TextField
                 autoFocus
                 margin="none"
@@ -220,9 +227,9 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
                 }}
                 InputLabelProps={{ shrink: true }}
               />
-            </Grid>
-            <Grid item xs={1}></Grid>
-            <Grid item xs={4}>
+            </Grid2>
+            <Grid2 xs={1}></Grid2>
+            <Grid2 xs={4}>
               <FormControl margin="none" required>
                 <InputLabel htmlFor="expires">Expiration</InputLabel>
                 <Select
@@ -235,15 +242,15 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
                     id: 'expires',
                   }}
                 >
-                  {expirationOptionsList.map((option) => (
-                    <MenuItem key={option} value={option}>
+                  {expirationDropdownItems.map(([key, option]) => (
+                    <MenuItem key={key} value={option}>
                       {option}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
-            </Grid>
-          </Grid>
+            </Grid2>
+          </Grid2>
           <DialogActions>
             <Button variant="contained" type="submit" disabled={loading}>
               Generate Token

@@ -3,7 +3,7 @@
  */
 import * as React from 'react'
 import FormControl from '@mui/material/FormControl'
-import Grid from '@mui/material/Grid'
+import Grid2 from '@mui/material/Unstable_Grid2'
 import IconButton from '@mui/material/IconButton'
 import Input from '@mui/material/Input'
 import InputAdornment from '@mui/material/InputAdornment'
@@ -67,15 +67,48 @@ const TeamMembersSection = ({
     <>
       <Typography
         sx={{ textTransform: 'capitalize' }}
-        gutterBottom
-        variant="h5"
+        component="h3"
+        variant="h6"
       >
         {title}:
       </Typography>
-      <Grid container spacing={1} sx={{ mb: 3 }}>
+      <Grid2 xs={12} sx={{ p: 0 }}>
+        <FormControl fullWidth variant="standard" size="small">
+          <InputLabel htmlFor={`${name}`}>
+            <Typography sx={{ textTransform: 'capitalize' }}>
+              Add email
+            </Typography>
+          </InputLabel>
+          <Input
+            autoComplete="off"
+            margin="none"
+            id={`${name}`}
+            name={`${name}`}
+            required
+            fullWidth
+            onChange={handleChange}
+            value={newEmail}
+            onKeyDown={handleAddWrapper}
+            endAdornment={
+              <InputAdornment position="end" sx={{ pr: 1 }}>
+                <IconButton
+                  aria-label="add"
+                  data-value={newEmail}
+                  onClick={handleAdd}
+                  onMouseDown={handleAdd}
+                  edge="end"
+                >
+                  <AddCircleIcon />
+                </IconButton>
+              </InputAdornment>
+            }
+          />
+        </FormControl>
+      </Grid2>
+      <Grid2 container spacing={1} sx={{ p: 0, mb: 3 }}>
         {members &&
           members.map(({ id, email }, index) => (
-            <Grid item xs={12} key={id}>
+            <Grid2 xs={12} key={id} sx={{ mt: 1 }}>
               <FormControl fullWidth variant="standard" disabled margin="none">
                 <TeamMemberReadOnlyField
                   index={index}
@@ -83,42 +116,9 @@ const TeamMembersSection = ({
                   handleRemove={handleRemove}
                 />
               </FormControl>
-            </Grid>
+            </Grid2>
           ))}
-        <Grid item xs={12}>
-          <FormControl fullWidth variant="standard" size="small">
-            <InputLabel htmlFor={`${name}`}>
-              <Typography sx={{ textTransform: 'capitalize' }}>
-                Add email
-              </Typography>
-            </InputLabel>
-            <Input
-              autoComplete="off"
-              margin="none"
-              id={`${name}`}
-              name={`${name}`}
-              required
-              fullWidth
-              onChange={handleChange}
-              value={newEmail}
-              onKeyDown={handleAddWrapper}
-              endAdornment={
-                <InputAdornment position="end" sx={{ pr: 1 }}>
-                  <IconButton
-                    aria-label="add"
-                    data-value={newEmail}
-                    onClick={handleAdd}
-                    onMouseDown={handleAdd}
-                    edge="end"
-                  >
-                    <AddCircleIcon />
-                  </IconButton>
-                </InputAdornment>
-              }
-            />
-          </FormControl>
-        </Grid>
-      </Grid>
+      </Grid2>
     </>
   )
 }

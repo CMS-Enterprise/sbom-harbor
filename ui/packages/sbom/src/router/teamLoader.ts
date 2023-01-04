@@ -3,12 +3,12 @@
  * @module @cyclonedx/ui/sbom/loaders/teamLoader
  * @see {@link @cyclonedx/ui/sbom/Routes}
  */
-import { Params } from 'react-router-dom'
-import { Team, TeamEntity } from '@/types'
-import authLoader from '@/router/authLoader'
-import harborRequest from '@/utils/harborRequest'
-import reduceProjectsArrayToMap from '@/selectors/reduceProjectsArrayToMap'
+import { defer, Params } from 'react-router-dom'
 import reduceArrayToMap from '@/selectors/reduceArrayToMap'
+import reduceProjectsArrayToMap from '@/selectors/reduceProjectsArrayToMap'
+import getJWT from '@/utils/getJWT'
+import harborRequest from '@/utils/harborRequest'
+import { Team, TeamEntity, TeamMemberRole } from '@/types'
 
 const teamLoader = ({
   params: { teamId = '' },
@@ -16,23 +16,55 @@ const teamLoader = ({
 }: {
   params: Params<string>
   request: Request
-}): Promise<Team> =>
-  authLoader()
-    .then(
-      (jwtToken: string): Promise<TeamEntity> =>
-        harborRequest({
-          jwtToken,
-          path: `team/${teamId}`,
-          signal,
-        })
-    )
-    .then(
-      ({ members, tokens, projects, ...rest }: TeamEntity): Team => ({
-        ...rest,
-        members: reduceArrayToMap(members),
-        tokens: reduceArrayToMap(tokens),
-        projects: reduceProjectsArrayToMap(projects),
-      })
-    )
-
+}) => {
+  return defer({
+    data: getJWT()
+      .then(
+        (jwtToken: string): Promise<Response> =>
+          harborRequest({
+            jwtToken,
+            path: `team/${teamId}`,
+            signal,
+          })
+      )
+      .then((response: Response): Promise<TeamEntity> => response.json())
+      .then(
+        ({
+          members,
+          tokens,
+          projects,
+          ...rest
+        }: TeamEntity): Team & {
+          membersTableRows: {
+            id: string
+            email: string
+            isTeamLead: boolean
+            role: TeamMemberRole
+            username: string
+          }[]
+        } => {
+          const membersMap = reduceArrayToMap(members)
+          const tokensMap = reduceArrayToMap(tokens)
+          const projectsMap = reduceProjectsArrayToMap(projects)
+          return {
+            ...rest,
+            members: membersMap,
+            tokens: tokensMap,
+            projects: projectsMap,
+            membersTableRows: Object.values(membersMap).map(
+              ({ id, email, isTeamLead }) => ({
+                id,
+                email,
+                isTeamLead,
+                role: isTeamLead
+                  ? TeamMemberRole.TEAM_LEAD
+                  : TeamMemberRole.MEMBER,
+                username: id,
+              })
+            ),
+          }
+        }
+      ),
+  })
+}
 export default teamLoader

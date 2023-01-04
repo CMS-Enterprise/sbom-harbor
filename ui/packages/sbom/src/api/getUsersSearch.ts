@@ -10,8 +10,9 @@ const getAddress = async (
   const session = await Auth.currentSession()
   const jwtToken = session.getAccessToken().getJwtToken()
 
-  // TODO: use url.searchParams instead of building the url manually
   const url = `${USER_API_SEARCH_URL}?filter=${filter}`
+
+  // TODO: use url.searchParams instead of building the url manually
   // const url = new URL(USER_API_SEARCH_URL)
   // url.searchParams.append('filter', filter)
 

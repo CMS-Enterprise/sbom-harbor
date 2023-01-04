@@ -4,12 +4,16 @@
  */
 import * as React from 'react'
 import AddIcon from '@mui/icons-material/Add'
+import MoreVertIcon from '@mui/icons-material/MoreVert'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import Fab from '@mui/material/Fab'
+import IconButton from '@mui/material/IconButton'
 import Typography from '@mui/material/Typography'
+import styled from '@mui/system/styled'
 import {
   DataGrid,
+  GridActionsCell,
   GridActionsCellItem,
   GridColumns,
   GridRowId,
@@ -17,17 +21,34 @@ import {
 } from '@mui/x-data-grid'
 import deleteToken from '@/api/deleteToken'
 import updateToken from '@/api/updateToken'
-import useAlert from '@/hooks/useAlert'
-import authLoader from '@/router/authLoader'
 import DateLocaleString from '@/components/DateLocaleString'
-import TokenCreateDialog from './TokenCreateDialog'
-import { Token } from '@/types'
+import useAlert from '@/hooks/useAlert'
 import { useDialog } from '@/hooks/useDialog'
+import { useAuthState } from '@/hooks/useAuth'
+import { Token } from '@/types'
+import TokenCreateDialog from './TokenCreateDialog'
+
+/**
+ * Hack component used to render a custom, disabled actions menu in the
+ * data grid that prevents the forwarding of the "focusElementRef" prop
+ * to a raw DOM element. See the last item in the memoized "columns"
+ * array in the TokensTable state.
+ */
+const IconButtonWithExcludedProps = styled(IconButton, {
+  // use the default MUI name of IconButton
+  name: 'IconButton',
+  // don't forward the focusElementRef prop passed from GridActionsCell
+  shouldForwardProp: (prop) => prop !== 'focusElementRef',
+})({})
 
 type InputProps = {
   teamId: string
   tokens: Token[]
 }
+
+type TokenRow = {
+  loading: boolean
+} & Token
 
 type RenderCellProps = {
   row: Token
@@ -42,18 +63,32 @@ type TokenUpdatePayload = {
 /**
  * A component that renders a table of team members with their details.
  * @param {InputProps} props Input props for the TeamMembersTable component.
- * @param {UserTableRowType[]} props.members - The list of team members.
+ * @param {UserTableRowType[]} props.members The list of team members.
  * @returns {JSX.Element} A component that renders a datagrid table of team members.
  */
 const TokensTable = ({ teamId, tokens }: InputProps) => {
   const { setAlert } = useAlert()
+  const { jwtToken } = useAuthState()
   const [openDialog] = useDialog()
 
   // set the initial state of the rows to the tokens passed in as props.
-  const [rows, setRows] = React.useState<Token[]>(() => tokens)
+  const [rows, setRows] = React.useState<TokenRow[]>(() =>
+    tokens.map((t) => ({ ...t, loading: false }))
+  )
 
-  // update the rows state if the tokens prop changes.
-  React.useEffect(() => setRows(tokens), [tokens])
+  /**
+   * Temporarily disables the actions button of a row while it being edited.
+   * @param {GridRowId} id The id of the row to set the loading property of.
+   * @param {boolean} loading The value to set the loading property to.
+   */
+  const setRowLoading = (id: GridRowId, loading: boolean) => {
+    setRows((prevRows) => {
+      const index = prevRows.findIndex((row) => row.id === id)
+      const newRows = [...prevRows]
+      newRows.splice(index, 1, { ...prevRows[index], loading })
+      return newRows
+    })
+  }
 
   /**
    * Callback that makes a request API to delete a token from the team. If the
@@ -69,13 +104,16 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
       // define async function to delete the token
       const fetchDelete = async () => {
         try {
-          const jwtToken = await authLoader()
-          await deleteToken({
+          setRowLoading(id, true)
+          const response = await deleteToken({
             tokenId: id as string,
             teamId,
             jwtToken,
             abortController,
           })
+          if (!response.ok) {
+            throw new Error('Failed to delete token')
+          }
           // remove the token row from the table
           setRows((prevRows) => prevRows.filter((row) => row.id !== id))
           setAlert({
@@ -88,6 +126,7 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
             message: 'Failed to delete token',
             severity: 'error',
           })
+          setRowLoading(id, true)
         }
       }
       // call the async function to make the request
@@ -102,17 +141,24 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
 
   /**
    * Callback that makes a request API to update a token.
+   * @param {GridRowId} id The id of the row matching the token to update.
+   * @param {TokenUpdatePayload} updateParams Updated properties of the token.
+   * @param {TokenUpdatePayload} updateParams.name The name of the token.
+   * @param {TokenUpdatePayload} updateParams.enabled If the token is enabled.
+   * @param {TokenUpdatePayload} updateParams.expires Tokens expiration date.
    */
   const handleUpdateToken = (
     id: GridRowId,
     { name, enabled, expires }: TokenUpdatePayload
   ) => {
     const abortController = new AbortController()
+    // mark the row as loading to disable the actions menu
+    setRowLoading(id, true)
     // define async function to update the token
     const fetchUpdate = async () => {
       try {
-        const jwtToken = await authLoader()
-        await updateToken({
+        // make the request to the API to update the token
+        const response = await updateToken({
           tokenId: id as string,
           teamId,
           jwtToken,
@@ -123,6 +169,10 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
             expires,
           },
         })
+        // verify that the request response was OK
+        if (!response.ok) {
+          throw new Error('Failed to update token')
+        }
         // update the token row in the table
         setRows((prevRows) => {
           const index = prevRows.findIndex((row) => row.id === id)
@@ -133,9 +183,14 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
             expires: typeof expires !== 'undefined' ? expires : prev.expires,
           }
           const newRows = [...prevRows]
-          newRows.splice(index, 1, { ...prevRows[index], ...newToken })
+          newRows.splice(index, 1, {
+            ...prevRows[index],
+            ...newToken,
+            loading: false,
+          })
           return newRows
         })
+        // show a success alert
         setAlert({
           message: 'Token updated successfully.',
           severity: 'success',
@@ -146,6 +201,7 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
           message: 'Failed to update token',
           severity: 'error',
         })
+        setRowLoading(id, false)
       }
     }
     // call the async function to make the request
@@ -156,50 +212,54 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
 
   /**
    * Callback that makes a request API to disable an enabled token.
+   * @param {GridRowId} id The id of the row matching the token to update.
    */
+  /* eslint-disable react-hooks/exhaustive-deps */
   const handleDisableToken = React.useCallback(
     (id: GridRowId) => () => handleUpdateToken(id, { enabled: false }),
-    /* eslint-disable react-hooks/exhaustive-deps */
     []
-    /* eslint-enable react-hooks/exhaustive-deps */
   )
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   /**
    * Callback that makes a request API to enable a disabled token.
+   * @param {GridRowId} id The id of the row matching the token to update.
    */
+  /* eslint-disable react-hooks/exhaustive-deps */
   const handleEnableToken = React.useCallback(
     (id: GridRowId) => () => handleUpdateToken(id, { enabled: true }),
-    /* eslint-disable react-hooks/exhaustive-deps */
     []
-    /* eslint-enable react-hooks/exhaustive-deps */
   )
+  /* eslint-enable react-hooks/exhaustive-deps */
 
-  const handleTokenAdded = React.useCallback(
-    (token: Token) => {
-      setRows((prevRows) => [...prevRows, token])
-    },
-    /* eslint-disable react-hooks/exhaustive-deps */
-    []
-    /* eslint-enable react-hooks/exhaustive-deps */
-  )
+  /**
+   * Callback that updates the rows in the table after a token is created.
+   * @param {GridRowId} id The id of the row matching the token to update.
+   */
+  /* eslint-disable react-hooks/exhaustive-deps */
+  const handleTokenAdded = React.useCallback((token: Token) => {
+    setRows((prevRows) => [...prevRows, { ...token, loading: false }])
+  }, [])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   /**
    * Callback that displays the pop-up dialog to create a new token.
+   * @param {GridRowId} id The id of the row matching the token to update.
    */
-  const openTokenDialog = React.useCallback(
-    () => {
-      openDialog({
-        children: (
-          <TokenCreateDialog teamId={teamId} onTokenAdded={handleTokenAdded} />
-        ),
-      })
-    },
-    /* eslint-disable react-hooks/exhaustive-deps */
-    []
-    /* eslint-enable react-hooks/exhaustive-deps */
-  )
+  /* eslint-disable react-hooks/exhaustive-deps */
+  const openTokenDialog = React.useCallback(() => {
+    openDialog({
+      children: (
+        <TokenCreateDialog teamId={teamId} onTokenAdded={handleTokenAdded} />
+      ),
+    })
+  }, [])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
-  const columns = React.useMemo<GridColumns<Token>>(
+  /**
+   * The column definitions for the TokensTable DataGrid.
+   */
+  const columns = React.useMemo<GridColumns<TokenRow>>(
     () => [
       {
         flex: 0.35,
@@ -261,6 +321,18 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
         field: 'actions',
         type: 'actions',
         width: 80,
+        cellClassName: 'MuiDataGrid-cell--full-width ',
+        renderCell: (params): JSX.Element => {
+          if (params.row.loading) {
+            params.focusElementRef = null
+            return (
+              <IconButtonWithExcludedProps disabled>
+                <MoreVertIcon />
+              </IconButtonWithExcludedProps>
+            )
+          }
+          return <GridActionsCell {...params} sx={{ m: 0 }} />
+        },
         getActions: (params: GridRowParams<Token>): JSX.Element[] =>
           [
             <GridActionsCellItem
@@ -292,14 +364,16 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
   )
 
   return (
-    <>
+    <Box>
       <Card>
         <DataGrid
-          rows={rows}
           columns={columns}
-          pagination={undefined}
+          rows={rows}
           autoHeight
           disableSelectionOnClick
+          getRowClassName={({ row: { loading = false } = {} }) =>
+            `row-loading-${loading}`
+          }
           hideFooter
           sortModel={[
             {
@@ -307,22 +381,63 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
               sort: 'desc' as const,
             },
           ]}
+          sx={{
+            '& .MuiDataGrid-row': {
+              transition: 'all 0.5s ease',
+
+              '&.row-loading-true': {
+                filter: 'opacity(0.5)',
+                backgroundColor: 'rgba(0,0,0, .25)',
+              },
+
+              '& .MuiDataGrid-cell--full-width': {
+                width: '100% !important',
+
+                '& > div': {
+                  alignItems: 'center',
+                  display: 'inline-flex',
+                  position: 'relative',
+                  textAlign: 'center',
+                  minHeight: '100%',
+                  minWidth: '100%',
+                  width: '100% !important',
+
+                  '& > button': {
+                    borderRadius: 0,
+                    display: 'block',
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    padding: '0',
+                    top: '0',
+                    bottom: '0',
+                  },
+                },
+              },
+            },
+          }}
         />
       </Card>
       <Box
         sx={{
           display: 'flex',
           justifyContent: 'flex-end',
+          mb: -1.5,
+          mt: -1.5,
+          ml: 3,
           width: '100%',
-          mt: -2,
-          '& > :not(style)': { m: 1 },
         }}
       >
-        <Fab color="primary" aria-label="add" onClick={openTokenDialog}>
+        <Fab
+          color="primary"
+          aria-label="add"
+          onClick={openTokenDialog}
+          size="medium"
+        >
           <AddIcon />
         </Fab>
       </Box>
-    </>
+    </Box>
   )
 }
 
