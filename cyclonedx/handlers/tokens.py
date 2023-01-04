@@ -5,6 +5,7 @@ from datetime import datetime
 from json import loads
 
 import boto3
+import pytz
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
@@ -80,7 +81,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
     request_body: dict = loads(event["body"])
 
     # Create a creation and expiration time
-    now = datetime.now()
+    now = datetime.now(pytz.utc)
 
     try:
         expires: str = request_body[Token.Fields.EXPIRES]
