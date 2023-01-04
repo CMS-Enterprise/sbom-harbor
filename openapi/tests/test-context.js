@@ -1,8 +1,14 @@
+import http from "k6/http";
+import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
+
+const BASE_URL = `${__ENV.CF_DOMAIN}`
+
+// Utility method to reduce boilerplate. Pretty prints JSON output.
 const stringify = (obj) => {
     return JSON.stringify(obj, null, 4);
 }
 
-const debug = true;
+let debug = false;
 const log = (message) => {
     if (!debug) {
         return
@@ -11,10 +17,17 @@ const log = (message) => {
     console.log(message);
 }
 
+// Debug helper method to log output during development.
 const log_req = (url, body) => {
-    log(`req: url - ${url} - body: ${stringify(body)}`);
+    if (body) {
+        log(`req: url - ${url} - body: ${stringify(body)}`);
+        return;
+    }
+
+    log(`req: url - ${url}`);
 }
 
+// Debug helper method to log output during development.
 const log_resp = (url, response) => {
     log(`response: url - ${url} body - ${stringify(response)}`);
 }
@@ -25,33 +38,47 @@ export class TestContext {
         this.teamIds = [];
         this.username = `${__ENV.ADMIN_USERNAME}`;
         this.password = `${__ENV.ADMIN_PASSWORD}`;
-        // Create an enabled token, but set it to expire immediately so that it can't ever be used.
-        this.expiryDate = new Date();
+        this.sbom = open("../sbom-fixture.json");
+
+        // TODO: Remove this workaround once the API handles multiple date formats.
+        const date = new Date();
+        let expiry = new Date(date.setTime(date.getTime() + 1 * 60 * 60 * 1000));
+        this.expiryDate = expiry.toISOString().replace('Z','');
     }
 
-    forLog() {
-        return (({ testId, teamName, team, teamIds, expiryDate }) => ({ testId, teamName, team, teamIds, expiryDate }))(this);
+    init() {
+        if (!this.buildUp()) {
+            console.error("failed to build TestContext");
+            return false;
+        }
+
+        console.log(`login succeeded: proceeding with tests for run ${this.testId}`);
+
+        return true;
     }
 
     login() {
         let url = BASE_URL + `/api/v1/login`;
         let params = {headers: {"Content-Type": "application/json", "Accept": "application/json"}};
 
+        let body = this.bodyFor("/api/v1/login");
+
         // log_req(url, body);
-        let response = http.post(url, JSON.stringify(this.bodyFor("login")), params);
+        let response = http.post(url, body, params);
         // log_resp(url, response.body);
 
         if (response.status !== 200) {
             this.jwt = undefined;
+            console.log(`failed login - status: ${response.status} for body ${body}`);
             return false;
         }
 
         this.jwt = JSON.parse(response.body).token;
-        // log(`login success: ${this.jwt}`);
 
         this.headerParams = {
             headers: {
-                "Content-Type": "application/json", "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
                 "Authorization": `${this.jwt}`
             }
         };
@@ -90,12 +117,17 @@ export class TestContext {
     }
 
     teardown() {
+        // TODO: Validate these all work once the API KeyError on team deletion is fixed.
         this.teamIds.forEach(teamId => {
             let url = BASE_URL + `/api/v1/team/${teamId}?children=true`;
-            let response = http.del(url, this.headerParams);
+            console.log(`tearing down team ${teamId}`);
+
+            let response = http.del(url, {}, this.headerParams);
 
             if (response.status !== 200) {
-                log(`TestContext.teardown failed for team id ${teamId} with ${response.status} - ${response.body}`)
+                console.log(`teardown failed for team id ${teamId} with ${response.status} - ${response.body}`);
+            } else {
+                console.log(`teardown complete for team id ${teamId} with ${response.status} - ${response.body}`);
             }
         });
     }
@@ -115,7 +147,7 @@ export class TestContext {
             case "projectId":
                 this.ensureProject();
                 return this.project.id;
-            case " codebaseId":
+            case "codebaseId":
                 this.ensureCodebase();
                 return this.codebase.id;
             case "tokenId":
@@ -124,33 +156,43 @@ export class TestContext {
         }
     }
 
-    bodyFor(entityName) {
-        switch (entityName) {
-            case "login":
-                return {username: this.username, password: this.password};
-            case "team":
-                // TODO: Add unique constraint on name and ensure it's enforced.
-                return {id: "", name: this.teamName, members: [], projects: []};
-            case "member":
-                return {email: this.username, isTeamLead: true};
-            case "project":
-                return {id: "", name: this.entityName("project"), fisma: "", codebases: []};
-            case "codebase":
-                return {id: "", name: this.entityName("codebase"), language: "", buildTool: ""};
-            case "token":
-                return {name: this.entityName("token"), created: "", enabled: true, expires: this.expiryDate.toISOString(), token: this.testId};
+    bodyFor(route) {
+        switch (route) {
+            case "/api/v1/login":
+                return stringify({username: this.username, password: this.password});
+            case "/api/v1/team":
+                return stringify({id: "", name: this.teamName, members: [], projects: []});
+            case "/api/v1/member":
+                return stringify({email: this.username, isTeamLead: true});
+            case "/api/v1/project":
+                return stringify({id: "", name: this.entityName("project"), fisma: "", codebases: []});
+            case "/api/v1/codebase":
+                return stringify({id: "", name: this.entityName("codebase"), language: "", buildTool: ""});
+            case "/api/v1/token":
+                return stringify({name: this.entityName("token"), created: "", enabled: true, expires: this.expiryDate});
+            case "/api/v1/{teamId}/{projectId}/{codebaseId}/sbom":
+                return this.sbom;
             default:
-                return undefined;
+                return stringify({});
+        }
+    }
+
+    tokenFor(route) {
+        switch (route) {
+            case "/api/v1/{teamId}/{projectId}/{codebaseId}/sbom":
+                this.token = undefined;
+                this.ensureToken();
+                return this.token.token;
+            default:
+                return this.jwt;
         }
     }
 
     createEntity(url, body, funcName) {
-        // log_req(url, body);
-        let response = http.post(url, JSON.stringify(body), this.headerParams);
-        // log_resp(url, response.json());
+        let response = http.post(url, body, this.headerParams);
 
         if (response.status !== 200) {
-            console.error(`${funcName} failed with status ${response.status} and message ${response.body}`);
+            console.error(`${funcName} failed with: ${stringify(response.body)}`);
         }
 
         let result = JSON.parse(response.body);
@@ -167,7 +209,7 @@ export class TestContext {
 
         let url = BASE_URL + `/api/v1/team?children=true`;
 
-        this.team = this.createEntity(url, this.bodyFor("team"), "ensureTeam");
+        this.team = this.createEntity(url, this.bodyFor("/api/v1/team"), "ensureTeam");
         this.teamIds.push(this.team.id);
     }
 
@@ -181,7 +223,7 @@ export class TestContext {
 
         let url = BASE_URL + `/api/v1/member?teamId=${this.team.id}`;
 
-        this.member = this.createEntity(url, this.bodyFor("member"), "ensureMember");
+        this.member = this.createEntity(url, this.bodyFor("/api/v1/member"), "ensureMember");
     }
 
     ensureProject() {
@@ -195,7 +237,7 @@ export class TestContext {
         // TODO: Dynamically test both values of booleans like children.
         let url = BASE_URL + `/api/v1/project?teamId=${this.team.id}&children=true`;
 
-        this.project = this.createEntity(url, this.bodyFor("project"), "ensureProject");
+        this.project = this.createEntity(url, this.bodyFor("/api/v1/project"), "ensureProject");
     }
 
     ensureCodebase() {
@@ -203,12 +245,13 @@ export class TestContext {
             return
         }
 
+        // Ensure upstream requirements
         this.ensureTeam();
         this.ensureProject();
 
         let url = BASE_URL + `/api/v1/codebase?teamId=${this.team.id}&projectId=${this.project.id}`;
 
-        this.codebase = this.createEntity(url, this.bodyFor("codebase"), "ensureCodebase");
+        this.codebase = this.createEntity(url, this.bodyFor("/api/v1/codebase"), "ensureCodebase");
     }
 
     ensureToken() {
@@ -218,19 +261,26 @@ export class TestContext {
 
         let url = BASE_URL + `/api/v1/token?teamId=${this.team.id}`;
 
-        this.token = this.createEntity(url, this.bodyFor("token"), "ensureToken");
-    }
-}
-
-export const initContext = () => {
-    const ctx = new TestContext()
-
-    if (!ctx.buildUp()) {
-        console.error("failed to build TestContext");
-        return;
+        this.token = this.createEntity(url, this.bodyFor("/api/v1/token"), "ensureToken");
     }
 
-    log(`initiating e2e tests with ctx: ${stringify(ctx.forLog())}`);
+    isFixture(method, route) {
+        if (method === "del" && route.includes("team")) {
+            console.log(`deferring fixture delete to teardown: ${method} - ${route}`);
 
-    return ctx;
+            return true;
+        }
+
+        return false;
+    }
+
+    handleFixtures(method, route, responseBody) {
+        if (method !== "post" || route !== "/api/v1/team") {
+            return;
+        }
+
+        console.log(`adding fixture to teardown: ${method} - ${route} - ${responseBody}`);
+        let body = JSON.parse(responseBody);
+        this.teamIds.push(body.id);
+    }
 }
