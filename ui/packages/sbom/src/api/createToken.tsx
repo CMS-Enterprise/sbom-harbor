@@ -1,4 +1,5 @@
 import harborRequest from '@/utils/harborRequest'
+import { Token } from '@/types'
 
 /**
  * Function that makes a request to the Harbor API to create a token.
@@ -19,7 +20,7 @@ const createToken = async ({
   teamId: string
   name: string
   expires: TDateISOWithoutZ
-}): Promise<Record<string, never>> =>
+}): Promise<Token> =>
   harborRequest({
     path: `/token?teamId=${teamId}`,
     method: 'POST',

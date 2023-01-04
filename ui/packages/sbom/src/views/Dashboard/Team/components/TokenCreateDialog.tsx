@@ -11,12 +11,13 @@ import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Select, { SelectChangeEvent } from '@mui/material/Select'
 import TextField from '@mui/material/TextField'
-import { useDialog } from '@/hooks/useDialog'
-import TokenViewDialog from '@/views/Dashboard/Team/components/TokenViewDialog'
 import createToken from '@/api/createToken'
-import authLoader from '@/router/authLoader'
 import useAlert from '@/hooks/useAlert'
+import { useDialog } from '@/hooks/useDialog'
+import authLoader from '@/router/authLoader'
+import { Token } from '@/types'
 import dateAsISOWithoutZ from '@/utils/dateAsISOWithoutZ'
+import TokenViewDialog from '@/views/Dashboard/Team/components/TokenViewDialog'
 
 enum ExpirationOptions {
   SEVEN_DAYS = '7 days',
@@ -61,9 +62,10 @@ const defaultFormState = {
 type InputProps = {
   setOpen?: (open: boolean) => void
   teamId: string
+  onTokenAdded: (token: Token) => void
 }
 
-const TokenCreateDialog = ({ setOpen, teamId }: InputProps) => {
+const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
   const [openDialog] = useDialog()
   const { setAlert } = useAlert()
 
@@ -146,6 +148,9 @@ const TokenCreateDialog = ({ setOpen, teamId }: InputProps) => {
           // make the create token request
           const response = await createToken(params)
 
+          // add the token to the list of tokens in the table
+          onTokenAdded(response)
+
           // show a success message
           setAlert({
             message: 'Token created successfully!',
@@ -153,7 +158,9 @@ const TokenCreateDialog = ({ setOpen, teamId }: InputProps) => {
           })
           // open the next dialog window to show the token
           // to let the user to copy it to the clipboard.
-          openDialog({ children: <TokenViewDialog token={response.token} /> })
+          openDialog({
+            children: <TokenViewDialog token={response.token} />,
+          })
         } catch (error) {
           console.error('Error creating token', error)
           setAlert({

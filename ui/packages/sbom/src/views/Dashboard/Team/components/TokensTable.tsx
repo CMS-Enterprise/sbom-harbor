@@ -174,13 +174,24 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
     /* eslint-enable react-hooks/exhaustive-deps */
   )
 
+  const handleTokenAdded = React.useCallback(
+    (token: Token) => {
+      setRows((prevRows) => [...prevRows, token])
+    },
+    /* eslint-disable react-hooks/exhaustive-deps */
+    []
+    /* eslint-enable react-hooks/exhaustive-deps */
+  )
+
   /**
    * Callback that displays the pop-up dialog to create a new token.
    */
   const openTokenDialog = React.useCallback(
     () => {
       openDialog({
-        children: <TokenCreateDialog teamId={teamId} />,
+        children: (
+          <TokenCreateDialog teamId={teamId} onTokenAdded={handleTokenAdded} />
+        ),
       })
     },
     /* eslint-disable react-hooks/exhaustive-deps */
@@ -205,6 +216,7 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
         renderCell: ({ row: { created } }: RenderCellProps): JSX.Element => (
           <DateLocaleString date={new Date(created)} />
         ),
+        defaultSort: 'desc',
       },
       {
         flex: 0.125,
@@ -300,6 +312,12 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
           autoHeight
           disableSelectionOnClick
           hideFooter
+          sortModel={[
+            {
+              field: 'created',
+              sort: 'desc' as const,
+            },
+          ]}
         />
       </Card>
       <Box
