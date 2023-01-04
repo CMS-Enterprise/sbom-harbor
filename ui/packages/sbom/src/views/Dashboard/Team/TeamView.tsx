@@ -39,6 +39,10 @@ const TeamView = (): JSX.Element => {
     }))
   )
 
+  const [tokensTableRows, setTokensTableRows] = React.useState(() =>
+    Object.values(tokens)
+  )
+
   return (
     <Container component="main" maxWidth="md" data-testid="team">
       <Paper
@@ -77,7 +81,7 @@ const TeamView = (): JSX.Element => {
               </Typography>
             </Grid>
             <Grid item xs={12} md={12}>
-              <TokensTable tokens={Object.values(tokens)} teamId={id} />
+              <TokensTable tokens={tokensTableRows} teamId={id} />
             </Grid>
           </Grid>
         </Box>

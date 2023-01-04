@@ -3,7 +3,10 @@
  * @module @cyclonedx/ui/sbom/views/Dashboard/Team/TokensTable
  */
 import * as React from 'react'
+import AddIcon from '@mui/icons-material/Add'
+import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
+import Fab from '@mui/material/Fab'
 import Typography from '@mui/material/Typography'
 import {
   DataGrid,
@@ -12,12 +15,14 @@ import {
   GridRowId,
   GridRowParams,
 } from '@mui/x-data-grid'
-import DateLocaleString from '@/components/DateLocaleString'
-import authLoader from '@/router/authLoader'
 import deleteToken from '@/api/deleteToken'
-import useAlert from '@/hooks/useAlert'
-import { Token } from '@/types'
 import updateToken from '@/api/updateToken'
+import useAlert from '@/hooks/useAlert'
+import authLoader from '@/router/authLoader'
+import DateLocaleString from '@/components/DateLocaleString'
+import TokenCreateDialog from './TokenCreateDialog'
+import { Token } from '@/types'
+import { useDialog } from '@/hooks/useDialog'
 
 type InputProps = {
   teamId: string
@@ -42,14 +47,13 @@ type TokenUpdatePayload = {
  */
 const TokensTable = ({ teamId, tokens }: InputProps) => {
   const { setAlert } = useAlert()
+  const [openDialog] = useDialog()
 
   // set the initial state of the rows to the tokens passed in as props.
   const [rows, setRows] = React.useState<Token[]>(() => tokens)
 
   // update the rows state if the tokens prop changes.
-  React.useEffect(() => {
-    setRows(tokens)
-  }, [tokens])
+  React.useEffect(() => setRows(tokens), [tokens])
 
   /**
    * Callback that makes a request API to delete a token from the team. If the
@@ -155,22 +159,50 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
    */
   const handleDisableToken = React.useCallback(
     (id: GridRowId) => () => handleUpdateToken(id, { enabled: false }),
+    /* eslint-disable react-hooks/exhaustive-deps */
     []
+    /* eslint-enable react-hooks/exhaustive-deps */
   )
 
   /**
    * Callback that makes a request API to enable a disabled token.
-
    */
   const handleEnableToken = React.useCallback(
     (id: GridRowId) => () => handleUpdateToken(id, { enabled: true }),
+    /* eslint-disable react-hooks/exhaustive-deps */
     []
+    /* eslint-enable react-hooks/exhaustive-deps */
+  )
+
+  const handleTokenAdded = React.useCallback(
+    (token: Token) => {
+      setRows((prevRows) => [...prevRows, token])
+    },
+    /* eslint-disable react-hooks/exhaustive-deps */
+    []
+    /* eslint-enable react-hooks/exhaustive-deps */
+  )
+
+  /**
+   * Callback that displays the pop-up dialog to create a new token.
+   */
+  const openTokenDialog = React.useCallback(
+    () => {
+      openDialog({
+        children: (
+          <TokenCreateDialog teamId={teamId} onTokenAdded={handleTokenAdded} />
+        ),
+      })
+    },
+    /* eslint-disable react-hooks/exhaustive-deps */
+    []
+    /* eslint-enable react-hooks/exhaustive-deps */
   )
 
   const columns = React.useMemo<GridColumns<Token>>(
     () => [
       {
-        flex: 0.2,
+        flex: 0.35,
         field: 'name',
         headerName: 'Description',
         renderCell: ({ row: { name, id } }: RenderCellProps): JSX.Element => (
@@ -184,6 +216,7 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
         renderCell: ({ row: { created } }: RenderCellProps): JSX.Element => (
           <DateLocaleString date={new Date(created)} />
         ),
+        defaultSort: 'desc',
       },
       {
         flex: 0.125,
@@ -225,17 +258,6 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
         ),
       },
       {
-        flex: 0.5,
-        minWidth: 130,
-        field: 'token',
-        headerName: 'Secret',
-        renderCell: ({
-          row: { token = '********' },
-        }: RenderCellProps): JSX.Element => (
-          <Typography variant="caption">{token}</Typography>
-        ),
-      },
-      {
         field: 'actions',
         type: 'actions',
         width: 80,
@@ -270,16 +292,37 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
   )
 
   return (
-    <Card>
-      <DataGrid
-        rows={rows}
-        columns={columns}
-        pagination={undefined}
-        autoHeight
-        disableSelectionOnClick
-        hideFooter
-      />
-    </Card>
+    <>
+      <Card>
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          pagination={undefined}
+          autoHeight
+          disableSelectionOnClick
+          hideFooter
+          sortModel={[
+            {
+              field: 'created',
+              sort: 'desc' as const,
+            },
+          ]}
+        />
+      </Card>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          width: '100%',
+          mt: -2,
+          '& > :not(style)': { m: 1 },
+        }}
+      >
+        <Fab color="primary" aria-label="add" onClick={openTokenDialog}>
+          <AddIcon />
+        </Fab>
+      </Box>
+    </>
   )
 }
 
