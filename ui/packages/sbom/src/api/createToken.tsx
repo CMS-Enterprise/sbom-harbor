@@ -18,7 +18,7 @@ const createToken = async ({
   jwtToken: string
   teamId: string
   name: string
-  expires: string
+  expires: TDateISOWithoutZ
 }): Promise<Record<string, never>> =>
   harborRequest({
     path: `/token?teamId=${teamId}`,

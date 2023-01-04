@@ -21,8 +21,6 @@ const harborRequest = async ({
   signal = new AbortController().signal,
   children = true,
 }: Params) => {
-  debugger // eslint-disable-line no-debugger
-
   // ensure path doesn't contain double slashes
   const url = new URL(`${CONFIG.API_URL}/v1/${path}`.replace(/\/\//g, '/'))
 

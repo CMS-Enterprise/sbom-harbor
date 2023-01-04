@@ -7,9 +7,12 @@ test('calls makes a fetch request', () => {
     json: async () => ({}),
   })
 
+  const date = new Date()
+  const expires = date.toISOString().replace(/Z$/, '') as TDateISOWithoutZ
+
   createToken({
     name: 'some-name',
-    expires: 'some-expires',
+    expires,
     jwtToken: 'some-token',
     teamId: 'some-team',
   })

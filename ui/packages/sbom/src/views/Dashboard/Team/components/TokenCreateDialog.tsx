@@ -16,6 +16,7 @@ import TokenViewDialog from '@/views/Dashboard/Team/components/TokenViewDialog'
 import createToken from '@/api/createToken'
 import authLoader from '@/router/authLoader'
 import useAlert from '@/hooks/useAlert'
+import dateAsISOWithoutZ from '@/utils/dateAsISOWithoutZ'
 
 enum ExpirationOptions {
   SEVEN_DAYS = '7 days',
@@ -28,20 +29,19 @@ enum ExpirationOptions {
   // CUSTOM = 'Custom',
 }
 
+const getExpirationDate = (daysToAdd: number): TDateISOWithoutZ => {
+  const date = new Date()
+  return dateAsISOWithoutZ(new Date(date.setDate(date.getDate() + daysToAdd)))
+}
+
 // FIXME: copy pasta shame
 const ExpirationValues = {
-  SEVEN_DAYS: (date: Date = new Date()) =>
-    new Date(date.setDate(date.getDate() + 7)).toISOString(),
-  THIRTY_DAYS: (date: Date = new Date()) =>
-    new Date(date.setDate(date.getDate() + 30)).toISOString(),
-  SIXTY_DAYS: (date: Date = new Date()) =>
-    new Date(date.setDate(date.getDate() + 60)).toISOString(),
-  NINETY_DAYS: (date: Date = new Date()) =>
-    new Date(date.setDate(date.getDate() + 90)).toISOString(),
-  SIX_MONTHS: (date: Date = new Date()) =>
-    new Date(date.setDate(date.getDate() + 182)).toISOString(),
-  ONE_YEAR: (date: Date = new Date()) =>
-    new Date(date.setDate(date.getDate() + 365)).toISOString(),
+  SEVEN_DAYS: () => getExpirationDate(7),
+  THIRTY_DAYS: () => getExpirationDate(30),
+  SIXTY_DAYS: () => getExpirationDate(60),
+  NINETY_DAYS: () => getExpirationDate(90),
+  SIX_MONTHS: () => getExpirationDate(182),
+  ONE_YEAR: () => getExpirationDate(365),
   // TODO: implement datepicker for custom expiration
   // CUSTOM = 'Custom',
 }
@@ -135,14 +135,17 @@ const TokenCreateDialog = ({ setOpen, teamId }: InputProps) => {
                 ([, value]) => value === formInput.expires
               )?.[0] as keyof typeof ExpirationValues
             ]()
-          // make the create token request
-          const response = await createToken({
+
+          const params = {
             teamId,
             jwtToken,
-            expires: expires,
+            expires,
             name: formInput.name,
-          })
-          console.log('New token response', response)
+          }
+
+          // make the create token request
+          const response = await createToken(params)
+
           // show a success message
           setAlert({
             message: 'Token created successfully!',
