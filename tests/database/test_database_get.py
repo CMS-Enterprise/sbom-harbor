@@ -1,7 +1,7 @@
 """ Database and Model tests for Getting objects in the HarborTeamsTable """
 
 import uuid
-from decimal import Decimal
+from datetime import datetime, timedelta
 from uuid import uuid4
 
 import boto3
@@ -17,7 +17,7 @@ from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
-from cyclonedx.model.token import Token
+from cyclonedx.model.token import Token, parse_datetime
 
 
 def test_get_team_only(test_dynamo_db_resource, test_harbor_teams_table):
@@ -174,8 +174,8 @@ def test_get_token_only(test_dynamo_db_resource, test_harbor_teams_table):
     team_id = str(uuid.uuid4())
     token_id = str(uuid.uuid4())
     token_val = str(uuid.uuid4())
-    created = Decimal(507482179.234)
-    expires = Decimal(507492179.234)
+    created = datetime.now().astimezone().isoformat()
+    expires = (datetime.now().astimezone() + timedelta(days=180)).isoformat()
 
     sort_key = "{}#{}".format(EntityType.TOKEN.value, token_id)
 
@@ -205,7 +205,7 @@ def test_get_token_only(test_dynamo_db_resource, test_harbor_teams_table):
     assert token.entity_key == sort_key
     assert token.enabled
     assert token.created == created
-    assert token.expires == expires
+    assert token.expires == parse_datetime(expires)
     assert token.token == token_val
 
 

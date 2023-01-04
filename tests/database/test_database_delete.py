@@ -1,7 +1,7 @@
 """ Database and Model tests for Deleting objects in the HarborTeamsTable """
 
 import uuid
-from decimal import Decimal
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -15,7 +15,7 @@ from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
-from cyclonedx.model.token import Token
+from cyclonedx.model.token import Token, parse_datetime
 
 
 def test_delete_team_only(test_dynamo_db_resource, test_harbor_teams_table):
@@ -256,8 +256,8 @@ def test_delete_token_only(test_dynamo_db_resource, test_harbor_teams_table):
     team_id = str(uuid.uuid4())
     token_id = str(uuid.uuid4())
     token_val = str(uuid.uuid4())
-    created = Decimal(507482179.234)
-    expires = Decimal(507492179.234)
+    created = datetime.now().astimezone().isoformat()
+    expires = (datetime.now().astimezone() + timedelta(days=180)).isoformat()
 
     tet = EntityType.TOKEN.value
     range_key = "{}#{}".format(tet, token_id)
@@ -336,8 +336,11 @@ def test_delete_team_with_a_child_of_each_type(
     build_tool = "YARN"
     clone_url = "https://github.com/cmsgov/ab2d-lambdas"
 
-    created = Decimal(507482179.234)
-    expires = Decimal(507492179.234)
+    created = datetime.now().astimezone().isoformat()
+    # Handling the date parsing here because the model setter gets bypassed by the test.
+    expires = parse_datetime(
+        (datetime.now().astimezone() + timedelta(days=180)).isoformat()
+    )
     token_val = str(uuid.uuid4())
 
     # Put the Team
@@ -459,7 +462,7 @@ def test_delete_team_with_a_child_of_each_type(
     assert token_range_key == token_item[HARBOR_TEAMS_TABLE_SORT_KEY]
     assert token_item["enabled"]
     assert created == token_item["created"]
-    assert expires == token_item["expires"]
+    assert parse_datetime(expires) == token_item["expires"]
     assert token_val == token_item["token"]
 
     HarborDBClient(test_dynamo_db_resource).delete(

@@ -1,7 +1,6 @@
 """ Database and Model tests for Creating objects in the HarborTeamsTable """
 import uuid
-from datetime import datetime
-from decimal import Decimal
+from datetime import datetime, timedelta
 
 import boto3
 import pytest
@@ -19,7 +18,7 @@ from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
-from cyclonedx.model.token import Token
+from cyclonedx.model.token import Token, parse_datetime
 from tests.conftest import create_mock_dynamodb_infra
 
 
@@ -522,7 +521,7 @@ def test_update_token_only(test_dynamo_db_resource, test_harbor_teams_table):
     assert entity_key == item[HARBOR_TEAMS_TABLE_SORT_KEY]
     assert item[Token.Fields.ENABLED]
     assert new_created.isoformat() == item[Token.Fields.CREATED]
-    assert new_expires.isoformat() == item[Token.Fields.EXPIRES]
+    assert parse_datetime(new_expires) == item[Token.Fields.EXPIRES]
     assert token_val == item[Token.Fields.TOKEN]
 
 
@@ -561,8 +560,8 @@ def test_update_team_with_a_child_of_each_type(
     build_tool = "YARN"
     clone_url = "https://github.com/cmsgov/ab2d-lambdas"
 
-    created = Decimal(507482179.234)
-    expires = Decimal(507492179.234)
+    created = datetime.now().astimezone().isoformat()
+    expires = (datetime.now().astimezone() + timedelta(days=180)).isoformat()
     token_val = str(uuid.uuid4())
     new_token_val = str(uuid.uuid4())
 
@@ -740,5 +739,5 @@ def test_update_team_with_a_child_of_each_type(
     assert "{}#{}".format(tet, token_id) == token_item[HARBOR_TEAMS_TABLE_SORT_KEY]
     assert token_item[Token.Fields.ENABLED]
     assert created == token_item[Token.Fields.CREATED]
-    assert expires == token_item[Token.Fields.EXPIRES]
+    assert parse_datetime(expires) == token_item[Token.Fields.EXPIRES]
     assert new_token_val == token_item[Token.Fields.TOKEN]

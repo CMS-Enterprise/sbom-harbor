@@ -5,6 +5,8 @@ from datetime import datetime
 from json import loads
 
 import boto3
+import pytz
+from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
 from cyclonedx.clients.db.dynamodb import HarborDBClient
@@ -79,11 +81,11 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
     request_body: dict = loads(event["body"])
 
     # Create a creation and expiration time
-    now = datetime.now()
+    now = datetime.now(pytz.utc)
 
     try:
         expires: str = request_body[Token.Fields.EXPIRES]
-        expires_dt: datetime = datetime.fromisoformat(expires)
+        expires_dt: datetime = parse(expires)
         if expires_dt <= now:
             raise ValueError("Specified expiration date is before now.")
     except KeyError:
