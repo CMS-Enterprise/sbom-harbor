@@ -8,6 +8,7 @@ test('calls makes a fetch request', () => {
   })
 
   const date = new Date()
+  // TODO: undo this once the API gets corrected
   const expires = date.toISOString().replace(/Z$/, '') as TDateISOWithoutZ
 
   createToken({
