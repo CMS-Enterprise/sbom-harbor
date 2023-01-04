@@ -1,8 +1,7 @@
 import { Auth } from 'aws-amplify'
 import { CONFIG } from '@/utils/constants'
 
-const { API_URL } = CONFIG
-const SEARCH_URL = `${API_URL}/user/search`
+const { USER_API_SEARCH_URL } = CONFIG
 
 const getAddress = async (
   filter: string,
@@ -12,8 +11,8 @@ const getAddress = async (
   const jwtToken = session.getAccessToken().getJwtToken()
 
   // TODO: use url.searchParams instead of building the url manually
-  const url = `${SEARCH_URL}?filter=${filter}`
-  // const url = new URL(SEARCH_URL)
+  const url = `${USER_API_SEARCH_URL}?filter=${filter}`
+  // const url = new URL(USER_API_SEARCH_URL)
   // url.searchParams.append('filter', filter)
 
   const res = await fetch(url, {
