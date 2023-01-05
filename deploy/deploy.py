@@ -1,4 +1,6 @@
 """ This module is the start of the deployment for SBOM-API """
+import logging
+from logging import config
 from os import system
 
 import aws_cdk as cdk
@@ -12,6 +14,7 @@ from deploy.constants import (
     CMS_PERMISSION_BOUNDARY_ARN,
     CMS_ROLE_PATH,
     ENVIRONMENT,
+    PYTHON_LOGGING_CONFIG,
 )
 from deploy.role_aspect import RoleAspect
 from deploy.stacks import (
@@ -25,6 +28,9 @@ from deploy.stacks import (
 from deploy.stacks.SBOMIngressApiStack import SBOMIngressApiStack
 from deploy.util import DynamoTableManager
 from tests.data.create_cognito_users import test_create_cognito_users
+
+config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 
 def dodep() -> None:
@@ -96,7 +102,7 @@ def dodep() -> None:
         pilot_stack.add_pilot_route(ingress_api_stack.api)
 
         if AWS_PROFILE in ("cms-dev", "cms-prod"):
-            print(
+            logger.info(
                 "Deploying to CMS. Applying permissions boundary, and path, to all roles!"
             )
             for stack in stacks:

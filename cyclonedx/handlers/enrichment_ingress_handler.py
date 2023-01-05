@@ -1,7 +1,9 @@
 """
 -> Module for the Enrichment Ingress Handler
 """
+import logging
 from json import dumps
+from logging import config
 
 import boto3
 from jsonschema.exceptions import ValidationError
@@ -11,9 +13,13 @@ from cyclonedx.constants import (
     EVENT_BUS_DETAIL_TYPE,
     EVENT_BUS_NAME,
     EVENT_BUS_SOURCE,
+    PYTHON_LOGGING_CONFIG,
     SBOM_BUCKET_NAME_KEY,
     SBOM_S3_KEY,
 )
+
+config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 
 def enrichment_ingress_handler(event: dict = None, context: dict = None):
@@ -28,7 +34,7 @@ def enrichment_ingress_handler(event: dict = None, context: dict = None):
 
     records: list = __get_records_from_event(event)
 
-    print(f"<Records records={records}>")
+    logger.info("Records records= %s", records)
 
     for record in records:
 
@@ -45,7 +51,7 @@ def enrichment_ingress_handler(event: dict = None, context: dict = None):
         # try:
         #     enrichment_id = s3_object["Metadata"][ENRICHMENT_ID]
         # except KeyError as key_err:
-        #     print(f"<s3Object object={s3_object} />")
+        #     logger.info("s3Object object= %s", s3_object)} />")
         #     enrichment_id = f"ERROR: {key_err}"
 
         response = eb_client.put_events(
@@ -66,4 +72,4 @@ def enrichment_ingress_handler(event: dict = None, context: dict = None):
             ],
         )
 
-        print(f"<PutEventsResponse response='{response}' />")
+        logger.info("PutEventsResponse response= %s", response)

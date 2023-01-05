@@ -1,12 +1,18 @@
 """ This Module has functions that can be run using Poetry to perform build tasks"""
-
-from shutil import rmtree
+import logging
 from inspect import stack
+from logging import config
 from optparse import OptionParser
 from os import system
+from shutil import rmtree
+
+from deploy.constants import PYTHON_LOGGING_CONFIG
+
+config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 parser = OptionParser("usage: %prog [options]")
-parser.add_option('--ui', dest="ui", help='ui flag', action="store_true")
+parser.add_option("--ui", dest="ui", help="ui flag", action="store_true")
 
 
 def install():
@@ -109,7 +115,7 @@ def clean():
         try:
             rmtree(unwanted_dir)
         except OSError as os_error:
-            print("Error: %s : %s" % (unwanted_dir, os_error.strerror))
+            logger.info("Error: %s", (unwanted_dir, os_error.strerror))
     run_ui_if_enabled()
 
 
@@ -131,10 +137,11 @@ def run_ui_if_enabled():
         poetry run <install,run,lint,test> --ui
     """
 
+    # pylint: disable = W0612
     (options, args) = parser.parse_args()
     caller = stack()[1][3]
 
     if options.ui:
         method = caller + "_ui"
-        print("\nRunning " + caller + " for UI...\n")
+        logger.info("Running caller for UI %s", caller)
         globals()[method]()

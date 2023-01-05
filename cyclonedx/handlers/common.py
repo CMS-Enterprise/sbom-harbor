@@ -1,10 +1,11 @@
 """
 -> Common Handler Functions
 """
-
 import importlib.resources as pr
+import logging
 from io import StringIO
 from json import dumps, loads
+from logging import config
 from typing import Union
 
 import boto3
@@ -12,21 +13,24 @@ from boto3 import resource
 
 import cyclonedx.schemas as schemas
 from cyclonedx.clients import HarborDBClient
-from cyclonedx.model import generate_model_id
 from cyclonedx.constants import (
+    PYTHON_LOGGING_CONFIG,
     S3_META_CODEBASE_KEY,
     S3_META_PROJECT_KEY,
     S3_META_TEAM_KEY,
     SBOM_BUCKET_NAME_KEY,
     SBOM_S3_KEY,
 )
-from cyclonedx.model import EntityType, HarborModel
+from cyclonedx.model import EntityType, HarborModel, generate_model_id
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
 
 team_schema = loads(pr.read_text(schemas, "team.schema.json"))
+
+config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 
 class ContextKeys:
@@ -160,8 +164,8 @@ def print_values(event: dict, context: dict) -> None:
     -> Prints the values of the event and context
     """
 
-    print(f"<EVENT event=|{dumps(event, indent=2)}| />")
-    print(f"<CONTEXT context=|{context}| />")
+    logger.info("EVENT event= %s", dumps(event, indent=2))
+    logger.info("CONTEXT context %s", context)
 
 
 def _get_request_body_as_dict(event: dict) -> dict:
@@ -240,7 +244,7 @@ def _to_codebases(team_id: str, project_id: str, codebases: list[dict]):
             for codebase in codebases
         ]
     except KeyError as ke:
-        print(f"KeyError trying to create CodeBase: {ke}")
+        logger.info("KeyError trying to create CodeBase: %s", ke)
         return []
 
 
@@ -269,7 +273,7 @@ def _to_projects(team_id: str, projects: list[dict]):
 
         return ret_projects
     except KeyError as ke:
-        print(f"KeyError trying to create Project: {ke}")
+        logger.info("KeyError trying to create Project: %s", ke)
         return []
 
 

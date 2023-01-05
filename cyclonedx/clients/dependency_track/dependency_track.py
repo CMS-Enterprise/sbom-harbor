@@ -1,6 +1,8 @@
 """ This Module has all the utility functions
 necessary to interoperate with Dependency Track."""
+import logging
 from json import dumps, loads
+from logging import config
 from time import sleep
 from uuid import uuid4
 
@@ -15,8 +17,12 @@ from cyclonedx.constants import (
     DT_DEFAULT_ADMIN_PWD,
     DT_ROOT_PWD,
     EMPTY_VALUE,
+    PYTHON_LOGGING_CONFIG,
 )
 from cyclonedx.dtendpoints import DTEndpoints
+
+config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 
 def __change_dt_root_pwd():
@@ -25,14 +31,14 @@ def __change_dt_root_pwd():
     -> Change the root password in Dependency Track
     """
 
-    print("@START __change_dt_root_pwd()")
+    logger.info("@START __change_dt_root_pwd()")
 
     ssm: BaseClient = client("ssm")
 
     pwd: str = DT_DEFAULT_ADMIN_PWD
     new_pwd: str = str(uuid4())
 
-    print(f"@NEW PASSWORD __change_dt_root_pwd({new_pwd})")
+    logger.info("NEW PASSWORD __change_dt_root_pwd %s", new_pwd)
 
     headers: dict = {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -63,7 +69,7 @@ def __change_dt_root_pwd():
         DataType="text",
     )
 
-    print(f"@END __change_dt_root_pwd() -> new Pwd({new_pwd})")
+    logger.info("END __change_dt_root_pwd() -> new Pwd %s", new_pwd)
 
     return new_pwd
 
@@ -102,7 +108,7 @@ def __get_jwt(root_pwd=None):
     -> Get JWT from Dependency Track
     """
 
-    print("@START __get_jwt()")
+    logger.info("@START __get_jwt()")
 
     if root_pwd is None:
         root_pwd = __get_root_password()
@@ -119,8 +125,11 @@ def __get_jwt(root_pwd=None):
         "password": root_pwd,
     }
 
-    print(
-        f"<GetJwtRequest ep={DTEndpoints.do_login()} headers={headers} params={params} />"
+    logger.info(
+        "GetJwtRequest ep=%s headers=%s params= %s",
+        DTEndpoints.do_login(),
+        headers,
+        params,
     )
 
     response = post(
@@ -131,7 +140,7 @@ def __get_jwt(root_pwd=None):
 
     jwt = response.text
 
-    print(f"@END __get_jwt({jwt})")
+    logger.info("END __get_jwt %s", jwt)
 
     return jwt
 
@@ -142,7 +151,7 @@ def __get_teams():
     -> Get teams from Dependency Track
     """
 
-    print("@START __get_teams()")
+    logger.info("@START __get_teams()")
 
     jwt = __get_jwt()
 
@@ -158,7 +167,7 @@ def __get_teams():
 
     teams = response.json()
 
-    print(f"@END __get_teams({teams})")
+    logger.info("END __get_teams %s", teams)
 
     return teams
 
@@ -169,13 +178,13 @@ def __get_automation_team_data_from_dt():
     -> Get the automation team info from Dependency Track
     """
 
-    print("@START __get_automation_team_data_from_dt()")
+    logger.info("@START __get_automation_team_data_from_dt()")
 
     for team in __get_teams():
         if team["name"] == "Automation":
             uuid = team["uuid"]
             api_key = team["apiKeys"][0]["key"]
-            print(f"@END __get_automation_team_data_from_dt({uuid}, {api_key})")
+            logger.info("END __get_automation_team_data_from_dt %s", uuid)
             return uuid, api_key
 
     raise Exception("Unable to find Automation team in DT")
@@ -187,7 +196,7 @@ def __set_team_permissions(team_uuid):
     -> Set the permissions for a team in Dependency Track
     """
 
-    print("@START __set_team_permissions()")
+    logger.info("@START __set_team_permissions()")
 
     jwt = __get_jwt()
 
@@ -214,7 +223,7 @@ def __set_team_permissions(team_uuid):
             headers=headers,
         )
 
-    print("@END __set_team_permissions()")
+    logger.info("@END __set_team_permissions()")
 
 
 def __get_body_from_event(event) -> dict:
@@ -267,8 +276,8 @@ def __get_records_from_event(event) -> list:
     as a **string** that the POST body contained.
     """
 
-    print(f"Incoming Event: {event}")
-    print(f"Incoming Event Type: {type(event)}")
+    logger.info("Incoming Event: %s", event)
+    logger.info("Incoming Event Type: %s", type(event))
 
     event_dict: dict = {}
 
@@ -360,14 +369,14 @@ def __get_findings(project_uuid: str, sbom_token: str) -> dict:
 
     while not __findings_ready(key, sbom_token):
         sleep(0.5)
-        print("Not ready...")
+        logger.info("Not ready...")
 
     findings = get(DTEndpoints.get_findings(project_uuid), headers=headers)
     json = findings.json()
 
-    print("<Results are in!>")
-    print(json)
-    print("</Results are in!>")
+    logger.info("<Results are in!>")
+    logger.info(json)
+    logger.info("</Results are in!>")
 
     return json
 
@@ -450,7 +459,7 @@ def __create_project():
     proj = create_proj_rsp.json()
     project_uuid = proj["uuid"]
 
-    print(f"<ProjectCreated uuid={project_uuid}>")
+    logger.info("ProjectCreated uuid= %s", project_uuid)
 
     return project_uuid
 
@@ -465,9 +474,9 @@ def __delete_project(project_uuid: str):
         "Accept": "application/json",
     }
 
-    print("<DeletingProject>")
-    print(project_uuid)
-    print("</DeletingProject>")
+    logger.info("<DeletingProject>")
+    logger.info(project_uuid)
+    logger.info("</DeletingProject>")
 
     put(
         DTEndpoints.delete_project(project_uuid),
@@ -497,9 +506,9 @@ def __upload_sbom(project_uuid, bom_str_file):
         "Content-Type": mpe.content_type,
     }
 
-    print("<BomUploadHeaders>")
-    print(bom_upload_headers)
-    print("</BomUploadHeaders>")
+    logger.info("<BomUploadHeaders>")
+    logger.info(bom_upload_headers)
+    logger.info("</BomUploadHeaders>")
 
     upload_sbom_rsp: Response = post(
         DTEndpoints.post_sbom(),
@@ -534,7 +543,7 @@ def __get_api_key():
     # If the Parameter isn't found, then we
     # need to set the initial api key from DT
     except ssm.exceptions.ParameterNotFound:
-        print("<__get_api_key -> Loc 05>")
+        logger.info("<__get_api_key -> Loc 05>")
         return __set_initial_api_key_in_ssm()
 
 

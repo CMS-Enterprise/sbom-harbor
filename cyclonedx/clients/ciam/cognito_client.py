@@ -1,6 +1,8 @@
 """
 -> Module to house the HarborCognitoClient class
 """
+import logging
+from logging import config
 from os import environ
 
 import boto3
@@ -10,11 +12,15 @@ from cyclonedx.clients.ciam.jwt_data import JwtData
 from cyclonedx.clients.ciam.user_data import CognitoUserData
 from cyclonedx.constants import (
     COGNITO_TEAM_DELIMITER,
+    PYTHON_LOGGING_CONFIG,
     USER_POOL_CLIENT_ID_KEY,
     USER_POOL_ID_KEY,
 )
 from cyclonedx.exceptions.ciam_exception import HarborCiamError
 from cyclonedx.model.member import Member
+
+config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 
 class HarborCognitoClient:
@@ -108,7 +114,7 @@ class HarborCognitoClient:
                 },
             )
         except self.cognito_client.exceptions.NotAuthorizedException as err:
-            print(f"Caught NotAuthorizedException: {err}")
+            logger.info("Caught NotAuthorizedException: %s", err)
             raise HarborCiamError("Not Authorized") from err
 
         return resp["AuthenticationResult"]["AccessToken"]
