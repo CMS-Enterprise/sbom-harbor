@@ -40,10 +40,9 @@ export class TestContext {
         this.password = `${__ENV.ADMIN_PASSWORD}`;
         this.sbom = open("../sbom-fixture.json");
 
-        // TODO: Remove this workaround once the API handles multiple date formats.
         const date = new Date();
         let expiry = new Date(date.setTime(date.getTime() + 1 * 60 * 60 * 1000));
-        this.expiryDate = expiry.toISOString().replace('Z','');
+        this.expiryDate = expiry.toISOString();
     }
 
     init() {
@@ -167,7 +166,7 @@ export class TestContext {
             case "/api/v1/project":
                 return stringify({id: "", name: this.entityName("project"), fisma: "", codebases: []});
             case "/api/v1/codebase":
-                return stringify({id: "", name: this.entityName("codebase"), language: "", buildTool: ""});
+                return stringify({id: "", name: this.entityName("codebase"), language: "", buildTool: "", cloneUrl: "https://github.com/cmsgov/ab2d-lambdas"});
             case "/api/v1/token":
                 return stringify({name: this.entityName("token"), created: "", enabled: true, expires: this.expiryDate});
             case "/api/v1/{teamId}/{projectId}/{codebaseId}/sbom":

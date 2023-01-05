@@ -69,7 +69,7 @@ export default function() {
             check(request, {
                 "<%& description%>": (r) => {
                     if (r.status !== 200) {
-                        console.log(`${r.request.method}: ${r.url.replace(BASE_URL, '')} failed with ${JSON.stringify(r.body)}`);
+                        console.log(`${r.request.method}: ${r.url.replace(BASE_URL, '')} failed with ${r.status} - ${JSON.stringify(r.body)}`);
                     } else {
                         ctx.handleFixtures(method, route, r.body);
                     }

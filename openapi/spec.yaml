@@ -826,8 +826,11 @@ components:
           type: string
         buildTool:
           type: string
+        cloneUrl:
+          type: string
       required:
         - name
+        - cloneUrl
     token:
       type: object
       properties:
