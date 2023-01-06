@@ -1,15 +1,14 @@
 """ Token Model Object. Represents a Token within the SBOM Harbor System. """
+from datetime import datetime
 from uuid import uuid4
 
-from cyclonedx.model import (
-    EntityKey,
-    HarborModel,
-    EntityType,
-)
+import pytz
+from dateutil.parser import parse
+
+from cyclonedx.model import EntityKey, EntityType, HarborModel
 
 
 def generate_token() -> str:
-
     """
     -> Function to generate an API token consistently
     """
@@ -18,14 +17,12 @@ def generate_token() -> str:
 
 
 class Token(HarborModel):
-
     """
     A Token, is an entity that represents a string used to authorize sending
     SBOMs into the system.
     """
 
     class Fields(HarborModel.Fields):
-
         """Inner Class to hold the fields of a Token"""
 
         NAME = "name"
@@ -41,7 +38,6 @@ class Token(HarborModel):
         item: dict,
         children: dict[str, list[HarborModel]] = None,
     ) -> "Token":
-
         """to_instance() Creates a Token from its data"""
 
         return Token(
@@ -65,7 +61,6 @@ class Token(HarborModel):
         enabled: bool = True,
         token: str = "",
     ):
-
         """Constructor"""
 
         super().__init__(
@@ -84,7 +79,6 @@ class Token(HarborModel):
 
     @property
     def name(self) -> str:
-
         """Define the property that holds when the token was created"""
 
         return self._name
@@ -97,21 +91,18 @@ class Token(HarborModel):
 
     @property
     def created(self) -> str:
-
         """Define the property that holds when the token was created"""
 
         return self._created
 
     @property
     def expires(self) -> str:
-
         """Define the property that holds when the token expires"""
 
         return self._expires
 
     @expires.setter
     def expires(self, expires: str):
-
         """
         -> Setter for the str 'expires' property
         """
@@ -120,14 +111,12 @@ class Token(HarborModel):
 
     @property
     def enabled(self) -> bool:
-
         """Define the property that tell us if the token is enabled"""
 
         return self._enabled
 
     @enabled.setter
     def enabled(self, enabled: bool):
-
         """
         -> Setter for the boolean 'enabled' property
         """
@@ -136,13 +125,11 @@ class Token(HarborModel):
 
     @property
     def token(self) -> str:
-
         """Define the property that holds the token itself"""
 
         return self._token
 
     def get_item(self) -> dict:
-
         """Get the dictionary representation of the Token"""
 
         return {
@@ -155,7 +142,6 @@ class Token(HarborModel):
         }
 
     def to_json(self):
-
         """
         Return a dictionary that can be sent as the
         json representation of a given model object
@@ -169,3 +155,31 @@ class Token(HarborModel):
             Token.Fields.ENABLED: self.enabled,
             Token.Fields.TOKEN: self.token,
         }
+
+    def is_expired(self):
+        """
+        Returns whether a token is expired. All expires values
+        are converted to UTC.
+        """
+        if self.expires is None:
+            return True
+
+        dt = parse(self.expires)
+        # Defensive coding for existing records.
+        if dt.tzinfo is None:
+            dt = dt.astimezone(pytz.utc)
+
+        return dt <= datetime.now(pytz.utc)
+
+    def set_expires(self, expires: str):
+        """
+        Ensures all expiration dates are set to UTC.
+        """
+        dt = parse(expires)
+
+        # All expiration logic uses UTC time, so we have to store a timezone aware date.
+        if dt.tzinfo is None:
+            # if no timezone is set by the caller we have to pick one, so we pick the server time.
+            dt = dt.astimezone()
+
+        self.expires = dt.astimezone(pytz.utc).isoformat()
