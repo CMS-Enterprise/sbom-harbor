@@ -17,6 +17,7 @@ from deploy.constants import (
     DT_TASK_DEF_ID,
     EFS_MOUNT_ID,
     FARGATE_CLUSTER_ID,
+    FARGATE_CLUSTER_NAME,
 )
 from deploy.enrichment.dependency_track import DependencyTrackLoadBalancer
 
@@ -37,7 +38,9 @@ class DependencyTrackFargateInstance(Construct):
         super().__init__(scope, FARGATE_CLUSTER_ID)
 
         # create an ecs cluster for running dependency track
-        fargate_cluster = ecs.Cluster(self, FARGATE_CLUSTER_ID, vpc=vpc)
+        fargate_cluster = ecs.Cluster(
+            self, FARGATE_CLUSTER_ID, cluster_name=FARGATE_CLUSTER_NAME, vpc=vpc
+        )
 
         # create an efs mount for maintaining
         dt_mount = efs.FileSystem(

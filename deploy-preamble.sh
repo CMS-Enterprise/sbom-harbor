@@ -24,8 +24,11 @@ if [[ -z $AWS_PROFILE ]]; then
 fi
 
 if [[ -z $ENVIRONMENT ]]; then
+  # derive environment name from branch
   export BRANCH=$(git rev-parse --abbrev-ref HEAD)
-  export ENVIRONMENT=$(echo $BRANCH | awk '{split($0, a, "/"); print tolower(a[1])}')
+  env=$(echo $BRANCH | awk '{split($0, a, "/"); print tolower(a[1])}')
+  # ispgcasp- ends up making some aws resource names too long, replace with "e" (for "ephemeral")
+  export ENVIRONMENT="${env/ispgcasp-/e}"
 fi
 
 # ION_CHANNEL vars are a temporary shim until the client pulls from secrets manager

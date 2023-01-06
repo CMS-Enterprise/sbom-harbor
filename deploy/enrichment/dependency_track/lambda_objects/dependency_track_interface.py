@@ -11,12 +11,13 @@ from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 
 from cyclonedx.constants import (
+    EMPTY_VALUE,
+)
+
+from deploy.constants import (
     DT_API_BASE,
     DT_API_KEY,
     DT_ROOT_PWD,
-    EMPTY_VALUE,
-)
-from deploy.constants import (
     DT_INTERFACE_LN,
     PRIVATE,
     SBOM_API_PYTHON_RUNTIME,

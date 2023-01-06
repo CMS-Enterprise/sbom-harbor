@@ -6,13 +6,12 @@ from aws_cdk import (
 )
 from constructs import Construct
 
-from cyclonedx.constants import (
+from deploy.constants import (
     DT_API_PORT,
     DT_LOAD_BALANCER_ID,
+    DT_LOAD_BALANCER_NAME,
     DT_LOAD_BALANCER_LISTENER_ID,
     DT_LOAD_BALANCER_TARGET_ID,
-)
-from deploy.constants import (
     DT_LB_ID,
     DT_LB_LOGGING_ID,
     DT_LB_SG_ID,
@@ -48,7 +47,7 @@ class DependencyTrackLoadBalancer(Construct):
             DT_LOAD_BALANCER_ID,
             vpc=vpc,
             internet_facing=False,
-            load_balancer_name=DT_LOAD_BALANCER_ID,
+            load_balancer_name=DT_LOAD_BALANCER_NAME,
             security_group=security_group,
         )
 

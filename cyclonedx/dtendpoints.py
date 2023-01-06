@@ -3,7 +3,7 @@ Module to hold constant values for the API
 """
 
 import os
-from cyclonedx.constants import DT_API_BASE, DT_API_PORT
+from deploy.constants import DT_API_BASE, DT_API_PORT
 
 
 class DTEndpoints:

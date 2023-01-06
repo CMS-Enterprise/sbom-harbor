@@ -9,7 +9,6 @@ from aws_cdk import aws_events as eventbridge
 
 from deploy.constants import (
     AWS_ACCOUNT_ID,
-    AWS_PROFILE,
     AWS_REGION,
     CMS_PERMISSION_BOUNDARY_ARN,
     CMS_ROLE_PATH,
