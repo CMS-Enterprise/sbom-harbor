@@ -16,6 +16,20 @@ def generate_token() -> str:
     return f"sbom-api-{uuid4()}"
 
 
+def parse_expires(expires: str):
+    """
+    Ensures all expiration dates are set to UTC.
+    """
+    dt = parse(expires)
+
+    # All expiration logic uses UTC time, so we have to store a timezone aware date.
+    if dt.tzinfo is None:
+        # if no timezone is set by the caller we have to pick one, so we pick the server time.
+        dt = dt.astimezone()
+
+    return dt.astimezone(pytz.utc).isoformat()
+
+
 class Token(HarborModel):
     """
     A Token, is an entity that represents a string used to authorize sending
@@ -107,7 +121,7 @@ class Token(HarborModel):
         -> Setter for the str 'expires' property
         """
 
-        self._expires = expires
+        self._expires = parse_expires(expires)
 
     @property
     def enabled(self) -> bool:
@@ -171,15 +185,8 @@ class Token(HarborModel):
 
         return dt <= datetime.now(pytz.utc)
 
-    def set_expires(self, expires: str):
+    def is_valid(self):
         """
-        Ensures all expiration dates are set to UTC.
+        If is enabled and not expired, then allow
         """
-        dt = parse(expires)
-
-        # All expiration logic uses UTC time, so we have to store a timezone aware date.
-        if dt.tzinfo is None:
-            # if no timezone is set by the caller we have to pick one, so we pick the server time.
-            dt = dt.astimezone()
-
-        self.expires = dt.astimezone(pytz.utc).isoformat()
+        return self.enabled and not self.is_expired()

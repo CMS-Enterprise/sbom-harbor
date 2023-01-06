@@ -87,7 +87,7 @@ def tomorrow_javascript():
     )
 
 
-def test_can_validate_expires():
+def test_parse_expires():
     """
     -> Tests that we can compare an ISO 8601 date string to an rfc3339 date string.
     """
@@ -120,7 +120,7 @@ def test_can_validate_expires():
                 token_id="test",
             )
             print("input  {key} {expires}".format(key=key, expires=yesterdays[key]))
-            token.set_expires(yesterdays[key])
+            token.expires = yesterdays[key]
             print("output {key} {expires}".format(key=key, expires=token.expires))
             assert token.is_expired()
             successes[key] = {
@@ -138,7 +138,7 @@ def test_can_validate_expires():
                 token_id="test",
             )
             print("input  {key} {expires}".format(key=key, expires=tomorrows[key]))
-            token.set_expires(tomorrows[key])
+            token.expires = tomorrows[key]
             print("output {key} {expires}".format(key=key, expires=token.expires))
             assert not token.is_expired()
             successes[key] = {
@@ -162,3 +162,11 @@ def test_can_validate_expires():
         )
 
     assert len(exceptions) == 0
+
+
+# def test_can_validate_token():
+#     """
+#     -> Tests that we can properly calculate token validity.
+#     """
+#
+#     test_cases = []
