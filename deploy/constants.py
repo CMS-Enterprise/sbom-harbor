@@ -12,7 +12,7 @@ regionCodes = {
 }
 
 
-def environize(name: str, delimiter="-", include_account=False) -> str:
+def environize(name: str, delimiter: str = "-", include_account=False) -> str:
     """environize returns a name that is unique per environment.
     Set include_account=True for resources that need to be globally unique such as S3 buckets."""
 
