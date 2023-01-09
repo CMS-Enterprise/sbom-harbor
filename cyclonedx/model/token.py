@@ -18,7 +18,7 @@ def generate_token() -> str:
 
 def parse_datetime(expires: str):
     """
-    Ensures all expiration dates are set to UTC.
+    Parses date/datetime strings and converts to UTC.
     """
     if isinstance(expires, datetime):
         return expires.astimezone(pytz.utc).isoformat()
@@ -37,6 +37,9 @@ def parse_datetime(expires: str):
         return dt.astimezone(pytz.utc).isoformat()
     # pylint: disable = W0703
     except Exception:
+        # We don't want to error because we had a problem parsing a date
+        # so just set it to a blank string and the token will always be
+        # invalid and unusable.
         return ""
 
 
@@ -182,9 +185,10 @@ class Token(HarborModel):
 
     def is_expired(self):
         """
-        Returns whether a token is expired. All expires values
-        are converted to UTC.
+        Determines whether a token is expired.
         """
+
+        # If the expires field is not set, it is an invalid token.
         if self.expires is None:
             return True
 
@@ -197,6 +201,6 @@ class Token(HarborModel):
 
     def is_valid(self):
         """
-        If is enabled and not expired, then allow
+        Determines whether a token is valid for use.
         """
         return self.enabled and not self.is_expired()
