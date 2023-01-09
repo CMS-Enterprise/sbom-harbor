@@ -79,6 +79,7 @@ class DependencyTrackFargateInstance(Construct):
             environment={},
             cpu=4096,
             memory_reservation_mib=8192,
+            readonly_root_filesystem=True,
         )
 
         port_mapping = ecs.PortMapping(
