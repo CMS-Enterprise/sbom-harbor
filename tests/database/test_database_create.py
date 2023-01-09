@@ -1,7 +1,7 @@
 """ Database and Model tests for Creating objects in the HarborTeamsTable """
 
 import uuid
-from decimal import Decimal
+from datetime import datetime, timedelta
 
 from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.constants import (
@@ -13,7 +13,7 @@ from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
-from cyclonedx.model.token import Token
+from cyclonedx.model.token import Token, parse_datetime
 
 
 def test_create_team_only(test_dynamo_db_resource, test_harbor_teams_table):
@@ -166,8 +166,8 @@ def test_create_token_only(test_dynamo_db_resource, test_harbor_teams_table):
     token_id = str(uuid.uuid4())
     token_val = str(uuid.uuid4())
 
-    created = Decimal(507482179.234)
-    expires = Decimal(507492179.234)
+    created = datetime.now().astimezone().isoformat()
+    expires = (datetime.now().astimezone() + timedelta(days=180)).isoformat()
 
     HarborDBClient(test_dynamo_db_resource).create(
         Token(
@@ -194,7 +194,7 @@ def test_create_token_only(test_dynamo_db_resource, test_harbor_teams_table):
     assert "{}#{}".format(tet, token_id) == item[HARBOR_TEAMS_TABLE_SORT_KEY]
     assert item["enabled"]
     assert created == item["created"]
-    assert expires == item["expires"]
+    assert parse_datetime(expires) == item["expires"]
     assert token_val == item["token"]
 
 
@@ -270,8 +270,8 @@ def test_create_team_with_a_child_of_each_type(
     build_tool = "YARN"
     clone_url = "https://github.com/cmsgov/ab2d-lambdas"
 
-    created = Decimal(507482179.234)
-    expires = Decimal(507492179.234)
+    created = datetime.now().astimezone().isoformat()
+    expires = (datetime.now().astimezone() + timedelta(days=180)).isoformat()
     token_val = str(uuid.uuid4())
 
     HarborDBClient(test_dynamo_db_resource).create(
@@ -389,5 +389,5 @@ def test_create_team_with_a_child_of_each_type(
     assert "{}#{}".format(tet, token_id) == token_item[HARBOR_TEAMS_TABLE_SORT_KEY]
     assert token_item[Token.Fields.ENABLED]
     assert created == token_item[Token.Fields.CREATED]
-    assert expires == token_item[Token.Fields.EXPIRES]
+    assert parse_datetime(expires) == token_item[Token.Fields.EXPIRES]
     assert token_val == token_item[Token.Fields.TOKEN]

@@ -92,81 +92,129 @@ def test_parse_expires():
     -> Tests that we can compare an ISO 8601 date string to an rfc3339 date string.
     """
 
-    yesterdays = {
-        "yesterday_javascript": yesterday_javascript(),
-        "yesterday_tz": yesterday_tz(),
-        "yesterday_naive": yesterday_naive(),
-        "yesterday_iso_tz": yesterday_iso_tz(),
-        "yesterday_iso_naive": yesterday_iso_naive(),
+    test_cases = {
+        "yesterday_javascript": {
+            "expires": yesterday_javascript(),
+            "is_expired": True,
+        },
+        "yesterday_tz": {
+            "expires": yesterday_tz(),
+            "is_expired": True,
+        },
+        "yesterday_naive": {
+            "expires": yesterday_naive(),
+            "is_expired": True,
+        },
+        "yesterday_iso_tz": {
+            "expires": yesterday_iso_tz(),
+            "is_expired": True,
+        },
+        "yesterday_iso_naive": {
+            "expires": yesterday_iso_naive(),
+            "is_expired": True,
+        },
+        "tomorrow_javascript": {
+            "expires": tomorrow_javascript(),
+            "is_expired": False,
+        },
+        "tomorrow_tz": {
+            "expires": tomorrow_tz(),
+            "is_expired": False,
+        },
+        "tomorrow_naive": {
+            "expires": tomorrow_naive(),
+            "is_expired": False,
+        },
+        "tomorrow_iso_tz": {
+            "expires": tomorrow_iso_tz(),
+            "is_expired": False,
+        },
+        "tomorrow_iso_naive": {
+            "expires": tomorrow_iso_naive(),
+            "is_expired": False,
+        },
     }
 
-    tomorrows = {
-        "tomorrow_javascript": tomorrow_javascript(),
-        "tomorrow_tz": tomorrow_tz(),
-        "tomorrow_naive": tomorrow_naive(),
-        "tomorrow_iso_tz": tomorrow_iso_tz(),
-        "tomorrow_iso_naive": tomorrow_iso_naive(),
+    for key in test_cases:
+        token = Token(
+            team_id="test",
+            token_id="test",
+        )
+
+        token.expires = test_cases[key]["expires"]
+        assert token.is_expired() == test_cases[key]["is_expired"]
+
+
+def test_can_validate_token():
+    """
+    -> Tests that we can properly calculate token validity.
+    """
+
+    test_cases = {
+        "yesterday_javascript": {
+            "expires": yesterday_javascript(),
+            "enabled": True,
+            "is_valid": False,
+        },
+        "yesterday_tz": {
+            "expires": yesterday_tz(),
+            "enabled": True,
+            "is_valid": False,
+        },
+        "yesterday_naive": {
+            "expires": yesterday_naive(),
+            "enabled": True,
+            "is_valid": False,
+        },
+        "yesterday_iso_tz": {
+            "expires": yesterday_iso_tz(),
+            "enabled": True,
+            "is_valid": False,
+        },
+        "yesterday_iso_naive": {
+            "expires": yesterday_iso_naive(),
+            "enabled": True,
+            "is_valid": False,
+        },
+        "tomorrow_javascript": {
+            "expires": tomorrow_javascript(),
+            "enabled": True,
+            "is_valid": True,
+        },
+        "tomorrow_tz": {
+            "expires": tomorrow_tz(),
+            "enabled": True,
+            "is_valid": True,
+        },
+        "tomorrow_naive": {
+            "expires": tomorrow_naive(),
+            "enabled": True,
+            "is_valid": True,
+        },
+        "tomorrow_iso_tz": {
+            "expires": tomorrow_iso_tz(),
+            "enabled": True,
+            "is_valid": True,
+        },
+        "tomorrow_iso_naive": {
+            "expires": tomorrow_iso_naive(),
+            "enabled": True,
+            "is_valid": True,
+        },
+        "not_enabled": {
+            "expires": tomorrow_iso_naive(),
+            "enabled": False,
+            "is_valid": False,
+        },
     }
 
-    successes = {}
-    exceptions = {}
-
-    print("\n")
-
-    for key in yesterdays:
-        try:
-            token = Token(
-                team_id="test",
-                token_id="test",
-            )
-            print("input  {key} {expires}".format(key=key, expires=yesterdays[key]))
-            token.expires = yesterdays[key]
-            print("output {key} {expires}".format(key=key, expires=token.expires))
-            assert token.is_expired()
-            successes[key] = {
-                "input": yesterdays[key],
-                "output": token.expires,
-            }
-        # pylint: disable = W0703
-        except Exception as e:
-            exceptions[key] = e
-
-    for key in tomorrows:
-        try:
-            token = Token(
-                team_id="test",
-                token_id="test",
-            )
-            print("input  {key} {expires}".format(key=key, expires=tomorrows[key]))
-            token.expires = tomorrows[key]
-            print("output {key} {expires}".format(key=key, expires=token.expires))
-            assert not token.is_expired()
-            successes[key] = {
-                "input": tomorrows[key],
-                "output": token.expires,
-            }
-        # pylint: disable = W0703
-        except Exception as e:
-            exceptions[key] = e
-
-    for key in exceptions:
-        print(
-            "{key} failed with {exception}".format(key=key, exception=exceptions[key])
+    for key in test_cases:
+        token = Token(
+            team_id="test",
+            token_id="test",
         )
 
-    for key in successes:
-        print(
-            "{key} succeeded for\n input {input} \n output {output}".format(
-                key=key, input=successes[key]["input"], output=successes[key]["output"]
-            ),
-        )
+        token.expires = test_cases[key]["expires"]
+        token.enabled = test_cases[key]["enabled"]
 
-    assert len(exceptions) == 0
-
-
-# def test_can_validate_token():
-#     """
-#     -> Tests that we can properly calculate token validity.
-#     """
-#
-#     test_cases = []
+        assert token.is_valid() == test_cases[key]["is_valid"]
