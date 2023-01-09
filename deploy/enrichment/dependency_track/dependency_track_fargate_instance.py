@@ -102,7 +102,7 @@ class DependencyTrackFargateInstance(Construct):
             cluster=fargate_cluster,
             task_definition=dt_api_task_definition,
             desired_count=1,
-            assign_public_ip=True,
+            assign_public_ip=False,
             platform_version=ecs.FargatePlatformVersion.VERSION1_4,
             security_groups=[security_group],
         )
