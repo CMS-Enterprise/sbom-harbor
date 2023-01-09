@@ -19,10 +19,6 @@ SBOM_BUCKET_NAME_KEY = "sbom_bucket"
 SBOM_S3_KEY = "sbom_s3_key"
 
 
-IC_API_BASE = "IC_API_BASE"
-IC_API_KEY = "IC_API_KEY"
-IC_RULESET_TEAM_ID = "IC_RULESET_TEAM_ID"
-
 S3_META_TEAM_KEY = "x-amz-meta-sbom-api-team"
 S3_META_PROJECT_KEY = "x-amz-meta-sbom-api-project"
 S3_META_CODEBASE_KEY = "x-amz-meta-sbom-api-codebase"

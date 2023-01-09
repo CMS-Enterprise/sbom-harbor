@@ -165,3 +165,8 @@ HARBOR_USERNAME_KEY = "HARBOR_USERNAME"
 HARBOR_PASSWORD_KEY = "HARBOR_PASSWORD"
 HARBOR_USERNAME = getenv("HARBOR_USERNAME")
 HARBOR_PASSWORD = getenv("HARBOR_PASSWORD")
+
+# Ion Channel
+IC_API_BASE = environize("IC_API_BASE", delimiter="_")
+IC_API_KEY = environize("IC_API_KEY", delimiter="_")
+IC_RULESET_TEAM_ID = environize("IC_RULESET_TEAM_ID", delimiter="_")

@@ -11,8 +11,14 @@ from aws_cdk import aws_s3 as i_bucket
 from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 
-from cyclonedx.constants import IC_API_BASE, IC_API_KEY, IC_RULESET_TEAM_ID
-from deploy.constants import IC_INTERFACE_LN, PRIVATE, SBOM_API_PYTHON_RUNTIME
+from deploy.constants import (
+    IC_INTERFACE_LN,
+    PRIVATE,
+    SBOM_API_PYTHON_RUNTIME,
+    IC_API_BASE,
+    IC_API_KEY,
+    IC_RULESET_TEAM_ID,
+)
 from deploy.util import create_asset
 
 
