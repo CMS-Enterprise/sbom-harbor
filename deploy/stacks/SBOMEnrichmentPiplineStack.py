@@ -12,7 +12,7 @@ from constructs import Construct
 
 from cyclonedx.constants import EVENT_BUS_SOURCE
 
-from deploy.constants import ENRICHMENT_STACK_ID, S3_BUCKET_NAME
+from deploy.constants import ENRICHMENT_STACK_ID, S3_BUCKET_NAME, environize
 from deploy.enrichment import EnrichmentIngressLambda
 from deploy.enrichment.dependency_track import (
     DependencyTrackFargateInstance,
@@ -29,12 +29,13 @@ class SBOMEnrichmentPiplineStack(Stack):
     """This Stack deploys the Enrichment Pipeline"""
 
     def __init__(
-            self,
-            scope: Construct,
-            vpc: ec2.Vpc,
-            table_mgr: DynamoTableManager,
-            event_bus: eventbridge.EventBus,
-            **kwargs) -> None:
+        self,
+        scope: Construct,
+        vpc: ec2.Vpc,
+        table_mgr: DynamoTableManager,
+        event_bus: eventbridge.EventBus,
+        **kwargs
+    ) -> None:
 
         # Run the constructor of the Stack superclass.
         super().__init__(scope, ENRICHMENT_STACK_ID, **kwargs)
@@ -141,7 +142,7 @@ class SBOMEnrichmentPiplineStack(Stack):
         enrichment_machine = stepfunctions.StateMachine(
             self,
             "ENRICHMENT_STATE_MACHINE",
-            state_machine_name="ENRICHMENT_STATE_MACHINE",
+            state_machine_name=environize("Enrichment", delimiter="_"),
             state_machine_type=stepfunctions.StateMachineType.STANDARD,
             definition=chain,
         )
@@ -149,7 +150,7 @@ class SBOMEnrichmentPiplineStack(Stack):
         eventbridge.Rule(
             self,
             "ENRICHMENT_EVENTBRIDGE_RULE",
-            rule_name="ENRICHMENT_EVENTBRIDGE_RULE",
+            rule_name=environize("Enrichment", delimiter="_"),
             enabled=True,
             event_pattern=eventbridge.EventPattern(
                 source=[EVENT_BUS_SOURCE],
