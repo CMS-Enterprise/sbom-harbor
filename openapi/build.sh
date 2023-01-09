@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Used to generate code from the openapi spec.yaml file found in this directory.
+# Used to generate client code or tests from the openapi spec.yaml file found in this directory.
 # All paths are relative so this script must be run from the openapi directory.
 set -eo pipefail
 
@@ -28,14 +28,9 @@ done
 echo "
     TESTS: $TESTS
     CLIENT: $CLIENT
-    SERVER: $SERVER
     "
 
 if [[ $TESTS == 1 ]]; then
-#  docker run --rm -v ${PWD}:/local openapitools/openapi-generator-cli generate \
-#    -i /local/openapi.yaml \
-#    -g k6 \
-#    -o /local/.openapi-generator/
     echo "Generating Tests"
     $GENERATE /local/tests/config.yaml
 fi
@@ -43,9 +38,4 @@ fi
 if [[ $CLIENT == 1 ]]; then
   echo "Generating API Client"
   $GENERATE /local/client/config.yaml
-fi
-
-if [[ $SERVER == 1 ]]; then
-  echo "Generating API Server"
-  $GENERATE /local/server/config.yaml
 fi
