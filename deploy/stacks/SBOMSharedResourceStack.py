@@ -40,6 +40,7 @@ class SBOMSharedResourceStack(Stack):
             S3_BUCKET_ID,
             bucket_name=S3_BUCKET_NAME,
             public_read_access=False,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             removal_policy=RemovalPolicy.DESTROY,
             event_bridge_enabled=True,
             versioned=True,

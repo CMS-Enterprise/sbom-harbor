@@ -34,6 +34,7 @@ class SBOMWebStack(Stack):
                 bucket_name="sbom.harbor.cf",
                 public_read_access=False,
                 removal_policy=RemovalPolicy.DESTROY,
+                block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             ),
             include_cookies=False,
             prefix="prefix",
