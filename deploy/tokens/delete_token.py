@@ -16,7 +16,7 @@ from deploy.util import DynamoTableManager
 
 class SBOMDeleteTokenLambda(Construct):
 
-    """ Lambda to delete an API token """
+    """Lambda to delete an API token"""
 
     def __init__(
         self,
@@ -29,8 +29,9 @@ class SBOMDeleteTokenLambda(Construct):
         super().__init__(scope, DELETE_TOKEN_LN)
 
         self.func = lambda_.Function(
-            self, DELETE_TOKEN_LN,
-            function_name="SBOMDeleteTokenLambda",
+            self,
+            DELETE_TOKEN_LN,
+            function_name=DELETE_TOKEN_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),

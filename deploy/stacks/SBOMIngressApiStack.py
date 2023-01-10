@@ -24,14 +24,19 @@ from constructs import Construct
 from cyclonedx.constants import USER_POOL_CLIENT_ID_KEY, USER_POOL_ID_KEY
 from deploy.authorizers import AuthorizerLambdaFactory, SBOMUploadAPIKeyAuthorizerLambda
 from deploy.constants import (
+    API_GW_URL_OUTPUT_ID,
     API_GW_URL_EXPORT_NAME,
-    API_GW_ID_EXPORT_NAME,
+    API_GW_ID_OUTPUT_ID,
+    API_GW_LOG_GROUP_NAME,
     API_STACK_ID,
     AUTHORIZATION_HEADER,
     PRIVATE,
     S3_BUCKET_ID,
     S3_BUCKET_NAME,
     SBOM_API_PYTHON_RUNTIME,
+    ENVIRONMENT,
+    AWS_REGION_SHORT,
+    AUTHORIZER_LN,
 )
 from deploy.user import SBOMLoginLambda, SBOMUserSearchLambda
 from deploy.util import DynamoTableManager, SbomIngressLambda, create_asset
@@ -129,7 +134,7 @@ class LambdaFactory:
         return LambdaFactory.HarborLambda(
             self.scope,
             vpc=self.vpc,
-            name=f"Harbor_{lambda_name}_Lambda",
+            name=f"{ENVIRONMENT}_Harbor_{lambda_name}_Lambda_{AWS_REGION_SHORT}",
             table_mgr=self.table_mgr,
             handler=func,
             user_pool_id=self.user_pool_id,
@@ -154,7 +159,7 @@ class SBOMIngressApiStack(Stack):
         log_group = logs.LogGroup(
             api,
             "AccessLogs",
-            log_group_name="APIGWAccessLogs",
+            log_group_name=API_GW_LOG_GROUP_NAME,
             retention=RetentionDays.ONE_DAY,
             removal_policy=RemovalPolicy.DESTROY,
         )
@@ -189,11 +194,9 @@ class SBOMIngressApiStack(Stack):
             self,
             id="SBOMManagementApi",
             default_authorizer=HttpLambdaAuthorizer(
-                id="SBOMApi_HttpLambdaAuthorizer_ID",
-                authorizer_name="SBOMApi_HttpLambdaAuthorizer_NAME",
-                handler=authorizer_factory.create(
-                    "SBOMAPIAuthorizer"
-                ).get_lambda_function(),
+                id=AUTHORIZER_LN,
+                authorizer_name=AUTHORIZER_LN,
+                handler=authorizer_factory.create(AUTHORIZER_LN).get_lambda_function(),
             ),
             description="SBOM Management API (Experimental)",
             cors_preflight=CorsPreflightOptions(
@@ -274,7 +277,7 @@ class SBOMIngressApiStack(Stack):
 
         CfnOutput(
             self,
-            API_GW_URL_EXPORT_NAME,
+            API_GW_URL_OUTPUT_ID,
             value=self.api.url.replace("https://", "").replace("/", ""),
             export_name=API_GW_URL_EXPORT_NAME,
             description="URL Of the API Gateway",
@@ -282,9 +285,8 @@ class SBOMIngressApiStack(Stack):
 
         CfnOutput(
             self,
-            API_GW_ID_EXPORT_NAME,
+            API_GW_ID_OUTPUT_ID,
             value=self.api.api_id,
-            export_name=API_GW_ID_EXPORT_NAME,
             description="ID Of the API Gateway",
         )
 
@@ -546,7 +548,6 @@ class SBOMIngressApiStack(Stack):
                     vpc=vpc,
                     user_pool_client_id=client_id,
                     user_pool_id=user_pool_id,
-                    function_name="SBOMLoginLambda-v1",
                 ).get_lambda_function(),
             ),
         )

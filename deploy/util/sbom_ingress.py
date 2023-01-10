@@ -31,7 +31,7 @@ class SbomIngressLambda(Construct):
         self.sbom_ingress_func = lambda_.Function(
             self,
             SBOM_INGRESS_LN,
-            function_name="SbomIngressLambda",
+            function_name=SBOM_INGRESS_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),

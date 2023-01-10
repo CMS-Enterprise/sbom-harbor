@@ -16,7 +16,7 @@ from deploy.util import DynamoTableManager
 
 class SBOMGetTeamLambda(Construct):
 
-    """ Lambda to get a team """
+    """Lambda to get a team"""
 
     def __init__(
         self,
@@ -29,8 +29,9 @@ class SBOMGetTeamLambda(Construct):
         super().__init__(scope, GET_TEAM_LN)
 
         self.func = lambda_.Function(
-            self, GET_TEAM_LN,
-            function_name="SBOMGetTeamLambda",
+            self,
+            GET_TEAM_LN,
+            function_name=GET_TEAM_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
@@ -44,4 +45,3 @@ class SBOMGetTeamLambda(Construct):
 
     def get_lambda_function(self):
         return self.func
-

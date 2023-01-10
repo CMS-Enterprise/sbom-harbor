@@ -12,7 +12,8 @@ from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 from requests import Response
 
-from cyclonedx.constants import IC_API_KEY, IC_RULESET_TEAM_ID, PYTHON_LOGGING_CONFIG
+from cyclonedx.constants import PYTHON_LOGGING_CONFIG
+from deploy.constants import IC_API_KEY, IC_RULESET_TEAM_ID
 from cyclonedx.exceptions.ion_channel import IonChannelError
 
 config.fileConfig(PYTHON_LOGGING_CONFIG)

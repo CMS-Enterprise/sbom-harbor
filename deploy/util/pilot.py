@@ -21,7 +21,7 @@ class PilotLambda(Construct):
         self.pilot_func = lambda_.Function(
             self,
             PILOT_LN,
-            function_name="PilotLambda",
+            function_name=PILOT_LN,
             runtime=lambda_.Runtime.FROM_IMAGE,
             handler=lambda_.Handler.FROM_IMAGE,
             code=lambda_.Code.from_asset_image(

@@ -91,7 +91,7 @@ class AuthorizerLambdaFactory:
         return AuthorizerLambdaFactory.SBOMJwtAuthorizerLambda(
             self.scope,
             vpc=self.vpc,
-            name=f"{lambda_name}_Authorizer",
+            name=lambda_name,
             user_pool_id=self.user_pool_id,
             user_pool_client_id=self.user_pool_client_id,
         )

@@ -9,7 +9,6 @@ from aws_cdk import aws_events as eventbridge
 
 from deploy.constants import (
     AWS_ACCOUNT_ID,
-    AWS_PROFILE,
     AWS_REGION,
     CMS_PERMISSION_BOUNDARY_ARN,
     CMS_ROLE_PATH,
@@ -101,17 +100,13 @@ def dodep() -> None:
         pilot_stack.add_dependency(ingress_api_stack)
         pilot_stack.add_pilot_route(ingress_api_stack.api)
 
-        if AWS_PROFILE in ("cms-dev", "cms-prod"):
-            logger.info(
-                "Deploying to CMS. Applying permissions boundary, and path, to all roles!"
-            )
-            for stack in stacks:
-                cdk.Aspects.of(stack).add(
-                    RoleAspect(
-                        permission_boundary_arn=CMS_PERMISSION_BOUNDARY_ARN,
-                        path=CMS_ROLE_PATH,
-                    )
+        for stack in stacks:
+            cdk.Aspects.of(stack).add(
+                RoleAspect(
+                    permission_boundary_arn=CMS_PERMISSION_BOUNDARY_ARN,
+                    path=CMS_ROLE_PATH,
                 )
+            )
 
     # Synth the CDK app
     app.synth()

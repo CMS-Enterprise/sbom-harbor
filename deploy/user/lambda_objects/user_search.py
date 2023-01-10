@@ -40,7 +40,7 @@ class SBOMUserSearchLambda(Construct):
         self.func = lambda_.Function(
             self,
             USER_SEARCH_LN,
-            function_name="SBOMUserSearchLambda",
+            function_name=USER_SEARCH_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),

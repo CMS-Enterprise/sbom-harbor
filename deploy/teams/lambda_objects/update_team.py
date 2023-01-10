@@ -16,7 +16,7 @@ from deploy.util import DynamoTableManager
 
 class SBOMUpdateTeamLambda(Construct):
 
-    """ Lambda to update a team """
+    """Lambda to update a team"""
 
     def __init__(
         self,
@@ -29,8 +29,9 @@ class SBOMUpdateTeamLambda(Construct):
         super().__init__(scope, UPDATE_TEAM_LN)
 
         self.func = lambda_.Function(
-            self, UPDATE_TEAM_LN,
-            function_name="SBOMUpdateTeamLambda",
+            self,
+            UPDATE_TEAM_LN,
+            function_name=UPDATE_TEAM_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),

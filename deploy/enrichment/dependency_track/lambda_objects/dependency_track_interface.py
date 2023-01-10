@@ -11,12 +11,13 @@ from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 
 from cyclonedx.constants import (
+    EMPTY_VALUE,
+)
+
+from deploy.constants import (
     DT_API_BASE,
     DT_API_KEY,
     DT_ROOT_PWD,
-    EMPTY_VALUE,
-)
-from deploy.constants import (
     DT_INTERFACE_LN,
     PRIVATE,
     SBOM_API_PYTHON_RUNTIME,
@@ -51,7 +52,7 @@ class DependencyTrackInterfaceLambda(Construct):
         self.func = lambda_.Function(
             self,
             DT_INTERFACE_LN,
-            function_name="DependencyTrackInterfaceLambda",
+            function_name=DT_INTERFACE_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
