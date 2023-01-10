@@ -96,3 +96,11 @@ pub mod importer;
 /// The Pilot module contains the Lambda handler implementation and supporting
 /// domain logic for the Harbor Pilot API.
 pub mod pilot;
+
+/// The AWS module contains convenience functions that wrap the AWS SDK to reduce
+/// boilerplate and reduce imports in user code.
+pub mod aws;
+
+/// The System module contains all functionality related to system level concerns
+/// such as instance level configuration, authentication flows, and RBAC.
+pub mod system;
