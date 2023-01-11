@@ -106,8 +106,6 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
        * @type {() => Promise<void>}
        */
       const doSubmit = async () => {
-        debugger // eslint-disable-line
-
         try {
           // set the loading state to true
           setLoading(true)
