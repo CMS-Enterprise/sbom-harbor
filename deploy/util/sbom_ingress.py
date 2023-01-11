@@ -1,7 +1,6 @@
 """
 -> Module to house SbomIngressLambda
 """
-from aws_cdk import Duration
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
@@ -9,7 +8,12 @@ from aws_cdk import aws_s3 as i_bucket
 from constructs import Construct
 
 from cyclonedx.constants import SBOM_BUCKET_NAME_KEY
-from deploy.constants import PRIVATE, SBOM_API_PYTHON_RUNTIME, SBOM_INGRESS_LN
+from deploy.constants import (
+    PRIVATE,
+    SBOM_API_PYTHON_RUNTIME,
+    SBOM_INGRESS_LN,
+    STANDARD_LAMBDA_TIMEOUT,
+)
 from deploy.util import create_asset
 
 
@@ -40,7 +44,7 @@ class SbomIngressLambda(Construct):
             environment={
                 SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name,
             },
-            timeout=Duration.minutes(10),
+            timeout=STANDARD_LAMBDA_TIMEOUT,
             memory_size=512,
         )
 

@@ -1,7 +1,6 @@
 """
 -> Module to house DependencyTrackInterfaceLambda
 """
-from aws_cdk import Duration
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_elasticloadbalancingv2 as elbv2
 from aws_cdk import aws_events as eventbridge
@@ -10,17 +9,15 @@ from aws_cdk import aws_s3 as i_bucket
 from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 
-from cyclonedx.constants import (
-    EMPTY_VALUE,
-)
-
+from cyclonedx.constants import EMPTY_VALUE
 from deploy.constants import (
     DT_API_BASE,
     DT_API_KEY,
-    DT_ROOT_PWD,
     DT_INTERFACE_LN,
+    DT_ROOT_PWD,
     PRIVATE,
     SBOM_API_PYTHON_RUNTIME,
+    STANDARD_LAMBDA_TIMEOUT,
 )
 from deploy.enrichment.dependency_track import DependencyTrackLoadBalancer
 from deploy.util import create_asset
@@ -61,7 +58,7 @@ class DependencyTrackInterfaceLambda(Construct):
             environment={
                 DT_API_BASE: fq_dn,
             },
-            timeout=Duration.minutes(1),
+            timeout=STANDARD_LAMBDA_TIMEOUT,
             security_groups=[dt_func_sg],
             memory_size=512,
         )

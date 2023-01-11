@@ -3,6 +3,7 @@ from os import getenv, path
 
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_lambda as lambda_
+from aws_cdk import Duration
 
 regionCodes = {
     "us-east-1": "use1",
@@ -61,6 +62,7 @@ APP_LB_ID = "AppLoadBalancer"
 
 
 # Lambdas
+STANDARD_LAMBDA_TIMEOUT = Duration.minutes(15)
 SBOM_INGRESS_LN = environize("SBOMIngress", delimiter="_")
 CREATE_TOKEN_LN = environize("CreateToken", delimiter="_")
 DELETE_TOKEN_LN = environize("DeleteToken", delimiter="_")

@@ -1,7 +1,6 @@
 """
 -> Module to house EnrichmentIngressLambda
 """
-from aws_cdk import Duration
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_events as eventbridge
 from aws_cdk import aws_lambda as lambda_
@@ -9,13 +8,12 @@ from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_s3_notifications as s3n
 from constructs import Construct
 
-from cyclonedx.constants import (
-    SBOM_BUCKET_NAME_KEY,
-)
+from cyclonedx.constants import SBOM_BUCKET_NAME_KEY
 from deploy.constants import (
     PRIVATE,
     SBOM_API_PYTHON_RUNTIME,
     SBOM_ENRICHMENT_LN,
+    STANDARD_LAMBDA_TIMEOUT,
 )
 from deploy.util import create_asset
 
@@ -48,7 +46,7 @@ class EnrichmentIngressLambda(Construct):
             environment={
                 SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name,
             },
-            timeout=Duration.seconds(10),
+            timeout=STANDARD_LAMBDA_TIMEOUT,
             memory_size=512,
         )
 

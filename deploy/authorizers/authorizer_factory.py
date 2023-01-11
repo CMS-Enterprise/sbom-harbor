@@ -1,13 +1,12 @@
 """Factory for generating Authorizer Lambdas"""
 
-from aws_cdk import Duration
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk.aws_iam import Effect, PolicyStatement
 from constructs import Construct
 
 from cyclonedx.constants import USER_POOL_CLIENT_ID_KEY, USER_POOL_ID_KEY
-from deploy.constants import PRIVATE, SBOM_API_PYTHON_RUNTIME
+from deploy.constants import PRIVATE, SBOM_API_PYTHON_RUNTIME, STANDARD_LAMBDA_TIMEOUT
 from deploy.util import create_asset
 
 
@@ -40,7 +39,7 @@ class AuthorizerLambdaFactory:
                 vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
                 handler="cyclonedx.handlers.jwt_authorizer_handler",
                 code=create_asset(self),
-                timeout=Duration.seconds(10),
+                timeout=STANDARD_LAMBDA_TIMEOUT,
                 memory_size=512,
                 environment={
                     USER_POOL_ID_KEY: user_pool_id,

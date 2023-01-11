@@ -1,21 +1,22 @@
+"""
+-> Constructs GetTeamsForUserId Lambda
+"""
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_lambda as lambda_
 from constructs import Construct
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_lambda as lambda_,
-    Duration,
-)
+
 from deploy.constants import (
+    GET_TEAMS_FOR_ID_LN,
     PRIVATE,
     SBOM_API_PYTHON_RUNTIME,
-    GET_TEAMS_FOR_ID_LN,
+    STANDARD_LAMBDA_TIMEOUT,
 )
-from deploy.util import create_asset
-from deploy.util import DynamoTableManager
+from deploy.util import DynamoTableManager, create_asset
 
 
 class SBOMGetTeamsForUserIdLambda(Construct):
 
-    """ Lambda to get a team """
+    """Lambda to get a team"""
 
     def __init__(
         self,
@@ -28,18 +29,22 @@ class SBOMGetTeamsForUserIdLambda(Construct):
         super().__init__(scope, GET_TEAMS_FOR_ID_LN)
 
         self.func = lambda_.Function(
-            self, GET_TEAMS_FOR_ID_LN,
+            self,
+            GET_TEAMS_FOR_ID_LN,
             function_name=GET_TEAMS_FOR_ID_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
             handler="cyclonedx.teams.get_teams_for_id_handler",
             code=create_asset(self),
-            timeout=Duration.seconds(10),
+            timeout=STANDARD_LAMBDA_TIMEOUT,
             memory_size=512,
         )
 
         table_mgr.grant(self.func)
 
     def get_lambda_function(self):
+        """
+        -> Get the actual Lambda Construct
+        """
         return self.func

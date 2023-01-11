@@ -1,7 +1,6 @@
 """
 -> Module to house SummarizerLambda
 """
-from aws_cdk import Duration
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_events as eventbridge
 from aws_cdk import aws_lambda as lambda_
@@ -11,6 +10,7 @@ from constructs import Construct
 from deploy.constants import (
     PRIVATE,
     SBOM_API_PYTHON_RUNTIME,
+    STANDARD_LAMBDA_TIMEOUT,
     SUMMARIZER_LN,
 )
 from deploy.util import create_asset
@@ -44,7 +44,7 @@ class SummarizerLambda(Construct):
             vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
             handler="cyclonedx.handlers.summarizer_handler",
             code=create_asset(self),
-            timeout=Duration.minutes(1),
+            timeout=STANDARD_LAMBDA_TIMEOUT,
             security_groups=[dt_func_sg],
             memory_size=512,
         )

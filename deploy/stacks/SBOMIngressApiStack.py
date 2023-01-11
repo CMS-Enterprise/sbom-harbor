@@ -2,7 +2,7 @@
 
 from os import path
 
-from aws_cdk import CfnOutput, Duration, RemovalPolicy, Stack
+from aws_cdk import CfnOutput, RemovalPolicy, Stack
 from aws_cdk import aws_apigatewayv2 as apigwv2
 from aws_cdk import aws_apigatewayv2_alpha as apigwv2a
 from aws_cdk import aws_cognito as cognito
@@ -24,19 +24,20 @@ from constructs import Construct
 from cyclonedx.constants import USER_POOL_CLIENT_ID_KEY, USER_POOL_ID_KEY
 from deploy.authorizers import AuthorizerLambdaFactory, SBOMUploadAPIKeyAuthorizerLambda
 from deploy.constants import (
-    API_GW_URL_OUTPUT_ID,
-    API_GW_URL_EXPORT_NAME,
     API_GW_ID_OUTPUT_ID,
     API_GW_LOG_GROUP_NAME,
+    API_GW_URL_EXPORT_NAME,
+    API_GW_URL_OUTPUT_ID,
     API_STACK_ID,
     AUTHORIZATION_HEADER,
+    AUTHORIZER_LN,
+    AWS_REGION_SHORT,
+    ENVIRONMENT,
     PRIVATE,
     S3_BUCKET_ID,
     S3_BUCKET_NAME,
     SBOM_API_PYTHON_RUNTIME,
-    ENVIRONMENT,
-    AWS_REGION_SHORT,
-    AUTHORIZER_LN,
+    STANDARD_LAMBDA_TIMEOUT,
 )
 from deploy.user import SBOMLoginLambda, SBOMUserSearchLambda
 from deploy.util import DynamoTableManager, SbomIngressLambda, create_asset
@@ -78,7 +79,7 @@ class LambdaFactory:
                 vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
                 handler=handler,
                 code=create_asset(self),
-                timeout=Duration.minutes(2),
+                timeout=STANDARD_LAMBDA_TIMEOUT,
                 memory_size=512,
                 environment={
                     USER_POOL_ID_KEY: user_pool_id,

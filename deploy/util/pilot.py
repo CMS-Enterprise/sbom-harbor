@@ -1,12 +1,12 @@
 """
 -> Module to house PilotLambda
 """
-from aws_cdk import Duration, Size
+from aws_cdk import Size
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
 from constructs import Construct
 
-from deploy.constants import PILOT_LN
+from deploy.constants import PILOT_LN, STANDARD_LAMBDA_TIMEOUT
 
 
 class PilotLambda(Construct):
@@ -28,7 +28,7 @@ class PilotLambda(Construct):
                 directory="./harbor-rs",
                 file="Dockerfile.pilot",
             ),
-            timeout=Duration.minutes(2),
+            timeout=STANDARD_LAMBDA_TIMEOUT,
             memory_size=512,
             ephemeral_storage_size=Size.mebibytes(amount=5000),
         )
