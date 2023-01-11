@@ -1,6 +1,7 @@
 """ Constants to be used throughout the system"""
 from os import path
-from deploy.constants import DT_API_PORT, environize
+
+DT_API_PORT = 8080
 
 PYTHON_LOGGING_CONFIG = path.join(
     path.dirname(path.dirname(__file__)), "python_logging.conf"
@@ -36,13 +37,21 @@ USER_POOL_ID_KEY = "USER_POOL_NAME"
 USER_POOL_CLIENT_ID_KEY = "USER_POOL_CLIENT_ID"
 
 # DynamoDB
-HARBOR_TEAMS_TABLE_NAME = environize("HarborTeams")
+HARBOR_TEAMS_TABLE_NAME = "HarborTeams1077"
 HARBOR_TEAMS_TABLE_ID = "TeamsDynamoDbTable"
 HARBOR_TEAMS_TABLE_PARTITION_KEY = "TeamId"
 HARBOR_TEAMS_TABLE_SORT_KEY = "EntityKey"
 
 # Event Bus
 EVENT_BUS_ID = "EnrichmentEventBus"
-EVENT_BUS_NAME = environize("HarborEnrichments")
+EVENT_BUS_NAME = "HarborEnrichments1077"
 EVENT_BUS_SOURCE = "enrichment.lambda"
 EVENT_BUS_DETAIL_TYPE = "SBOM.Event.Detail.Type"
+
+IC_API_BASE = "IC_API_BASE1077"
+IC_API_KEY = "IC_API_KEY1077"
+IC_RULESET_TEAM_ID = "IC_RULESET_TEAM_ID1077"
+
+DT_ROOT_PWD = "DT_ROOT_PWD1077"
+DT_API_KEY = "DT_API_KEY1077"
+DT_API_BASE = "DT_API_BASE1077"

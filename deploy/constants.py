@@ -103,10 +103,7 @@ DT_LOAD_BALANCER_TARGET_ID = "DT-LB-TARGET-ID"
 EFS_MOUNT_ID = "dtApiStorage"
 FARGATE_CLUSTER_ID = "HarborFargateCluster"
 FARGATE_CLUSTER_NAME = environize("Harbor")
-DT_ROOT_PWD = environize("DT_ROOT_PWD", delimiter="_")
-DT_API_KEY = environize("DT_API_KEY", delimiter="_")
-DT_API_BASE = environize("DT_API_BASE", delimiter="_")
-DT_API_PORT = 8080
+
 
 # S3 - SBOMs
 S3_BUCKET_ID = "UploadsEnrichmentBucket"
@@ -167,6 +164,3 @@ HARBOR_USERNAME = getenv("HARBOR_USERNAME")
 HARBOR_PASSWORD = getenv("HARBOR_PASSWORD")
 
 # Ion Channel
-IC_API_BASE = environize("IC_API_BASE", delimiter="_")
-IC_API_KEY = environize("IC_API_KEY", delimiter="_")
-IC_RULESET_TEAM_ID = environize("IC_RULESET_TEAM_ID", delimiter="_")
