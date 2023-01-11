@@ -6,16 +6,14 @@
 import * as React from 'react'
 import { Await, Link, useLoaderData } from 'react-router-dom'
 import Box from '@mui/material/Box'
-import Container from '@mui/material/Container'
 import Grid2 from '@mui/material/Unstable_Grid2'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
+import Fallback from '@/components/SimpleLoadingFallback'
 import TeamMembersTable from './components/TeamMembersTable'
 import TeamViewProjectCard from './components/TeamViewProjectCard'
 import TokensTable from './components/TokensTable'
 import { Project, Team, TeamMemberRole } from '@/types'
-
-const Fallback = (): JSX.Element => <Container>Loading...</Container>
 
 /**
  * The view that renders a team at the path `/team/:teamId`.

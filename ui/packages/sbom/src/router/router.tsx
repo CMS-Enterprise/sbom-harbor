@@ -78,6 +78,9 @@ const router = createHashRouter([
             children: [
               {
                 id: RouteIds.TEAM_NEW,
+                loader: () => ({
+                  data: Promise.resolve({}),
+                }),
                 path: 'new',
                 element: <TeamForm />,
               },

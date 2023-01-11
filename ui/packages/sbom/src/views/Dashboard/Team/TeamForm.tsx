@@ -7,6 +7,7 @@
  */
 import * as React from 'react'
 import {
+  Await,
   useLoaderData,
   useMatch,
   useNavigate,
@@ -29,12 +30,13 @@ import SubmitButton from '@/components/forms/SubmitButton'
 import { useAlert, DEFAULT_ALERT_TIMEOUT } from '@/hooks/useAlert'
 import { useAuthState } from '@/hooks/useAuth'
 import reduceArrayToMap from '@/selectors/reduceArrayToMap'
-import { Project, Team } from '@/types'
+import { Project, Team, TeamMemberRole } from '@/types'
 import { defaultFormState, defaultProject } from './constants'
 import TeamMembersSection from './components/TeamMembersSection'
 import TeamViewProjectCreateCard from './components/TeamViewProjectCreateCard'
 import TeamViewProjectCreationCard from './components/TeamViewProjectCreationCard'
 import { FormState, FormTeamState } from './types'
+import Fallback from '@/components/SimpleLoadingFallback'
 
 /**
  * A component that renders a page with a form for creating/editing a team.
@@ -47,14 +49,26 @@ const TeamForm = () => {
   // auth state hook for user info and token
   const { jwtToken } = useAuthState()
 
+  // route match hook to determine if this is an edit or create form
+  const newTeamRouteMatch = useMatch('/app/team/new')
+
   // route loader hook to fetch team data
-  const team = useLoaderData() as FormTeamState
+  const { data } = useLoaderData() as {
+    data: Promise<
+      Team & {
+        membersTableRows: {
+          id: string
+          email: string
+          isTeamLead: boolean
+          role: TeamMemberRole
+          username: string
+        }[]
+      }
+    >
+  }
 
   // route params hook to get team id
   const { teamId = '' } = useParams()
-
-  // route match hook to determine if this is an edit or create form
-  const newTeamRouteMatch = useMatch('/app/team/new')
 
   // route navigate hook to redirect back to team view page on cancel
   const navigate = useNavigate()
@@ -71,8 +85,16 @@ const TeamForm = () => {
   // form input reducer
   const [formInput, setFormInput] = React.useReducer(
     (state: FormState, newState: FormState) => ({ ...state, ...newState }),
-    { ...defaultFormState, ...team }
+    { ...defaultFormState }
   )
+
+  React.useEffect(() => {
+    if (newTeamRouteMatch || Object.values(data).length === 0) return
+    // if this is an edit form, set the form input state to the team data
+    data.then((data) => {
+      setFormInput(data)
+    })
+  }, [newTeamRouteMatch, data])
 
   // memoize separating admins and regular members from the team members.
   const [admins, members] = React.useMemo(() => {
@@ -269,115 +291,131 @@ const TeamForm = () => {
 
   return (
     <Paper sx={{ p: 4 }}>
-      <Typography component="h1" variant="h4">
-        New Team
-      </Typography>
-      <Box
-        component="form"
-        autoComplete="off"
-        onSubmit={handleSubmitForm}
-        data-testid="team-form"
-      >
-        <Grid2 container spacing={6}>
-          <Grid2 xs={12} sx={{ p: 3.5 }}>
-            <TextField
-              autoFocus
-              fullWidth
-              name="name"
-              id="team"
-              label="Team Name"
-              onChange={handleInputFieldChange}
-              required
-              value={formInput.name}
-              variant="standard"
-              InputProps={{
-                sx: {
-                  '& .Mui-disabled': {
-                    color: 'text.primary',
-                  },
-                },
-              }}
-              sx={{ display: 'revert' }}
-            />
-          </Grid2>
-
-          <Grid2 xs={12} sx={{ mt: 2, pb: 0 }}>
-            <Typography component="h2" variant="h5">
-              Team Members
-            </Typography>
-          </Grid2>
-
-          <Grid2 xs={12}>
-            <Card>
-              <CardContent sx={{ p: 0 }}>
-                <Grid2 container spacing={3}>
-                  <Grid2 xs={12} md={6}>
-                    <TeamMembersSection
-                      name="newAdminEmail"
-                      title="admins"
-                      handleAdd={handleAddTeamAdmin}
-                      handleChange={handleInputFieldChange}
-                      handleRemove={handleRemoveTeamMember}
-                      members={admins}
-                      newEmail={formInput.newAdminEmail}
+      <React.Suspense fallback={<Fallback />}>
+        <Await
+          resolve={data}
+          errorElement={<div>Could not load teams 😬</div>}
+          // eslint-disable-next-line react/no-children-prop
+          children={({ name = '' }) => (
+            <>
+              <Typography component="h1" variant="h4" sx={{ mb: 4 }}>
+                {newTeamRouteMatch ? 'New Team' : `Edit Team: "${name}"`}
+              </Typography>
+              <Box
+                component="form"
+                autoComplete="off"
+                onSubmit={handleSubmitForm}
+                data-testid="team-form"
+              >
+                <Grid2 container spacing={6}>
+                  <Grid2 xs={12} sx={{ p: 3.5 }}>
+                    <TextField
+                      autoFocus
+                      fullWidth
+                      name="name"
+                      id="team"
+                      label="Team Name"
+                      onChange={handleInputFieldChange}
+                      required
+                      value={formInput.name}
+                      variant="standard"
+                      InputProps={{
+                        sx: {
+                          '& .Mui-disabled': {
+                            color: 'text.primary',
+                          },
+                        },
+                      }}
+                      sx={{ display: 'revert' }}
                     />
                   </Grid2>
-                  <Grid2 xs={12} md={6}>
-                    <TeamMembersSection
-                      name="newMemberEmail"
-                      title="members"
-                      handleAdd={handleAddTeamMember}
-                      handleChange={handleInputFieldChange}
-                      handleRemove={handleRemoveTeamMember}
-                      members={members}
-                      newEmail={formInput.newMemberEmail}
-                    />
+
+                  <Grid2 xs={12} sx={{ mt: 2, pb: 0 }}>
+                    <Typography component="h2" variant="h5">
+                      Team Members
+                    </Typography>
                   </Grid2>
+
                   <Grid2 xs={12}>
-                    <UserAutocomplete
-                      label="Search for a User"
-                      name="newUserSearch"
-                      control={control}
-                    />
+                    <Card>
+                      <CardContent sx={{ p: 0 }}>
+                        <Grid2 container spacing={3}>
+                          <Grid2 xs={12} md={6}>
+                            <TeamMembersSection
+                              name="newAdminEmail"
+                              title="admins"
+                              handleAdd={handleAddTeamAdmin}
+                              handleChange={handleInputFieldChange}
+                              handleRemove={handleRemoveTeamMember}
+                              members={admins}
+                              newEmail={formInput.newAdminEmail}
+                            />
+                          </Grid2>
+                          <Grid2 xs={12} md={6}>
+                            <TeamMembersSection
+                              name="newMemberEmail"
+                              title="members"
+                              handleAdd={handleAddTeamMember}
+                              handleChange={handleInputFieldChange}
+                              handleRemove={handleRemoveTeamMember}
+                              members={members}
+                              newEmail={formInput.newMemberEmail}
+                            />
+                          </Grid2>
+                          <Grid2 xs={12}>
+                            <UserAutocomplete
+                              label="Search for a User"
+                              name="newUserSearch"
+                              control={control}
+                            />
+                          </Grid2>
+                        </Grid2>
+                      </CardContent>
+                    </Card>
+                  </Grid2>
+
+                  <Grid2 xs={12} sx={{ mt: 2, pb: 0 }}>
+                    <Typography component="h2" variant="h5">
+                      Projects
+                    </Typography>
+                  </Grid2>
+
+                  {Object.values(formInput.projects).map((project) => (
+                    <Grid2 xs={12} md={12} key={project.id}>
+                      <TeamViewProjectCreateCard
+                        project={project}
+                        onUpdate={handleUpdateProject}
+                      />
+                    </Grid2>
+                  ))}
+                  <Grid2 xs={12} md={12}>
+                    <TeamViewProjectCreationCard onClick={handleAddProject} />
+                  </Grid2>
+
+                  <Grid2 xs={12}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Button
+                        onClick={handleCancel}
+                        color="error"
+                        variant="outlined"
+                        sx={{ mt: 3 }}
+                      >
+                        Cancel
+                      </Button>
+                      <SubmitButton disabled={isSubmitting} />
+                    </Box>
                   </Grid2>
                 </Grid2>
-              </CardContent>
-            </Card>
-          </Grid2>
-
-          <Grid2 xs={12} sx={{ mt: 2, pb: 0 }}>
-            <Typography component="h2" variant="h5">
-              Projects
-            </Typography>
-          </Grid2>
-
-          {Object.values(formInput.projects).map((project) => (
-            <Grid2 xs={12} md={12} key={project.id}>
-              <TeamViewProjectCreateCard
-                project={project}
-                onUpdate={handleUpdateProject}
-              />
-            </Grid2>
-          ))}
-          <Grid2 xs={12} md={12}>
-            <TeamViewProjectCreationCard onClick={handleAddProject} />
-          </Grid2>
-
-          <Grid2 xs={12}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Button
-                onClick={handleCancel}
-                color="error"
-                variant="outlined"
-                sx={{ mt: 3 }}
-              >
-                Cancel
-              </Button>
-              <SubmitButton disabled={isSubmitting} />
-            </Box>
-          </Grid2>
-        </Grid2>
-      </Box>
+              </Box>
+            </>
+          )}
+        />
+      </React.Suspense>
     </Paper>
   )
 }
