@@ -16,8 +16,8 @@ import useAlert from '@/hooks/useAlert'
 import { useDialog } from '@/hooks/useDialog'
 import authLoader from '@/router/authLoader'
 import { Token } from '@/types'
-import dateAsISOWithoutZ from '@/utils/dateAsISOWithoutZ'
 import TokenViewDialog from '@/views/Dashboard/Team/components/TokenViewDialog'
+import formatTimestampForServer from '@/utils/formatTimestampForServer'
 
 enum ExpirationOptions {
   SEVEN_DAYS = '7 days',
@@ -30,19 +30,14 @@ enum ExpirationOptions {
   // CUSTOM = 'Custom',
 }
 
-const getExpirationDate = (daysToAdd: number): TDateISOWithoutZ => {
-  const date = new Date()
-  return dateAsISOWithoutZ(new Date(date.setDate(date.getDate() + daysToAdd)))
-}
-
 // FIXME: copy pasta shame
 const ExpirationValues = {
-  SEVEN_DAYS: () => getExpirationDate(7),
-  THIRTY_DAYS: () => getExpirationDate(30),
-  SIXTY_DAYS: () => getExpirationDate(60),
-  NINETY_DAYS: () => getExpirationDate(90),
-  SIX_MONTHS: () => getExpirationDate(182),
-  ONE_YEAR: () => getExpirationDate(365),
+  SEVEN_DAYS: () => formatTimestampForServer(7),
+  THIRTY_DAYS: () => formatTimestampForServer(30),
+  SIXTY_DAYS: () => formatTimestampForServer(60),
+  NINETY_DAYS: () => formatTimestampForServer(90),
+  SIX_MONTHS: () => formatTimestampForServer(182),
+  ONE_YEAR: () => formatTimestampForServer(365),
   // TODO: implement datepicker for custom expiration
   // CUSTOM = 'Custom',
 }
