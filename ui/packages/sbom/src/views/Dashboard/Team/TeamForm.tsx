@@ -13,6 +13,7 @@ import {
   useParams,
 } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import { Auth } from 'aws-amplify'
 import { v4 as uuidv4 } from 'uuid'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -24,15 +25,16 @@ import Typography from '@mui/material/Typography'
 import updateTeam from '@/api/updateTeam'
 import UserAutocomplete from '@/components/UserAutocomplete'
 import SubmitButton from '@/components/forms/SubmitButton'
-import { useAlert } from '@/hooks/useAlert'
+import { useAlert, DEFAULT_ALERT_TIMEOUT } from '@/hooks/useAlert'
 import { useAuthState } from '@/hooks/useAuth'
 import reduceArrayToMap from '@/selectors/reduceArrayToMap'
-import { Project } from '@/types'
-import { FormState, FormTeamState } from './types'
+import { Project, Team } from '@/types'
 import { defaultFormState, defaultProject } from './constants'
 import TeamMembersSection from './components/TeamMembersSection'
 import TeamViewProjectCreateCard from './components/TeamViewProjectCreateCard'
 import TeamViewProjectCreationCard from './components/TeamViewProjectCreationCard'
+import { FormState, FormTeamState } from './types'
+import { CognitoUser } from 'amazon-cognito-identity-js'
 
 /**
  * A component that renders a page with a form for creating/editing a team.
@@ -209,25 +211,49 @@ const TeamForm = () => {
     event.preventDefault()
     const abortController = new AbortController()
 
-    // if already submitting or there's no token, return early.
-    if (isSubmitting === true || !jwtToken) {
+    // if already submitting, return early.
+    if (isSubmitting === true) {
       return () => abortController.abort()
     }
 
     try {
       setSubmitting(true)
-      await updateTeam({
+
+      // get the JWT token from the auth context or from the Cognito session
+      const token =
+        jwtToken || (await Auth.currentAuthenticatedUser()).getJwtToken()
+
+      // check that there is a jwtToken
+      if (!token) {
+        throw new Error('Unable to make request: no JWT token.')
+      }
+
+      // make the request
+      const response = await updateTeam({
         abortController,
         formInput,
         jwtToken,
         newTeamRouteMatch: !!newTeamRouteMatch,
         teamId,
       })
-      setSubmitting(false)
+
+      // show success alert
       setAlert({
-        message: 'Team updated successfully',
+        message: `Team ${
+          newTeamRouteMatch ? 'created' : 'updated'
+        } successfully`,
         severity: 'success',
+        timeout: DEFAULT_ALERT_TIMEOUT,
       })
+
+      // navigate to the team page after update is done
+      // FIXME: newly created team won't load until user logs out and back in
+      setTimeout(async () => {
+        // get ID of the team that was created/updated
+        const { id } = (await response.json()) as Team
+        // navigate to view that team
+        navigate(`/teams/${id}`)
+      }, DEFAULT_ALERT_TIMEOUT + 10)
     } catch (error) {
       console.error(error)
       setSubmitting(false)

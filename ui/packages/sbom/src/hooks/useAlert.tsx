@@ -4,7 +4,7 @@
 import * as React from 'react'
 import { AlertColor } from '@mui/material/Alert'
 
-const DEFAULT_TIMEOUT = 3000
+export const DEFAULT_ALERT_TIMEOUT = 3000
 
 export type AlertProps = {
   severity?: AlertColor
@@ -59,7 +59,7 @@ export const AlertProvider = ({
     severity = 'info',
     message = '',
     autoHide = true,
-    timeout = DEFAULT_TIMEOUT,
+    timeout = DEFAULT_ALERT_TIMEOUT,
   }: AlertProps) => {
     setState({
       ...state,
