@@ -320,6 +320,7 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
           justifyContent: 'flex-end',
           width: '100%',
           mt: -2,
+          mb: -2,
           '& > :not(style)': { m: 1 },
         }}
       >

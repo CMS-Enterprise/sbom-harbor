@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { useLoaderData } from 'react-router-dom'
 import Container from '@mui/material/Container'
-import Grid from '@mui/material/Grid'
+import Grid from '@mui/material/Unstable_Grid2'
 import uploadSBOM from '@/api/uploadSBOM'
 import useAlert from '@/hooks/useAlert'
 import { Team } from '@/types'
@@ -91,12 +91,12 @@ const SbomUploadInput = ({ teamId, projectId, codebaseId }: Props) => {
   return (
     <Container className="file-select" role="section">
       <Grid container spacing={1} sx={{ flexFlow: 'column' }}>
-        <Grid item>
+        <Grid>
           <label htmlFor={fileInputId} role="heading">
             Upload SBOM
           </label>
         </Grid>
-        <Grid item>
+        <Grid>
           <input
             id={fileInputId}
             name={fileInputId}

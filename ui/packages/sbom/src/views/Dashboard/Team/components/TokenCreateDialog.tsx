@@ -6,7 +6,7 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import FormControl from '@mui/material/FormControl'
-import Grid from '@mui/material/Grid'
+import Grid2 from '@mui/material/Unstable_Grid2'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Select, { SelectChangeEvent } from '@mui/material/Select'
@@ -201,15 +201,15 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
           onSubmit={handleSubmit}
           sx={{ mt: 4, width: '100%' }}
         >
-          <Grid
+          <Grid2
             container
             spacing={0}
             direction="row"
             alignItems="flex-end"
             sx={{ mb: 4 }}
           >
-            <Grid item xs={1}></Grid>
-            <Grid item xs={6}>
+            <Grid2 xs={1}></Grid2>
+            <Grid2 xs={6}>
               <TextField
                 autoFocus
                 margin="none"
@@ -227,9 +227,9 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
                 }}
                 InputLabelProps={{ shrink: true }}
               />
-            </Grid>
-            <Grid item xs={1}></Grid>
-            <Grid item xs={4}>
+            </Grid2>
+            <Grid2 xs={1}></Grid2>
+            <Grid2 xs={4}>
               <FormControl margin="none" required>
                 <InputLabel htmlFor="expires">Expiration</InputLabel>
                 <Select
@@ -249,8 +249,8 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
                   ))}
                 </Select>
               </FormControl>
-            </Grid>
-          </Grid>
+            </Grid2>
+          </Grid2>
           <DialogActions>
             <Button variant="contained" type="submit" disabled={loading}>
               Generate Token

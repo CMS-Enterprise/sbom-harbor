@@ -68,7 +68,7 @@ const AppContent = (): JSX.Element => {
               <MenuIcon />
             </IconButton>
             <Typography
-              component="h1"
+              component="span"
               variant="h6"
               color="inherit"
               noWrap
@@ -103,8 +103,9 @@ const AppContent = (): JSX.Element => {
 
         {/* main content outlet for child routes */}
         <Container
-          maxWidth="lg"
+          component="main"
           fixed
+          maxWidth="lg"
           sx={{ mt: 8, pt: 4, overflow: 'scroll' }}
         >
           {/* @ts-ignore */}

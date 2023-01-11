@@ -17,8 +17,10 @@ import { Auth } from 'aws-amplify'
 import { v4 as uuidv4 } from 'uuid'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Container from '@mui/material/Container'
-import Grid from '@mui/material/Grid'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import CardHeader from '@mui/material/CardHeader'
+import Grid2 from '@mui/material/Unstable_Grid2'
 import Paper from '@mui/material/Paper'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
@@ -267,103 +269,118 @@ const TeamForm = () => {
   }
 
   return (
-    <Container component="main" maxWidth="xl" data-testid="team">
-      <Paper
-        variant="outlined"
-        sx={{ mt: { xs: 3, md: 6 }, p: { xs: 2, md: 3 } }}
+    <Paper sx={{ p: 4 }}>
+      <Typography component="h1" variant="h4">
+        New Team
+      </Typography>
+      <Box
+        component="form"
+        noValidate
+        autoComplete="off"
+        onSubmit={handleSubmitForm}
+        data-testid="team-form"
       >
-        <Box
-          component="form"
-          noValidate
-          autoComplete="off"
-          onSubmit={handleSubmitForm}
-        >
-          <Grid container spacing={6}>
-            <Grid item xs={12} sx={{ mt: 4 }}>
-              <TextField
-                fullWidth
-                name="name"
-                id="team"
-                label="Team Name"
-                onChange={handleInputFieldChange}
-                required
-                value={formInput.name}
-                variant="standard"
-                InputProps={{
-                  sx: {
-                    '& .Mui-disabled': {
-                      color: 'text.primary',
-                    },
+        <Grid2 container spacing={6}>
+          <Grid2 xs={12} sx={{ p: 3.5 }}>
+            <TextField
+              autoFocus
+              fullWidth
+              name="name"
+              id="team"
+              label="Team Name"
+              onChange={handleInputFieldChange}
+              required
+              value={formInput.name}
+              variant="standard"
+              InputProps={{
+                sx: {
+                  '& .Mui-disabled': {
+                    color: 'text.primary',
                   },
-                }}
-                sx={{
-                  display: 'revert',
-                }}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TeamMembersSection
-                name="newAdminEmail"
-                title="admins"
-                handleAdd={handleAddTeamAdmin}
-                handleChange={handleInputFieldChange}
-                handleRemove={handleRemoveTeamMember}
-                members={admins}
-                newEmail={formInput.newAdminEmail}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TeamMembersSection
-                name="newMemberEmail"
-                title="members"
-                handleAdd={handleAddTeamMember}
-                handleChange={handleInputFieldChange}
-                handleRemove={handleRemoveTeamMember}
-                members={members}
-                newEmail={formInput.newMemberEmail}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <UserAutocomplete
-                label="Search for a User"
-                name="newUserSearch"
-                control={control}
-              />
-            </Grid>
-          </Grid>
+                },
+              }}
+              sx={{ display: 'revert' }}
+            />
+          </Grid2>
 
-          <Typography variant="h6" sx={{ mt: 6, mb: 4 }}>
-            Projects
-          </Typography>
+          <Grid2 xs={12} sx={{ mt: 2, pb: 0 }}>
+            <Typography component="h2" variant="h5">
+              Team Members
+            </Typography>
+          </Grid2>
 
-          <Grid container spacing={6} sx={{ mb: 6 }}>
-            {Object.values(formInput.projects).map((project) => (
-              <Grid item xs={12} md={12} key={project.id}>
-                <TeamViewProjectCreateCard
-                  project={project}
-                  onUpdate={handleUpdateProject}
-                />
-              </Grid>
-            ))}
-            <Grid item xs={12} md={12}>
-              <TeamViewProjectCreationCard onClick={handleAddProject} />
-            </Grid>
-          </Grid>
+          <Grid2 xs={12}>
+            <Card>
+              <CardContent sx={{ p: 0 }}>
+                <Grid2 container spacing={3}>
+                  <Grid2 xs={12} md={6}>
+                    <TeamMembersSection
+                      name="newAdminEmail"
+                      title="admins"
+                      handleAdd={handleAddTeamAdmin}
+                      handleChange={handleInputFieldChange}
+                      handleRemove={handleRemoveTeamMember}
+                      members={admins}
+                      newEmail={formInput.newAdminEmail}
+                    />
+                  </Grid2>
+                  <Grid2 xs={12} md={6}>
+                    <TeamMembersSection
+                      name="newMemberEmail"
+                      title="members"
+                      handleAdd={handleAddTeamMember}
+                      handleChange={handleInputFieldChange}
+                      handleRemove={handleRemoveTeamMember}
+                      members={members}
+                      newEmail={formInput.newMemberEmail}
+                    />
+                  </Grid2>
+                  <Grid2 xs={12}>
+                    <UserAutocomplete
+                      label="Search for a User"
+                      name="newUserSearch"
+                      control={control}
+                    />
+                  </Grid2>
+                </Grid2>
+              </CardContent>
+            </Card>
+          </Grid2>
 
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Button
-              onClick={handleCancel}
-              color="error"
-              variant="outlined"
-              sx={{ mt: 3, ml: 1 }}
-            >
-              Cancel
-            </Button>
-            <SubmitButton disabled={isSubmitting} />
-          </Box>
-        </Box>
-      </Paper>
-    </Container>
+          <Grid2 xs={12} sx={{ mt: 2, pb: 0 }}>
+            <Typography component="h2" variant="h5">
+              Projects
+            </Typography>
+          </Grid2>
+
+          {Object.values(formInput.projects).map((project) => (
+            <Grid2 xs={12} md={12} key={project.id}>
+              <TeamViewProjectCreateCard
+                project={project}
+                onUpdate={handleUpdateProject}
+              />
+            </Grid2>
+          ))}
+          <Grid2 xs={12} md={12}>
+            <TeamViewProjectCreationCard onClick={handleAddProject} />
+          </Grid2>
+
+          <Grid2 xs={12}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Button
+                onClick={handleCancel}
+                color="error"
+                variant="outlined"
+                sx={{ mt: 3 }}
+              >
+                Cancel
+              </Button>
+              <SubmitButton disabled={isSubmitting} />
+            </Box>
+          </Grid2>
+        </Grid2>
+      </Box>
+    </Paper>
   )
 }
 
