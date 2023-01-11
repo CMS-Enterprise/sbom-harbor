@@ -275,7 +275,6 @@ const TeamForm = () => {
       </Typography>
       <Box
         component="form"
-        noValidate
         autoComplete="off"
         onSubmit={handleSubmitForm}
         data-testid="team-form"
