@@ -29,16 +29,19 @@ const UserSearchInput = ({
   const [inputValue, setInputValue] = React.useState('')
   const [value, setValue] = React.useState<string | null>(null)
   const [options, setOptions] = React.useState<Array<string>>([])
+  const [loading, setLoading] = React.useState(false)
 
   const fetch = React.useMemo(
     () =>
       throttle(
         async (request, active: boolean, abortController: AbortController) => {
           if (!active) return
+          setLoading(true)
           const results = await getUsersSearch(request?.input, abortController)
           let newOptions = [] as Array<string>
           if (value) newOptions = [value]
           if (results) newOptions = [...newOptions, ...results]
+          setLoading(false)
           setOptions(newOptions)
         },
         THROTTLE_TIMEOUT
@@ -50,6 +53,7 @@ const UserSearchInput = ({
     const abortController = new AbortController()
     let active = true
     if (inputValue === '') {
+      setLoading(false)
       setOptions(value ? [value] : [])
       return undefined
     }
@@ -58,7 +62,7 @@ const UserSearchInput = ({
       active = false
       abortController.abort()
     }
-  }, [value, inputValue, fetch])
+  }, [value, inputValue, fetch, loading])
 
   return (
     <Controller
@@ -73,15 +77,17 @@ const UserSearchInput = ({
           {...field}
           id="user-search"
           data-testid="user-search"
+          value={value}
           autoComplete
-          fullWidth
           clearOnBlur={false}
           clearOnEscape
-          filterSelectedOptions
-          includeInputInList
-          value={value}
-          options={options}
           filterOptions={(x) => x}
+          filterSelectedOptions
+          fullWidth
+          includeInputInList
+          loading={loading}
+          loadingText="Loading..."
+          options={options}
           getOptionLabel={(option = '') => option}
           isOptionEqualToValue={(option, value) =>
             option === value || option === ''
