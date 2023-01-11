@@ -102,7 +102,11 @@ const AppContent = (): JSX.Element => {
         </AppDrawer>
 
         {/* main content outlet for child routes */}
-        <Container sx={{ mt: 8, overflow: 'scroll' }}>
+        <Container
+          maxWidth="lg"
+          fixed
+          sx={{ mt: 8, pt: 4, overflow: 'scroll' }}
+        >
           {/* @ts-ignore */}
           <Outlet />
         </Container>
