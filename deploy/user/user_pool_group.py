@@ -1,7 +1,5 @@
-from aws_cdk import (
-    aws_cognito as cognito,
-    RemovalPolicy,
-)
+from aws_cdk import RemovalPolicy
+from aws_cdk import aws_cognito as cognito
 from constructs import Construct
 
 from deploy.constants import (
@@ -9,10 +7,7 @@ from deploy.constants import (
     USER_POOL_GROUP_ID,
     USER_POOL_GROUP_NAME,
 )
-from deploy.user import (
-    SBOMUserPool,
-    SBOMUserRole
-)
+from deploy.user import SBOMUserPool, SBOMUserRole
 
 
 class SBOMUserPoolGroup(Construct):

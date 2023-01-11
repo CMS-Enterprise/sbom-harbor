@@ -1,22 +1,19 @@
 """
 -> Module to house the SBOMLoginLambda Construct
 """
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_iam as iam,
-    aws_lambda as lambda_,
-    Duration,
-)
+from aws_cdk import Duration
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_iam as iam
+from aws_cdk import aws_lambda as lambda_
 from constructs import Construct
 
-from cyclonedx.constants import (
+from deploy.constants import (
+    AWS_ACCOUNT_ID,
+    ENVIRONMENT,
+    LOGIN_LN,
+    SBOM_API_PYTHON_RUNTIME,
     USER_POOL_CLIENT_ID_KEY,
     USER_POOL_ID_KEY,
-)
-from deploy.constants import (
-    LOGIN_LN,
-    PRIVATE,
-    SBOM_API_PYTHON_RUNTIME,
 )
 from deploy.util import create_asset
 
@@ -42,7 +39,9 @@ class SBOMLoginLambda(Construct):
             function_name=LOGIN_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            ),
             handler="cyclonedx.handlers.login_handler",
             code=create_asset(self),
             timeout=Duration.seconds(10),
@@ -50,6 +49,8 @@ class SBOMLoginLambda(Construct):
             environment={
                 USER_POOL_ID_KEY: user_pool_id,
                 USER_POOL_CLIENT_ID_KEY: user_pool_client_id,
+                "CDK_DEFAULT_ACCOUNT": AWS_ACCOUNT_ID,
+                "ENVIRONMENT": ENVIRONMENT,
             },
         )
 

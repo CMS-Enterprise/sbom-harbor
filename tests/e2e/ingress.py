@@ -4,7 +4,6 @@
 from importlib.resources import files
 from json import loads
 
-import boto3
 import botocore.exceptions
 import pytest
 from botocore.waiter import Waiter
@@ -12,7 +11,7 @@ from importlib_resources.abc import Traversable
 from requests import Response, post
 
 from cyclonedx.model import HarborModel
-from tests import sboms
+from tests import sboms, get_boto_session
 from tests.e2e import (
     cleanup,
     create_codebase,
@@ -66,7 +65,7 @@ def test_sbom_ingress():
     -> Main Test
     """
 
-    retest: bool = True
+    retest: bool = False
     retest_team_id: str = ""
     retest_project_id: str = ""
     retest_codebase_id: str = ""
@@ -125,7 +124,7 @@ def test_sbom_ingress():
     sbom_s3_object_key: str = sbom_upload_rsp_json.get("s3ObjectKey")
 
     # Check to see if the SBOM Arrived
-    session = boto3.Session(profile_name="sandbox")
+    session = get_boto_session()
     s3_client = session.client("s3")
     waiter: Waiter = s3_client.get_waiter("object_exists")
 

@@ -28,16 +28,17 @@ def api_key_authorizer_handler(event: dict, context: dict = None):
     print_values(event, context)
 
     try:
+
         # Extract the Method ARN and the token from the event
         method_arn: str = event["methodArn"]
         token: str = event["authorizationToken"]
         team_id: str = _extract_id_from_path("team", event)
-
         resource = boto3.resource("dynamodb")
         team: Team = HarborDBClient(resource).get(
             Team(team_id=team_id),
             recurse=True,
         )
+
     except KeyError as ke:
         return harbor_response(
             400,

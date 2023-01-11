@@ -1,17 +1,10 @@
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_lambda as lambda_,
-    Duration,
-)
+from aws_cdk import Duration
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_lambda as lambda_
 from constructs import Construct
 
-from deploy.constants import (
-    PRIVATE,
-    SBOM_API_PYTHON_RUNTIME,
-    UPDATE_TEAM_LN,
-)
-from deploy.util import create_asset
-from deploy.util import DynamoTableManager
+from deploy.constants import SBOM_API_PYTHON_RUNTIME, UPDATE_TEAM_LN
+from deploy.util import DynamoTableManager, create_asset
 
 
 class SBOMUpdateTeamLambda(Construct):
@@ -34,7 +27,9 @@ class SBOMUpdateTeamLambda(Construct):
             function_name=UPDATE_TEAM_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            ),
             handler="cyclonedx.teams.update_team_handler",
             code=create_asset(self),
             timeout=Duration.seconds(10),
