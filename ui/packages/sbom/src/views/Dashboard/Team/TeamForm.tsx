@@ -34,7 +34,6 @@ import TeamMembersSection from './components/TeamMembersSection'
 import TeamViewProjectCreateCard from './components/TeamViewProjectCreateCard'
 import TeamViewProjectCreationCard from './components/TeamViewProjectCreationCard'
 import { FormState, FormTeamState } from './types'
-import { CognitoUser } from 'amazon-cognito-identity-js'
 
 /**
  * A component that renders a page with a form for creating/editing a team.

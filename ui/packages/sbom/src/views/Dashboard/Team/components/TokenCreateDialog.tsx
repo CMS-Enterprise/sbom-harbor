@@ -63,9 +63,14 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
     { ...defaultFormState }
   )
 
-  const handleClose = React.useCallback(() => {
-    if (setOpen) setOpen(false)
-  }, [])
+  const handleClose = React.useCallback(
+    () => {
+      if (setOpen) setOpen(false)
+    },
+    /* eslint-disable react-hooks/exhaustive-deps */
+    []
+    /* eslint-enable react-hooks/exhaustive-deps */
+  )
 
   /**
    * React callback hook to handle the expiration select change.
@@ -157,7 +162,9 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
       // return a cleanup function to abort the submit request.
       return () => abortController.abort()
     },
+    /* eslint-disable react-hooks/exhaustive-deps */
     [formInput]
+    /* eslint-enable react-hooks/exhaustive-deps */
   )
 
   const ExpirationValues = React.useMemo(
