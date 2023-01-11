@@ -18,7 +18,7 @@ create_user() {
   local user_pool_id=$(get_user_pool_id)
 
   aws cognito-idp admin-create-user  \
-    --user-pool-id ${COGNITO_USER_POOL_ID} \
+    --user-pool-id ${USER_POOL_ID} \
     --username "$1" \
     --desired-delivery-mediums EMAIL \
     --user-attributes Name=email,Value="$1"
@@ -36,7 +36,7 @@ set_user_password() {
   local user_pool_id=$(get_user_pool_id)
 
   aws cognito-idp admin-set-user-password \
-    --user-pool-id "${COGNITO_USER_POOL_ID}"  \
+    --user-pool-id "${USER_POOL_ID}"  \
     --username "${ADMIN_USERNAME}" \
     --password "${ADMIN_PASSWORD}" \
     --permanent
@@ -44,17 +44,17 @@ set_user_password() {
 
 update_user() {
   aws cognito-idp admin-update-user-attributes \
-    --user-pool-id ${COGNITO_USER_POOL_ID} \
-    --username "sbomadmin@aquia.us" \
-    --user-attributes Name="gender",Value="m" \
-      Name="name",Value="Admin User"
+    --user-pool-id ${USER_POOL_ID} \
+    --username ${ADMIN_USERNAME} \
+    --user-attributes \
+      Name="custom:teams",Value="d54ad85a-249e-4da2-9735-6bcfb09244f3\,4a434ea8-dbcd-430f-8a15-0d8f851c9751"
 }
 
 setup_admin_user() {
-  COGNITO_USER_POOL_ID=$(aws cognito-idp list-user-pools --max-results 1 --output json | jq '.UserPools|.[0]|.Id' | sed -e 's/"//g')
+  USER_POOL_ID=$(aws cognito-idp list-user-pools --max-results 1 --output json | jq '.UserPools|.[0]|.Id' | sed -e 's/"//g')
 
   aws cognito-idp admin-create-user  \
-    --user-pool-id ${COGNITO_USER_POOL_ID} \
+    --user-pool-id ${USER_POOL_ID} \
     --username "${ADMIN_USERNAME}" \
     --desired-delivery-mediums EMAIL \
     --user-attributes \
@@ -62,7 +62,7 @@ setup_admin_user() {
       Name='name',Value="Admin User"
 
   aws cognito-idp admin-set-user-password \
-    --user-pool-id "${COGNITO_USER_POOL_ID}"  \
+    --user-pool-id "${USER_POOL_ID}"  \
     --username "${ADMIN_USERNAME}" \
     --password "${ADMIN_PASSWORD}" \
     --permanent
