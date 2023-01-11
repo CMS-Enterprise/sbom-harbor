@@ -1,8 +1,22 @@
 import * as React from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { render, screen, waitFor } from '@testing-library/react'
+import {
+  render,
+  screen,
+  waitFor,
+  renderHook,
+  act,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SbomUploadInput from '@/components/SbomUploadInput'
+import {
+  Outlet,
+  Route,
+  RouterProvider,
+  createBrowserRouter,
+  createHashRouter,
+} from 'react-router-dom'
+import { RouteIds, Team, Token } from '@/types'
 
 const inputProps = {
   teamId: uuidv4(),
@@ -10,19 +24,23 @@ const inputProps = {
   codebaseId: uuidv4(),
 }
 
-jest.mock('react-router-dom', () => {
-  const date = new Date()
-  const created = date.toLocaleDateString()
-  const expires = new Date(
-    date.setDate(date.getDate() + 1)
-  ).toLocaleDateString()
-  return {
-    ...jest.requireActual('react-router-dom'),
-    useLoaderData: () => [
-      { id: 'some-token', token: `sbom-api-abcdefg`, created, expires },
-    ],
-  }
-})
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useLoaderData: () => ({
+    tokens: {
+      'some-token': {
+        id: 'some-token',
+        name: 'some-token',
+        token: 'sbom-api-abcdefg',
+        enabled: true,
+        created: new Date().toLocaleDateString(),
+        expires: new Date(
+          new Date().setDate(new Date().getDate() + 1)
+        ).toLocaleDateString(),
+      },
+    },
+  }),
+}))
 
 test('should render a label and a file input field', async () => {
   render(<SbomUploadInput {...inputProps} />)
@@ -31,22 +49,32 @@ test('should render a label and a file input field', async () => {
 })
 
 test('should upload a file when one is selected', async () => {
+  const user = userEvent.setup()
+
   render(<SbomUploadInput {...inputProps} />)
 
   // create a mock SBOM file
-  const fileContent = JSON.stringify({
+  const fileContents = JSON.stringify({
     bomFormat: 'SPDX',
     bomFormatVersion: '2.2',
     bomSpecVersion: '2.2',
     specVersion: '2.2',
   })
-  const blob = new Blob([fileContent])
+
+  const blob = new Blob([fileContents])
   const file = new File([blob], 'sbom.json', { type: 'application/JSON' })
-  File.prototype.text = jest.fn().mockResolvedValueOnce(fileContent)
+  File.prototype.text = jest.fn().mockResolvedValueOnce(fileContents)
 
   // trigger the file upload event
-  const user = userEvent.setup()
-  user.upload(screen.getByTestId('file-input'), file)
+  act(() => {
+    // @ts-ignore
+    window.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({}),
+    })
+
+    user.upload(screen.getByTestId('file-input'), file)
+  })
 
   // assert that fetch was called
   await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1))

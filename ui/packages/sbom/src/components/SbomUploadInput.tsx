@@ -30,11 +30,11 @@ const SbomUploadInput = ({ teamId, projectId, codebaseId }: Props) => {
       // make the request to upload the SBOM file
       await uploadSBOM({
         abortController,
-        jwtToken: token,
         fileContents,
         codebaseId,
         projectId,
         teamId,
+        token,
       })
       // set the alert to show the success message
       setAlert({

@@ -107,6 +107,9 @@ const updateTeam = async ({
 
     // pass the abort controller to the request to allow for cancelling the request.
     signal: abortController.signal,
+
+    // include updating of children
+    children: true,
   })
 }
 
