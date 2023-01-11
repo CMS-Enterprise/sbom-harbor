@@ -4,33 +4,33 @@ import harborRequest from '@/utils/harborRequest'
  * Function that makes a request to the Harbor API to delete a token.
  * @param {[AbortController]} abortController - signal to cancel the request.
  * @param {string} jwtToken - JWT token to authenticate the request.
- * @param {string} tokenId - the id of the token to delete.
+ * @param {string} fileContents - the contents of the SBOM file as a string.
+ * @param {string} codebaseId - the id of the codebase to upload the SBOM for.
+ * @param {string} projectId - the id of the project containing the codebase.
  * @param {string} teamId - the id of the team to delete the token from.
  * @returns {Promise} - the response from the Harbor API.
  */
-const updateToken = async ({
+const uploadSBOM = async ({
   abortController = new AbortController(),
   jwtToken,
-  tokenId,
+  fileContents,
+  codebaseId,
+  projectId,
   teamId,
-  token: body,
 }: {
   abortController?: AbortController
   jwtToken: string
   teamId: string
-  tokenId: string
-  token: {
-    name?: string
-    enabled?: boolean
-    expires?: string
-  }
+  projectId: string
+  codebaseId: string
+  fileContents: string
 }): Promise<Response> =>
-  harborRequest({
-    path: `/token/${tokenId}?teamId=${teamId}`,
-    method: 'PUT',
+  await harborRequest({
+    path: `${teamId}/${projectId}/${codebaseId}/sbom`,
+    method: 'POST',
+    body: JSON.parse(fileContents),
     jwtToken,
-    body,
     signal: abortController.signal,
   })
 
-export default updateToken
+export default uploadSBOM

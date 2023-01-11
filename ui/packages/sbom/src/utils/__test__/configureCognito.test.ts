@@ -3,7 +3,7 @@
  * @see {@link @cyclone-dx/ui-sbom/utils/configureCognito.js}
  */
 import { Amplify } from 'aws-amplify'
-import configureCognito from '../configureCognito'
+import configureCognito from '@/utils/configureCognito'
 
 // Mock the Amplify module to spy on the Auth.configure method
 jest.mock('aws-amplify', () => ({

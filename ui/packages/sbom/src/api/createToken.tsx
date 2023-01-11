@@ -1,5 +1,4 @@
 import harborRequest from '@/utils/harborRequest'
-import { Token } from '@/types'
 
 /**
  * Function that makes a request to the Harbor API to create a token.

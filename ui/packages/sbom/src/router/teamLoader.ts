@@ -3,12 +3,12 @@
  * @module @cyclonedx/ui/sbom/loaders/teamLoader
  * @see {@link @cyclonedx/ui/sbom/Routes}
  */
-import { Auth } from 'aws-amplify'
 import { defer, Params } from 'react-router-dom'
-import { Team, TeamEntity, TeamMemberRole } from '@/types'
-import reduceProjectsArrayToMap from '@/selectors/reduceProjectsArrayToMap'
 import reduceArrayToMap from '@/selectors/reduceArrayToMap'
+import reduceProjectsArrayToMap from '@/selectors/reduceProjectsArrayToMap'
+import getJWT from '@/utils/getJWT'
 import harborRequest from '@/utils/harborRequest'
+import { Team, TeamEntity, TeamMemberRole } from '@/types'
 
 const teamLoader = ({
   params: { teamId = '' },
@@ -18,14 +18,7 @@ const teamLoader = ({
   request: Request
 }) => {
   return defer({
-    data: Auth.currentSession()
-      .then((session) => {
-        const jwtToken = session.getAccessToken().getJwtToken()
-        if (!jwtToken) {
-          throw new Response('Invalid Session', { status: 401 })
-        }
-        return jwtToken
-      })
+    data: getJWT()
       .then(
         (jwtToken: string): Promise<Response> =>
           harborRequest({

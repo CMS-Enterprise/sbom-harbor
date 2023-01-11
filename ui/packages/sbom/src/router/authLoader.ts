@@ -3,19 +3,12 @@
  * @module @cyclonedx/ui/sbom/loaders/authLoader
  * @see {@link @cyclonedx/ui/sbom/Routes}
  */
-import { Auth } from 'aws-amplify'
 import { defer } from 'react-router-dom'
+import getJWT from '@/utils/getJWT'
 
 const authLoader = async () => {
-  const session = Auth.currentSession()
   return defer({
-    jwtToken: session.then((session) => {
-      const jwtToken = session.getAccessToken().getJwtToken()
-      if (!jwtToken) {
-        throw new Response('Invalid Session', { status: 401 })
-      }
-      return jwtToken
-    }),
+    jwtToken: getJWT(),
   })
 }
 
