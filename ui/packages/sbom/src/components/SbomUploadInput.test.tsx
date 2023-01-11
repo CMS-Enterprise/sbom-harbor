@@ -1,22 +1,8 @@
 import * as React from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import {
-  render,
-  screen,
-  waitFor,
-  renderHook,
-  act,
-} from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SbomUploadInput from '@/components/SbomUploadInput'
-import {
-  Outlet,
-  Route,
-  RouterProvider,
-  createBrowserRouter,
-  createHashRouter,
-} from 'react-router-dom'
-import { RouteIds, Team, Token } from '@/types'
 
 const inputProps = {
   teamId: uuidv4(),
@@ -67,15 +53,9 @@ test('should upload a file when one is selected', async () => {
 
   // trigger the file upload event
   act(() => {
-    // @ts-ignore
-    window.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({}),
-    })
-
     user.upload(screen.getByTestId('file-input'), file)
   })
 
   // assert that fetch was called
-  await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1))
+  await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1))
 })

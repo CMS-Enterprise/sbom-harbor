@@ -2,9 +2,7 @@ import updateTeam from '@/api/updateTeam'
 import { BuildTool, CodebaseLanguage } from '@/types'
 import formatTimestampForServer from '@/utils/formatTimestampForServer'
 
-const port = window.location.port || 3000
-const host = window.location.hostname
-const requestUrl = `https://${host}:${port}/api/v1/team`
+const apiUrl = 'https://localhost:3000/api/v1/team'
 
 const member = {
   isTeamLead: true,
@@ -19,6 +17,13 @@ const codebase = {
   buildTool: BuildTool.NPM,
 }
 
+const project = {
+  id: 'project-id-1',
+  name: 'some-project',
+  fisma: 'some-fisma',
+  codebases: { 'codebase-id-1': codebase },
+}
+
 const token = {
   id: 'token-id-1',
   name: 'some-token',
@@ -28,12 +33,7 @@ const token = {
   expires: formatTimestampForServer(1, new Date()),
 }
 
-const project = {
-  id: 'project-id-1',
-  name: 'some-project',
-  fisma: 'some-fisma',
-  codebases: { 'codebase-id-1': codebase },
-}
+const teamId = 'abcd-0123'
 
 const team = {
   name: 'some-name',
@@ -52,40 +52,31 @@ const bodyData = {
 const updateTeamParams = {
   formInput: team,
   jwtToken: 'some-token',
-  teamId: 'team-id',
+  newTeamRouteMatch: true,
+  teamId,
 }
 
-const fetchMockResolvedValue = { ok: true, json: async () => ({}) }
+test('calls makes a fetch request once', async () => {
+  await updateTeam(updateTeamParams)
+  expect(global.fetch).toHaveBeenCalledTimes(1)
+})
 
-test('calls makes a fetch request once with correct body', async () => {
-  // @ts-ignore
-  window.fetch.mockResolvedValueOnce(fetchMockResolvedValue)
-  await updateTeam({ ...updateTeamParams, newTeamRouteMatch: false })
-
-  expect(window.fetch).toHaveBeenCalledTimes(1)
-
-  // @ts-ignore
-  const [[, { body }]] = window.fetch.mock.calls
-
+test('calls makes a fetch request with correct body', async () => {
+  await updateTeam(updateTeamParams)
+  const [[, { body }]] = (global.fetch as jest.Mock).mock.calls
   expect(JSON.parse(body)).toMatchObject(bodyData)
 })
 
 test('creates a new team on the update team route', async () => {
-  // @ts-ignore
-  window.fetch.mockResolvedValueOnce(fetchMockResolvedValue)
-  await updateTeam({ ...updateTeamParams, newTeamRouteMatch: true })
-
-  // @ts-ignore
-  const [[url]] = window.fetch.mock.calls
-  expect(url.toString()).toStrictEqual(`${requestUrl}?children=true`)
+  await updateTeam(updateTeamParams)
+  const [[requestUrl]] = (global.fetch as jest.Mock).mock.calls
+  const desiredUrl = `${apiUrl}?children=true`
+  expect(requestUrl.toString()).toStrictEqual(desiredUrl)
 })
 
 test('updates an existing team on the update team route', async () => {
-  // @ts-ignore
-  window.fetch.mockResolvedValueOnce(fetchMockResolvedValue)
   await updateTeam({ ...updateTeamParams, newTeamRouteMatch: false })
-
-  // @ts-ignore
-  const [[url]] = window.fetch.mock.calls
-  expect(url.toString()).toStrictEqual(`${requestUrl}/team-id?children=true`)
+  const [[requestUrl]] = (global.fetch as jest.Mock).mock.calls
+  const desiredUrl = `${apiUrl}/${teamId}?children=true`
+  expect(requestUrl.toString()).toStrictEqual(desiredUrl)
 })

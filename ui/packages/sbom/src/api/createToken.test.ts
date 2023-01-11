@@ -1,13 +1,7 @@
 import formatTimestampForServer from '@/utils/formatTimestampForServer'
-import createToken from './createToken'
+import createToken from '@/api/createToken'
 
-test('calls makes a fetch request', async () => {
-  // @ts-ignore
-  window.fetch.mockResolvedValueOnce({
-    ok: true,
-    json: async () => ({}),
-  })
-
+test('calls makes a single fetch request', async () => {
   await createToken({
     name: 'some-name',
     expires: formatTimestampForServer(1, new Date()),
@@ -15,5 +9,5 @@ test('calls makes a fetch request', async () => {
     teamId: 'some-team',
   })
 
-  expect(window.fetch).toHaveBeenCalledTimes(1)
+  expect(global.fetch).toHaveBeenCalledTimes(1)
 })

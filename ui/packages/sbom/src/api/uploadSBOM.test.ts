@@ -1,12 +1,6 @@
 import uploadSBOM from '@/api/uploadSBOM'
 
-test('calls makes a fetch request', async () => {
-  // @ts-ignore
-  window.fetch.mockResolvedValueOnce({
-    ok: true,
-    json: async () => ({}),
-  })
-
+test('calls makes a single fetch request', async () => {
   await uploadSBOM({
     token: 'some-token',
     teamId: 'some-team',
@@ -15,5 +9,5 @@ test('calls makes a fetch request', async () => {
     fileContents: '{"bomFormat":"CycloneDX","specVersion": "1.3"}',
   })
 
-  expect(window.fetch).toHaveBeenCalledTimes(1)
+  expect(global.fetch).toHaveBeenCalledTimes(1)
 })
