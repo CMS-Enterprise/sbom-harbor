@@ -12,10 +12,25 @@ import {
 } from 'react-hook-form'
 import throttle from 'lodash/throttle'
 import Autocomplete from '@mui/material/Autocomplete'
-import TextField from '@mui/material/TextField'
+import CircularProgress from '@mui/material/CircularProgress'
 import getUsersSearch from '@/api/getUsersSearch'
+import TextField from '@mui/material/TextField'
 
 const THROTTLE_TIMEOUT = 750
+
+type State = {
+  inputValue?: string
+  loading?: boolean
+  options?: Array<string>
+  value?: string | null
+}
+
+const defaultFormState = {
+  inputValue: '',
+  loading: false,
+  options: [],
+  value: null,
+}
 
 const UserSearchInput = ({
   control,
@@ -26,39 +41,68 @@ const UserSearchInput = ({
   name: string
   [key: string]: unknown
 }): JSX.Element => {
-  const [inputValue, setInputValue] = React.useState('')
-  const [value, setValue] = React.useState<string | null>(null)
-  const [options, setOptions] = React.useState<Array<string>>([])
+  const [state, dispatchSetState] = React.useReducer(
+    (state: State, newState: State) => ({
+      ...state,
+      ...newState,
+    }),
+    { ...defaultFormState }
+  )
 
   const fetch = React.useMemo(
     () =>
       throttle(
-        async (request, active: boolean, abortController: AbortController) => {
-          if (!active) return
-          const results = await getUsersSearch(request?.input, abortController)
-          let newOptions = [] as Array<string>
-          if (value) newOptions = [value]
-          if (results) newOptions = [...newOptions, ...results]
-          setOptions(newOptions)
+        async (
+          input: string,
+          active: boolean,
+          abortController: AbortController
+        ) => {
+          try {
+            if (!active) {
+              return
+            }
+            dispatchSetState({ loading: true })
+            const results = await getUsersSearch(input, abortController)
+            const optionsSet = new Set<string>()
+            if (results) {
+              results.forEach((r) => optionsSet.add(r))
+            }
+            const newOptions = [...optionsSet]
+            dispatchSetState({ options: newOptions, loading: false })
+          } catch (error: unknown) {
+            if (error instanceof Error) console.warn(error)
+          }
         },
         THROTTLE_TIMEOUT
       ),
-    [value]
+    []
   )
 
   React.useEffect(() => {
-    const abortController = new AbortController()
     let active = true
-    if (inputValue === '') {
-      setOptions(value ? [value] : [])
-      return undefined
+    if (state.inputValue === '' || state.value === state.inputValue) {
+      active = false
+      dispatchSetState({ options: state.value ? [state.value] : [] })
     }
-    fetch({ input: inputValue }, active, abortController)
+    const abortController = new AbortController()
+    if (active && state.inputValue) {
+      fetch(state.inputValue, active, abortController)
+    } else {
+      dispatchSetState({ loading: false })
+    }
     return () => {
       active = false
       abortController.abort()
     }
-  }, [value, inputValue, fetch])
+  }, [state.value, state.inputValue])
+
+  // TODO: filter out illegal characters
+  const handleInputChange = React.useCallback(
+    (event: React.SyntheticEvent<Element, Event>, newValue: string) => {
+      dispatchSetState({ inputValue: newValue })
+    },
+    []
+  )
 
   return (
     <Controller
@@ -73,29 +117,50 @@ const UserSearchInput = ({
           {...field}
           id="user-search"
           data-testid="user-search"
+          value={state.value}
           autoComplete
-          fullWidth
           clearOnBlur={false}
           clearOnEscape
-          filterSelectedOptions
+          freeSolo
+          filterOptions={(options) => options}
+          fullWidth
           includeInputInList
-          value={value}
-          options={options}
-          filterOptions={(x) => x}
+          loading={state.loading}
+          loadingText="Loading..."
+          options={state.options || []}
           getOptionLabel={(option = '') => option}
           isOptionEqualToValue={(option, value) =>
             option === value || option === ''
           }
           onChange={(_, newValue: string | null = '') => {
-            setOptions(newValue ? [newValue, ...options] : options)
-            setValue(newValue)
+            const newOptions: string[] = state.options || []
+            dispatchSetState({
+              options: [
+                ...new Set(newValue ? [newValue, ...newOptions] : newOptions),
+              ],
+              value: newValue,
+            })
             field.onChange(newValue)
           }}
-          onInputChange={(_, newValue: string) => {
-            setInputValue(newValue)
-          }}
+          onInputChange={handleInputChange}
           renderInput={(params) => (
-            <TextField {...rest} {...params} variant="outlined" fullWidth />
+            <TextField
+              {...rest}
+              {...params}
+              variant="outlined"
+              fullWidth
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <React.Fragment>
+                    {state.loading ? (
+                      <CircularProgress color="inherit" size={20} />
+                    ) : null}
+                    {params.InputProps.endAdornment}
+                  </React.Fragment>
+                ),
+              }}
+            />
           )}
         />
       )}
