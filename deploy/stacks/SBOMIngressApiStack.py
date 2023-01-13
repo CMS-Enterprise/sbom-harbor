@@ -21,22 +21,29 @@ from aws_cdk.aws_iam import Effect, PolicyStatement
 from aws_cdk.aws_logs import RetentionDays
 from constructs import Construct
 
-from cyclonedx.constants import USER_POOL_CLIENT_ID_KEY, USER_POOL_ID_KEY
+from cyclonedx.constants import (
+    AWS_ACCOUNT_ID_KEY,
+    AWS_REGION_KEY,
+    ENVIRONMENT_KEY,
+    USER_POOL_CLIENT_ID_KEY,
+    USER_POOL_ID_KEY,
+)
 from deploy.authorizers import AuthorizerLambdaFactory, SBOMUploadAPIKeyAuthorizerLambda
 from deploy.constants import (
-    API_GW_URL_OUTPUT_ID,
-    API_GW_URL_EXPORT_NAME,
     API_GW_ID_OUTPUT_ID,
     API_GW_LOG_GROUP_NAME,
+    API_GW_URL_EXPORT_NAME,
+    API_GW_URL_OUTPUT_ID,
     API_STACK_ID,
     AUTHORIZATION_HEADER,
+    AUTHORIZER_LN,
+    AWS_ACCOUNT_ID,
+    AWS_REGION_SHORT,
+    ENVIRONMENT,
     PRIVATE,
     S3_BUCKET_ID,
     S3_BUCKET_NAME,
     SBOM_API_PYTHON_RUNTIME,
-    ENVIRONMENT,
-    AWS_REGION_SHORT,
-    AUTHORIZER_LN,
 )
 from deploy.user import SBOMLoginLambda, SBOMUserSearchLambda
 from deploy.util import DynamoTableManager, SbomIngressLambda, create_asset
@@ -69,6 +76,16 @@ class LambdaFactory:
 
             super().__init__(scope, name)
 
+            print(f"<Environment variables>")
+            print(f"{USER_POOL_ID_KEY}: {user_pool_id}")
+            print(f"{USER_POOL_CLIENT_ID_KEY}: {user_pool_client_id}")
+            print(f"{ENVIRONMENT_KEY}: {ENVIRONMENT}")
+            print(f"{AWS_REGION_KEY}: {AWS_REGION_SHORT}")
+            print(f"{AWS_ACCOUNT_ID_KEY}: {AWS_ACCOUNT_ID}")
+            print(f"</Environment variables>")
+
+            exit()
+
             self.lambda_func = lambda_.Function(
                 self,
                 name,
@@ -83,6 +100,9 @@ class LambdaFactory:
                 environment={
                     USER_POOL_ID_KEY: user_pool_id,
                     USER_POOL_CLIENT_ID_KEY: user_pool_client_id,
+                    ENVIRONMENT_KEY: ENVIRONMENT,
+                    AWS_REGION_KEY: AWS_REGION_SHORT,
+                    AWS_ACCOUNT_ID_KEY: AWS_ACCOUNT_ID,
                 },
             )
 

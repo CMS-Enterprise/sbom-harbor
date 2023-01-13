@@ -11,8 +11,12 @@ from aws_cdk.aws_stepfunctions import Chain, Parallel
 from constructs import Construct
 
 from cyclonedx.constants import EVENT_BUS_SOURCE
-
-from deploy.constants import ENRICHMENT_STACK_ID, S3_BUCKET_NAME, environize
+from deploy.constants import (
+    ENRICHMENT_STACK_ID,
+    S3_BUCKET_NAME,
+    STATE_MACHINE_NAME,
+    STATE_MACHINE_RULE_NAME,
+)
 from deploy.enrichment import EnrichmentIngressLambda
 from deploy.enrichment.dependency_track import (
     DependencyTrackFargateInstance,
@@ -142,7 +146,7 @@ class SBOMEnrichmentPiplineStack(Stack):
         enrichment_machine = stepfunctions.StateMachine(
             self,
             "ENRICHMENT_STATE_MACHINE",
-            state_machine_name=environize("Enrichment", delimiter="_"),
+            state_machine_name=STATE_MACHINE_NAME,
             state_machine_type=stepfunctions.StateMachineType.STANDARD,
             definition=chain,
         )
@@ -150,7 +154,7 @@ class SBOMEnrichmentPiplineStack(Stack):
         eventbridge.Rule(
             self,
             "ENRICHMENT_EVENTBRIDGE_RULE",
-            rule_name=environize("Enrichment", delimiter="_"),
+            rule_name=STATE_MACHINE_RULE_NAME,
             enabled=True,
             event_pattern=eventbridge.EventPattern(
                 source=[EVENT_BUS_SOURCE],

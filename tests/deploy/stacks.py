@@ -4,7 +4,7 @@
 import aws_cdk as cdk
 from aws_cdk import aws_cognito as cognito
 
-from deploy.constants import AWS_ACCOUNT_ID, AWS_REGION
+from deploy.constants import AWS_ACCOUNT_ID, DEPLOYMENT_AWS_REGION
 from deploy.stacks import (
     PilotStack,
     SBOMGeneratorPipelineStack,
@@ -23,7 +23,7 @@ def test_pilot_stack():
 
     env = cdk.Environment(
         account=AWS_ACCOUNT_ID,
-        region=AWS_REGION,
+        region=DEPLOYMENT_AWS_REGION,
     )
 
     app = cdk.App()
@@ -67,7 +67,7 @@ def test_sbom_generator_pipeline():
 
     env = cdk.Environment(
         account=AWS_ACCOUNT_ID,
-        region=AWS_REGION,
+        region=DEPLOYMENT_AWS_REGION,
     )
 
     app = cdk.App()

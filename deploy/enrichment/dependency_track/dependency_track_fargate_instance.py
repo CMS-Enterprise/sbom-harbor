@@ -1,16 +1,12 @@
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_ecs as ecs,
-    aws_efs as efs,
-    aws_elasticloadbalancingv2 as elbv2,
-)
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_ecs as ecs
+from aws_cdk import aws_efs as efs
+from aws_cdk import aws_elasticloadbalancingv2 as elbv2
 from constructs import Construct
 
 from cyclonedx.constants import (
     ALLOW_DT_PORT_SG,
     DT_API_PORT,
-)
-from deploy.constants import (
     DT_CONTAINER_ID,
     DT_DOCKER_ID,
     DT_FARGATE_SVC_NAME,

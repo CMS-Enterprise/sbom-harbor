@@ -9,9 +9,9 @@ from aws_cdk import aws_events as eventbridge
 
 from deploy.constants import (
     AWS_ACCOUNT_ID,
-    AWS_REGION,
     CMS_PERMISSION_BOUNDARY_ARN,
     CMS_ROLE_PATH,
+    DEPLOYMENT_AWS_REGION,
     ENVIRONMENT,
     PYTHON_LOGGING_CONFIG,
 )
@@ -40,7 +40,7 @@ def dodep() -> None:
 
     env = cdk.Environment(
         account=AWS_ACCOUNT_ID,
-        region=AWS_REGION,
+        region=DEPLOYMENT_AWS_REGION,
     )
 
     # Create the CDK app to pass into all the Stacks

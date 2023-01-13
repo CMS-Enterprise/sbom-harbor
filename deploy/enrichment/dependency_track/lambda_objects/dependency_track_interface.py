@@ -11,14 +11,20 @@ from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 
 from cyclonedx.constants import (
-    EMPTY_VALUE,
-)
-
-from deploy.constants import (
+    AWS_ACCOUNT_ID_KEY,
+    AWS_REGION_KEY,
     DT_API_BASE,
     DT_API_KEY,
     DT_ROOT_PWD,
+    EMPTY_VALUE,
+    ENVIRONMENT_KEY,
+)
+from deploy.constants import (
+    AWS_ACCOUNT_ID,
+    AWS_REGION_SHORT,
+    DT_INTERFACE_ID,
     DT_INTERFACE_LN,
+    ENVIRONMENT,
     PRIVATE,
     SBOM_API_PYTHON_RUNTIME,
 )
@@ -51,7 +57,7 @@ class DependencyTrackInterfaceLambda(Construct):
 
         self.func = lambda_.Function(
             self,
-            DT_INTERFACE_LN,
+            DT_INTERFACE_ID,
             function_name=DT_INTERFACE_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
@@ -60,6 +66,9 @@ class DependencyTrackInterfaceLambda(Construct):
             code=create_asset(self),
             environment={
                 DT_API_BASE: fq_dn,
+                ENVIRONMENT_KEY: ENVIRONMENT,
+                AWS_REGION_KEY: AWS_REGION_SHORT,
+                AWS_ACCOUNT_ID_KEY: AWS_ACCOUNT_ID,
             },
             timeout=Duration.minutes(1),
             security_groups=[dt_func_sg],
