@@ -13,13 +13,13 @@ from requests import Response, get, post, put
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from cyclonedx.constants import (
+    DT_API_KEY,
     DT_DEFAULT_ADMIN_PWD,
+    DT_ROOT_PWD,
     EMPTY_VALUE,
     PYTHON_LOGGING_CONFIG,
 )
 from cyclonedx.dtendpoints import DTEndpoints
-
-from deploy.constants import DT_API_KEY, DT_ROOT_PWD
 
 config.fileConfig(PYTHON_LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
