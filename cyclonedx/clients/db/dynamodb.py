@@ -293,3 +293,5 @@ class HarborDBClient:
         except Exception as err:
             err_msg: str = get_error_message("getting", model, err)
             raise DatabaseError(err_msg) from err
+
+        

@@ -4,6 +4,7 @@
 import datetime
 from datetime import timedelta
 from json import loads
+from urllib.error import HTTPError
 
 import boto3
 
@@ -113,6 +114,18 @@ def _add_creating_member(
 
 def _do_post(event: dict, db_client: HarborDBClient) -> dict:
 
+    # Check to see if team already exists
+    try:
+        team_exists = _do_get(event, db_client)
+        # A status code of 200 will mean the HarborDBClient has found a match for the team name
+        if team_exists['status_code'] == 200:
+            raise HTTPError("http 422 unprocessable entity: team already exists in harbor")
+
+    # If no team is found it will result in a database error which should be ignored to finish the function call
+    except DatabaseError:
+        pass
+
+    # Create new team object
     request_body: dict = loads(event["body"])
 
     team_id: str = generate_model_id()
@@ -167,7 +180,6 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
     )
 
     return harbor_response(200, team.to_json())
-
 
 def _do_put(event: dict, db_client: HarborDBClient) -> dict:
 
