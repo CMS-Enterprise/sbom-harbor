@@ -17,4 +17,5 @@ module "common" {
   source           = "./modules/common"
   environment      = var.environment
   aws_region_short = local.aws_region_short
+  aws_account_id   = data.aws_caller_identity.current.account_id
 }
