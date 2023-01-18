@@ -94,3 +94,42 @@ output "user_pool_client_id" {
   description = "Cognito user pool client id"
   value       = aws_cognito_user_pool_client.harbor_user_pool_client.id
 }
+
+resource "aws_iam_role" "cognito-user" {
+  assume_role_policy = <<POLICY
+{
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "ForAnyValue:StringLike": {
+          "cognito-identity.amazonaws.com:amr": "authenticated"
+        },
+        "StringEquals": {
+          "cognito-identity.amazonaws.com:aud": ${aws_cognito_user_pool.harbor_user_pool.id}
+        }
+      },
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "cognito-identity.amazonaws.com"
+      }
+    }
+  ],
+  "Version": "2012-10-17"
+}
+POLICY
+
+  description          = "Default role for authenticated users"
+  managed_policy_arns  = ["arn:aws:iam::aws:policy/AmazonS3FullAccess", "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
+  max_session_duration = "3600"
+  name                 = "${var.environment}-cognito-user-${var.aws_region_short}"
+  path                 = "/"
+}
+
+
+resource "aws_cognito_user_group" "harbor_user_pool_group_admins" {
+  name         = "${var.environment}-admins-${var.aws_region_short}"
+  user_pool_id = aws_cognito_user_pool.harbor_user_pool.id
+  description  = "Default group for authenticated administrator users"
+  role_arn     = aws_iam_role.cognito-user.arn
+}
