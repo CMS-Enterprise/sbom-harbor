@@ -18,7 +18,7 @@ resource "aws_cognito_user_pool" "harbor_user_pool" {
   }
 
   mfa_configuration = "OFF"
-  name              = "${var.environment}-harbor-user-pool-${var.aws_region_short}"
+  name              = "${var.environment}-harbor-user-pool"
 
   password_policy {
     minimum_length                   = "8"
@@ -122,13 +122,13 @@ POLICY
   description          = "Default role for authenticated users"
   managed_policy_arns  = ["arn:aws:iam::aws:policy/AmazonS3FullAccess", "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
   max_session_duration = "3600"
-  name                 = "${var.environment}-cognito-user-${var.aws_region_short}"
+  name                 = "${var.environment}-cognito-user"
   path                 = "/"
 }
 
 
 resource "aws_cognito_user_group" "harbor_user_pool_group_admins" {
-  name         = "${var.environment}-admins-${var.aws_region_short}"
+  name         = "${var.environment}-harbor-admins"
   user_pool_id = aws_cognito_user_pool.harbor_user_pool.id
   description  = "Default group for authenticated administrator users"
   role_arn     = aws_iam_role.cognito-user.arn

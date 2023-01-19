@@ -9,24 +9,22 @@ resource "aws_dynamodb_table" "harbor_teams" {
     type = "S"
   }
 
-  billing_mode = "PROVISIONED"
+  billing_mode = "PAY_PER_REQUEST"
   hash_key     = "TeamId"
-  name         = "${var.environment}-harbor-teams-${var.aws_region_short}"
+  name         = "${var.environment}-harbor-teams"
 
   point_in_time_recovery {
     enabled = "false"
   }
 
   range_key      = "EntityKey"
-  read_capacity  = "1"
   stream_enabled = "false"
-  write_capacity = "5"
 }
 
-output "dynamo_db_table_teams_id" {
+output "dynamodb_table_teams_id" {
   value = aws_dynamodb_table.harbor_teams.id
 }
 
-output "dynamo_db_table_teams_arn" {
+output "dynamodb_table_teams_arn" {
   value = aws_dynamodb_table.harbor_teams.arn
 }
