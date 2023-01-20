@@ -1,20 +1,18 @@
-from aws_cdk import (
-    aws_ec2 as ec2,
-    RemovalPolicy,
-)
+from aws_cdk import RemovalPolicy
+from aws_cdk import aws_ec2 as ec2
 from constructs import Construct
 
 from deploy.constants import (
     CIDR,
     PRIVATE_SUBNET_NAME,
-    PRIVATE,
     PUBLIC_SUBNET_NAME,
-    PUBLIC, VPC_ID, VPC_NAME,
+    VPC_ID,
+    VPC_NAME,
 )
 
 
 class SBOMApiVpc(Construct):
-    
+
     """This is the VPC used throughout the application.
     One single VPC for the app."""
 
@@ -29,7 +27,7 @@ class SBOMApiVpc(Construct):
 
         private_subnet = ec2.SubnetConfiguration(
             name=PRIVATE_SUBNET_NAME,
-            subnet_type=PRIVATE,
+            subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
             cidr_mask=26,
         )
 
@@ -37,7 +35,7 @@ class SBOMApiVpc(Construct):
         # see: https://us-east-1.console.aws.amazon.com/ec2/v2/home?region=us-east-1#Addresses:
         public_subnet = ec2.SubnetConfiguration(
             name=PUBLIC_SUBNET_NAME,
-            subnet_type=PUBLIC,
+            subnet_type=ec2.SubnetType.PUBLIC,
             cidr_mask=26,
         )
 

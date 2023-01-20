@@ -1,17 +1,15 @@
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_lambda as lambda_,
-    Duration,
-)
+from aws_cdk import Duration
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_lambda as lambda_
 from constructs import Construct
 
 from deploy.constants import (
+    AWS_ACCOUNT_ID,
+    ENVIRONMENT,
     GET_TEAM_LN,
-    PRIVATE,
     SBOM_API_PYTHON_RUNTIME,
 )
-from deploy.util import create_asset
-from deploy.util import DynamoTableManager
+from deploy.util import DynamoTableManager, create_asset
 
 
 class SBOMGetTeamLambda(Construct):
@@ -34,11 +32,17 @@ class SBOMGetTeamLambda(Construct):
             function_name=GET_TEAM_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            ),
             handler="cyclonedx.teams.get_team_handler",
             code=create_asset(self),
             timeout=Duration.seconds(10),
             memory_size=512,
+            environment={
+                "CDK_DEFAULT_ACCOUNT": AWS_ACCOUNT_ID,
+                "ENVIRONMENT": ENVIRONMENT,
+            },
         )
 
         table_mgr.grant(self.func)

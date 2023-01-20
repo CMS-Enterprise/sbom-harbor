@@ -11,7 +11,6 @@ import boto3
 
 from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.constants import (
-    HARBOR_TEAMS_TABLE_NAME,
     HARBOR_TEAMS_TABLE_PARTITION_KEY,
     HARBOR_TEAMS_TABLE_SORT_KEY,
 )
@@ -22,12 +21,17 @@ from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
 from cyclonedx.model.token import Token
+from tests import get_boto_session, get_harbor_table_name, get_harbor_client
+
+harbor_table: str = get_harbor_table_name()
+
+session = get_boto_session()
 
 boto3.set_stream_logger(name="botocore", level=logging.DEBUG)
 
-ddb_resource = boto3.resource("dynamodb")
-ddb_client = boto3.client("dynamodb")
-teams_table = ddb_resource.Table(HARBOR_TEAMS_TABLE_NAME)
+ddb_resource = session.resource("dynamodb")
+ddb_client = session.client("dynamodb")
+teams_table = ddb_resource.Table(harbor_table)
 
 project_id = "test-project-id"
 project_name = "Test Project Name"
@@ -48,7 +52,6 @@ created = datetime.now()
 expires = now + timedelta(days=100)
 token_val = str(uuid.uuid4())
 
-
 def test_write_to_db():
 
     """
@@ -56,8 +59,9 @@ def test_write_to_db():
     -> If this test fails, then we will be unable to add the test team.
     """
 
+    print(f"Attempting to write to {harbor_table}")
     teams_table.put_item(
-        TableName=HARBOR_TEAMS_TABLE_NAME,
+        TableName=harbor_table,
         Item={
             HARBOR_TEAMS_TABLE_PARTITION_KEY: "dawn-patrol",
             HARBOR_TEAMS_TABLE_SORT_KEY: EntityType.TEAM.value,
@@ -76,14 +80,14 @@ def test_add_test_team():
     for team_id in ["dawn-patrol", "dusk-patrol"]:
 
         try:
-            HarborDBClient(ddb_resource).delete(
+            get_harbor_client().delete(
                 Team(team_id=team_id),
                 recurse=True,
             )
         except DatabaseError:
             ...
 
-        HarborDBClient(ddb_resource).create(
+        get_harbor_client().create(
             Team(
                 team_id=team_id,
                 name=team_id,

@@ -1,7 +1,10 @@
 """
 -> init file for e2e tests module
 """
-from json import dumps
+from io import BufferedReader
+from json import dumps, loads
+from os import listdir, getcwd
+from subprocess import Popen, PIPE
 
 import boto3
 import requests
@@ -10,6 +13,7 @@ from requests import Response, delete, get, post
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
+from tests import get_boto_session, get_current_environment
 
 
 class TestCodebaseValues:
@@ -57,15 +61,23 @@ def get_cloudfront_url():
     -> Extracts the CloudFront url using boto3
     """
 
-    session = boto3.Session(
-        profile_name="sandbox",
-    )
+    session = get_boto_session()
+
+    environment: str = get_current_environment()
+
     client = session.client("cloudfront")
     distributions = client.list_distributions()
     distribution_list = distributions["DistributionList"]
 
     try:
-        sbom_api_distribution = distribution_list["Items"][0]
+
+        sbom_api_distribution = list(
+            filter(
+                lambda d: "Comment" in d and d["Comment"] == environment,
+                distribution_list["Items"],
+            ),
+        )[0]
+
         cf_domain_name = sbom_api_distribution["DomainName"]
         cf_url = f"https://{cf_domain_name}"
         print(f"CloudFront url is: {cf_url}")

@@ -10,8 +10,13 @@ from aws_cdk import aws_events as eventbridge
 from aws_cdk import aws_s3 as s3
 from constructs import Construct
 
-from cyclonedx.constants import EVENT_BUS_ID, EVENT_BUS_NAME
-from deploy.constants import S3_BUCKET_ID, S3_BUCKET_NAME, SHARED_RESOURCE_STACK_ID
+from deploy.constants import (
+    EVENT_BUS_ID,
+    EVENT_BUS_NAME,
+    S3_BUCKET_ID,
+    S3_BUCKET_NAME,
+    SHARED_RESOURCE_STACK_ID,
+)
 from deploy.constructs.harbor_teams_table import HarborTeamsTable
 from deploy.util import DynamoTableManager, SBOMApiVpc, s3_utils
 

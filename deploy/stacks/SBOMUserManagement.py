@@ -1,27 +1,21 @@
-
 """This Stack is used to set up shared resources
 that the other stacks use when deploying the application"""
 
-from aws_cdk import (
-    aws_iam as iam,
-    aws_cognito as cognito,
-    Stack,
-)
+from aws_cdk import Stack
+from aws_cdk import aws_cognito as cognito
+from aws_cdk import aws_iam as iam
 from constructs import Construct
 
-from deploy.constants import (
-    USER_MANAGEMENT_STACK_ID,
-)
+from deploy.constants import USER_MANAGEMENT_STACK_ID
 from deploy.user import (
     SBOMUserPool,
     SBOMUserPoolClient,
     SBOMUserPoolGroup,
-    SBOMUserRole
+    SBOMUserRole,
 )
 
 
 class SBOMUserManagement(Stack):
-
     def __init__(
         self,
         scope: Construct,
@@ -45,7 +39,8 @@ class SBOMUserManagement(Stack):
 
         # Create the Cognito "admin" user pool group
         user_pool_group = SBOMUserPoolGroup(
-            self, user_pool=user_pool, user_role=user_role)
+            self, user_pool=user_pool, user_role=user_role
+        )
         self.cognito_user_pool_group = user_pool_group.get_cognito_user_pool_group()
 
     def get_user_role(self) -> iam.Role:

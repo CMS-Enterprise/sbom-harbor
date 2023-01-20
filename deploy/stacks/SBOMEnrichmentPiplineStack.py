@@ -10,9 +10,12 @@ from aws_cdk import aws_stepfunctions_tasks as tasks
 from aws_cdk.aws_stepfunctions import Chain, Parallel
 from constructs import Construct
 
-from cyclonedx.constants import EVENT_BUS_SOURCE
-
-from deploy.constants import ENRICHMENT_STACK_ID, S3_BUCKET_NAME, environize
+from deploy.constants import (
+    ENRICHMENT_STACK_ID,
+    EVENT_BUS_SOURCE,
+    S3_BUCKET_NAME,
+    environize,
+)
 from deploy.enrichment import EnrichmentIngressLambda
 from deploy.enrichment.dependency_track import (
     DependencyTrackFargateInstance,

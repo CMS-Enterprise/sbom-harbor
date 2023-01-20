@@ -1,11 +1,11 @@
-from constructs import Construct
-from aws_cdk import (
-    RemovalPolicy,
-    aws_dynamodb as dynamodb,
-    aws_applicationautoscaling as autoscale,
-)
+""" Harbor teams DynamoDB table """
 
-from cyclonedx.constants import (
+from aws_cdk import RemovalPolicy
+from aws_cdk import aws_applicationautoscaling as autoscale
+from aws_cdk import aws_dynamodb as dynamodb
+from constructs import Construct
+
+from deploy.constants import (
     HARBOR_TEAMS_TABLE_ID,
     HARBOR_TEAMS_TABLE_NAME,
     HARBOR_TEAMS_TABLE_PARTITION_KEY,
@@ -16,7 +16,7 @@ from cyclonedx.constants import (
 class HarborTeamsTable(Construct):
 
     """
-     The Teams Management Table
+    The Teams Management Table
     """
 
     def __init__(
@@ -26,7 +26,8 @@ class HarborTeamsTable(Construct):
         super().__init__(scope, HARBOR_TEAMS_TABLE_NAME)
 
         self.construct = dynamodb.Table(
-            self, HARBOR_TEAMS_TABLE_ID,
+            self,
+            HARBOR_TEAMS_TABLE_ID,
             table_name=HARBOR_TEAMS_TABLE_NAME,
             billing_mode=dynamodb.BillingMode.PROVISIONED,
             removal_policy=RemovalPolicy.DESTROY,
@@ -46,9 +47,7 @@ class HarborTeamsTable(Construct):
             max_capacity=50,
         )
 
-        read_scaling.scale_on_utilization(
-            target_utilization_percent=50
-        )
+        read_scaling.scale_on_utilization(target_utilization_percent=50)
 
         read_scaling.scale_on_schedule(
             "ScaleUpInTheMorning",
@@ -56,7 +55,7 @@ class HarborTeamsTable(Construct):
                 hour="8",
                 minute="0",
             ),
-            min_capacity=20
+            min_capacity=20,
         )
 
         read_scaling.scale_on_schedule(
@@ -65,11 +64,11 @@ class HarborTeamsTable(Construct):
                 hour="20",
                 minute="0",
             ),
-            max_capacity=20
+            max_capacity=20,
         )
 
     def get_construct(self) -> dynamodb.Table:
 
-        """ Return the underlying CDK Defined L3 Construct """
+        """Return the underlying CDK Defined L3 Construct"""
 
         return self.construct

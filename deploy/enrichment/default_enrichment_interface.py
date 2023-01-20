@@ -8,11 +8,7 @@ from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_s3 as i_bucket
 from constructs import Construct
 
-from deploy.constants import (
-    PRIVATE,
-    SBOM_API_PYTHON_RUNTIME,
-    DEFAULT_INTERFACE_LN,
-)
+from deploy.constants import DEFAULT_INTERFACE_LN, SBOM_API_PYTHON_RUNTIME
 from deploy.util import create_asset
 
 
@@ -41,7 +37,9 @@ class DefaultEnrichmentInterfaceLambda(Construct):
             function_name=DEFAULT_INTERFACE_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            ),
             handler="cyclonedx.handlers.des_interface_handler",
             code=create_asset(self),
             timeout=Duration.minutes(15),

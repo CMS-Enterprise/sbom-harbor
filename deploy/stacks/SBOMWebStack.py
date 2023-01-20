@@ -8,6 +8,7 @@ from aws_cdk import aws_iam as iam
 from aws_cdk import aws_s3 as s3
 from constructs import Construct
 
+from cyclonedx.constants import ENVIRONMENT
 from deploy.constants import (
     API_GW_URL_EXPORT_NAME,
     AUTHORIZATION_HEADER,
@@ -78,6 +79,7 @@ class SBOMWebStack(Stack):
         distribution = cf.CloudFrontWebDistribution(
             self,
             CLOUDFRONT_DIST_ID,
+            comment=ENVIRONMENT,
             viewer_certificate=harbor_cert.get_viewer_cert()
             if harbor_cert.enabled
             else None,

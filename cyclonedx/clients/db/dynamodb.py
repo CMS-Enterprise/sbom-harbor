@@ -78,7 +78,7 @@ class HarborDBClient:
 
         return type_map[entity_type]
 
-    def __init__(self, dynamodb_resource: Any):
+    def __init__(self, dynamodb_resource: Any, alt_table: str = ""):
 
         """
         Constructor: Sets up the DynamoDB Table for our use.
@@ -86,7 +86,7 @@ class HarborDBClient:
         https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#service-resource
         """
 
-        self.table = dynamodb_resource.Table(HARBOR_TEAMS_TABLE_NAME)
+        self.table = dynamodb_resource.Table(alt_table if alt_table else HARBOR_TEAMS_TABLE_NAME)
 
     @staticmethod
     def _recurse(model: T, func: Callable) -> None:
