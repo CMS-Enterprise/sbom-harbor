@@ -104,7 +104,6 @@ class IonChannelClient:
         try:
             rsp_json: dict = response.json()
         except Exception as e:
-            print(f"Error trying to GET({url}).  Reply is: {response.text}")
             raise ValueError from e
 
         return rsp_json
@@ -252,14 +251,11 @@ class IonChannelClient:
 
     def __get_id(self, url: str, obj_name: str = None):
 
-        print(f"Attempting to get id with url: {url}")
-
         rsp_json = self.__get(url)
 
         try:
             data_arr = rsp_json["data"]
         except KeyError as ke:
-            print(f"<json-response data='{rsp_json}' />")
             raise ValueError from ke
 
         if len(data_arr) < 1:
@@ -461,14 +457,12 @@ class IonChannelClient:
         """
         -> Observe when Ion Channel is finished analyzing the SBOM
         """
-        print("Starting Analysis...")
         analyses: list[dict] = self.__get_projects_ids()
 
         complete = False
         finished_projects: list[str] = []
         errored_projects: list[str] = []
         while not complete:
-            print("<<< Analysis loop! >>>")
             # We hope it's done.
             complete = True
 
@@ -492,13 +486,9 @@ class IonChannelClient:
                 status_rsp_dict: dict = self.__get(gas_url_complete)
                 analysis: str = status_rsp_dict["data"]["status"]
 
-                print(f"<<< Look @ <team ID: {team_id}>, <analysis: {analysis}> >>>")
-
                 if analysis == "finished":
-                    print("<<< is finished >>>")
                     finished_projects.append(project_id)
                 elif analysis == "errored":
-                    print("<<< has errored >>>")
                     errored_projects.append(project_id)
                 else:
                     complete = False
@@ -507,8 +497,8 @@ class IonChannelClient:
                     # Try not to hammer the Ion Channel API
                     sleep(1)
 
-            print("Extracting data from %s projects" % len(finished_projects))
-            print("%s projects are failing" % len(errored_projects))
+            logger.info("Extracting data from %s projects" % len(finished_projects))
+            logger.info("%s projects are failing" % len(errored_projects))
 
     def get_report(self):
 

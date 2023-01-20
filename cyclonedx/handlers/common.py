@@ -164,8 +164,8 @@ def print_values(event: dict, context: dict) -> None:
     -> Prints the values of the event and context
     """
 
-    print("EVENT event= %s", dumps(event, indent=2))
-    print("CONTEXT context %s", context)
+    logger.info("EVENT event= %s", dumps(event, indent=2))
+    logger.info("CONTEXT context %s", context)
 
 
 def _get_request_body_as_dict(event: dict) -> dict:
