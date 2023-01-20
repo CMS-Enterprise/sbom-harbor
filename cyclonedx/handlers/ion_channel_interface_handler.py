@@ -45,10 +45,14 @@ def ic_interface_handler(event: dict = None, context: dict = None):
     if ic_client.already_exists:
         ic_client.archive_existing_projects()
 
+    print("Importing the SBOM...")
     ic_client.import_sbom(sbom_str_file)
     ic_client.monitor_sbom_analysis()
 
+    print("Extracting the report...")
     report: dict = ic_client.get_report()
+
+    print(f"Report: {report}")
 
     findings_object: dict = {
         # This key is necessary to set the name of the
