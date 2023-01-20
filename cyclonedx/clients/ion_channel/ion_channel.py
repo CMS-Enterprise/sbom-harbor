@@ -101,7 +101,13 @@ class IonChannelClient:
             headers=self.headers,
         )
 
-        return response.json()
+        try:
+            rsp_json: dict = response.json()
+        except Exception as e:
+            print(f"Error trying to GET({url}).  Reply is: {response.text}")
+            raise ValueError from e
+
+        return rsp_json
 
     def __put(self, url: str, json: dict) -> dict:
 
@@ -219,7 +225,9 @@ class IonChannelClient:
     def __get_sbom_data(self, team_name: str, create_if_missing: bool):
 
         # Get all of our existing SBOMs in Ion Channel
-        get_sboms_rsp: dict = self.__get(self.get_sboms_url)
+        get_sboms_rsp: dict = self.__get(
+            f"{self.get_sboms_url}?org_id={self.org_id}"
+        )
 
         response_data: dict = get_sboms_rsp["data"]
         software_lists: list = response_data["softwareLists"]
@@ -244,8 +252,15 @@ class IonChannelClient:
 
     def __get_id(self, url: str, obj_name: str = None):
 
+        print(f"Attempting to get id with url: {url}")
+
         rsp_json = self.__get(url)
-        data_arr = rsp_json["data"]
+
+        try:
+            data_arr = rsp_json["data"]
+        except KeyError as ke:
+            print(f"<json-response data='{rsp_json}' />")
+            raise ValueError from ke
 
         if len(data_arr) < 1:
             raise IonChannelError(
