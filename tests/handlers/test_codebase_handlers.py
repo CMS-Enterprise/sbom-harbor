@@ -36,6 +36,7 @@ def test_create():
     codebase_name: str = str(uuid.uuid4())
     language: str = "JAVA"
     build_tool: str = "MAVEN"
+    clone_url: str = "https://github.com/cmsgov/ab2d-lambdas"
 
     db_client.create(
         Team(
@@ -59,6 +60,7 @@ def test_create():
         name=codebase_name,
         language=language,
         build_tool=build_tool,
+        clone_url=clone_url,
         handler=codebase_handler,
     )
 
@@ -69,6 +71,7 @@ def test_create():
     assert codebase_dict[CodeBase.Fields.NAME] == codebase_name
     assert codebase_dict[CodeBase.Fields.LANGUAGE] == language
     assert codebase_dict[CodeBase.Fields.BUILD_TOOL] == build_tool
+    assert codebase_dict[CodeBase.Fields.CLONE_URL] == clone_url
     assert codebase_dict[HarborModel.Fields.ID] == codebase_id
 
 
@@ -91,6 +94,7 @@ def test_get():
     codebase_name: str = str(uuid.uuid4())
     language: str = "JAVA"
     build_tool: str = "MAVEN"
+    clone_url: str = "https://github.com/cmsgov/ab2d-lambdas"
 
     db_client.create(
         Team(
@@ -113,6 +117,7 @@ def test_get():
         name=codebase_name,
         language=language,
         build_tool=build_tool,
+        clone_url=clone_url,
         handler=codebase_handler,
     )
 
@@ -131,6 +136,7 @@ def test_get():
     assert codebase_dict[CodeBase.Fields.NAME] == codebase_name
     assert codebase_dict[CodeBase.Fields.LANGUAGE] == language
     assert codebase_dict[CodeBase.Fields.BUILD_TOOL] == build_tool
+    assert codebase_dict[CodeBase.Fields.CLONE_URL] == clone_url
     assert codebase_dict[HarborModel.Fields.ID] == codebase_id
 
 
@@ -153,6 +159,7 @@ def test_get_all():
     codebase_name: str = str(uuid.uuid4())
     language: str = "JAVA"
     build_tool: str = "MAVEN"
+    clone_url: str = "https://github.com/cmsgov/ab2d-lambdas"
 
     db_client.create(
         Team(
@@ -175,6 +182,7 @@ def test_get_all():
         name=codebase_name,
         language=language,
         build_tool=build_tool,
+        clone_url=clone_url,
         handler=codebase_handler,
     )
 
@@ -184,6 +192,7 @@ def test_get_all():
         name=codebase_name,
         language=language,
         build_tool=build_tool,
+        clone_url=clone_url,
         handler=codebase_handler,
     )
 
@@ -203,10 +212,12 @@ def test_get_all():
     assert codebase_dict_0[CodeBase.Fields.NAME] == codebase_name
     assert codebase_dict_0[CodeBase.Fields.LANGUAGE] == language
     assert codebase_dict_0[CodeBase.Fields.BUILD_TOOL] == build_tool
+    assert codebase_dict_0[CodeBase.Fields.CLONE_URL] == clone_url
 
     assert codebase_dict_1[CodeBase.Fields.NAME] == codebase_name
     assert codebase_dict_1[CodeBase.Fields.LANGUAGE] == language
     assert codebase_dict_1[CodeBase.Fields.BUILD_TOOL] == build_tool
+    assert codebase_dict_1[CodeBase.Fields.CLONE_URL] == clone_url
 
 
 @mock_dynamodb
@@ -228,6 +239,7 @@ def test_update():
     codebase_name: str = str(uuid.uuid4())
     language: str = "JAVA"
     build_tool: str = "MAVEN"
+    clone_url: str = "https://github.com/cmsgov/ab2d-lambdas"
 
     db_client.create(
         Team(
@@ -251,6 +263,7 @@ def test_update():
         name=codebase_name,
         language=language,
         build_tool=build_tool,
+        clone_url=clone_url,
         handler=codebase_handler,
     )
 
@@ -261,6 +274,7 @@ def test_update():
     new_codebase_name: str = str(uuid.uuid4())
     new_language: str = "KOTLIN"
     new_build_tool: str = "GRADLE"
+    new_clone_url: str = "https://github.com/cmsgov/xy32z-lambdas"
 
     update(
         team_id=team_id,
@@ -269,6 +283,7 @@ def test_update():
         new_name=new_codebase_name,
         new_language=new_language,
         new_build_tool=new_build_tool,
+        new_clone_url=new_clone_url,
         handler=codebase_handler,
     )
 
@@ -283,6 +298,7 @@ def test_update():
     assert new_codebase_name == get_response_dict.get(CodeBase.Fields.NAME)
     assert new_language == get_response_dict.get(CodeBase.Fields.LANGUAGE)
     assert new_build_tool == get_response_dict.get(CodeBase.Fields.BUILD_TOOL)
+    assert new_clone_url == get_response_dict.get(CodeBase.Fields.CLONE_URL)
 
 
 @mock_dynamodb
@@ -304,6 +320,7 @@ def test_delete():
     codebase_name: str = str(uuid.uuid4())
     language: str = "JAVA"
     build_tool: str = "MAVEN"
+    clone_url: str = "https://github.com/cmsgov/ab2d-lambdas"
 
     db_client.create(
         Team(
@@ -326,6 +343,7 @@ def test_delete():
         name=codebase_name,
         language=language,
         build_tool=build_tool,
+        clone_url=clone_url,
         handler=codebase_handler,
     )
 
@@ -419,6 +437,7 @@ def create(
     name: str,
     language: str,
     build_tool: str,
+    clone_url: str,
     handler,
 ):
 
@@ -442,6 +461,7 @@ def create(
                 "name": name,
                 "language": language,
                 "buildTool": build_tool,
+                "cloneUrl": clone_url,
             }
         ),
     }
@@ -501,6 +521,7 @@ def update(
     new_name: str,
     new_language: str,
     new_build_tool: str,
+    new_clone_url: str,
     handler: Callable,
 ) -> dict:
     """
@@ -525,6 +546,7 @@ def update(
                 CodeBase.Fields.NAME: new_name,
                 CodeBase.Fields.LANGUAGE: new_language,
                 CodeBase.Fields.BUILD_TOOL: new_build_tool,
+                CodeBase.Fields.CLONE_URL: new_clone_url,
             }
         ),
     }

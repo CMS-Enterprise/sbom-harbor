@@ -6,8 +6,13 @@ from aws_cdk import aws_lambda as lambda_
 from aws_cdk.aws_iam import Effect, PolicyStatement
 from constructs import Construct
 
-from cyclonedx.constants import USER_POOL_CLIENT_ID_KEY, USER_POOL_ID_KEY
-from deploy.constants import PRIVATE, SBOM_API_PYTHON_RUNTIME
+from deploy.constants import (
+    AWS_ACCOUNT_ID,
+    ENVIRONMENT,
+    SBOM_API_PYTHON_RUNTIME,
+    USER_POOL_CLIENT_ID_KEY,
+    USER_POOL_ID_KEY,
+)
 from deploy.util import create_asset
 
 
@@ -37,7 +42,9 @@ class AuthorizerLambdaFactory:
                 function_name=name,
                 runtime=SBOM_API_PYTHON_RUNTIME,
                 vpc=vpc,
-                vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+                vpc_subnets=ec2.SubnetSelection(
+                    subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+                ),
                 handler="cyclonedx.handlers.jwt_authorizer_handler",
                 code=create_asset(self),
                 timeout=Duration.seconds(10),
@@ -45,6 +52,8 @@ class AuthorizerLambdaFactory:
                 environment={
                     USER_POOL_ID_KEY: user_pool_id,
                     USER_POOL_CLIENT_ID_KEY: user_pool_client_id,
+                    "CDK_DEFAULT_ACCOUNT": AWS_ACCOUNT_ID,
+                    "ENVIRONMENT": ENVIRONMENT,
                 },
             )
 
@@ -91,7 +100,7 @@ class AuthorizerLambdaFactory:
         return AuthorizerLambdaFactory.SBOMJwtAuthorizerLambda(
             self.scope,
             vpc=self.vpc,
-            name=f"{lambda_name}_Authorizer",
+            name=lambda_name,
             user_pool_id=self.user_pool_id,
             user_pool_client_id=self.user_pool_client_id,
         )

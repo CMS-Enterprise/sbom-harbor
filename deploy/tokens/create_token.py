@@ -1,22 +1,15 @@
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_lambda as lambda_,
-    Duration,
-)
+from aws_cdk import Duration
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_lambda as lambda_
 from constructs import Construct
 
-from deploy.constants import (
-    CREATE_TOKEN_LN,
-    PRIVATE,
-    SBOM_API_PYTHON_RUNTIME,
-)
-from deploy.util import create_asset
-from deploy.util import DynamoTableManager
+from deploy.constants import CREATE_TOKEN_LN, SBOM_API_PYTHON_RUNTIME
+from deploy.util import DynamoTableManager, create_asset
 
 
 class SBOMCreateTokenLambda(Construct):
 
-    """ Lambda to create an API token """
+    """Lambda to create an API token"""
 
     def __init__(
         self,
@@ -29,11 +22,14 @@ class SBOMCreateTokenLambda(Construct):
         super().__init__(scope, CREATE_TOKEN_LN)
 
         self.func = lambda_.Function(
-            self, CREATE_TOKEN_LN,
-            function_name="SBOMCreateTokenLambda",
+            self,
+            CREATE_TOKEN_LN,
+            function_name=CREATE_TOKEN_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            ),
             handler="cyclonedx.tokens.create_token_handler",
             code=create_asset(self),
             timeout=Duration.seconds(10),

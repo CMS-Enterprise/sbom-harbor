@@ -1,21 +1,18 @@
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_elasticloadbalancingv2 as elbv2,
-    aws_s3 as s3,
-    RemovalPolicy,
-)
+from aws_cdk import RemovalPolicy
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_elasticloadbalancingv2 as elbv2
+from aws_cdk import aws_s3 as s3
 from constructs import Construct
 
-from cyclonedx.constants import (
-    DT_API_PORT,
-    DT_LOAD_BALANCER_ID,
-    DT_LOAD_BALANCER_LISTENER_ID,
-    DT_LOAD_BALANCER_TARGET_ID,
-)
 from deploy.constants import (
+    DT_API_PORT,
     DT_LB_ID,
     DT_LB_LOGGING_ID,
     DT_LB_SG_ID,
+    DT_LOAD_BALANCER_ID,
+    DT_LOAD_BALANCER_LISTENER_ID,
+    DT_LOAD_BALANCER_NAME,
+    DT_LOAD_BALANCER_TARGET_ID,
 )
 
 
@@ -48,7 +45,7 @@ class DependencyTrackLoadBalancer(Construct):
             DT_LOAD_BALANCER_ID,
             vpc=vpc,
             internet_facing=False,
-            load_balancer_name=DT_LOAD_BALANCER_ID,
+            load_balancer_name=DT_LOAD_BALANCER_NAME,
             security_group=security_group,
         )
 

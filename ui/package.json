@@ -22,7 +22,7 @@
   "packageManager": "yarn@3.2.4",
   "engines": {
     "node": "18.0.0",
-    "npm": "^8.19.0",
+    "npm": "8.19.0",
     "yarn": "3.2.4"
   },
   "workspaces": [
@@ -36,35 +36,35 @@
     "**/{json,md,yaml,yml}": "yarn lint:other"
   },
   "devDependencies": {
-    "@types/jest": "29.2.4",
+    "@types/jest": "29.2.5",
     "@types/lodash": "4.14.191",
-    "@types/node": "18.11.10",
+    "@types/node": "18.11.18",
     "@types/react": "18.0.26",
-    "@types/react-dom": "18.0.9",
+    "@types/react-dom": "18.0.10",
     "@types/uuid": "9.0.0",
     "@types/yup": "0.32.0",
-    "@typescript-eslint/eslint-plugin": "5.45.0",
-    "@typescript-eslint/parser": "5.45.0",
+    "@typescript-eslint/eslint-plugin": "5.48.0",
+    "@typescript-eslint/parser": "5.48.0",
     "dotenv": "16.0.3",
-    "dotenv-webpack": "^8.0.1",
-    "eslint": "8.29.0",
-    "eslint-config-prettier": "8.5.0",
+    "dotenv-webpack": "8.0.1",
+    "eslint": "8.31.0",
+    "eslint-config-prettier": "8.6.0",
     "eslint-plugin-import": "2.26.0",
-    "eslint-plugin-jest": "27.1.6",
+    "eslint-plugin-jest": "27.2.1",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-prettier": "4.2.1",
     "eslint-plugin-react": "7.31.11",
     "eslint-plugin-react-hooks": "4.6.0",
-    "husky": "8.0.2",
+    "husky": "8.0.3",
     "lint-staged": "13.1.0",
     "npm-run-all": "4.1.5",
-    "prettier": "2.8.0",
+    "prettier": "2.8.2",
     "pretty-quick": "3.1.3",
     "rimraf": "3.0.2",
     "source-map-explorer": "2.5.3",
-    "typescript": "4.9.3"
+    "typescript": "4.9.4"
   },
   "resolutions": {
-    "svgo": "^2.7.0"
+    "svgo": "2.7.0"
   }
 }

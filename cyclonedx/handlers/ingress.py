@@ -2,7 +2,9 @@
 -> Module to house the SBOM Ingress Handler
 """
 import datetime
+import logging
 from json import dumps
+from logging import config
 from os import environ
 from uuid import uuid4
 
@@ -14,6 +16,7 @@ from cyclonedx.clients.dependency_track.dependency_track import (
     __get_body_from_event,
 )
 from cyclonedx.constants import (
+    PYTHON_LOGGING_CONFIG,
     S3_META_CODEBASE_KEY,
     S3_META_PROJECT_KEY,
     S3_META_TEAM_KEY,
@@ -21,6 +24,9 @@ from cyclonedx.constants import (
     SBOM_BUCKET_NAME_KEY,
 )
 from cyclonedx.core import CycloneDxCore
+
+config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 
 def sbom_ingress_handler(event: dict = None, context: dict = None) -> dict:
@@ -44,11 +50,11 @@ def sbom_ingress_handler(event: dict = None, context: dict = None) -> dict:
     # Get the bucket name from the environment variable
     # This is set during deployment
     bucket_name = environ[SBOM_BUCKET_NAME_KEY]
-    print(f"Bucket name from env(SBOM_BUCKET_NAME_EV): {bucket_name}")
+    logger.info("Bucket name from env(SBOM_BUCKET_NAME_EV) %s", bucket_name)
 
     # Generate the name of the object in S3
     key = f"sbom-{uuid4()}"
-    print(f"Putting object in S3 with key: {key}")
+    logger.info("Putting object in S3 with key: %s", key)
 
     # Create an instance of the Python CycloneDX Core
     core = CycloneDxCore()

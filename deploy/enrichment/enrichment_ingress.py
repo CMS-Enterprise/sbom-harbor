@@ -9,12 +9,10 @@ from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_s3_notifications as s3n
 from constructs import Construct
 
-from cyclonedx.constants import (
-    SBOM_BUCKET_NAME_KEY,
-)
+from cyclonedx.constants import ENVIRONMENT, AWS_ACCOUNT_ID
 from deploy.constants import (
-    PRIVATE,
     SBOM_API_PYTHON_RUNTIME,
+    SBOM_BUCKET_NAME_KEY,
     SBOM_ENRICHMENT_LN,
 )
 from deploy.util import create_asset
@@ -39,14 +37,18 @@ class EnrichmentIngressLambda(Construct):
         self.func = lambda_.Function(
             self,
             SBOM_ENRICHMENT_LN,
-            function_name="EnrichmentIngressLambda",
+            function_name=SBOM_ENRICHMENT_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            ),
             handler="cyclonedx.handlers.enrichment_ingress_handler",
             code=create_asset(self),
             environment={
                 SBOM_BUCKET_NAME_KEY: s3_bucket.bucket_name,
+                "CDK_DEFAULT_ACCOUNT": AWS_ACCOUNT_ID,
+                "ENVIRONMENT": ENVIRONMENT,
             },
             timeout=Duration.seconds(10),
             memory_size=512,

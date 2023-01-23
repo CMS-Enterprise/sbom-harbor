@@ -1,12 +1,8 @@
-from aws_cdk import (
-    aws_cognito as cognito,
-    RemovalPolicy,
-)
+from aws_cdk import RemovalPolicy
+from aws_cdk import aws_cognito as cognito
 from constructs import Construct
 
-from deploy.constants import (
-    USER_POOL_APP_CLIENT_ID,
-)
+from deploy.constants import USER_POOL_APP_CLIENT_ID
 from deploy.user import SBOMUserPool
 
 
@@ -31,9 +27,7 @@ class SBOMUserPoolClient(Construct):
 
         self.node.add_dependency(user_pool)
 
-        client_write_attributes = (
-            cognito.ClientAttributes()
-        ).with_standard_attributes(
+        client_write_attributes = (cognito.ClientAttributes()).with_standard_attributes(
             email=True,
             phone_number=True,
             family_name=True,
@@ -45,12 +39,14 @@ class SBOMUserPoolClient(Construct):
         )
 
         client_read_attributes = (
-            client_write_attributes
-        ).with_standard_attributes(
-            email_verified=True,
-            phone_number_verified=True,
-        ).with_custom_attributes(
-            "custom:teams",
+            (client_write_attributes)
+            .with_standard_attributes(
+                email_verified=True,
+                phone_number_verified=True,
+            )
+            .with_custom_attributes(
+                "custom:teams",
+            )
         )
 
         self.client = cognito.UserPoolClient(
@@ -79,7 +75,6 @@ class SBOMUserPoolClient(Construct):
             prevent_user_existence_errors=True,
             read_attributes=client_read_attributes,
             write_attributes=client_write_attributes,
-
         )
 
         cfn_client = self.client.node.default_child

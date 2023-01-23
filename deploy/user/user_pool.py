@@ -1,14 +1,9 @@
 """ This module is where all the higher level CDK constructs are stored """
-from aws_cdk import (
-    aws_cognito as cognito,
-    RemovalPolicy,
-)
+from aws_cdk import RemovalPolicy
+from aws_cdk import aws_cognito as cognito
 from constructs import Construct
 
-from deploy.constants import (
-    USER_POOL_ID,
-    USER_POOL_NAME,
-)
+from deploy.constants import USER_POOL_ID, USER_POOL_NAME
 
 
 class SBOMUserPool(Construct):
@@ -84,4 +79,3 @@ class SBOMUserPool(Construct):
 
     def get_cognito_user_pool(self) -> cognito.UserPool:
         return self.user_pool
-    

@@ -4,15 +4,14 @@
 
 from uuid import uuid4
 
-import boto3
 import requests
 from _pytest.outcomes import fail
 from requests import Response, get
 
-from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
+from tests import get_harbor_client
 from tests.data.add_test_team_data_to_dynamodb import test_add_test_team
 from tests.data.create_cognito_users import test_create_cognito_users
 from tests.e2e import (
@@ -35,7 +34,7 @@ def test_user_creating_team_is_member():
 
     _, team_id = test_create_team()
 
-    new_team: Team = HarborDBClient(boto3.resource("dynamodb")).get(
+    new_team: Team = get_harbor_client().get(
         Team(team_id=team_id),
         recurse=True,
     )
@@ -53,12 +52,11 @@ def test_get_two_separate_endpoints():
     -> with the same JWT and not be Forbidden(401).
     """
 
-    resource = boto3.resource("dynamodb")
     cf_url: str = get_cloudfront_url()
     team_id: str = str(uuid4())
     project_id: str = str(uuid4())
 
-    HarborDBClient(resource).create(
+    get_harbor_client().create(
         Team(
             team_id=team_id,
             name="Test Team",
@@ -98,7 +96,7 @@ def test_get_two_separate_endpoints():
     )
     print_response(team_rsp)
 
-    HarborDBClient(resource).delete(
+    get_harbor_client().delete(
         Team(
             team_id=team_id,
             projects=[

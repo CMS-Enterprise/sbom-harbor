@@ -1,22 +1,15 @@
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_lambda as lambda_,
-    Duration,
-)
+from aws_cdk import Duration
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_lambda as lambda_
 from constructs import Construct
 
-from deploy.constants import (
-    REGISTER_TEAM_LN,
-    PRIVATE,
-    SBOM_API_PYTHON_RUNTIME,
-)
-from deploy.util import create_asset
-from deploy.util import DynamoTableManager
+from deploy.constants import REGISTER_TEAM_LN, SBOM_API_PYTHON_RUNTIME
+from deploy.util import DynamoTableManager, create_asset
 
 
 class SBOMRegisterTeamLambda(Construct):
 
-    """ Lambda to register a team """
+    """Lambda to register a team"""
 
     def __init__(
         self,
@@ -29,11 +22,14 @@ class SBOMRegisterTeamLambda(Construct):
         super().__init__(scope, REGISTER_TEAM_LN)
 
         self.func = lambda_.Function(
-            self, REGISTER_TEAM_LN,
-            function_name="SBOMRegisterTeamLambda",
+            self,
+            REGISTER_TEAM_LN,
+            function_name=REGISTER_TEAM_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            ),
             handler="cyclonedx.teams.register_team_handler",
             code=create_asset(self),
             timeout=Duration.seconds(10),

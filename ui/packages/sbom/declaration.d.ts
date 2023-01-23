@@ -81,3 +81,9 @@ type TDateISOTime = `${THours}:${TMinutes}:${TSeconds}.${TMilliseconds}`
  *   "Expression produces a union type that is too complex to represent. ts(2590)
  */
 type TDateISO = `${TDateISODate}T${TDateISOTime}Z`
+
+/**
+ * Represent a string like `2021-01-08T14:42:34.678` (format: ISO 8601).
+ * The server needs the string to be formatted this way.
+ */
+type TDateISOWithoutZ = `${TDateISODate}T${TDateISOTime}`

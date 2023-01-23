@@ -102,6 +102,7 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
             name=request_body[CodeBase.Fields.NAME],
             language=request_body[CodeBase.Fields.LANGUAGE],
             build_tool=request_body[CodeBase.Fields.BUILD_TOOL],
+            clone_url=request_body[CodeBase.Fields.CLONE_URL],
         ),
     )
 

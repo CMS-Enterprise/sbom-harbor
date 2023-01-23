@@ -94,6 +94,7 @@ def test_get_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
     project_id: str = str(uuid.uuid4())
     language = "PYTHON"
     build_tool = "POETRY"
+    clone_url = "https://github.com/cmsgov/ab2d-lambdas"
 
     cet = EntityType.CODEBASE.value
     sort_key = "{}#{}".format(cet, codebase_id)
@@ -107,6 +108,7 @@ def test_get_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
             CodeBase.Fields.PARENT_ID: project_id,
             CodeBase.Fields.LANGUAGE: language,
             CodeBase.Fields.BUILD_TOOL: build_tool,
+            CodeBase.Fields.CLONE_URL: clone_url,
         }
     )
 
@@ -124,6 +126,7 @@ def test_get_codebase_only(test_dynamo_db_resource, test_harbor_teams_table):
     assert filled_codebase.parent_id == project_id
     assert filled_codebase.language == language
     assert filled_codebase.build_tool == build_tool
+    assert filled_codebase.clone_url == clone_url
 
 
 def test_get_member_only(test_dynamo_db_resource, test_harbor_teams_table):
@@ -206,6 +209,7 @@ def test_get_token_only(test_dynamo_db_resource, test_harbor_teams_table):
     assert token.token == token_val
 
 
+# pylint:disable = R0915
 def test_get_team_recursively(test_dynamo_db_resource, test_harbor_teams_table):
 
     """
@@ -260,6 +264,7 @@ def test_get_team_recursively(test_dynamo_db_resource, test_harbor_teams_table):
     codebase_name = "project-1"
     language = "JAVA"
     build_tool = "MAVEN"
+    clone_url = "https://github.com/cmsgov/ab2d-lambdas"
 
     # Put A Codebase in and associate it to project1_id
     test_harbor_teams_table.put_item(
@@ -270,6 +275,7 @@ def test_get_team_recursively(test_dynamo_db_resource, test_harbor_teams_table):
             CodeBase.Fields.LANGUAGE: language,
             CodeBase.Fields.PARENT_ID: project1_id,
             CodeBase.Fields.BUILD_TOOL: build_tool,
+            CodeBase.Fields.CLONE_URL: clone_url,
         }
     )
 
@@ -330,3 +336,4 @@ def test_get_team_recursively(test_dynamo_db_resource, test_harbor_teams_table):
     assert grandchild_codebase[CodeBase.Fields.PARENT_ID] == project1_id
     assert grandchild_codebase[CodeBase.Fields.LANGUAGE] == language
     assert grandchild_codebase[CodeBase.Fields.BUILD_TOOL] == build_tool
+    assert grandchild_codebase[CodeBase.Fields.CLONE_URL] == clone_url

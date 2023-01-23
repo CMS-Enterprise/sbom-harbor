@@ -40,7 +40,7 @@ if [[ $DEPLOY_ONLY == 0 ]]; then
   cd ..
 fi
 
-cdk deploy $CDK_ROLE_ARN --require-approval never --concurrency 5 $ENVIRONMENT-harbor-shared-resources-$AWS_REGION_SHORT $ENVIRONMENT-harbor-user-management-$AWS_REGION_SHORT $ENVIRONMENT-harbor-backend-$AWS_REGION_SHORT $ENVIRONMENT-harbor-frontend-$AWS_REGION_SHORT $ENRICHMENTS
+cdk deploy --role-arn $CDK_ROLE_ARN --require-approval never --concurrency 6 $ENVIRONMENT-harbor-shared-resources-$AWS_REGION_SHORT $ENVIRONMENT-harbor-user-management-$AWS_REGION_SHORT $ENVIRONMENT-harbor-backend-$AWS_REGION_SHORT $ENVIRONMENT-harbor-frontend-$AWS_REGION_SHORT $ENRICHMENTS
 
 ./upload-swagger-docs.sh
 

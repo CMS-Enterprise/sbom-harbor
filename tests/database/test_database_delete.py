@@ -334,6 +334,7 @@ def test_delete_team_with_a_child_of_each_type(
     email = "fancypants@hotmail.com"
     language = "JAVASCRIPT"
     build_tool = "YARN"
+    clone_url = "https://github.com/cmsgov/ab2d-lambdas"
 
     created = Decimal(507482179.234)
     expires = Decimal(507492179.234)
@@ -369,6 +370,7 @@ def test_delete_team_with_a_child_of_each_type(
             CodeBase.Fields.NAME: codebase_name,
             CodeBase.Fields.LANGUAGE: language,
             CodeBase.Fields.BUILD_TOOL: build_tool,
+            CodeBase.Fields.CLONE_URL: clone_url,
         }
     )
 

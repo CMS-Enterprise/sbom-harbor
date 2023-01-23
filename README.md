@@ -31,7 +31,7 @@ This project depends on Python version: `3.9.10` and Node.js version: `^18.0.0`.
     - Install `nvm` (either option):
         - Using Homebrew: `brew update && brew install nvm`
         - Using the [`nvm` install script](https://github.com/nvm-sh/nvm#install--update-script)
-    - Install Node version defined in the [`.nvmrc`](https://github.com/aquia-inc/cyclonedx-python/blob/master/.nvmrc) file with the latest `npm`, and enable [`corepack`](https://yarnpkg.com/getting-started/install#install-corepack) in order to use `yarn`:
+    - Install Node version defined in the [`.nvmrc`](https://github.com/cms-enterprise/sbom-harbor/blob/main/.nvmrc) file with the latest `npm`, and enable [`corepack`](https://yarnpkg.com/getting-started/install#install-corepack) in order to use `yarn`:
         ```sh
         $ nvm install --default --latest-npm
         $ corepack enable
@@ -41,7 +41,7 @@ This project depends on Python version: `3.9.10` and Node.js version: `^18.0.0`.
         `corepack enable` ([docs)
 
 4. Configure virtual envrionment and install local dependencies:
-    - Clone Repository: `git clone git@github.com:aquia-inc/cyclonedx-python.git`
+    - Clone Repository: `git clone git@github.com:cms-enterprise/sbom-harbor.git`
     - Cd into repo: `cd cyclonedx-python`
     - Start Poetry shell: `poetry shell`. This creates your virtual environment where your deps can be installed.
     - Install Python dependencies: `poetry install`.

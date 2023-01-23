@@ -10,15 +10,13 @@ from aws_cdk import aws_s3 as i_bucket
 from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 
-from cyclonedx.constants import (
+from cyclonedx.constants import AWS_ACCOUNT_ID, ENVIRONMENT
+from deploy.constants import (
     DT_API_BASE,
     DT_API_KEY,
+    DT_INTERFACE_LN,
     DT_ROOT_PWD,
     EMPTY_VALUE,
-)
-from deploy.constants import (
-    DT_INTERFACE_LN,
-    PRIVATE,
     SBOM_API_PYTHON_RUNTIME,
 )
 from deploy.enrichment.dependency_track import DependencyTrackLoadBalancer
@@ -51,14 +49,18 @@ class DependencyTrackInterfaceLambda(Construct):
         self.func = lambda_.Function(
             self,
             DT_INTERFACE_LN,
-            function_name="DependencyTrackInterfaceLambda",
+            function_name=DT_INTERFACE_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            ),
             handler="cyclonedx.handlers.dt_interface_handler",
             code=create_asset(self),
             environment={
                 DT_API_BASE: fq_dn,
+                "CDK_DEFAULT_ACCOUNT": AWS_ACCOUNT_ID,
+                "ENVIRONMENT": ENVIRONMENT,
             },
             timeout=Duration.minutes(1),
             security_groups=[dt_func_sg],

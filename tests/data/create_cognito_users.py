@@ -5,10 +5,15 @@
 import boto3
 from botocore.exceptions import ClientError
 
-from tests.conftest import FINAL_TEST_PASSWORD
 from cyclonedx.clients.ciam import CognitoUserData
+from cyclonedx.constants import USER_MANAGEMENT_STACK_ID
+from tests import get_boto_session, get_current_environment
+from tests.conftest import FINAL_TEST_PASSWORD
 
-client = boto3.client("cognito-idp")
+session = get_boto_session()
+
+cognito_client = session.client("cognito-idp")
+cfn_client = session.client("cloudformation")
 
 
 def test_create_cognito_users():
@@ -31,12 +36,19 @@ def test_create_cognito_users():
         "linda",
     ]
 
-    response = client.list_user_pools(MaxResults=5)
+    current_env: str = get_current_environment()
 
-    user_pool = response["UserPools"][0]
-    user_pool_id: str = user_pool["Id"]
+    stack_name: str = f"{current_env}-harbor-user-management-use1"
 
-    print(user_pool)
+    response = cfn_client.describe_stacks(StackName=stack_name)
+
+    stack_outputs = response["Stacks"][0]["Outputs"]
+
+    user_pool_id = next(
+        output["OutputValue"]
+        for output in stack_outputs
+        if output["OutputKey"].startswith("ExportsOutputRefCognitoUserPool")
+    )
 
     for username in usernames:
 
@@ -45,14 +57,14 @@ def test_create_cognito_users():
         teams = "dawn-patrol,dusk-patrol" if username == "sbomadmin" else "dawn-patrol"
 
         try:
-            client.admin_delete_user(
+            cognito_client.admin_delete_user(
                 UserPoolId=user_pool_id,
                 Username=email_username,
             )
         except ClientError:
             ...
 
-        client.admin_create_user(
+        cognito_client.admin_create_user(
             UserPoolId=user_pool_id,
             Username=email_username,
             UserAttributes=[
@@ -71,7 +83,7 @@ def test_create_cognito_users():
             DesiredDeliveryMediums=["EMAIL"],
         )
 
-        client.admin_set_user_password(
+        cognito_client.admin_set_user_password(
             UserPoolId=user_pool_id,
             Username=email_username,
             Password=FINAL_TEST_PASSWORD,

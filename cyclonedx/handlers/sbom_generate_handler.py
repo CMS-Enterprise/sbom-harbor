@@ -1,11 +1,18 @@
 """
 -> Module to house the SBOM Generator Handler
 """
+import logging
+from logging import config
+
+from cyclonedx.constants import PYTHON_LOGGING_CONFIG
 from cyclonedx.handlers.common import (
     QueryStringKeys,
     _extract_value_from_qs,
     harbor_response,
 )
+
+config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 
 def sbom_generate_handler(event: dict = None, context: dict = None) -> dict:
@@ -22,8 +29,8 @@ def sbom_generate_handler(event: dict = None, context: dict = None) -> dict:
         project_id: str = _extract_value_from_qs(QueryStringKeys.PROJECT_ID, event)
         token: str = event["authorizationToken"]
 
-        print(team_id)
-        print(project_id)
+        logger.info(team_id)
+        logger.info(project_id)
 
         if token is None:
             return harbor_response(403, response)

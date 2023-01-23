@@ -1,6 +1,8 @@
 """
 -> A module to house the Ion Channel Client and supporting functions
 """
+import logging
+from logging import config
 from time import sleep
 from typing import IO, Union
 
@@ -10,14 +12,16 @@ from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 from requests import Response
 
-from cyclonedx.constants import IC_API_KEY, IC_RULESET_TEAM_ID
-
-# pylint: disable = R0902
+from cyclonedx.constants import IC_API_KEY, IC_RULESET_TEAM_ID, PYTHON_LOGGING_CONFIG
 from cyclonedx.exceptions.ion_channel import IonChannelError
 
+config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
+
+# pylint: disable = R0902
+
+
 # pylint: disable = E1136
-
-
 def get_ic_urls() -> tuple:
 
     """
@@ -91,13 +95,18 @@ class IonChannelClient:
         -> Execute an http get request
         """
 
-        print(f"Sending To: GET:{url}")
+        logger.info("Sending To: GET:%s", url)
         response: Response = requests.get(
             url,
             headers=self.headers,
         )
 
-        return response.json()
+        try:
+            rsp_json: dict = response.json()
+        except Exception as e:
+            raise ValueError from e
+
+        return rsp_json
 
     def __put(self, url: str, json: dict) -> dict:
 
@@ -105,7 +114,7 @@ class IonChannelClient:
         -> Execute an http put request
         """
 
-        print(f"Sending To: PUT:{url}")
+        logger.info("Sending To: PUT:%s", url)
         response: Response = requests.put(
             url,
             headers=self.headers,
@@ -125,7 +134,7 @@ class IonChannelClient:
         -> Execute an http post request
         """
 
-        print(f"Sending To: POST:{url}")
+        logger.info("Sending To: POST:%s", url)
         if json:
             response: Response = requests.post(
                 url,
@@ -215,7 +224,9 @@ class IonChannelClient:
     def __get_sbom_data(self, team_name: str, create_if_missing: bool):
 
         # Get all of our existing SBOMs in Ion Channel
-        get_sboms_rsp: dict = self.__get(self.get_sboms_url)
+        get_sboms_rsp: dict = self.__get(
+            f"{self.get_sboms_url}?org_id={self.org_id}"
+        )
 
         response_data: dict = get_sboms_rsp["data"]
         software_lists: list = response_data["softwareLists"]
@@ -241,7 +252,11 @@ class IonChannelClient:
     def __get_id(self, url: str, obj_name: str = None):
 
         rsp_json = self.__get(url)
-        data_arr = rsp_json["data"]
+
+        try:
+            data_arr = rsp_json["data"]
+        except KeyError as ke:
+            raise ValueError from ke
 
         if len(data_arr) < 1:
             raise IonChannelError(
@@ -345,7 +360,7 @@ class IonChannelClient:
                 "results": results,
             }
         except KeyError as ke:
-            print(f"ERROR, no 'name' key: {report_json} {ke}")
+            logger.info("ERROR, no 'name' key: %s, %s", report_json, ke)
             return (
                 f"Error:analysis_id({analysis_id})",
                 f"Error:project_id({project_id})",
@@ -442,14 +457,12 @@ class IonChannelClient:
         """
         -> Observe when Ion Channel is finished analyzing the SBOM
         """
-
         analyses: list[dict] = self.__get_projects_ids()
 
         complete = False
         finished_projects: list[str] = []
         errored_projects: list[str] = []
         while not complete:
-
             # We hope it's done.
             complete = True
 
@@ -479,13 +492,13 @@ class IonChannelClient:
                     errored_projects.append(project_id)
                 else:
                     complete = False
-                    print(status_rsp_dict["data"]["message"])
+                    logger.info(status_rsp_dict["data"]["message"])
 
                     # Try not to hammer the Ion Channel API
                     sleep(1)
 
-            print(f"Extracting data from {len(finished_projects)} projects")
-            print(f"{len(errored_projects)} projects are failing")
+            logger.info("Extracting data from %s projects" % len(finished_projects))
+            logger.info("%s projects are failing" % len(errored_projects))
 
     def get_report(self):
 

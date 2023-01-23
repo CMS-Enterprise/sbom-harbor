@@ -1,22 +1,22 @@
-from aws_cdk import (
-    aws_ec2 as ec2,
-    aws_ecs as ecs,
-    aws_efs as efs,
-    aws_elasticloadbalancingv2 as elbv2,
-)
+""" Dependency track Fargate instance """
+
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_ecs as ecs
+from aws_cdk import aws_efs as efs
+from aws_cdk import aws_elasticloadbalancingv2 as elbv2
 from constructs import Construct
 
-from cyclonedx.constants import (
+from cyclonedx.constants import AWS_ACCOUNT_ID, ENVIRONMENT
+from deploy.constants import (
     ALLOW_DT_PORT_SG,
     DT_API_PORT,
-)
-from deploy.constants import (
     DT_CONTAINER_ID,
     DT_DOCKER_ID,
     DT_FARGATE_SVC_NAME,
     DT_TASK_DEF_ID,
     EFS_MOUNT_ID,
     FARGATE_CLUSTER_ID,
+    FARGATE_CLUSTER_NAME,
 )
 from deploy.enrichment.dependency_track import DependencyTrackLoadBalancer
 
@@ -37,7 +37,11 @@ class DependencyTrackFargateInstance(Construct):
         super().__init__(scope, FARGATE_CLUSTER_ID)
 
         # create an ecs cluster for running dependency track
-        fargate_cluster = ecs.Cluster(self, FARGATE_CLUSTER_ID, vpc=vpc)
+        fargate_cluster = ecs.Cluster(
+            self, FARGATE_CLUSTER_ID,
+            cluster_name=FARGATE_CLUSTER_NAME,
+            vpc=vpc,
+        )
 
         # create an efs mount for maintaining
         dt_mount = efs.FileSystem(
@@ -73,7 +77,10 @@ class DependencyTrackFargateInstance(Construct):
             DT_CONTAINER_ID,
             image=ecs.ContainerImage.from_registry(DT_DOCKER_ID),
             logging=ecs.LogDrivers.aws_logs(stream_prefix="dependencyTrackApi"),
-            environment={},
+            environment={
+                "CDK_DEFAULT_ACCOUNT": AWS_ACCOUNT_ID,
+                "ENVIRONMENT": ENVIRONMENT,
+            },
             cpu=4096,
             memory_reservation_mib=8192,
         )
@@ -90,7 +97,8 @@ class DependencyTrackFargateInstance(Construct):
         security_group = ec2.SecurityGroup(self, ALLOW_DT_PORT_SG, vpc=vpc)
 
         security_group.add_ingress_rule(
-            peer=ec2.Peer.any_ipv4(), connection=ec2.Port.tcp(DT_API_PORT)
+            peer=ec2.Peer.any_ipv4(),
+            connection=ec2.Port.tcp(DT_API_PORT),
         )
 
         dt_service = ecs.FargateService(

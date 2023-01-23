@@ -6,13 +6,19 @@ from __future__ import annotations
 
 import abc
 import copy
+import logging
 from enum import Enum
+from logging import config
 from uuid import uuid4
 
 from cyclonedx.constants import (
     HARBOR_TEAMS_TABLE_PARTITION_KEY,
     HARBOR_TEAMS_TABLE_SORT_KEY,
+    PYTHON_LOGGING_CONFIG,
 )
+
+config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 
 def generate_model_id(model_id: str = ""):
@@ -238,7 +244,9 @@ class HarborModel:
             (entity_type, _) = EntityKey.split_entity_key(instance.entity_key)
             self._children[entity_type].append(instance)
         except KeyError:
-            print(f"This class has no children of {entity_type} type, moving on...")
+            logger.info(
+                self, f"This class has no children of {entity_type} type, moving on..."
+            )
 
     @classmethod
     @abc.abstractmethod
