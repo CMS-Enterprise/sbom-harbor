@@ -11,6 +11,7 @@ from aws_cdk import aws_s3 as i_bucket
 from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 
+from cyclonedx.constants import AWS_ACCOUNT_ID, ENVIRONMENT
 from deploy.constants import (
     IC_API_BASE,
     IC_API_KEY,
@@ -49,6 +50,10 @@ class IonChannelInterfaceLambda(Construct):
                 subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
             ),
             handler="cyclonedx.handlers.ic_interface_handler",
+            environment={
+                "CDK_DEFAULT_ACCOUNT": AWS_ACCOUNT_ID,
+                "ENVIRONMENT": ENVIRONMENT,
+            },
             code=create_asset(self),
             timeout=Duration.minutes(15),
             security_groups=[dt_func_sg],

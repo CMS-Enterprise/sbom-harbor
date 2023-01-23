@@ -8,11 +8,10 @@ import requests
 from _pytest.outcomes import fail
 from requests import Response, get
 
-from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
-from tests import get_boto_session, get_harbor_client
+from tests import get_harbor_client
 from tests.data.add_test_team_data_to_dynamodb import test_add_test_team
 from tests.data.create_cognito_users import test_create_cognito_users
 from tests.e2e import (
