@@ -9,7 +9,7 @@ SERVER=0
 
 VERSION="v6.2.1"
 DOCKER_IMAGE="openapitools/openapi-generator-cli:${VERSION}"
-GENERATE="docker run --rm --volume "$(PWD):/local" ${DOCKER_IMAGE} batch --clean"
+GENERATE="docker run --rm --volume "$(pwd):/local" ${DOCKER_IMAGE} batch --clean"
 
 while getopts "tcs" arg; do
   case "${arg}" in
