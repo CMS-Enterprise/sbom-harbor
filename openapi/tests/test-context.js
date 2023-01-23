@@ -36,8 +36,8 @@ export class TestContext {
     constructor() {
         this.testId = uuidv4();
         this.teamIds = [];
-        this.username = `${__ENV.ADMIN_USERNAME}`;
-        this.password = `${__ENV.ADMIN_PASSWORD}`;
+        this.username = `${__ENV.HARBOR_USERNAME}`;
+        this.password = `${__ENV.HARBOR_PASSWORD}`;
         this.sbom = open("../sbom-fixture.json");
 
         const date = new Date();
