@@ -181,19 +181,19 @@ def test_sbom_ingress():
         f"Found S3 object containing Ion Channel findings: {dt_findings_s3_object_key}"
     )
 
-    # s3_resource = session.resource("s3")
+    s3_resource = session.resource("s3")
 
     # Delete the files in S3
-    # s3_resource.Object(s3_bucket_name, sbom_s3_object_key).delete()
-    # s3_resource.Object(s3_bucket_name, dt_findings_s3_object_key).delete()
-    # s3_resource.Object(s3_bucket_name, ic_findings_s3_object_key).delete()
-    #
-    # # Clean up the database
-    # cleanup(
-    #     team_id=team_id,
-    #     team_url=get_team_url(cf_url),
-    #     jwt=jwt,
-    # )
+    s3_resource.Object(s3_bucket_name, sbom_s3_object_key).delete()
+    s3_resource.Object(s3_bucket_name, dt_findings_s3_object_key).delete()
+    s3_resource.Object(s3_bucket_name, ic_findings_s3_object_key).delete()
+
+    # Clean up the database
+    cleanup(
+        team_id=team_id,
+        team_url=get_team_url(cf_url),
+        jwt=jwt,
+    )
 
     print(
         f"IDS for retest: team_id({team_id}), project_id({project_id}), codebase_id({codebase_id})"
