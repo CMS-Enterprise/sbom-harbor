@@ -6,15 +6,16 @@ from aws_cdk import aws_efs as efs
 from aws_cdk import aws_elasticloadbalancingv2 as elbv2
 from constructs import Construct
 
-from cyclonedx.constants import AWS_ACCOUNT_ID, ENVIRONMENT
 from deploy.constants import (
     ALLOW_DT_PORT_SG,
+    AWS_ACCOUNT_ID,
     DT_API_PORT,
     DT_CONTAINER_ID,
     DT_DOCKER_ID,
     DT_FARGATE_SVC_NAME,
     DT_TASK_DEF_ID,
     EFS_MOUNT_ID,
+    ENVIRONMENT,
     FARGATE_CLUSTER_ID,
     FARGATE_CLUSTER_NAME,
 )
@@ -38,7 +39,8 @@ class DependencyTrackFargateInstance(Construct):
 
         # create an ecs cluster for running dependency track
         fargate_cluster = ecs.Cluster(
-            self, FARGATE_CLUSTER_ID,
+            self,
+            FARGATE_CLUSTER_ID,
             cluster_name=FARGATE_CLUSTER_NAME,
             vpc=vpc,
         )
@@ -83,6 +85,7 @@ class DependencyTrackFargateInstance(Construct):
             },
             cpu=4096,
             memory_reservation_mib=8192,
+            readonly_root_filesystem=True,
         )
 
         port_mapping = ecs.PortMapping(
@@ -107,7 +110,7 @@ class DependencyTrackFargateInstance(Construct):
             cluster=fargate_cluster,
             task_definition=dt_api_task_definition,
             desired_count=1,
-            assign_public_ip=True,
+            assign_public_ip=False,
             platform_version=ecs.FargatePlatformVersion.VERSION1_4,
             security_groups=[security_group],
         )
