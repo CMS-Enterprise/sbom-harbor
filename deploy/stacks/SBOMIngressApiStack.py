@@ -21,7 +21,6 @@ from aws_cdk.aws_iam import Effect, PolicyStatement
 from aws_cdk.aws_logs import RetentionDays
 from constructs import Construct
 
-from cyclonedx.constants import USER_POOL_CLIENT_ID_KEY, USER_POOL_ID_KEY
 from deploy.authorizers import AuthorizerLambdaFactory, SBOMUploadAPIKeyAuthorizerLambda
 from deploy.constants import (
     API_GW_ID_OUTPUT_ID,
@@ -31,13 +30,15 @@ from deploy.constants import (
     API_STACK_ID,
     AUTHORIZATION_HEADER,
     AUTHORIZER_LN,
+    AWS_ACCOUNT_ID,
     AWS_REGION_SHORT,
     ENVIRONMENT,
-    PRIVATE,
     S3_BUCKET_ID,
     S3_BUCKET_NAME,
     SBOM_API_PYTHON_RUNTIME,
     STANDARD_LAMBDA_TIMEOUT,
+    USER_POOL_CLIENT_ID_KEY,
+    USER_POOL_ID_KEY,
 )
 from deploy.user import SBOMLoginLambda, SBOMUserSearchLambda
 from deploy.util import DynamoTableManager, SbomIngressLambda, create_asset
@@ -76,7 +77,9 @@ class LambdaFactory:
                 function_name=name,
                 runtime=SBOM_API_PYTHON_RUNTIME,
                 vpc=vpc,
-                vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+                vpc_subnets=ec2.SubnetSelection(
+                    subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+                ),
                 handler=handler,
                 code=create_asset(self),
                 timeout=STANDARD_LAMBDA_TIMEOUT,
@@ -84,6 +87,8 @@ class LambdaFactory:
                 environment={
                     USER_POOL_ID_KEY: user_pool_id,
                     USER_POOL_CLIENT_ID_KEY: user_pool_client_id,
+                    "CDK_DEFAULT_ACCOUNT": AWS_ACCOUNT_ID,
+                    "ENVIRONMENT": ENVIRONMENT,
                 },
             )
 

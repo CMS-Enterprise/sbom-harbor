@@ -56,7 +56,7 @@ module.exports = {
       moduleNameMapper: { '^@/(.*)$': '<rootDir>/src/$1' },
       roots: ['<rootDir>/src/'],
       testMatch: ['<rootDir>/src/**/?(*.)+(spec|test).[jt]s?(x)'],
-      setupFilesAfterEnv: '<rootDir>/jest.setup.js',
+      setupFilesAfterEnv: '<rootDir>/jest.setup.ts',
       collectCoverage: true,
       collectCoverageFrom: ['<rootDir>/**/*.{js,jsx,ts,tsx}'],
       coverageReporters: ['json', 'lcov', 'text'],

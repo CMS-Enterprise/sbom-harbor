@@ -1,12 +1,8 @@
-"""
--> Constructs SBOMRegisterTeam Lambda
-"""
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_lambda as lambda_
 from constructs import Construct
 
 from deploy.constants import (
-    PRIVATE,
     REGISTER_TEAM_LN,
     SBOM_API_PYTHON_RUNTIME,
     STANDARD_LAMBDA_TIMEOUT,
@@ -34,7 +30,9 @@ class SBOMRegisterTeamLambda(Construct):
             function_name=REGISTER_TEAM_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            ),
             handler="cyclonedx.teams.register_team_handler",
             code=create_asset(self),
             timeout=STANDARD_LAMBDA_TIMEOUT,

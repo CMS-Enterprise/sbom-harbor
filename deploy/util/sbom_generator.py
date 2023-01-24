@@ -6,6 +6,7 @@ from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_lambda as lambda_
 from constructs import Construct
 
+from cyclonedx.constants import AWS_ACCOUNT_ID, ENVIRONMENT
 from deploy.constants import (
     CF_DOMAIN,
     CF_DOMAIN_KEY,
@@ -15,7 +16,6 @@ from deploy.constants import (
     HARBOR_PASSWORD_KEY,
     HARBOR_USERNAME,
     HARBOR_USERNAME_KEY,
-    PRIVATE,
     SBOM_GENERATOR_LN,
     STANDARD_LAMBDA_TIMEOUT,
 )
@@ -42,7 +42,9 @@ class SBOMGeneratorLambda(Construct):
             function_name=SBOM_GENERATOR_LN,
             runtime=lambda_.Runtime.FROM_IMAGE,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            ),
             handler=lambda_.Handler.FROM_IMAGE,
             code=lambda_.Code.from_asset_image(
                 directory="./harbor-sbom-generator",
@@ -53,6 +55,8 @@ class SBOMGeneratorLambda(Construct):
                 CF_DOMAIN_KEY: CF_DOMAIN,
                 HARBOR_USERNAME_KEY: HARBOR_USERNAME,
                 HARBOR_PASSWORD_KEY: HARBOR_PASSWORD,
+                "CDK_DEFAULT_ACCOUNT": AWS_ACCOUNT_ID,
+                "ENVIRONMENT": ENVIRONMENT,
             },
             timeout=STANDARD_LAMBDA_TIMEOUT,
             memory_size=512,

@@ -8,7 +8,8 @@ from aws_cdk import aws_s3 as i_bucket
 from constructs import Construct
 
 from deploy.constants import (
-    PRIVATE,
+    AWS_ACCOUNT_ID,
+    ENVIRONMENT,
     SBOM_API_PYTHON_RUNTIME,
     STANDARD_LAMBDA_TIMEOUT,
     SUMMARIZER_LN,
@@ -41,12 +42,18 @@ class SummarizerLambda(Construct):
             function_name=SUMMARIZER_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            ),
             handler="cyclonedx.handlers.summarizer_handler",
             code=create_asset(self),
             timeout=STANDARD_LAMBDA_TIMEOUT,
             security_groups=[dt_func_sg],
             memory_size=512,
+            environment={
+                "CDK_DEFAULT_ACCOUNT": AWS_ACCOUNT_ID,
+                "ENVIRONMENT": ENVIRONMENT,
+            },
         )
 
         event_bus.grant_put_events_to(self.func)

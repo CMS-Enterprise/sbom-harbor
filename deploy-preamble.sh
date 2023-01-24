@@ -32,9 +32,9 @@ if [[ -z $ENVIRONMENT ]]; then
 fi
 
 # ION_CHANNEL vars are a temporary shim until the client pulls from secrets manager
-# if [[ -z ION_CHANNEL_TOKEN ]]; then
-export ION_CHANNEL_TOKEN="IonChannelDummyToken"
-# fi
+if [[ -z ION_CHANNEL_TOKEN ]]; then
+  export ION_CHANNEL_TOKEN="IonChannelDummyToken"
+fi
 
 # if [[ -z ION_CHANNEL_TEAM_ID ]]; then
 #   export ION_CHANNEL_TEAM_ID="none"

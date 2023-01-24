@@ -1,13 +1,11 @@
-"""
--> Constructs GetTeamsForUserId Lambda
-"""
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_lambda as lambda_
 from constructs import Construct
 
 from deploy.constants import (
+    AWS_ACCOUNT_ID,
+    ENVIRONMENT,
     GET_TEAMS_FOR_ID_LN,
-    PRIVATE,
     SBOM_API_PYTHON_RUNTIME,
     STANDARD_LAMBDA_TIMEOUT,
 )
@@ -34,11 +32,17 @@ class SBOMGetTeamsForUserIdLambda(Construct):
             function_name=GET_TEAMS_FOR_ID_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            ),
             handler="cyclonedx.teams.get_teams_for_id_handler",
             code=create_asset(self),
             timeout=STANDARD_LAMBDA_TIMEOUT,
             memory_size=512,
+            environment={
+                "CDK_DEFAULT_ACCOUNT": AWS_ACCOUNT_ID,
+                "ENVIRONMENT": ENVIRONMENT,
+            },
         )
 
         table_mgr.grant(self.func)

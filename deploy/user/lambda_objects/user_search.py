@@ -7,11 +7,12 @@ from aws_cdk import aws_lambda as lambda_
 from aws_cdk.aws_iam import Effect, PolicyStatement
 from constructs import Construct
 
-from cyclonedx.constants import USER_POOL_CLIENT_ID_KEY, USER_POOL_ID_KEY
+from cyclonedx.constants import AWS_ACCOUNT_ID, ENVIRONMENT
 from deploy.constants import (
-    PRIVATE,
     SBOM_API_PYTHON_RUNTIME,
     STANDARD_LAMBDA_TIMEOUT,
+    USER_POOL_CLIENT_ID_KEY,
+    USER_POOL_ID_KEY,
     USER_SEARCH_LN,
 )
 from deploy.util import create_asset
@@ -38,7 +39,9 @@ class SBOMUserSearchLambda(Construct):
             function_name=USER_SEARCH_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            ),
             handler="cyclonedx.handlers.user_search_handler",
             code=create_asset(self),
             timeout=STANDARD_LAMBDA_TIMEOUT,
@@ -46,6 +49,8 @@ class SBOMUserSearchLambda(Construct):
             environment={
                 USER_POOL_ID_KEY: user_pool.user_pool_id,
                 USER_POOL_CLIENT_ID_KEY: user_pool_client.user_pool_client_id,
+                "CDK_DEFAULT_ACCOUNT": AWS_ACCOUNT_ID,
+                "ENVIRONMENT": ENVIRONMENT,
             },
         )
 

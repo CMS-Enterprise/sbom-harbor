@@ -12,8 +12,7 @@ from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 from requests import Response
 
-from cyclonedx.constants import PYTHON_LOGGING_CONFIG
-from deploy.constants import IC_API_KEY, IC_RULESET_TEAM_ID
+from cyclonedx.constants import IC_API_KEY, IC_RULESET_TEAM_ID, PYTHON_LOGGING_CONFIG
 from cyclonedx.exceptions.ion_channel import IonChannelError
 
 config.fileConfig(PYTHON_LOGGING_CONFIG)
@@ -102,7 +101,12 @@ class IonChannelClient:
             headers=self.headers,
         )
 
-        return response.json()
+        try:
+            rsp_json: dict = response.json()
+        except Exception as e:
+            raise ValueError from e
+
+        return rsp_json
 
     def __put(self, url: str, json: dict) -> dict:
 
@@ -220,7 +224,9 @@ class IonChannelClient:
     def __get_sbom_data(self, team_name: str, create_if_missing: bool):
 
         # Get all of our existing SBOMs in Ion Channel
-        get_sboms_rsp: dict = self.__get(self.get_sboms_url)
+        get_sboms_rsp: dict = self.__get(
+            f"{self.get_sboms_url}?org_id={self.org_id}"
+        )
 
         response_data: dict = get_sboms_rsp["data"]
         software_lists: list = response_data["softwareLists"]
@@ -246,7 +252,11 @@ class IonChannelClient:
     def __get_id(self, url: str, obj_name: str = None):
 
         rsp_json = self.__get(url)
-        data_arr = rsp_json["data"]
+
+        try:
+            data_arr = rsp_json["data"]
+        except KeyError as ke:
+            raise ValueError from ke
 
         if len(data_arr) < 1:
             raise IonChannelError(
@@ -447,14 +457,12 @@ class IonChannelClient:
         """
         -> Observe when Ion Channel is finished analyzing the SBOM
         """
-
         analyses: list[dict] = self.__get_projects_ids()
 
         complete = False
         finished_projects: list[str] = []
         errored_projects: list[str] = []
         while not complete:
-
             # We hope it's done.
             complete = True
 
@@ -489,8 +497,8 @@ class IonChannelClient:
                     # Try not to hammer the Ion Channel API
                     sleep(1)
 
-            logger.info("Extracting data from %s projects", len(finished_projects))
-            logger.info("%s projects are failing", len(errored_projects))
+            logger.info("Extracting data from %s projects" % len(finished_projects))
+            logger.info("%s projects are failing" % len(errored_projects))
 
     def get_report(self):
 

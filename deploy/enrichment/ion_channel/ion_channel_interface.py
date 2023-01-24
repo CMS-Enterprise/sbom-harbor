@@ -10,12 +10,12 @@ from aws_cdk import aws_s3 as i_bucket
 from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 
+from cyclonedx.constants import AWS_ACCOUNT_ID, ENVIRONMENT
 from deploy.constants import (
     IC_API_BASE,
     IC_API_KEY,
     IC_INTERFACE_LN,
     IC_RULESET_TEAM_ID,
-    PRIVATE,
     SBOM_API_PYTHON_RUNTIME,
     STANDARD_LAMBDA_TIMEOUT,
 )
@@ -46,8 +46,14 @@ class IonChannelInterfaceLambda(Construct):
             function_name=IC_INTERFACE_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            ),
             handler="cyclonedx.handlers.ic_interface_handler",
+            environment={
+                "CDK_DEFAULT_ACCOUNT": AWS_ACCOUNT_ID,
+                "ENVIRONMENT": ENVIRONMENT,
+            },
             code=create_asset(self),
             timeout=STANDARD_LAMBDA_TIMEOUT,
             security_groups=[dt_func_sg],

@@ -1,21 +1,16 @@
 """This Stack is used to set up shared resources
 used by CICD, Github Actions, and secrets management"""
 
-from aws_cdk import (
-    aws_iam as iam,
-    Stack,
-    CfnOutput,
-)
-
+from aws_cdk import CfnOutput, Stack
+from aws_cdk import aws_iam as iam
 from constructs import Construct
 
 from deploy.constants import (
-    S3_WS_BUCKET_NAME,
-    DEVOPS_STACK_ID,
-    DEVOPS_OIDC_PROVIDER_ID,
-    DEVOPS_GITHUB_ROLE_ID,
     DEVOPS_GITHUB_ORG,
     DEVOPS_GITHUB_REPO,
+    DEVOPS_GITHUB_ROLE_ID,
+    DEVOPS_OIDC_PROVIDER_ID,
+    DEVOPS_STACK_ID,
 )
 
 

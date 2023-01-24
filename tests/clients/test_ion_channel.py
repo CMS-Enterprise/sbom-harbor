@@ -14,6 +14,9 @@ from cyclonedx.clients.ion_channel.ion_channel import get_ic_urls
 from cyclonedx.constants import IC_API_KEY, IC_RULESET_TEAM_ID
 from tests import sboms
 
+def live_test():
+    ic_client: IonChannelClient = IonChannelClient("abc1323", True)
+
 
 @mock_ssm
 @responses.activate

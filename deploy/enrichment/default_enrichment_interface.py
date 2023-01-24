@@ -9,7 +9,6 @@ from constructs import Construct
 
 from deploy.constants import (
     DEFAULT_INTERFACE_LN,
-    PRIVATE,
     SBOM_API_PYTHON_RUNTIME,
     STANDARD_LAMBDA_TIMEOUT,
 )
@@ -41,7 +40,9 @@ class DefaultEnrichmentInterfaceLambda(Construct):
             function_name=DEFAULT_INTERFACE_LN,
             runtime=SBOM_API_PYTHON_RUNTIME,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            ),
             handler="cyclonedx.handlers.des_interface_handler",
             code=create_asset(self),
             timeout=STANDARD_LAMBDA_TIMEOUT,

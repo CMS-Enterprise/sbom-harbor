@@ -1,14 +1,9 @@
 """ This module is where all the higher level CDK constructs are stored """
-from aws_cdk import (
-    aws_iam as iam,
-    RemovalPolicy,
-)
+from aws_cdk import RemovalPolicy
+from aws_cdk import aws_iam as iam
 from constructs import Construct
 
-from deploy.constants import (
-    USER_ROLE_ID,
-    USER_ROLE_NAME,
-)
+from deploy.constants import USER_ROLE_ID, USER_ROLE_NAME
 from deploy.user import SBOMUserPool
 
 
@@ -35,7 +30,7 @@ class SBOMUserRole(Construct):
             self,
             USER_ROLE_ID,
             role_name=USER_ROLE_NAME,
-            description='Default role for authenticated users',
+            description="Default role for authenticated users",
             assumed_by=iam.FederatedPrincipal(
                 "cognito-identity.amazonaws.com",
                 {
