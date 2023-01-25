@@ -9,6 +9,7 @@ use tracing::info;
 
 use crate::entities::{Project, Team};
 use crate::http;
+use crate::http::ContentType;
 
 fn join_url(base: &str, route: &str) -> String {
     let mut url = base.to_owned();
@@ -29,7 +30,11 @@ async fn login(base: &str, username: String, password: String) -> Result<String>
     let url = login_url(base);
 
     let response: Option<LoginResponse> =
-        http::post(url.as_str(), "", Some(LoginRequest { username, password })).await?;
+        http::post(
+            url.as_str(),
+            "",
+            Some(LoginRequest { username, password }),
+        Some(ContentType::Json)).await?;
 
     let token = response.unwrap().token;
     Ok(token)
@@ -80,7 +85,11 @@ impl Client {
     pub async fn delete_team(&self, id: String) -> Result<()> {
         let url = self.delete_team_url(id);
 
-        let _: Option<Team> = http::delete(url.as_str(), &self.token, None::<Team>).await?;
+        let _: Option<Team> = http::delete(
+            url.as_str(),
+            &self.token,
+            None::<Team>,
+            Some(ContentType::Json)).await?;
 
         Ok(())
     }
@@ -104,7 +113,11 @@ impl Client {
     pub async fn get_team(&self, id: String) -> Result<Team> {
         let url = self.get_team_url(id);
 
-        let team: Option<Team> = http::get(url.as_str(), &self.token, None::<Team>).await?;
+        let team: Option<Team> = http::get(
+            url.as_str(),
+            &self.token,
+            None::<Team>,
+        Some(ContentType::Json)).await?;
 
         Ok(team.unwrap())
     }
@@ -113,7 +126,11 @@ impl Client {
         let get_teams_url = self.get_teams_url();
 
         let teams: Option<Vec<Team>> =
-            http::get(get_teams_url.as_str(), &self.token, None::<Vec<Team>>).await?;
+            http::get(
+                get_teams_url.as_str(),
+                &self.token,
+                None::<Vec<Team>>,
+            Some(ContentType::Json)).await?;
 
         let team = teams.unwrap().into_iter().find(|t| t.name == name);
 
@@ -124,7 +141,11 @@ impl Client {
         let create_team_url = self.create_team_url();
         let team = Team::new(name);
         let team: Option<Team> =
-            http::post(create_team_url.as_str(), &self.token, Some(team)).await?;
+            http::post(
+                create_team_url.as_str(),
+                &self.token,
+                Some(team),
+            Some(ContentType::Json)).await?;
 
         let team = team.unwrap();
         if team.tokens.is_empty() {
@@ -153,7 +174,11 @@ impl Client {
         let create_project_url = self.create_project_url(team_id);
 
         let project: Option<Project> =
-            http::post(create_project_url.as_str(), &self.token, Some(project)).await?;
+            http::post(
+                create_project_url.as_str(),
+                &self.token,
+                Some(project),
+            Some(ContentType::Json)).await?;
 
         let project = project.unwrap();
 
@@ -199,7 +224,11 @@ impl Client {
         let url = Client::create_upload_url(cloud_front_domain, team_id, project_id, codebase_id);
 
         let response: Option<SBOMUploadResponse> =
-            http::post(url.as_str(), sbom_token, Some(sbom)).await?;
+            http::post(
+                url.as_str(),
+                sbom_token,
+                Some(sbom),
+            Some(ContentType::Json)).await?;
 
         Ok(response.unwrap())
     }

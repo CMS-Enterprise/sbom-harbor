@@ -17,7 +17,7 @@ pub struct Team {
     /// Projects that are owned by the Team.
     pub projects: Vec<Project>,
     /// Tokens associated with the Team.
-    pub(crate) tokens: Vec<Token>,
+    pub tokens: Vec<Token>,
 }
 
 impl Team {

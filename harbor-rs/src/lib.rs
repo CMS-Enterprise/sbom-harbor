@@ -1,4 +1,4 @@
-#![warn(missing_docs)]
+// #![warn(missing_docs)]
 //! Harbor SDK for Rust.
 //!
 //! Harbor-rs is the SDK for interacting with Harbor. Rust provides several advantages over other
@@ -97,10 +97,5 @@ pub mod importer;
 /// domain logic for the Harbor Pilot API.
 pub mod pilot;
 
-/// The AWS module contains convenience functions that wrap the AWS SDK to reduce
-/// boilerplate and reduce imports in user code.
-pub mod aws;
-
-/// The System module contains all functionality related to system level concerns
-/// such as instance level configuration, authentication flows, and RBAC.
-pub mod system;
+/// The Authorizer module contains the Lambda handler implementation for the HTTP Authorizer.
+pub mod authorizer;

@@ -1,5 +1,5 @@
 use lambda_http::{run, service_fn, Error};
-
+use harbor::authorizer::authorizer_handler;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -11,5 +11,5 @@ async fn main() -> Result<(), Error> {
         .without_time()
         .init();
 
-    run(service_fn(function_handler)).await
+    run(service_fn(authorizer_handler)).await
 }
