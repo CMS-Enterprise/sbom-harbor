@@ -85,7 +85,8 @@ class DependencyTrackFargateInstance(Construct):
             },
             cpu=4096,
             memory_reservation_mib=8192,
-            readonly_root_filesystem=True,
+            # Tried setting this to True to satisfy security hub finding but it causes container deployment to fail
+            readonly_root_filesystem=False,
         )
 
         port_mapping = ecs.PortMapping(
