@@ -3,8 +3,6 @@
 -> authorization when uploading and SBOM.
 """
 
-from datetime import datetime
-
 import boto3
 
 from cyclonedx.clients.db.dynamodb import HarborDBClient
@@ -59,14 +57,8 @@ def api_key_authorizer_handler(event: dict, context: dict = None):
 
     # Go through the tokens the team has
     for token_obj in team.tokens:
+        # If the token exists, is enabled and not expired, then allow
+        if token_obj.token == token and token_obj.is_valid():
+            policy = allow_policy(method_arn)
 
-        # Make sure the token is enabled
-        if token_obj.token == token and token_obj.enabled:
-            expires = token_obj.expires
-
-            # Make sure the token is not expired
-            if datetime.now() < datetime.fromisoformat(expires):
-                policy = allow_policy(method_arn)
-
-    # If the token exists, is enabled and not expired, then allow
     return policy
