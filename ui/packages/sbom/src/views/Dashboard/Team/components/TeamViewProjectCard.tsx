@@ -35,7 +35,7 @@ const TeamViewProjectCard = ({ teamId, project }: InputProps): JSX.Element => {
         disableTypography
         title={
           <Typography component="h3" variant="h6">
-            project.name
+            {project.name}
           </Typography>
         }
         titleTypographyProps={{
