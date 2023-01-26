@@ -10,9 +10,11 @@ import boto3
 from moto import mock_cognitoidp, mock_dynamodb
 
 from cyclonedx.clients.ciam import CognitoUserData, HarborCognitoClient
+from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.constants import USER_POOL_ID_KEY
 from cyclonedx.handlers import team_handler  # TODO Test teams_handler
 from cyclonedx.handlers.common import ContextKeys
+from cyclonedx.handlers.teams import _do_get_team_name
 from cyclonedx.model import HarborModel
 from cyclonedx.model.member import Member
 from tests.conftest import create_mock_cognito_infra, create_mock_dynamodb_infra
@@ -91,6 +93,22 @@ def test_get():
 
     return team_id, res_projects_ids, username
 
+@mock_dynamodb
+def test_get_team_name():
+
+    # Create mock event simulating creation of a team with an existing name
+    event: dict = {
+        "body" : dumps(
+            {
+                "name" : "Initial Team Name"
+            }
+        )
+    }
+
+    db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
+    team_id, team_dict, username = test_create()
+    team_exists = _do_get_team_name(event, db_client)
+    assert team_exists == True
 
 @mock_dynamodb
 @mock_cognitoidp

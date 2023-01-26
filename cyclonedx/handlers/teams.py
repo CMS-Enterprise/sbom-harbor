@@ -86,7 +86,10 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
 
     return harbor_response(200, team.to_json())
 
-def _do_get_team_name(team_name: str, db_client: HarborDBClient) -> str:
+def _do_get_team_name(event: dict, db_client: HarborDBClient) -> str:
+
+    body = _get_request_body_as_dict(event)
+    team_name = body['name']
     team_exists: bool = db_client.get_team_name(team_name)
     return team_exists
 
@@ -116,68 +119,66 @@ def _add_creating_member(
 
 def _do_post(event: dict, db_client: HarborDBClient) -> dict:
     # Check to see if team already exists
-    body = _get_request_body_as_dict(event)
-    team_name = body['name']
-    team_exists = _do_get_team_name(team_name, db_client)
+    team_exists = _do_get_team_name(event, db_client)
 
     if team_exists:
-        raise DatabaseError("Team {} already exists in harbor".format(team_name))
-    else:
-        # Create new team object
-        request_body: dict = loads(event["body"])
+        raise DatabaseError("Team name already exists in harbor")
 
-        team_id: str = generate_model_id()
+    # Create new team object
+    request_body: dict = loads(event["body"])
 
-        user_email: str = extract_attrib_from_event(ContextKeys.EMAIL, event)
-        username: str = extract_attrib_from_event(ContextKeys.USERNAME, event)
+    team_id: str = generate_model_id()
 
-        # Create the Cognito Client
-        cognito_client: HarborCognitoClient = HarborCognitoClient()
+    user_email: str = extract_attrib_from_event(ContextKeys.EMAIL, event)
+    username: str = extract_attrib_from_event(ContextKeys.USERNAME, event)
 
-        members: list[Member] = _to_members(team_id, request_body.get("members", []))
-        projects: list[Project] = _to_projects(team_id, request_body.get("projects", []))
+    # Create the Cognito Client
+    cognito_client: HarborCognitoClient = HarborCognitoClient()
 
-        # Add the team to all of the members in the request
-        # pylint: disable = W0106
-        for member in members:
-            cognito_client.add_team_to_member(
-                team_id=team_id,
-                member=member,
-            )
+    members: list[Member] = _to_members(team_id, request_body.get("members", []))
+    projects: list[Project] = _to_projects(team_id, request_body.get("projects", []))
 
-        _add_creating_member(
+    # Add the team to all of the members in the request
+    # pylint: disable = W0106
+    for member in members:
+        cognito_client.add_team_to_member(
             team_id=team_id,
-            username=username,
-            user_email=user_email,
+            member=member,
+        )
+
+    _add_creating_member(
+        team_id=team_id,
+        username=username,
+        user_email=user_email,
+        members=members,
+        cognito_client=cognito_client,
+    )
+
+    created: datetime = datetime.datetime.now()
+    expires: datetime = created + timedelta(weeks=1)
+
+    team: Team = db_client.create(
+        model=Team(
+            team_id=team_id,
+            name=request_body[Team.Fields.NAME],
             members=members,
-            cognito_client=cognito_client,
-        )
+            projects=projects,
+            tokens=[
+                Token(
+                    team_id=team_id,
+                    token_id=generate_model_id(),
+                    name="Initial Token",
+                    created=created.isoformat(),
+                    expires=expires.isoformat(),
+                    enabled=True,
+                    token=generate_token(),
+                )
+            ],
+        ),
+        recurse=True,
+    )
 
-        created: datetime = datetime.datetime.now()
-        expires: datetime = created + timedelta(weeks=1)
-
-        team: Team = db_client.create(
-            model=Team(
-                team_id=team_id,
-                name=request_body[Team.Fields.NAME],
-                members=members,
-                projects=projects,
-                tokens=[
-                    Token(
-                        team_id=team_id,
-                        token_id=generate_model_id(),
-                        name="Initial Token",
-                        created=created.isoformat(),
-                        expires=expires.isoformat(),
-                        enabled=True,
-                        token=generate_token(),
-                    )
-                ],
-            ),
-            recurse=True,
-        )
-
-        return harbor_response(200, team.to_json())
+    return harbor_response(200, team.to_json())
     
 def _do_put(event: dict, db_client: HarborDBClient) -> dict:
 
