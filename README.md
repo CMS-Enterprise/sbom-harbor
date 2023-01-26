@@ -46,12 +46,12 @@ This project depends on Python version: `3.9.10` and Node.js version: `^18.0.0`.
     - Start Poetry shell: `poetry shell`. This creates your virtual environment where your deps can be installed.
     - Install Python dependencies: `poetry install`.
     - Install pre-commit hooks: `pre-commit install`
-    
+
 5. [Configure gpg for git commit signing](https://docs.github.com/en/authentication/managing-commit-signature-verification)
-    
+
 
 6. Configure AWS Credentials
-    
+
     AWS credentials are managed via SSO with GSuite integration which will provide _temporary_ credentials with a 12 hour expiration. `aws-vault` is a CLI tool that makes retrieving and refreshing these temporary credentials easy and more secure by storing them in an encrypted manner (e.g.: Keychain on macOS)
     - Install `aws-vault`
         - Using Homebrew: `brew install --cask aws-vault`
@@ -141,3 +141,10 @@ In cases where it is necessary to manually initiate deployments to CMS, execute 
 
 CMS dev `ENVIRONMENT=dev AWS_PROFILE=cms-dev ./deploy.sh -e -u -p`
 CMS prod `ENVIRONMENT=prod AWS_PROFILE=cms-prod ./deploy.sh -e -u -p`
+
+
+### DESTROY ephemeral environments
+
+Your automatically generated ephemeral environment would have a name matching the pattern: `^e\d{4}$`
+
+Simply run `./destroy <environment name>`
