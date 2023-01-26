@@ -34,6 +34,7 @@ class SBOMWebStack(Stack):
                 "cloudfront.logging.bucket",
                 bucket_name="sbom.harbor.cf",
                 public_read_access=False,
+                block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
                 removal_policy=RemovalPolicy.DESTROY,
             ),
             include_cookies=False,
@@ -53,6 +54,7 @@ class SBOMWebStack(Stack):
             S3_WS_BUCKET_ID,
             bucket_name=S3_WS_BUCKET_NAME,
             public_read_access=False,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             removal_policy=RemovalPolicy.DESTROY,
             website_index_document="index.html",
         )
