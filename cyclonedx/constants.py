@@ -50,6 +50,7 @@ DT_FARGATE_SVC_NAME = environize("DTFargateService")
 DT_INSTALL_LOC = "/apiserver"
 DT_LB_ID = "DEPENDENCY-TRACK-LOAD-BALANCER"
 DT_LB_LOGGING_ID = "DEPENDENCY-TRACK-LOAD-BALANCER-LOGGING"
+DT_LB_LOGGING_BUCKET = environize("dt-alb-logs", include_account=True)
 DT_LB_SG_ID = "DEPENDENCY-TRACK-LOAD-BALANCER-SECURITY-GROUP"
 DT_REST_API_GATEWAY = "DT_REST_API_GW"
 DT_SBOM_QUEUE_NAME = environize("DT_SBOMQueue")
@@ -93,8 +94,6 @@ EVENT_BUS_ID = "EnrichmentEventBus"
 EVENT_BUS_NAME = environize("HarborEnrichments")
 EVENT_BUS_SOURCE = "enrichment.lambda"
 EVENT_BUS_DETAIL_TYPE = "SBOM.Event.Detail.Type"
-
-
 
 
 # CMS
