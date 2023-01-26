@@ -147,4 +147,7 @@ CMS prod `ENVIRONMENT=prod AWS_PROFILE=cms-prod ./deploy.sh -e -u -p`
 
 Your automatically generated ephemeral environment would have a name matching the pattern: `^e\d{4}$`
 
-Simply run `./destroy <environment name>`
+Simply run `./destroy.sh` to delete the current branches ephemeral environment.
+
+If necessary you can specify a different environment:
+`ENVIRONMENT=something ./destroy.sh`

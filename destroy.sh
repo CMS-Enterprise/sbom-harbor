@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # set -euxo pipefail
-export ENVIRONMENT=$1
+
 source ./deploy-preamble.sh
 
 echo "
