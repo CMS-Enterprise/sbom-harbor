@@ -4,8 +4,6 @@
 import datetime
 from datetime import timedelta
 from json import loads
-from urllib.error import HTTPError
-
 import boto3
 
 from cyclonedx.clients.ciam import HarborCognitoClient
@@ -25,6 +23,7 @@ from cyclonedx.handlers.common import (
     extract_attrib_from_event,
     harbor_response,
     print_values,
+    _get_request_body_as_dict
 )
 from cyclonedx.model import generate_model_id
 from cyclonedx.model.member import Member
@@ -87,6 +86,9 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
 
     return harbor_response(200, team.to_json())
 
+def _do_get_team_name(team_name: str, db_client: HarborDBClient) -> str:
+    team_exists: bool = db_client.get_team_name(team_name)
+    return team_exists
 
 def _add_creating_member(
     team_id: str,
@@ -113,74 +115,70 @@ def _add_creating_member(
 
 
 def _do_post(event: dict, db_client: HarborDBClient) -> dict:
-
     # Check to see if team already exists
-    try:
-        team_exists = _do_get(event, db_client)
-        # A status code of 200 will mean the HarborDBClient has found a match for the team name
-        if team_exists['status_code'] == 200:
-            raise HTTPError("http 422 unprocessable entity: team already exists in harbor")
+    body = _get_request_body_as_dict(event)
+    team_name = body['name']
+    team_exists = _do_get_team_name(team_name, db_client)
 
-    # If no team is found it will result in a database error which should be ignored to finish the function call
-    except DatabaseError:
-        pass
+    if team_exists:
+        raise DatabaseError("Team {} already exists in harbor".format(team_name))
+    else:
+        # Create new team object
+        request_body: dict = loads(event["body"])
 
-    # Create new team object
-    request_body: dict = loads(event["body"])
+        team_id: str = generate_model_id()
 
-    team_id: str = generate_model_id()
+        user_email: str = extract_attrib_from_event(ContextKeys.EMAIL, event)
+        username: str = extract_attrib_from_event(ContextKeys.USERNAME, event)
 
-    user_email: str = extract_attrib_from_event(ContextKeys.EMAIL, event)
-    username: str = extract_attrib_from_event(ContextKeys.USERNAME, event)
+        # Create the Cognito Client
+        cognito_client: HarborCognitoClient = HarborCognitoClient()
 
-    # Create the Cognito Client
-    cognito_client: HarborCognitoClient = HarborCognitoClient()
+        members: list[Member] = _to_members(team_id, request_body.get("members", []))
+        projects: list[Project] = _to_projects(team_id, request_body.get("projects", []))
 
-    members: list[Member] = _to_members(team_id, request_body.get("members", []))
-    projects: list[Project] = _to_projects(team_id, request_body.get("projects", []))
+        # Add the team to all of the members in the request
+        # pylint: disable = W0106
+        for member in members:
+            cognito_client.add_team_to_member(
+                team_id=team_id,
+                member=member,
+            )
 
-    # Add the team to all of the members in the request
-    # pylint: disable = W0106
-    for member in members:
-        cognito_client.add_team_to_member(
+        _add_creating_member(
             team_id=team_id,
-            member=member,
+            username=username,
+            user_email=user_email,
+            members=members,
+            cognito_client=cognito_client,
         )
 
-    _add_creating_member(
-        team_id=team_id,
-        username=username,
-        user_email=user_email,
-        members=members,
-        cognito_client=cognito_client,
-    )
+        created: datetime = datetime.datetime.now()
+        expires: datetime = created + timedelta(weeks=1)
 
-    created: datetime = datetime.datetime.now()
-    expires: datetime = created + timedelta(weeks=1)
+        team: Team = db_client.create(
+            model=Team(
+                team_id=team_id,
+                name=request_body[Team.Fields.NAME],
+                members=members,
+                projects=projects,
+                tokens=[
+                    Token(
+                        team_id=team_id,
+                        token_id=generate_model_id(),
+                        name="Initial Token",
+                        created=created.isoformat(),
+                        expires=expires.isoformat(),
+                        enabled=True,
+                        token=generate_token(),
+                    )
+                ],
+            ),
+            recurse=True,
+        )
 
-    team: Team = db_client.create(
-        model=Team(
-            team_id=team_id,
-            name=request_body[Team.Fields.NAME],
-            members=members,
-            projects=projects,
-            tokens=[
-                Token(
-                    team_id=team_id,
-                    token_id=generate_model_id(),
-                    name="Initial Token",
-                    created=created.isoformat(),
-                    expires=expires.isoformat(),
-                    enabled=True,
-                    token=generate_token(),
-                )
-            ],
-        ),
-        recurse=True,
-    )
-
-    return harbor_response(200, team.to_json())
-
+        return harbor_response(200, team.to_json())
+    
 def _do_put(event: dict, db_client: HarborDBClient) -> dict:
 
     """

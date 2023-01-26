@@ -294,4 +294,28 @@ class HarborDBClient:
             err_msg: str = get_error_message("getting", model, err)
             raise DatabaseError(err_msg) from err
 
+    def get_team_name(
+        self: "HarborDBClient", 
+        team_name: str 
+    ) -> bool:
+
+        """
+        Retrieves team name and team id from DynamoDB 
+
+        :param model: Team model object to use to retrieve the DynamoDB Entry
+        :return: Boolean with result of scan for team name
+        """
+        try:
+            results = self.table.scan(
+                FilterExpression = Attr("name").eq(team_name),
+                ProjectionExpression = "name"
+            )
+            return results["Items"][0]["name"] == team_name
+
+        except Exception as ex:
+            raise DatabaseError("Error executing DynamoDB scan operation") from ex
+
+
+
+        
         
