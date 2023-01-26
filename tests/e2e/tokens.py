@@ -7,6 +7,7 @@ from time import sleep
 from uuid import uuid4
 
 import pytest
+import pytz
 import requests
 from dateutil.relativedelta import relativedelta
 from requests import Response, get, post, put
@@ -110,7 +111,7 @@ def test_tokens_use_iso_date_string():
     cf_url: str = get_cloudfront_url()
     team_id: str = str(uuid4())
 
-    tomorrow = datetime.now() + relativedelta(days=1)
+    tomorrow = datetime.now(pytz.utc) + relativedelta(days=1)
     expires: str = tomorrow.isoformat()
 
     url: str = f"{cf_url}/api/v1/token?teamId={team_id}"

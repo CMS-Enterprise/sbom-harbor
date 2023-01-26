@@ -22,7 +22,7 @@ from cyclonedx.handlers.common import (
 )
 from cyclonedx.model import generate_model_id
 from cyclonedx.model.team import Team
-from cyclonedx.model.token import Token, generate_token
+from cyclonedx.model.token import Token, generate_token, parse_datetime
 
 
 def tokens_handler(event: dict, context: dict) -> dict:
@@ -85,7 +85,8 @@ def _do_post(event: dict, db_client: HarborDBClient) -> dict:
 
     try:
         expires: str = request_body[Token.Fields.EXPIRES]
-        expires_dt: datetime = parse(expires)
+        # Need to ensure the incoming expires is UTC for a valid comparison
+        expires_dt: datetime = parse(parse_datetime(expires))
         if expires_dt <= now:
             raise ValueError("Specified expiration date is before now.")
     except KeyError:
