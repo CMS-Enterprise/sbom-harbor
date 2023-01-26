@@ -48,7 +48,6 @@ class SBOMSharedResourceStack(Stack):
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             removal_policy=RemovalPolicy.DESTROY,
             event_bridge_enabled=True,
-            versioned=True,
         )
 
         s3_utils.set_source_bucket_replication(self)
