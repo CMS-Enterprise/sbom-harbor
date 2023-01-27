@@ -7,6 +7,7 @@ from constructs import Construct
 from deploy.constants import (
     DT_API_PORT,
     DT_LB_ID,
+    DT_LB_LOGGING_BUCKET,
     DT_LB_LOGGING_ID,
     DT_LB_SG_ID,
     DT_LOAD_BALANCER_ID,
@@ -52,6 +53,7 @@ class DependencyTrackLoadBalancer(Construct):
         logs_s3_bucket = s3.Bucket(
             self,
             DT_LB_LOGGING_ID,
+            bucket_name=DT_LB_LOGGING_BUCKET,
             removal_policy=RemovalPolicy.DESTROY,
             public_read_access=False,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
