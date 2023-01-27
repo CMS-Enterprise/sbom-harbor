@@ -11,7 +11,7 @@ from importlib_resources.abc import Traversable
 from requests import Response, post
 
 from cyclonedx.model import HarborModel
-from tests import sboms, get_boto_session
+from tests import sboms
 from tests.e2e import (
     cleanup,
     create_codebase,
@@ -59,7 +59,7 @@ def create_infrastructure(cf_url: str, jwt: str):
 
 
 # pylint: disable = R0915
-def test_sbom_ingress():
+def test_sbom_ingress(session, environment):
 
     """
     -> Main Test
@@ -84,7 +84,7 @@ def test_sbom_ingress():
     sbom_obj: Traversable = sbom_folder.joinpath("panther_python.json")
     sbom: dict = loads(sbom_obj.read_text())
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
     jwt: str = login(cf_url)
 
     if not retest:
@@ -124,7 +124,6 @@ def test_sbom_ingress():
     sbom_s3_object_key: str = sbom_upload_rsp_json.get("s3ObjectKey")
 
     # Check to see if the SBOM Arrived
-    session = get_boto_session()
     s3_client = session.client("s3")
     waiter: Waiter = s3_client.get_waiter("object_exists")
 

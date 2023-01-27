@@ -11,30 +11,30 @@ from requests import Response, get
 from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
-from tests import get_harbor_client
-from tests.data.add_test_team_data_to_dynamodb import test_add_test_team
-from tests.data.create_cognito_users import test_create_cognito_users
 from tests.e2e import (
     create_team_with_projects,
     get_cloudfront_url,
+    get_harbor_client,
     get_team_url,
     login,
     print_response,
 )
+from tests.e2e.add_test_team_data_to_dynamodb import test_add_test_team
+from tests.e2e.create_cognito_users import test_create_cognito_users
 
 
-def test_user_creating_team_is_member():
+def test_user_creating_team_is_member(session, environment):
 
     """
     -> Function to test that if a user creates a team,
     -> they are a member of that team.
     """
 
-    test_create_cognito_users()
+    test_create_cognito_users(session, environment)
 
-    _, team_id = test_create_team()
+    _, team_id = test_create_team(session, environment)
 
-    new_team: Team = get_harbor_client().get(
+    new_team: Team = get_harbor_client(session, environment).get(
         Team(team_id=team_id),
         recurse=True,
     )
@@ -43,7 +43,7 @@ def test_user_creating_team_is_member():
     assert member.email == "sbomadmin@aquia.io"
 
 
-def test_get_two_separate_endpoints():
+def test_get_two_separate_endpoints(session, environment):
 
     """
     -> In this test, we get a single JWT from the login endpoint.
@@ -52,11 +52,11 @@ def test_get_two_separate_endpoints():
     -> with the same JWT and not be Forbidden(401).
     """
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
     team_id: str = str(uuid4())
     project_id: str = str(uuid4())
 
-    get_harbor_client().create(
+    get_harbor_client(session, environment).create(
         Team(
             team_id=team_id,
             name="Test Team",
@@ -96,7 +96,7 @@ def test_get_two_separate_endpoints():
     )
     print_response(team_rsp)
 
-    get_harbor_client().delete(
+    get_harbor_client(session, environment).delete(
         Team(
             team_id=team_id,
             projects=[
@@ -110,15 +110,15 @@ def test_get_two_separate_endpoints():
     )
 
 
-def test_get_teams():
+def test_get_teams(session, environment):
 
     """
     -> Get the teams
     """
 
-    cf_url: str = get_cloudfront_url()
-    test_add_test_team()
-    test_create_cognito_users()
+    cf_url: str = get_cloudfront_url(session, environment)
+    test_add_test_team(session, environment)
+    test_create_cognito_users(session, environment)
 
     jwt = login(cf_url)
 
@@ -146,15 +146,15 @@ def test_get_teams():
         fail()
 
 
-def test_get_teams_with_children():
+def test_get_teams_with_children(session, environment):
 
     """
     -> Get Teams With Children
     """
 
-    cf_url: str = get_cloudfront_url()
-    test_add_test_team()
-    test_create_cognito_users()
+    cf_url: str = get_cloudfront_url(session, environment)
+    test_add_test_team(session, environment)
+    test_create_cognito_users(session, environment)
 
     jwt = login(cf_url)
 
@@ -187,16 +187,16 @@ def test_get_teams_with_children():
         fail()
 
 
-def test_get_team(team_id: str = None):
+def test_get_team(session, environment, team_id: str = None):
 
     """
     -> Get Team. The results of this query will not have children
     """
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
 
     if not team_id:
-        jwt, team_id = test_create_team()
+        jwt, team_id = test_create_team(session, environment)
     else:
         jwt = login(cf_url)
 
@@ -216,16 +216,16 @@ def test_get_team(team_id: str = None):
     assert team_dict["id"] == team_id
 
 
-def test_get_team_with_children(team_id: str = None):
+def test_get_team_with_children(session, environment, team_id: str = None):
 
     """
     -> Get team with children
     """
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
 
     if not team_id:
-        jwt, team_id = test_create_team()
+        jwt, team_id = test_create_team(session, environment)
     else:
         jwt = login(cf_url)
 
@@ -247,13 +247,13 @@ def test_get_team_with_children(team_id: str = None):
     return team_dict
 
 
-def test_create_team():
+def test_create_team(session, environment):
 
     """
     -> Create Team
     """
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
 
     jwt = login(cf_url)
 
@@ -281,13 +281,13 @@ def test_create_team():
     return jwt, new_team_id
 
 
-def test_create_team_with_children():
+def test_create_team_with_children(session, environment):
 
     """
     -> Create Team with Children
     """
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
 
     jwt = login(cf_url)
 
@@ -341,13 +341,13 @@ def test_create_team_with_children():
     }
 
 
-def test_update_team():
+def test_update_team(session, environment):
 
     """
     -> Update Team
     """
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
     jwt: str = login(cf_url)
 
     # Create a team with 2 projects
@@ -396,7 +396,7 @@ def test_update_team():
     assert new_name == new_name_from_service
 
 
-def test_update_team_with_children():
+def test_update_team_with_children(session, environment):
 
     # TODO Complete
 
@@ -406,9 +406,9 @@ def test_update_team_with_children():
     -> creates them.
     """
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
 
-    jwt, ids = test_create_team_with_children()
+    jwt, ids = test_create_team_with_children(session, environment)
 
     team_id: str = ids["team_id"]
     project_ids: list[str] = ids["project_ids"]
@@ -443,15 +443,15 @@ def test_update_team_with_children():
     print_response(team_rsp)
 
 
-def test_delete_team():
+def test_delete_team(session, environment):
 
     """
     -> Delete Team
     """
 
-    jwt, team_id = test_create_team()
+    jwt, team_id = test_create_team(session, environment)
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
 
     url = f"{cf_url}/api/v1/team/{team_id}"
 
@@ -467,14 +467,14 @@ def test_delete_team():
     assert len(team_dict) == 0
 
 
-def test_initial_token_created_when_team_created():
+def test_initial_token_created_when_team_created(session, environment):
 
     """
     -> Test that an initial token is created when a team is created
     """
 
-    _, team_id = test_create_team()
-    team: dict = test_get_team_with_children(team_id)
+    _, team_id = test_create_team(session, environment)
+    team: dict = test_get_team_with_children(session, environment, team_id)
     tokens: dict = team["tokens"]
 
     assert len(tokens) == 1

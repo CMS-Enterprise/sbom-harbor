@@ -21,13 +21,13 @@ from tests.e2e import (
 )
 
 
-def test_update_token():
+def test_update_token(session, environment):
 
     """
     -> Update Token
     """
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
     jwt: str = login(cf_url)
 
     # Create a team with 2 projects
@@ -102,12 +102,12 @@ def test_update_token():
     assert not get_rsp_json.get(Token.Fields.ENABLED)
 
 
-def test_tokens_use_iso_date_string():
+def test_tokens_use_iso_date_string(session, environment):
 
     """
     -> Test using the ISO Date String
     """
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
     team_id: str = str(uuid4())
 
     tomorrow = datetime.now() + relativedelta(days=1)
@@ -137,12 +137,14 @@ def test_tokens_use_iso_date_string():
         pytest.fail()
 
 
-def test_token_creation_fail_if_expiration_date_is_before_creation():
+def test_token_creation_fail_if_expiration_date_is_before_creation(
+    session, environment
+):
 
     """
     -> Test that the expiration date comes after the creations date
     """
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
     team_id: str = str(uuid4())
 
     yesterday = datetime.now() - relativedelta(days=1)

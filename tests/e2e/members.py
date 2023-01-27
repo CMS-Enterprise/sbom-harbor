@@ -18,13 +18,13 @@ from tests.e2e import (
 )
 
 
-def test_update_member():
+def test_update_member(session, environment):
 
     """
     -> Test updating a member
     """
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
     jwt: str = login(cf_url)
 
     # Create a team with 2 projects
