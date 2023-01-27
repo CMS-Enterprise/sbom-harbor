@@ -18,7 +18,7 @@ from deploy.constants import (
     SHARED_RESOURCE_STACK_ID,
 )
 from deploy.constructs.harbor_teams_table import HarborTeamsTable
-from deploy.util import DynamoTableManager, SBOMApiVpc, s3_utils
+from deploy.util import DynamoTableManager, SBOMApiVpc
 
 
 class SBOMSharedResourceStack(Stack):
@@ -49,8 +49,6 @@ class SBOMSharedResourceStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,
             event_bridge_enabled=True,
         )
-
-        s3_utils.set_source_bucket_replication(self)
 
         self.event_bus = eventbridge.EventBus(
             self,
