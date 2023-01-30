@@ -1,4 +1,5 @@
 import subprocess
+from os import getenv
 
 import boto3
 import pytest
@@ -10,14 +11,14 @@ def get_boto_session():
     """
     -> Get a Boto Session to the CMS AWS Dev Account
     """
-    return boto3.Session(profile_name="default")
+    return boto3.Session(profile_name=getenv("AWS_PROFILE", "default"))
 
 
 @pytest.fixture(name="environment", autouse=True)
 def get_current_environment():
 
     """
-    -> Get Environment we last deployed
+    -> Get Environment of current branch
     """
     process = subprocess.run(
         ["git", "rev-parse", "--abbrev-ref", "HEAD"],

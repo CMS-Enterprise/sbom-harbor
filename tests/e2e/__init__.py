@@ -5,6 +5,7 @@ import requests
 from requests import Response, delete, get, post
 
 from cyclonedx.clients import HarborDBClient
+from cyclonedx.constants import AWS_REGION_SHORT
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
@@ -206,7 +207,7 @@ def login(cf_url: str) -> str:
 
 
 def get_harbor_table_name(environment: str):
-    return f"{environment}-HarborTeams-use1"
+    return f"{environment}-HarborTeams-{AWS_REGION_SHORT}"
 
 
 def get_harbor_client(session: boto3.Session, environment: str):

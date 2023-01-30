@@ -5,6 +5,7 @@
 from botocore.exceptions import ClientError
 
 from cyclonedx.clients.ciam import CognitoUserData
+from cyclonedx.constants import environize
 from tests.conftest import FINAL_TEST_PASSWORD
 
 
@@ -29,8 +30,7 @@ def test_create_cognito_users(session, environment):
         "sam",
         "linda",
     ]
-
-    stack_name: str = f"{environment}-harbor-user-management-use1"
+    stack_name: str = environize("harbor-user-management", environment=environment)
 
     response = cfn_client.describe_stacks(StackName=stack_name)
 
