@@ -98,6 +98,41 @@ fn test_audience_parsing() -> Result<(), String> {
 }
 
 #[async_std::test]
+async fn can_verify_token() -> Result<(), String> {
+    let user_pool_id = env::var("OIDC_USER_POOL_ID").unwrap();
+    let idp_identifier = env::var("OIDC_IDENTIFIER").unwrap();
+
+    let authenticator = Authenticator::new(
+        user_pool_id,
+        idp_identifier,
+        IdentityProviderTypeType::Oidc)
+        .map_err(|e| e.to_string())
+        .await?;
+
+    let token = get_test_jwt()
+        .map_err(|e| e.to_string())
+        .await?;
+
+    let result = authenticator
+        .verify_token(token)
+        .map_err(|e| e.to_string())
+        .await?;
+
+    assert!(!result);
+
+    let token = String::from("00n3w4XaJKqsVRUEf8Q3hAt8Lyi0aBIt54Q1JaW2RW");
+    let token = base64::encode(token);
+
+    let result = authenticator.verify_token(token)
+        .map_err(|e| e.to_string())
+        .await?;
+
+    assert!(result);
+
+    Ok(())
+}
+
+#[async_std::test]
 async fn can_introspect_token() -> Result<(), String> {
     let user_pool_id = env::var("OIDC_USER_POOL_ID").unwrap();
     let idp_identifier = env::var("OIDC_IDENTIFIER").unwrap();

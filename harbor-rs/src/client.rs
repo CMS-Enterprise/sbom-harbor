@@ -32,9 +32,10 @@ async fn login(base: &str, username: String, password: String) -> Result<String>
     let response: Option<LoginResponse> =
         http::post(
             url.as_str(),
+            ContentType::Json,
             "",
             Some(LoginRequest { username, password }),
-        Some(ContentType::Json)).await?;
+        ).await?;
 
     let token = response.unwrap().token;
     Ok(token)
@@ -87,9 +88,9 @@ impl Client {
 
         let _: Option<Team> = http::delete(
             url.as_str(),
+            ContentType::Json,
             &self.token,
-            None::<Team>,
-            Some(ContentType::Json)).await?;
+            None::<Team>).await?;
 
         Ok(())
     }
@@ -115,9 +116,9 @@ impl Client {
 
         let team: Option<Team> = http::get(
             url.as_str(),
+            ContentType::Json,
             &self.token,
-            None::<Team>,
-        Some(ContentType::Json)).await?;
+            None::<Team>).await?;
 
         Ok(team.unwrap())
     }
@@ -128,9 +129,9 @@ impl Client {
         let teams: Option<Vec<Team>> =
             http::get(
                 get_teams_url.as_str(),
+                ContentType::Json,
                 &self.token,
-                None::<Vec<Team>>,
-            Some(ContentType::Json)).await?;
+                None::<Vec<Team>>).await?;
 
         let team = teams.unwrap().into_iter().find(|t| t.name == name);
 
@@ -143,9 +144,9 @@ impl Client {
         let team: Option<Team> =
             http::post(
                 create_team_url.as_str(),
+                ContentType::Json,
                 &self.token,
-                Some(team),
-            Some(ContentType::Json)).await?;
+                Some(team)).await?;
 
         let team = team.unwrap();
         if team.tokens.is_empty() {
@@ -176,9 +177,9 @@ impl Client {
         let project: Option<Project> =
             http::post(
                 create_project_url.as_str(),
-                &self.token,
-                Some(project),
-            Some(ContentType::Json)).await?;
+                ContentType::Json,
+                    &self.token,
+                Some(project),).await?;
 
         let project = project.unwrap();
 
@@ -209,7 +210,7 @@ impl Client {
         join_url(
             cloud_front_domain,
             &format!("/api/v1/{}/{}/{}/sbom", team_id, project_id, codebase_id),
-        ) // /{teamID}/{projectID}/{codebaseID}/sbom
+        )
     }
 
     /// Uploads an SBOM to the Enrichment Engine.
@@ -226,9 +227,9 @@ impl Client {
         let response: Option<SBOMUploadResponse> =
             http::post(
                 url.as_str(),
+                ContentType::Json,
                 sbom_token,
-                Some(sbom),
-            Some(ContentType::Json)).await?;
+                Some(sbom)).await?;
 
         Ok(response.unwrap())
     }

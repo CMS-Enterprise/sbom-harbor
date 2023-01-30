@@ -1,8 +1,10 @@
+use std::str::FromStr;
 use anyhow::bail;
 use aws_config::environment::EnvironmentVariableRegionProvider;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_cognitoidentityprovider::Client;
 use aws_sdk_cognitoidentityprovider::model::IdentityProviderTypeType;
+use chrono::{TimeZone, Utc};
 use jsonwebtoken::{Algorithm, decode, DecodingKey, Validation};
 use lambda_http::{Body, Error, Request, RequestExt, Response};
 use lambda_http::http::StatusCode;
@@ -143,28 +145,55 @@ impl Authenticator {
             n: "".to_string(),
         };
 
-        let okta = self.okta.expect("okta client not initialized");
-        let algorithm = Algorithm::from(jwk.kty.as_str());
+        let algorithm = Algorithm::from_str(jwk.kty.as_str()).expect("unsupported algorithm");
 
-        let validation = Validation::new(algorithm);
+        let okta = self.okta.clone().expect("okta client required to verify token");
+        let audience = okta.audience()?;
+        let mut validation = Validation::new(algorithm);
         validation.sub = Some(user_id);
-        validation.set_audience(&[okta.audience()]);
+        validation.set_audience(&[audience]);
+        validation.set_issuer(&[okta.issuer.clone()]);
+        validation.set_required_spec_claims(&["exp", "nbf", "aud", "iss", "sub"]);
 
         let client_secret = okta.client_secret.as_ref();
-        let token = decode(
+        let token_data = decode::<Claims>(
             jwt.as_str(),
             &DecodingKey::from_secret(client_secret),
             &Validation::new(algorithm))?;
 
-        Ok(true)
+        self.validate_claims(&token_data.claims)
     }
 
     async fn verify_cognito(&self, _jwt: String) -> Result<bool, anyhow::Error> {
         todo!()
     }
 
+
+    fn validate_claims(&self, claims: &Claims) -> Result<bool, anyhow::Error> {
+        let now = chrono::Utc::now();
+        let okta = self.okta.clone().expect("okta client required to validate claims");
+        let audience = okta.audience().unwrap_or("".to_string());
+        // Adapted from these rules.
+        // https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html
+        // kid – The token must have a header claim that matches the key in the jwks_uri that signed the token.
+        // iss – Must match the issuer that is configured for the authorizer.
+        // aud or client_id – Must match one of the audience entries that is configured for the authorizer.
+        // exp – Must be after the current time in UTC.
+        // nbf – Must be before the current time in UTC.
+        // iat – Must be before the current time in UTC.
+        // scope or scp – The token must include at least one of the scopes in the route's authorizationScopes.
+        let result = claims.kid.eq(&claims.kid)
+            && okta.issuer.eq(&claims.iss)
+            && (claims.aud.eq(&audience) || claims.client_id.eq(&okta.client_id))
+            && Utc.timestamp_millis_opt(claims.exp as i64).unwrap() > now
+            && Utc.timestamp_millis_opt(claims.nbf as i64).unwrap() <= now
+            && Utc.timestamp_millis_opt(claims.iat as i64).unwrap() < now;
+
+        Ok(result)
+    }
+
     async fn okta_inspect(&self, jwt: String) -> Result<bool, anyhow::Error> {
-        self.okta.clone().expect("okta client not initialized").introspect(jwt).await
+        self.okta.clone().expect("okta client required to inspect token").introspect(jwt).await
     }
 }
 
@@ -180,6 +209,18 @@ pub async fn get_user(_username: String, _user_pool_id: String) -> Result<String
         .send().await?;
 
     Ok(output.username().unwrap().to_string())
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Claims {
+    kid: String,
+    aud: String,
+    iss: String,
+    sub: String,
+    client_id: String,
+    iat: u64,
+    exp: u64,
+    nbf: u64,
 }
 
 const INTROSPECTION_ROUTE: &str = "/v1/introspect";
@@ -265,9 +306,9 @@ impl OktaClient {
 
         let result = http::post::<IntrospectRequest, IntrospectResponse>(
             url.as_str(),
+            ContentType::FormUrlEncoded,
             "",
-            Some(payload),
-        Some(ContentType::FormUrlEncoded)).await?;
+            Some(payload),).await?;
 
         match result {
             None => bail!("invalid introspect response"),
@@ -280,9 +321,9 @@ impl OktaClient {
 
         let result = http::get(
             url.as_str(),
+            ContentType::Json,
             "",
-            None::<String>,
-        Some(ContentType::Json)).await?;
+            None::<String>).await?;
 
         match result {
             None => bail!("invalid keys response"),
@@ -291,12 +332,12 @@ impl OktaClient {
     }
 
     pub fn audience(&self) -> Result<String, anyhow::Error> {
-        let url = Url::parse(&self.issuer);
+        let url = Url::parse(&self.issuer)?;
 
         if !url.scheme().eq("https") {
             bail!("invalid scheme");
         }
 
-        Ok(format!("{}://{}", url.scheme(), url.host()))
+        Ok(format!("{}://{}", url.scheme(), url.host().expect("invalid host")))
     }
 }

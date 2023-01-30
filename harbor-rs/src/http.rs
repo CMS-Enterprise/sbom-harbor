@@ -7,11 +7,8 @@ use serde::Serialize;
 
 const CONTENT_TYPE: &str = "content-type";
 
-/// ContentType is used to configure the content type request header.
 pub enum ContentType {
-    /// Content is application/x-www-form-urlencoded
     FormUrlEncoded,
-    /// Content is application/json
     Json,
 }
 
@@ -19,7 +16,7 @@ impl Display for ContentType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             ContentType::FormUrlEncoded => write!(f, "application/x-www-form-urlencoded"),
-            ContentType::Json => write!(f, "application/json")
+            ContentType::Json => write!(f, "application/json"),
         }
     }
 }
@@ -29,11 +26,11 @@ impl Display for ContentType {
 /// This function is a convenience wrapper around [request<T, U>].
 pub async fn get<T: Serialize, U: DeserializeOwned>(
     url: &str,
+    content_type: ContentType,
     token: &str,
     payload: Option<T>,
-    content_type: Option<ContentType>,
 ) -> Result<Option<U>> {
-    request(Method::GET, url, String::from(token), payload, content_type).await
+    request(Method::GET, url, content_type, String::from(token), payload).await
 }
 
 /// Performs a POST request to the specified URL.
@@ -41,11 +38,11 @@ pub async fn get<T: Serialize, U: DeserializeOwned>(
 /// This function is a convenience wrapper around [request<T, U>].
 pub async fn post<T: Serialize, U: DeserializeOwned>(
     url: &str,
+    content_type: ContentType,
     token: &str,
     payload: Option<T>,
-    content_type: Option<ContentType>,
 ) -> Result<Option<U>> {
-    request(Method::POST, url, String::from(token), payload, content_type).await
+    request(Method::POST, url, content_type, String::from(token), payload).await
 }
 
 /// Performs a DELETE request to the specified URL.
@@ -53,11 +50,11 @@ pub async fn post<T: Serialize, U: DeserializeOwned>(
 /// This function is a convenience wrapper around [request<T, U>].
 pub async fn delete<T: Serialize, U: DeserializeOwned>(
     url: &str,
+    content_type: ContentType,
     token: &str,
     payload: Option<T>,
-    content_type: Option<ContentType>,
 ) -> Result<Option<U>> {
-    request(Method::DELETE, url, String::from(token), payload, content_type).await
+    request(Method::DELETE, url, content_type, String::from(token), payload).await
 }
 
 /// Performs an HTTP request with the specified HTTP Method.
@@ -68,16 +65,11 @@ pub async fn delete<T: Serialize, U: DeserializeOwned>(
 pub async fn request<T: Serialize, U: DeserializeOwned>(
     method: Method,
     url: &str,
+    content_type: ContentType,
     token: String,
     payload: Option<T>,
-    content_type: Option<ContentType>,
 ) -> Result<Option<U>> {
     let uri: Uri = Uri::try_from(url)?;
-
-    let content_type = match content_type {
-        None => ContentType::Json,
-        Some(c) => c,
-    };
 
     let req_body: Body = match payload {
         Some(p) => {
@@ -85,7 +77,6 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
                 ContentType::FormUrlEncoded => serde_urlencoded::to_string(p)?,
                 ContentType::Json => serde_json::to_string(&p)?,
             };
-
             Body::from(body)
         }
         None => Body::empty(),
@@ -139,7 +130,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
     let result = match serde_json::from_slice(resp_body.as_ref()) {
         Ok(r) => r,
         Err(err) => {
-            let msg = format!("error parsing response: {} - {}", err, resp_body);
+            let msg = format!("error parsing response: {}", err);
             return Err(anyhow!(msg));
         }
     };
