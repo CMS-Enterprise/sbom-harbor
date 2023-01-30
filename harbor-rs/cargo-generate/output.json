@@ -1,0 +1,675 @@
+{
+    "auth": {
+        "/api/v1/login": [
+            {
+                "tag": "auth",
+                "method": "post",
+                "route": "/api/v1/login",
+                "op": {
+                    "summary": "Authenticate with a username and password.",
+                    "requestBody": {
+                        "$ref": "#/components/requestBodies/login"
+                    },
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/apiKey"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ],
+        "/api/v1/user/search": [
+            {
+                "tag": "auth",
+                "method": "get",
+                "route": "/api/v1/user/search",
+                "op": {
+                    "summary": "Search for members by email.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/userList"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "team": {
+        "/api/v1/team": [
+            {
+                "tag": "team",
+                "method": "post",
+                "route": "/api/v1/team",
+                "op": {
+                    "summary": "Create a new team.",
+                    "requestBody": {
+                        "$ref": "#/components/requestBodies/team"
+                    },
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/team"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ],
+        "/api/v1/team/{teamId}": [
+            {
+                "tag": "team",
+                "method": "get",
+                "route": "/api/v1/team/{teamId}",
+                "op": {
+                    "summary": "Get an existing team.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/team"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            },
+            {
+                "tag": "team",
+                "method": "put",
+                "route": "/api/v1/team/{teamId}",
+                "op": {
+                    "summary": "Modify an existing team.",
+                    "requestBody": {
+                        "$ref": "#/components/requestBodies/team"
+                    },
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/team"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            },
+            {
+                "tag": "team",
+                "method": "delete",
+                "route": "/api/v1/team/{teamId}",
+                "op": {
+                    "summary": "Delete an existing team.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/team"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ],
+        "/api/v1/teams": [
+            {
+                "tag": "team",
+                "method": "get",
+                "route": "/api/v1/teams",
+                "op": {
+                    "summary": "Get all existing teams.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/teamList"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "member": {
+        "/api/v1/member": [
+            {
+                "tag": "member",
+                "method": "post",
+                "route": "/api/v1/member",
+                "op": {
+                    "summary": "Add a member to a team. Creates member if they do not exist.",
+                    "requestBody": {
+                        "$ref": "#/components/requestBodies/member"
+                    },
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/member"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ],
+        "/api/v1/member/{memberId}": [
+            {
+                "tag": "member",
+                "method": "get",
+                "route": "/api/v1/member/{memberId}",
+                "op": {
+                    "summary": "Get an existing member.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/member"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            },
+            {
+                "tag": "member",
+                "method": "put",
+                "route": "/api/v1/member/{memberId}",
+                "op": {
+                    "summary": "Modify an existing member.",
+                    "requestBody": {
+                        "$ref": "#/components/requestBodies/member"
+                    },
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/member"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            },
+            {
+                "tag": "member",
+                "method": "delete",
+                "route": "/api/v1/member/{memberId}",
+                "op": {
+                    "summary": "Delete an existing member from a team.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/member"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ],
+        "/api/v1/members": [
+            {
+                "tag": "member",
+                "method": "get",
+                "route": "/api/v1/members",
+                "op": {
+                    "summary": "Get all existing members for a team.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/memberList"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "project": {
+        "/api/v1/project": [
+            {
+                "tag": "project",
+                "method": "post",
+                "route": "/api/v1/project",
+                "op": {
+                    "summary": "Create a project for a team.",
+                    "requestBody": {
+                        "$ref": "#/components/requestBodies/project"
+                    },
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/project"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ],
+        "/api/v1/project/{projectId}": [
+            {
+                "tag": "project",
+                "method": "get",
+                "route": "/api/v1/project/{projectId}",
+                "op": {
+                    "summary": "Get an existing project.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/project"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            },
+            {
+                "tag": "project",
+                "method": "put",
+                "route": "/api/v1/project/{projectId}",
+                "op": {
+                    "summary": "Modify an existing project.",
+                    "requestBody": {
+                        "$ref": "#/components/requestBodies/project"
+                    },
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/project"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            },
+            {
+                "tag": "project",
+                "method": "delete",
+                "route": "/api/v1/project/{projectId}",
+                "op": {
+                    "summary": "Delete an existing project.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/project"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ],
+        "/api/v1/projects": [
+            {
+                "tag": "project",
+                "method": "get",
+                "route": "/api/v1/projects",
+                "op": {
+                    "summary": "Get all projects for a team.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/projectList"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "codebase": {
+        "/api/v1/codebase": [
+            {
+                "tag": "codebase",
+                "method": "post",
+                "route": "/api/v1/codebase",
+                "op": {
+                    "summary": "Create a codebase for a project.",
+                    "requestBody": {
+                        "$ref": "#/components/requestBodies/codebase"
+                    },
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/codebase"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ],
+        "/api/v1/codebase/{codebaseId}": [
+            {
+                "tag": "codebase",
+                "method": "get",
+                "route": "/api/v1/codebase/{codebaseId}",
+                "op": {
+                    "summary": "Get an existing codebase.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/codebase"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            },
+            {
+                "tag": "codebase",
+                "method": "put",
+                "route": "/api/v1/codebase/{codebaseId}",
+                "op": {
+                    "summary": "Modify an existing codebase.",
+                    "requestBody": {
+                        "$ref": "#/components/requestBodies/codebase"
+                    },
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/codebase"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            },
+            {
+                "tag": "codebase",
+                "method": "delete",
+                "route": "/api/v1/codebase/{codebaseId}",
+                "op": {
+                    "summary": "Delete an existing codebase.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/codebase"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ],
+        "/api/v1/codebases": [
+            {
+                "tag": "codebase",
+                "method": "get",
+                "route": "/api/v1/codebases",
+                "op": {
+                    "summary": "Get all codebases for a project.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/codebaseList"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "token": {
+        "/api/v1/token": [
+            {
+                "tag": "token",
+                "method": "post",
+                "route": "/api/v1/token",
+                "op": {
+                    "summary": "Create a token for a team.",
+                    "requestBody": {
+                        "$ref": "#/components/requestBodies/token"
+                    },
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/token"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ],
+        "/api/v1/token/{tokenId}": [
+            {
+                "tag": "token",
+                "method": "get",
+                "route": "/api/v1/token/{tokenId}",
+                "op": {
+                    "summary": "Get an existing token.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/token"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            },
+            {
+                "tag": "token",
+                "method": "put",
+                "route": "/api/v1/token/{tokenId}",
+                "op": {
+                    "summary": "Modify an existing token.",
+                    "requestBody": {
+                        "$ref": "#/components/requestBodies/token"
+                    },
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/token"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            },
+            {
+                "tag": "token",
+                "method": "delete",
+                "route": "/api/v1/token/{tokenId}",
+                "op": {
+                    "summary": "Delete an existing token.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/token"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ],
+        "/api/v1/tokens": [
+            {
+                "tag": "token",
+                "method": "get",
+                "route": "/api/v1/tokens",
+                "op": {
+                    "summary": "Get all tokens for a team.",
+                    "responses": {
+                        "200": {
+                            "$ref": "#/components/responses/tokenList"
+                        },
+                        "400": {
+                            "$ref": "#/components/responses/badRequest"
+                        },
+                        "403": {
+                            "$ref": "#/components/responses/forbidden"
+                        },
+                        "500": {
+                            "$ref": "#/components/responses/internalServerError"
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}

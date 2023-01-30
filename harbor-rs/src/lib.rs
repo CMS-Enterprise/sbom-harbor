@@ -96,3 +96,12 @@ pub mod importer;
 /// The Pilot module contains the Lambda handler implementation and supporting
 /// domain logic for the Harbor Pilot API.
 pub mod pilot;
+
+/// The Team module contains the Lambda handler implementations supporting the
+/// Team endpoints.
+pub mod team;
+
+/// The API module contains the simplified API types for the entities sans Cognito
+/// specific structural attributes like the partition_key and sort_key and sans
+/// domain specific structural attributes like parent_id.
+pub mod api;

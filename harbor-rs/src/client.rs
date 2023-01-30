@@ -149,7 +149,22 @@ impl Client {
         codebase_name: &str,
     ) -> Result<Project> {
         // TODO: Find a way to get the build tool from the GitHub API.
-        let project = Project::new(project_name.to_string(), vec![codebase_name.to_string()]);
+        let codebase = crate::api::Codebase {
+            id: "".to_string(),
+            name: codebase_name.to_string(),
+            language: "".to_string(),
+            build_tool: "".to_string(),
+            clone_url: "".to_string(),
+        };
+
+        let project = crate::api::Project{
+            id: "".to_string(),
+            name: project_name.to_string(),
+            fisma: "".to_string(),
+            codebases: vec![codebase],
+        };
+
+
         let create_project_url = self.create_project_url(team_id);
 
         let project: Option<Project> =
