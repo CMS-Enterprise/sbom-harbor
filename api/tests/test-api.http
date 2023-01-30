@@ -1,0 +1,35 @@
+### Create at team
+POST http://localhost:3000/team
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer foo
+
+{"id": "", "name":"http_test"}
+
+> {% client.global.set("team_id", response.body.id); %}
+
+### List all teams
+GET http://localhost:3000/teams
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer foo
+
+### Get a specific team
+GET http://localhost:3000/team/{{team_id}}
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer foo
+
+### Update at team
+PUT http://localhost:3000/team/{{team_id}}
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer foo
+
+{"id": "{{team_id}}", "name":"curl_test_update"}
+
+### Delete a specific team
+DELETE http://localhost:3000/team/{{team_id}}
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer foo

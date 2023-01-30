@@ -1,0 +1,15 @@
+[workspace]
+members = [
+    "api",
+#    "client",
+    "core",
+#    "pilot"
+    "platform",
+    "cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["CMS SBOM Harbor Team"]
+documentation = "https://github.com/cms-enterprise/sbom-harbor"
