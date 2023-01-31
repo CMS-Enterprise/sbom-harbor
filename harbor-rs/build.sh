@@ -42,6 +42,7 @@ export CARGO_TARGET_DIR=$PWD/target/lambda
     # cargo only supports --release flag for release
     # profiles. dev is implicit
     if [ "${PROFILE}" == "release" ]; then
+        echo "RUNNING: <cargo build ${CARGO_BIN_ARG} ${CARGO_FLAGS:-} --${PROFILE}>"
         cargo build ${CARGO_BIN_ARG} ${CARGO_FLAGS:-} --${PROFILE}
     else
         cargo build ${CARGO_BIN_ARG} ${CARGO_FLAGS:-}
