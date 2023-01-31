@@ -9,6 +9,10 @@ echo "3ee9c3b83de642f919912e0594ee2601835518827da785d034c1163f8efdf907  actions-
 
 tar xzf ./actions-runner-linux-x64-2.301.1.tar.gz
 
-./config.sh --url https://github.com/CMS-Enterprise/sbom-harbor --token AAA5FL5YRXJ4L22WQNRY25TD3BUNM
+# Get Token
+# TODO: generate token once we have the ability to create PATs in github enterprise
+# token=$(curl -s -XPOST -H "authorization: token ${GITHUB_TOKEN}" https://api.github.com/repos/CMS-Enterprise/sbom-harbor/actions/runners/registration-token | jq -r .token)
+
+./config.sh --url https://github.com/CMS-Enterprise/sbom-harbor --token $GITHUB_TOKEN
 
 ./run.sh

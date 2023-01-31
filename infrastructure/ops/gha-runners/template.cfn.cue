@@ -6,6 +6,7 @@ import (
 	"github.com/cue-sh/cfn-cue/aws/useast1/ecr"
 	"github.com/cue-sh/cfn-cue/aws/useast1/iam"
 	"github.com/cue-sh/cfn-cue/aws/useast1/logs"
+	"github.com/cue-sh/cfn-cue/aws/useast1/secretsmanager"
 )
 
 Stacks: {
@@ -14,6 +15,7 @@ Stacks: {
 	[StackName= =~_baseNames.ghaRunners]: {
 		let stack = Stacks[StackName]
 		let vpcSubnetStackName = "\(stack.Environment)-\(_baseNames.vpcSubnets)-\(stack.RegionCode)"
+		let opsCommonStackName = "\(stack.Environment)-\(_baseNames.opsCommon)-\(stack.RegionCode)"
 
 		Template: {
 			Resources: {
@@ -21,17 +23,16 @@ Stacks: {
 					Properties: RepositoryName: _baseNames.ghaRunners
 				}
 
-				EcsCluster: ecs.#Cluster & {
-					Properties: ClusterName: StackName
+				GithubTokenSecret: secretsmanager.#Secret & {
+					Properties: {
+						Name: "\(_baseNames.ghaRunners)-GithubToken"
+					}
 				}
 
 				ExecutionRole: iam.#Role & {
 					Properties: {
-						RoleName: StackName
-						ManagedPolicyArns: [
-							"arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
-						]
-						Path: "/delegatedadmin/adodeveloper/service-role/"
+						RoleName: _baseNames.ghaRunners
+						Path:     "/delegatedadmin/adodeveloper/service-role/"
 						AssumeRolePolicyDocument: {
 							Version: "2012-10-17"
 							Statement: [
@@ -44,6 +45,24 @@ Stacks: {
 								},
 							]
 						}
+						ManagedPolicyArns: [
+							"arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
+						]
+						Policies: [
+							{
+								PolicyName: "AllowReadSecret"
+								PolicyDocument: {
+									Version: "2012-10-17"
+									Statement: [
+										{
+											Effect: "Allow"
+											Action: "secretsmanager:GetSecretValue"
+											Resource: Ref: "GithubTokenSecret"
+										},
+									]
+								}
+							},
+						]
 					}
 				}
 
@@ -67,7 +86,7 @@ Stacks: {
 
 				TaskLogGroup: logs.#LogGroup & {
 					Properties: {
-						LogGroupName:    StackName
+						LogGroupName:    _baseNames.ghaRunners
 						RetentionInDays: 30
 					}
 				}
@@ -84,26 +103,34 @@ Stacks: {
 						ContainerDefinitions: [
 							{
 								Image: "Fn::Join": [":", [{"Fn::GetAtt": "EcrRepo.RepositoryUri"}, "latest"]]
+								Secrets: [
+									{
+										Name: "GITHUB_TOKEN"
+										ValueFrom: Ref: "GithubTokenSecret"
+									},
+								]
+
 								LogConfiguration: {
 									LogDriver: "awslogs"
 									Options: {
-										"awslogs-group": StackName
+										"awslogs-group": _baseNames.ghaRunners
 										"awslogs-region": Ref: "AWS::Region"
-										"awslogs-stream-prefix": StackName
+										"awslogs-stream-prefix": _baseNames.ghaRunners
 									}}
 								Name: _baseNames.ghaRunners
-							}]
+							},
+						]
 					}
 				}
 
 				ECSService: ecs.#Service & {
 					Properties: {
-						Cluster: Ref: "EcsCluster"
+						Cluster: "Fn::ImportValue": "\(opsCommonStackName)-EcsClusterArn"
 						DeploymentConfiguration: {
 							MaximumPercent:        200
 							MinimumHealthyPercent: 50
 						}
-						DesiredCount: 0
+						DesiredCount: 1
 						LaunchType:   "FARGATE"
 						NetworkConfiguration: {
 							AwsvpcConfiguration: {
@@ -114,7 +141,7 @@ Stacks: {
 								SecurityGroups: [{Ref: "TaskSecurityGroup"}]
 							}
 						}
-						ServiceName: StackName
+						ServiceName: _baseNames.ghaRunners
 						TaskDefinition: Ref: "TaskDefinition"
 					}
 				}
