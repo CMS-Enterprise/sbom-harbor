@@ -36,7 +36,7 @@ uuid = { version = "1.2.2", features = ["serde", "v4"] }
 aquia = { path = "../../../aquia/aquia-rs" }
 async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
 aws_lambda_events = "0.7.2"
-base64 = "0.13.1"
+base64 = "0.21.0"
 ctor = "0.1.26"
 dotenv = "0.15.0"
 tokio-test = "*"

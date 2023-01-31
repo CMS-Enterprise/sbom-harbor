@@ -175,6 +175,9 @@ pub fn get_pilot_request() -> std::io::Result<PilotRequest> {
 #[async_std::test]
 #[ignore = "manual run only"]
 pub async fn save_test_fixtures() -> std::io::Result<()> {
+
+    use base64::{Engine as _, engine::{general_purpose}};
+
     let tuple = generate_pilot_apigw_request().await;
 
     assert!(!tuple.is_err(), "{:?}", tuple);
@@ -191,7 +194,7 @@ pub async fn save_test_fixtures() -> std::io::Result<()> {
     target_file = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     target_file.push("tests/fixtures/HARBOR_PILOT_REQUEST");
 
-    let secret = base64::encode(pilot_req);
+    let secret = general_purpose::STANDARD.encode(pilot_req);
     std::fs::write(target_file.as_path(), secret)
 }
 
