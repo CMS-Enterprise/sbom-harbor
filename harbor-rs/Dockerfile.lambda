@@ -1,0 +1,5 @@
+FROM public.ecr.aws/lambda/provided:al2-x86_64
+
+ARG LAMBDA=get_team
+COPY target/lambda/release/output/${LAMBDA}/bootstrap /var/runtime
+CMD [ "function.handler" ]

@@ -56,6 +56,10 @@ harbor-documentation/openapi.json
 harbor-rs/tests/fixtures/debug.log
 harbor-rs/tests/fixtures/pilot-request.json
 harbor-rs/tests/fixtures/HARBOR_PILOT_REQUEST
+harbor-rs/tests/fixtures/GET_TEAM_REQUEST
+harbor-rs/aqum
+harbor-rs/cargo-generate/bundle.json
+harbor-rs/cargo-generate/output.json
 
 
 # OpenAPI generator
@@ -67,4 +71,3 @@ harbor-rs/tests/fixtures/HARBOR_PILOT_REQUEST
 **/.terraform/providers/*
 **/terraform.tfstate
 **/terraform.tfstate.backup
-

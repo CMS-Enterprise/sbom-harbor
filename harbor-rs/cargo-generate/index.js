@@ -29,7 +29,7 @@ results.forEach(adapter => {
     }
 
     //let command = `cd ../ && cargo generate --init DerekStrickland/generate-rust-lambda lambda ${adapter.toOpts()}`;
-    let command = `cargo generate --path /Users/derek/code/aquia/aquia-rs-generate lambda ${adapter.toOpts()}`;
+    let command = `cargo generate --path ../../aquia-rs-generate lambda ${adapter.toOpts()}`;
     commands.push(command);
 
     console.log(`command: ${command}`);
@@ -55,7 +55,7 @@ results.forEach(adapter => {
     });
 });
 
-export async function loadBundle(specPath = "/Users/derek/code/aquia/cyclonedx-python/openapi/spec.yaml") {
+export async function loadBundle(specPath = "../../openapi/spec.yaml") {
     return await SwaggerParser.bundle(specPath);
 }
 
@@ -126,11 +126,11 @@ function writeBashFile() {
     }
 
     try {
-        fs.writeFileSync('aquia-generate.sh', "#!/bin/bash\n\n");
+        fs.writeFileSync('iron-generate.sh', "#!/bin/bash\n\n");
 
         commands.forEach(command => {
             console.info(`appending command: ${command}`);
-            fs.appendFileSync('aquia-generate.sh', `${command}\n`);
+            fs.appendFileSync('iron-generate.sh', `${command}\n`);
         });
 
         console.info("Script generation complete!");

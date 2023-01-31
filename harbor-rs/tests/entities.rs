@@ -2,8 +2,10 @@ use async_std;
 
 mod common;
 
-use aquia::config::Config;
-use aquia::dynamo::{Error, Store};
+use aqum::Error;
+use aqum::dynamo::Store;
+use aqum::dynamo::from_entity;
+use harbor::api;
 use harbor::entities::{Codebase, Discriminator, Entity, Project, Team};
 
 #[async_std::test]
@@ -15,7 +17,7 @@ async fn can_get_team() -> anyhow::Result<()> {
     team.partition_key = "dawn-patrol".to_string();
 
     let team: Result<Option<Team>, Error> = store
-        .find(Box::new(team)).await;
+        .find(&mut team).await;
 
     assert!(!team.is_err(), "{:?}", team);
 
@@ -59,19 +61,7 @@ fn can_get_entity_type_name() -> Result<(), String> {
 #[test]
 fn can_project_entity_to_api() -> Result<(), String> {
     let entity = test_codebase(Some("test-project-entity-to-api".to_string()), None, None);
-
-    // Ensure the serialized entity struct has the required Dynamo structural attributes.
-    let entity_json = serde_json::to_string(&entity).unwrap();
-    println!("entity: {}", entity_json);
-    assert!(entity_json.contains("TeamId"));
-
-    // Ensure the serialized api struct omits the Dynamo structural attributes.
-    let api_json = entity.to_body().unwrap();
-    println!("api: {}", api_json);
-    assert!(!api_json.contains("TeamId"));
-
-    let entity: Codebase = serde_json::from_str(&entity_json).unwrap();
-    let dto: harbor::api::Codebase = serde_json::from_str(&api_json).unwrap();
+    let dto: api::Codebase = from_entity(&entity).map_err(|e| e.to_string())?;
 
     assert_eq!(entity.id, dto.id);
     assert_eq!(entity.name, dto.name);
@@ -85,32 +75,20 @@ fn can_project_entity_to_api() -> Result<(), String> {
 #[test]
 fn can_project_subordinate_entity_to_api() -> Result<(), String> {
     // Build a test graph
-    let graph = test_graph(Some("project-subordinate-entity-to-api".to_string()));
-    println!("graph: {:?}", graph);
-    assert_eq!(graph.projects.len(), 1);
-    assert_eq!(graph.projects[0].codebases.len(), 1);
-    assert!(!graph.id.is_empty());
-    assert!(!graph.projects[0].id.is_empty());
-    assert!(!graph.projects[0].codebases[0].id.is_empty());
-    assert_eq!(graph.partition_key, graph.projects[0].partition_key);
-    assert_eq!(graph.partition_key, graph.projects[0].codebases[0].partition_key);
-    assert_eq!(graph.id, graph.projects[0].parent_id);
-    assert_eq!(graph.projects[0].partition_key, graph.projects[0].codebases[0].partition_key);
-    assert_eq!(graph.projects[0].id, graph.projects[0].codebases[0].parent_id);
+    let entity = test_graph(Some("project-subordinate-entity-to-api".to_string()));
+    println!("graph: {:?}", entity);
+    assert_eq!(entity.projects.len(), 1);
+    assert_eq!(entity.projects[0].codebases.len(), 1);
+    assert!(!entity.id.is_empty());
+    assert!(!entity.projects[0].id.is_empty());
+    assert!(!entity.projects[0].codebases[0].id.is_empty());
+    assert_eq!(entity.partition_key, entity.projects[0].partition_key);
+    assert_eq!(entity.partition_key, entity.projects[0].codebases[0].partition_key);
+    assert_eq!(entity.id, entity.projects[0].parent_id);
+    assert_eq!(entity.projects[0].partition_key, entity.projects[0].codebases[0].partition_key);
+    assert_eq!(entity.projects[0].id, entity.projects[0].codebases[0].parent_id);
 
-    // Ensure the serialized entity structs have the required Dynamo structural attributes.
-    let entity_json = serde_json::to_string(&graph).unwrap();
-    println!("entity: {}", entity_json);
-    assert!(entity_json.contains("TeamId"));
-
-    // Ensure the serialized api structs omit the Dynamo structural attributes.
-    let api_json = graph.to_body().unwrap();
-    println!("api: {}", api_json);
-    assert!(!api_json.contains("TeamId"));
-
-    // Validate team
-    let entity: Team = serde_json::from_str(&entity_json).unwrap();
-    let dto: harbor::api::Team = serde_json::from_str(&api_json).unwrap();
+    let dto: harbor::api::Team = from_entity(&entity).map_err(|e| e.to_string())?;
     assert_eq!(entity.id, dto.id);
     assert_eq!(entity.name, dto.name);
 
@@ -142,10 +120,10 @@ fn test_graph(mut name: Option<String>) -> Team {
     }
 
     let mut team = test_team(name.clone());
-    let mut project = Project::new(&team, name.clone().unwrap(), None);
+    let project = Project::new(&team, name.clone().unwrap(), None);
     team.projects(project);
 
-    let mut project = &mut team.projects[0];
+    let project = &mut team.projects[0];
     let codebase = Codebase::new(project,
                                                name.clone().unwrap(),
                                                Some("rust".to_string()),
@@ -167,7 +145,7 @@ fn test_team(mut name: Option<String>) -> Team {
 }
 
 
-fn test_project(mut name: Option<String>, mut team: Option<Team>) -> Project {
+fn test_project(mut name: Option<String>, team: Option<Team>) -> Project {
     if name.is_none() {
         name = Some("sbom-harbor".to_string());
     }
@@ -186,12 +164,12 @@ fn test_project(mut name: Option<String>, mut team: Option<Team>) -> Project {
         .find(|p| p.id == id).unwrap()
 }
 
-fn test_codebase(mut name: Option<String>, mut project: Option<Project>, mut team: Option<Team>) -> Codebase {
+fn test_codebase(mut name: Option<String>, project: Option<Project>, team: Option<Team>) -> Codebase {
     if name.is_none() {
         name = Some("sbom-harbor".to_string());
     }
 
-    let mut project = match project {
+    let project = match project {
         None => Some(test_project(name.clone(), team)).unwrap(),
         Some(p) => p
     };

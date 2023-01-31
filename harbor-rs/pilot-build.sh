@@ -18,6 +18,7 @@ docker run \
     --platform linux/amd64 \
     -u "$(id -u)":"$(id -g)" \
     -v ${PWD}:/code \
+    -v ${PWD}/iron-rs:/code/iron-rs \
     -v ${HOME}/.cargo/registry:/cargo/registry \
     -v ${HOME}/.cargo/git:/cargo/git \
     harbor/pilot-builder
