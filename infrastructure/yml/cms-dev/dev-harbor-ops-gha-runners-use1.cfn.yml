@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  EcrRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      EncryptionConfiguration:
+        EncryptionType: KMS
+      ImageTagMutability: IMMUTABLE
+      RepositoryName: harbor-ops-gha-runners
+  GithubTokenSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: harbor-ops-gha-runners-GithubToken
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Path: /delegatedadmin/adodeveloper/service-role/
+      PermissionsBoundary:
+        Fn::Sub: arn:aws:iam::${AWS::AccountId}:policy/cms-cloud-admin/ct-ado-poweruser-permissions-boundary-policy
+      Policies:
+        - PolicyName: AllowReadSecret
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  Ref: GithubTokenSecret
+      RoleName: harbor-ops-gha-runners
+  TaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: dev-harbor-ops-gha-runners-use1
+      GroupName: dev-harbor-ops-gha-runners-use1
+      VpcId:
+        Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-VpcId
+  TaskSecurityGroupEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      CidrIp: 0.0.0.0/0
+      FromPort: 443
+      GroupId:
+        Ref: TaskSecurityGroup
+      IpProtocol: tcp
+      ToPort: 443
+  TaskLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: harbor-ops-gha-runners
+      RetentionInDays: 30
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Image:
+            Fn::Join:
+              - ':'
+              - - Fn::GetAtt: EcrRepo.RepositoryUri
+                - latest
+          Secrets:
+            - Name: GITHUB_TOKEN
+              ValueFrom:
+                Ref: GithubTokenSecret
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: harbor-ops-gha-runners
+              awslogs-region:
+                Ref: AWS::Region
+              awslogs-stream-prefix: harbor-ops-gha-runners
+          Name: harbor-ops-gha-runners
+      Cpu: "1024"
+      ExecutionRoleArn:
+        Fn::GetAtt: ExecutionRole.Arn
+      Family: harbor-ops-gha-runners
+      Memory: "2048"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster:
+        Fn::ImportValue: dev-harbor-ops-common-use1-EcsClusterArn
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets:
+            - Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-SubnetApplicationsAId
+            - Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-SubnetApplicationsBId
+          SecurityGroups:
+            - Ref: TaskSecurityGroup
+      ServiceName: harbor-ops-gha-runners
+      TaskDefinition:
+        Ref: TaskDefinition
+Outputs:
+  EcrRepoUri:
+    Value:
+      Fn::GetAtt: EcrRepo.RepositoryUri
