@@ -125,9 +125,11 @@ Generates a dependency graph of the built production bundle.
 
 `./deploy.sh` and `./deploy-ui.sh` scripts can be used as convenience wrappers to the `poetry` and `yarn` commands listed above.
 
-`./deploy.sh` will use poetry to install and build python code. `-e` will include Enrichments, and `-u` will include the UI (essentially calling `./deploy-ui.sh` as a last step)
+`./deploy.sh` will use poetry to install and build python code. `-e` will include Enrichments, and `-u` will include the UI (essentially calling `./deploy-ui.sh` as a last step).
 
 `./deploy-ui.sh` will use `yarn` to install dependencies, build static assets, and upload them to the `web-assets` S3 bucket.
+
+**Note**: If it is not immediately obvious, since the deploy scripts described above use `poetry` you must run them from inside a `poetry` shell and you must install all dependencies (i.e. run `poetry shell` and then `poetry install`). 
 
 These scripts will _default_ to `ENVIRONMENT=sandbox` using AWS credentials for your personal sandbox account. To deploy to `harbor-dev` you can execute the scripts like so `ENVIRONMENT=dev AWS_PROFILE=harbor-dev ./deploy.sh`
 
