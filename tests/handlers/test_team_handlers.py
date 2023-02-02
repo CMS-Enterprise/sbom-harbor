@@ -96,19 +96,17 @@ def test_get():
 @mock_dynamodb
 def test_get_team_name():
 
-    # Create mock event simulating creation of a team with an existing name
-    event: dict = {
-        "body" : dumps(
-            {
-                "name" : "Initial Team Name"
-            }
-        )
-    }
+    """
+    -> Get Team Test
+    """
+    # create a team 
+    email: list = ["test@email.net", "test2@email.net"]
+    create_response: dict = create(team_handler, username=email[0])
 
-    db_client: HarborDBClient = HarborDBClient(boto3.resource("dynamodb"))
-    team_id, team_dict, username = test_create()
-    team_exists = _do_get_team_name(event, db_client)
-    assert team_exists == True
+    # Create a 2nd time which will attempt to use the same team name as the first call which should result in HTTP 400
+    dupe_response: dict = create(team_handler, username=email[1])
+
+    assert dupe_response["status_code"] == 400
 
 @mock_dynamodb
 @mock_cognitoidp
@@ -274,7 +272,6 @@ def update(team_id: str, project1_id: str, project2_id: str, handler):
     }
 
     return handler(event, {})
-
 
 def delete(team_id: str, username: str, handler: Callable):
 

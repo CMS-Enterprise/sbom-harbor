@@ -296,7 +296,7 @@ class HarborDBClient:
 
     def get_team_name(
         self: "HarborDBClient", 
-        team_name: str 
+        team_name: str,
     ) -> bool:
 
         """

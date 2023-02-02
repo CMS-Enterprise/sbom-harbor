@@ -480,3 +480,47 @@ def test_initial_token_created_when_team_created():
     tokens: dict = team["tokens"]
 
     assert len(tokens) == 1
+
+def test_check_duplicate_team_name():
+
+    """
+    -> Test that team creation fails if the team name submitted already exists in dynamoDB
+    """
+    # Create team 1
+    cf_url: str = get_cloudfront_url()
+
+    jwt = login(cf_url)
+
+    name: str = "Test Team Name"
+
+    url = f"{cf_url}/api/v1/team"
+
+    print(f"Sending To: POST:{url}")
+    team_rsp = requests.post(
+        url,
+        headers={
+            "Authorization": jwt,
+        },
+        json={
+            "name": name,
+        },
+    )
+
+    print_response(team_rsp)
+
+    # Create team 2 with duplicate name
+
+    print(f"Sending To: POST:{url}")
+    team_rsp = requests.post(
+        url,
+        headers={
+            "Authorization": jwt,
+        },
+        json={
+            "name": name,
+        },
+    )
+
+    print_response(team_rsp)
+
+    assert team_rsp.status_code == 400
