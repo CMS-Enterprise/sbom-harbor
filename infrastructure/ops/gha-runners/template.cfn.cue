@@ -10,7 +10,9 @@ import (
 )
 
 Stacks: {
-	"dev-\(_baseNames.ghaRunners)-use1": {}
+	"dev-\(_baseNames.ghaRunners)-use1": {
+		Template: Resources: ECSService: Properties: DesiredCount: 2
+	}
 
 	[StackName= =~_baseNames.ghaRunners]: {
 		let stack = Stacks[StackName]
@@ -130,8 +132,8 @@ Stacks: {
 							MaximumPercent:        200
 							MinimumHealthyPercent: 50
 						}
-						DesiredCount: 1
-						LaunchType:   "FARGATE"
+						// DesiredCount: number
+						LaunchType: "FARGATE"
 						NetworkConfiguration: {
 							AwsvpcConfiguration: {
 								Subnets: [
