@@ -38,9 +38,6 @@ jobs:
       - name: INSTALL - project
         run: poetry install --no-interaction
 
-      - name: INSTALL - pylint-exit
-        run: pip install pylint-exit
-
       - name: TEST - lint
         run: pylint --rcfile ./.pylintrc cyclonedx/ || pylint-exit $?
 
