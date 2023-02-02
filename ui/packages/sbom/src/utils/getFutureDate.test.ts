@@ -2,7 +2,7 @@ import getFutureDate from '@/utils/getFutureDate'
 
 const input = '2023-01-01T00:00:00.000Z'
 
-test('should return a timestamp formatted without the "Z"', () => {
+test('should return a formatted timestamp of a future date', () => {
   const result = getFutureDate(0, new Date(input))
   expect(result).toEqual('2023-01-01T00:00:00.000Z')
 })
