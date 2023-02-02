@@ -5,10 +5,10 @@
   "private": true,
   "scripts": {
     "clean": "yarn workspace @cyclonedx/ui-sbom run clean",
-    "build": "yarn workspace @cyclonedx/ui-sbom run build",
-    "test": "yarn workspace @cyclonedx/ui-sbom run test",
-    "start": "yarn workspace @cyclonedx/ui-sbom run start",
-    "watch": "yarn workspace @cyclonedx/ui-sbom run watch",
+    "build": "NODE_ENV=production yarn workspace @cyclonedx/ui-sbom run build",
+    "start": "NODE_ENV=development yarn workspace @cyclonedx/ui-sbom run start",
+    "test": "NODE_ENV=test yarn workspace @cyclonedx/ui-sbom run test",
+    "watch": "NODE_ENV=test yarn workspace @cyclonedx/ui-sbom run watch",
     "check": "yarn workspace @cyclonedx/ui-sbom run check",
     "fix": "run-p 'fix:js' 'fix:other'",
     "fix:js": "yarn run lint:js --fix",
@@ -36,6 +36,7 @@
     "**/{json,md,yaml,yml}": "yarn lint:other"
   },
   "devDependencies": {
+    "@types/dotenv-webpack": "^7.0.3",
     "@types/jest": "29.2.5",
     "@types/lodash": "4.14.191",
     "@types/node": "18.11.18",

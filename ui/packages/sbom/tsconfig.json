@@ -15,13 +15,16 @@
     "moduleResolution": "node",
     "noEmit": true,
     "noFallthroughCasesInSwitch": true,
-    "paths": { "@/*": ["src/*"] },
+    "paths": {
+      "@/*": ["src/*"],
+      "@config/*": ["config/*"]
+    },
     "plugins": [{ "name": "typescript-plugin-css-modules" }],
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
     "types": ["node", "react", "react-dom", "jest", "@testing-library/jest-dom"]
   },
-  "include": ["src", "declaration.d.ts"],
+  "include": ["src", "declaration.d.ts", "src/utils/validateEnv.ts"],
   "exclude": ["node_modules"]
 }

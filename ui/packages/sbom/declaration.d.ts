@@ -2,15 +2,34 @@
  * Global type declarations
  */
 
-// Image module declarations
+// ************************************
+// ** Module Declarations
+// ************************************
+
+// Image modules
 declare module '*.png'
 declare module '*.svg'
 
-// Style module declaration
+// Style modules
 declare module '*.css' {
   const classes: { [key: string]: string }
   export default classes
 }
+
+type ValidNodeEnvs = 'production' | 'test' | 'development'
+
+type ProcessEnv = {
+  NODE_ENV: ValidNodeEnvs
+  AWS_REGION: string
+  USER_POOL_ID: string
+  USER_POOL_CLIENT_ID: string
+  CF_DOMAIN: string
+}
+
+/**
+ * Generic Error Callback type
+ */
+type ErrorCallback = (err: Error) => void
 
 /**
  * Generalizable way to require at least one of a set of properties is provided.
@@ -40,11 +59,6 @@ type RequireOnlyOne<T, Keys extends keyof T = keyof T> = Pick<
   }[Keys]
 
 /**
- * Generic Error Callback type
- */
-type ErrorCallbackType = (err: Error) => void
-
-/**
  * Date Interface
  */
 interface Date {
@@ -55,6 +69,9 @@ interface Date {
   toISOString(): TDateISO
 }
 
+/**
+ * Date strings
+ */
 type TYear = `${number}${number}${number}${number}`
 type TMonth = `${number}${number}`
 type TDay = `${number}${number}`

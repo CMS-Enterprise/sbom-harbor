@@ -15,15 +15,21 @@ import {
  * @see {@link @cyclonedx/ui-sbom/craco.config.js}
  */
 export type AppConfig = {
+  // Environment
+  NODE_ENV: string
+
+  // AWS
   AWS_REGION: string | 'us-east-1'
   CF_DOMAIN: string
+  USER_POOL_ID: string
+  USER_POOL_CLIENT_ID: string
+
+  // API
   API_URL: string
   TEAM_API_URL: string
   TEAMS_API_URL: string
   USER_API_URL: string
   USER_API_SEARCH_URL: string
-  USER_POOL_ID: string
-  USER_POOL_CLIENT_ID: string
 }
 
 export enum RouteIds {

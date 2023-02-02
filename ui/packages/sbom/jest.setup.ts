@@ -6,11 +6,9 @@ import '@testing-library/jest-dom/extend-expect'
 
 /**
  * Create a mock fetch response per endpoint.
- * @param {URL | string} url the fetch request url
- * @param {Object} config the fetch request configuration
  * @returns  {Promise<Object>} the mocked fetch response per endpoint
  */
-async function mockFetch(url, config) {
+async function mockFetch() {
   return Promise.resolve({
     json: async () => ({}),
     ok: true,
