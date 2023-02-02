@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Private endpoints to reach AWS services
+Resources:
+  endpointS3:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - s3:*
+            Resource:
+              - '*'
+      RouteTableIds:
+        - Fn::ImportValue: dev-harbor-network-routes-use1-ApplicationsRouteTableAId
+        - Fn::ImportValue: dev-harbor-network-routes-use1-ApplicationsRouteTableBId
+      ServiceName: com.amazonaws.us-east-1.s3
+      VpcEndpointType: Gateway
+      VpcId:
+        Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-VpcId
+  endpointDDB:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - dynamodb:*
+            Resource:
+              - '*'
+      RouteTableIds:
+        - Fn::ImportValue: dev-harbor-network-routes-use1-ApplicationsRouteTableAId
+        - Fn::ImportValue: dev-harbor-network-routes-use1-ApplicationsRouteTableBId
+      ServiceName: com.amazonaws.us-east-1.dynamodb
+      VpcEndpointType: Gateway
+      VpcId:
+        Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-VpcId
+  endpointEcrApi:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - ecr:*
+            Resource:
+              - '*'
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - Ref: EcrInterfaceEndpointSecurityGroup
+      ServiceName: com.amazonaws.us-east-1.ecr.api
+      SubnetIds:
+        - Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-SubnetApplicationsAId
+        - Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-SubnetApplicationsBId
+      VpcEndpointType: Interface
+      VpcId:
+        Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-VpcId
+  endpointEcrDkr:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - ecr:*
+            Resource:
+              - '*'
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - Ref: EcrInterfaceEndpointSecurityGroup
+      ServiceName: com.amazonaws.us-east-1.ecr.dkr
+      SubnetIds:
+        - Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-SubnetApplicationsAId
+        - Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-SubnetApplicationsBId
+      VpcEndpointType: Interface
+      VpcId:
+        Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-VpcId
+  EcrInterfaceEndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ECR VPC Endpoint for dev-harbor-network-vpc-subnets-use1-VpcId
+      VpcId:
+        Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-VpcId
+  EcrInterfaceSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      CidrIp:
+        Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-VpcCidr
+      Description: Allow the ECR service to recieve communication from the VPC on port 443
+      FromPort: 443
+      GroupId:
+        Ref: EcrInterfaceEndpointSecurityGroup
+      IpProtocol: tcp
+      ToPort: 443
+  Ec2ApiEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - ec2:*
+            Resource:
+              - '*'
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - Ref: Ec2ApiEndpointSecurityGroup
+      ServiceName: com.amazonaws.us-east-1.ec2
+      SubnetIds:
+        - Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-SubnetApplicationsAId
+        - Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-SubnetApplicationsBId
+      VpcEndpointType: Interface
+      VpcId:
+        Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-VpcId
+  Ec2ApiEndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EC2 API VPC Endpoint for dev-harbor-network-vpc-subnets-use1-VpcId
+      VpcId:
+        Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-VpcId
+  Ec2ApiEndpointSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      CidrIp:
+        Fn::ImportValue: dev-harbor-network-vpc-subnets-use1-VpcCidr
+      Description: Allow the EC2 API to recieve communication from the VPC on port 443
+      FromPort: 443
+      GroupId:
+        Ref: Ec2ApiEndpointSecurityGroup
+      IpProtocol: tcp
+      ToPort: 443

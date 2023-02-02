@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: VPC and subnets for use by dev and ephemeral environments for SBOM Harbor.
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.40.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: dev-harbor-vpc
+  SubnetPublicA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1a
+      CidrBlock: 10.40.0.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: dev-harbor-network-vpc-subnets-use1-Public-a
+        - Key: Scope
+          Value: public
+      VpcId:
+        Ref: Vpc
+  SubnetPublicB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1b
+      CidrBlock: 10.40.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: dev-harbor-network-vpc-subnets-use1-Public-b
+        - Key: Scope
+          Value: public
+      VpcId:
+        Ref: Vpc
+  SubnetApplicationsA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1a
+      CidrBlock: 10.40.128.0/19
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: dev-harbor-network-vpc-subnets-use1-Applications-a
+        - Key: Scope
+          Value: private
+      VpcId:
+        Ref: Vpc
+  SubnetApplicationsB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1b
+      CidrBlock: 10.40.160.0/19
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: dev-harbor-network-vpc-subnets-use1-Applications-b
+        - Key: Scope
+          Value: private
+      VpcId:
+        Ref: Vpc
+Outputs:
+  VpcId:
+    Value:
+      Ref: Vpc
+    Export:
+      Name: dev-harbor-network-vpc-subnets-use1-VpcId
+  VpcCidr:
+    Value:
+      Fn::GetAtt: Vpc.CidrBlock
+    Export:
+      Name: dev-harbor-network-vpc-subnets-use1-VpcCidr
+  SubnetPublicAId:
+    Value:
+      Ref: SubnetPublicA
+    Export:
+      Name: dev-harbor-network-vpc-subnets-use1-SubnetPublicAId
+  SubnetPublicACidr:
+    Value: 10.40.0.0/24
+    Export:
+      Name: dev-harbor-network-vpc-subnets-use1-SubnetPublicACidr
+  SubnetPublicBId:
+    Value:
+      Ref: SubnetPublicB
+    Export:
+      Name: dev-harbor-network-vpc-subnets-use1-SubnetPublicBId
+  SubnetPublicBCidr:
+    Value: 10.40.1.0/24
+    Export:
+      Name: dev-harbor-network-vpc-subnets-use1-SubnetPublicBCidr
+  SubnetApplicationsAId:
+    Value:
+      Ref: SubnetApplicationsA
+    Export:
+      Name: dev-harbor-network-vpc-subnets-use1-SubnetApplicationsAId
+  SubnetApplicationsACidr:
+    Value: 10.40.128.0/19
+    Export:
+      Name: dev-harbor-network-vpc-subnets-use1-SubnetApplicationsACidr
+  SubnetApplicationsBId:
+    Value:
+      Ref: SubnetApplicationsB
+    Export:
+      Name: dev-harbor-network-vpc-subnets-use1-SubnetApplicationsBId
+  SubnetApplicationsBCidr:
+    Value: 10.40.160.0/19
+    Export:
+      Name: dev-harbor-network-vpc-subnets-use1-SubnetApplicationsBCidr
