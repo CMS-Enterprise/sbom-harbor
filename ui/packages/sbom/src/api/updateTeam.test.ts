@@ -1,6 +1,6 @@
 import updateTeam from '@/api/updateTeam'
 import { BuildTool, CodebaseLanguage } from '@/types'
-import formatTimestampForServer from '@/utils/formatTimestampForServer'
+import getFutureDate from '@/utils/getFutureDate'
 
 const apiUrl = 'https://localhost:3000/api/v1/team'
 
@@ -29,8 +29,8 @@ const token = {
   name: 'some-token',
   enabled: true,
   token: 'sbom-api-abcdefg',
-  created: formatTimestampForServer(0, new Date()),
-  expires: formatTimestampForServer(1, new Date()),
+  created: getFutureDate(0, new Date()),
+  expires: getFutureDate(1, new Date()),
 }
 
 const teamId = 'abcd-0123'

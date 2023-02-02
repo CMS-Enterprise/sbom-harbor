@@ -22,7 +22,7 @@ const updateToken = async ({
   token: {
     name?: string
     enabled?: boolean
-    expires?: string
+    expires?: TDateISO
   }
 }): Promise<Response> =>
   harborRequest({

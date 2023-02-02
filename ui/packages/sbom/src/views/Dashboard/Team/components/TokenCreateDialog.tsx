@@ -15,8 +15,8 @@ import createToken from '@/api/createToken'
 import useAlert from '@/hooks/useAlert'
 import { useAuthState } from '@/hooks/useAuth'
 import { useDialog } from '@/hooks/useDialog'
-import formatTimestampForServer from '@/utils/formatTimestampForServer'
 import TokenViewDialog from '@/views/Dashboard/Team/components/TokenViewDialog'
+import getFutureDate from '@/utils/getFutureDate'
 import { Token } from '@/types'
 
 enum ExpirationOptions {
@@ -169,12 +169,12 @@ const TokenCreateDialog = ({ setOpen, teamId, onTokenAdded }: InputProps) => {
 
   const ExpirationValues = React.useMemo(
     () => ({
-      SEVEN_DAYS: () => formatTimestampForServer(7),
-      THIRTY_DAYS: () => formatTimestampForServer(30),
-      SIXTY_DAYS: () => formatTimestampForServer(60),
-      NINETY_DAYS: () => formatTimestampForServer(90),
-      SIX_MONTHS: () => formatTimestampForServer(182),
-      ONE_YEAR: () => formatTimestampForServer(365),
+      SEVEN_DAYS: () => getFutureDate(7),
+      THIRTY_DAYS: () => getFutureDate(30),
+      SIXTY_DAYS: () => getFutureDate(60),
+      NINETY_DAYS: () => getFutureDate(90),
+      SIX_MONTHS: () => getFutureDate(182),
+      ONE_YEAR: () => getFutureDate(365),
       // TODO: implement datepicker for custom expiration
       // CUSTOM = 'Custom',
     }),

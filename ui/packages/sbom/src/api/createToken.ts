@@ -18,7 +18,7 @@ const createToken = async ({
   jwtToken: string
   teamId: string
   name: string
-  expires: TDateISOWithoutZ
+  expires: TDateISO
 }): Promise<Response> =>
   harborRequest({
     path: `/token?teamId=${teamId}`,

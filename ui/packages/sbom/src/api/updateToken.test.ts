@@ -1,4 +1,5 @@
 import updateToken from '@/api/updateToken'
+import getFutureDate from '@/utils/getFutureDate'
 
 test('calls makes a single fetch request', async () => {
   await updateToken({
@@ -8,6 +9,7 @@ test('calls makes a single fetch request', async () => {
     token: {
       name: 'some-name',
       enabled: true,
+      expires: getFutureDate(1, new Date()),
     },
   })
 
