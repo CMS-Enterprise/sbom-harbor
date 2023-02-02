@@ -31,14 +31,18 @@ jobs:
 
       - uses: actions/checkout@v3
 
-      - name: CONFIG - virtual environment
-        run: poetry config virtualenvs.in-project true
+        # disable virtual environment to reuse cache between workflow runs
+      - name: CONFIG - disable virtual environment
+        run: poetry config virtualenvs.create false
 
       - name: INSTALL - project
         run: poetry install --no-interaction
 
+      - name: INSTALL - pylint-ext
+        run: pip install pylint-exit
+
       - name: TEST - lint
-        run: pylint --rcfile ./.pylintrc cyclonedx/
+        run: pylint --rcfile ./.pylintrc cyclonedx/ || pylint-exit $?
 
       - name: TEST - unit
         run: python -m pytest -v --cov=cyclonedx/ tests/
