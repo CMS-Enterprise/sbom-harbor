@@ -76,12 +76,23 @@ Stacks: {
 					}
 				}
 
-				TaskSecurityGroupEgress: ec2.#SecurityGroupEgress & {
+				// TODO: limit egress to prefix list of known entities
+				TaskSecurityGroupEgress443: ec2.#SecurityGroupEgress & {
 					Properties: {
 						GroupId: Ref: "TaskSecurityGroup"
 						CidrIp:     "0.0.0.0/0"
 						FromPort:   443
 						ToPort:     443
+						IpProtocol: "tcp"
+					}
+				}
+
+				TaskSecurityGroupEgress80: ec2.#SecurityGroupEgress & {
+					Properties: {
+						GroupId: Ref: "TaskSecurityGroup"
+						CidrIp:     "0.0.0.0/0"
+						FromPort:   80
+						ToPort:     80
 						IpProtocol: "tcp"
 					}
 				}
@@ -105,6 +116,12 @@ Stacks: {
 						ContainerDefinitions: [
 							{
 								Image: "Fn::Join": [":", [{"Fn::GetAtt": "EcrRepo.RepositoryUri"}, "latest"]]
+								Environment: [
+									{
+										Name:  "ENVIRONMENT"
+										Value: stack.Environment
+									},
+								]
 								Secrets: [
 									{
 										Name: "GITHUB_TOKEN"
