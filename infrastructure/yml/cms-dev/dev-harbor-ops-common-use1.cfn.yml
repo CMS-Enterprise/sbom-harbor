@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  CloudFormationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      Path: /delegatedadmin/adodeveloper/service-role/
+      PermissionsBoundary:
+        Fn::Sub: arn:aws:iam::${AWS::AccountId}:policy/cms-cloud-admin/ct-ado-poweruser-permissions-boundary-policy
+      RoleName: ops-cloudformation-execution
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: harbor-ops-common
+Outputs:
+  CloudFormationRoleArn:
+    Value:
+      Fn::GetAtt:
+        - CloudFormationRole
+        - Arn
+  EcsClusterArn:
+    Value:
+      Fn::GetAtt: EcsCluster.Arn
+    Export:
+      Name: dev-harbor-ops-common-use1-EcsClusterArn
