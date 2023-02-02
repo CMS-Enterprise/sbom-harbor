@@ -19,27 +19,10 @@ env:
 
 jobs:
   backend:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted,dev]
     steps:
 
       - uses: actions/checkout@v3
-
-      - name: INSTALL - python@3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-
-      - name: INSTALL - poetry
-        uses: snok/install-poetry@v1.3.3
-        with:
-          virtualenvs-create: false
-          installer-parallel: true
-
-      - name: INSTALL - pylint
-        run: pip install pylint==2.15.5
-
-      - name: INSTALL - zip
-        run: sudo apt-get install zip -y
 
       - name: INSTALL - project
         run: poetry install --no-interaction
@@ -48,17 +31,12 @@ jobs:
         run: python -m pytest -v --cov=cyclonedx/ tests/
 
   frontend:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted,dev]
     defaults:
       run:
         working-directory: ui
     steps:
       - uses: actions/checkout@v3
-
-      - uses: actions/setup-node@v3
-        with:
-          node-version: "18.0.0"
-          registry-url: "https://registry.npmjs.org"
 
       - name: Debug
         run: |
