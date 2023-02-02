@@ -32,7 +32,12 @@ const TeamViewProjectCard = ({ teamId, project }: InputProps): JSX.Element => {
   return (
     <Card>
       <CardHeader
-        title={project.name}
+        disableTypography
+        title={
+          <Typography component="h3" variant="h6">
+            {project.name}
+          </Typography>
+        }
         titleTypographyProps={{
           sx: {
             lineHeight: '2rem !important',
@@ -48,11 +53,7 @@ const TeamViewProjectCard = ({ teamId, project }: InputProps): JSX.Element => {
             <DotsVertical />
           </IconButton>
         }
-      >
-        <Typography component="h5" variant="caption" sx={{ mb: 5 }}>
-          {project.name}
-        </Typography>
-      </CardHeader>
+      ></CardHeader>
       <CardContent>
         <Typography component="p" variant="caption" sx={{ mb: 5 }}>
           <>{codebaseEntries?.length || 0} Codebases</>

@@ -38,8 +38,8 @@ const router = createHashRouter([
   {
     id: RouteIds.MAIN,
     path: '/',
-    element: <Main />,
     loader: configureCognito,
+    element: <Main />,
     children: [
       {
         index: true,
@@ -61,20 +61,26 @@ const router = createHashRouter([
       },
       {
         path: 'app/*',
+        id: RouteIds.AUTHED_APP,
         element: <App />,
         errorElement: <ErrorBoundary />,
         loader: authLoader,
         children: [
           {
             index: true,
-            element: <Dashboard />,
+            id: RouteIds.DASHBOARD,
             loader: teamsLoader,
+            element: <Dashboard />,
             errorElement: <ErrorBoundary />,
           },
           {
             path: 'team',
             children: [
               {
+                id: RouteIds.TEAM_NEW,
+                loader: () => ({
+                  data: Promise.resolve({}),
+                }),
                 path: 'new',
                 element: <TeamForm />,
               },
@@ -87,16 +93,17 @@ const router = createHashRouter([
             errorElement: <ErrorBoundary />,
             children: [
               {
+                id: RouteIds.TEAM_VIEW,
                 path: '',
-                element: <TeamView />,
                 loader: teamLoader,
+                element: <TeamView />,
                 errorElement: <ErrorBoundary />,
               },
               {
                 id: RouteIds.TEAM_EDIT,
                 path: 'edit',
-                element: <TeamForm />,
                 loader: teamLoader,
+                element: <TeamForm />,
                 errorElement: <ErrorBoundary />,
               },
             ],

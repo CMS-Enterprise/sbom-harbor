@@ -1,5 +1,4 @@
 import harborRequest from '@/utils/harborRequest'
-import { Token } from '@/types'
 
 /**
  * Function that makes a request to the Harbor API to create a token.
@@ -19,13 +18,13 @@ const createToken = async ({
   jwtToken: string
   teamId: string
   name: string
-  expires: TDateISOWithoutZ
-}): Promise<Token> =>
+  expires: TDateISO
+}): Promise<Response> =>
   harborRequest({
-    path: `/token?teamId=${teamId}`,
-    method: 'POST',
-    jwtToken,
     body: { name, expires },
+    jwtToken,
+    method: 'POST',
+    path: `/token?teamId=${teamId}`,
     signal: abortController.signal,
   })
 

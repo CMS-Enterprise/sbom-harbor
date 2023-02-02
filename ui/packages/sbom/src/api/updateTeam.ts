@@ -17,33 +17,8 @@ const updateTeam = async ({
   abortController = new AbortController(),
 }: UpdateTeamParams) => {
   return harborRequest({
-    /**
-     * The path of the request.
-     * @type {string}
-     *
-     * The path is /team if this is a new team, otherwise it is /team/:teamId.
-     * This is determined by the newTeamRouteMatch boolean, which is a truthy
-     * value if the route matches the new team route. Otherwise, it is null.
-     *
-     * @see @/views/Dashboard/Team/TeamForm.tsx for the route match.
-     * @see @/router/router.tsx for the route definitions.
-     * @see https://reactrouter.com/web/api/match
-     */
-    path: newTeamRouteMatch ? '/team' : `/team/${teamId}`,
-
-    /**
-     * The method of the request.
-     * @type {string}
-     *
-     * The method is POST if this is a new team, otherwise it is PUT.
-     * This is determined by the newTeamRouteMatch boolean, which is a truthy
-     *  value if the route matches the new team route. Otherwise, it is null.
-     *
-     * @see @/views/Dashboard/Team/TeamForm.tsx for the route match.
-     * @see @/router/router.tsx for the route definitions.
-     * @see https://reactrouter.com/web/api/match
-     */
-    method: newTeamRouteMatch ? 'POST' : 'PUT',
+    // include updating of children
+    children: true,
 
     /**
      * The body of the request.
@@ -104,6 +79,34 @@ const updateTeam = async ({
      * @see @/router/authLoader
      */
     jwtToken,
+
+    /**
+     * The method of the request.
+     * @type {string}
+     *
+     * The method is POST if this is a new team, otherwise it is PUT.
+     * This is determined by the newTeamRouteMatch boolean, which is a truthy
+     *  value if the route matches the new team route. Otherwise, it is null.
+     *
+     * @see @/views/Dashboard/Team/TeamForm.tsx for the route match.
+     * @see @/router/router.tsx for the route definitions.
+     * @see https://reactrouter.com/web/api/match
+     */
+    method: newTeamRouteMatch ? 'POST' : 'PUT',
+
+    /**
+     * The path of the request.
+     * @type {string}
+     *
+     * The path is /team if this is a new team, otherwise it is /team/:teamId.
+     * This is determined by the newTeamRouteMatch boolean, which is a truthy
+     * value if the route matches the new team route. Otherwise, it is null.
+     *
+     * @see @/views/Dashboard/Team/TeamForm.tsx for the route match.
+     * @see @/router/router.tsx for the route definitions.
+     * @see https://reactrouter.com/web/api/match
+     */
+    path: newTeamRouteMatch ? '/team' : `/team/${teamId}`,
 
     // pass the abort controller to the request to allow for cancelling the request.
     signal: abortController.signal,

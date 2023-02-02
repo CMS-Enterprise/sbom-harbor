@@ -18,12 +18,12 @@ const deleteToken = async ({
   jwtToken: string
   teamId: string
   tokenId: string
-}): Promise<Record<string, never>> =>
+}): Promise<Response> =>
   harborRequest({
-    path: `/token/${tokenId}?teamId=${teamId}`,
-    method: 'DELETE',
-    jwtToken,
     body: {},
+    jwtToken,
+    method: 'DELETE',
+    path: `/token/${tokenId}?teamId=${teamId}`,
     signal: abortController.signal,
   })
 

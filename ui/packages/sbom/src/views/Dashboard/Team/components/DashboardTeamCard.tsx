@@ -11,49 +11,28 @@ import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import { Team } from '@/types'
 
-const DashboardTeamCard = ({ team }: { team: Team }): JSX.Element =>
-  team ? (
-    <Card sx={{ position: 'relative' }}>
-      <CardContent>
-        <Typography variant="h5">
-          <Box
-            component="span"
-            sx={{ color: 'primary.main', fontWeight: 'bold' }}
-          >
-            {team.name}
-          </Box>
-        </Typography>
-        <Typography variant="h6">
-          <>{Object.values(team.projects).length || 0} Projects</>
-        </Typography>
-        <Typography variant="body2" sx={{ mb: 3.25 }}>
-          <>{Object.values(team.members).length || 0} Members</>
-        </Typography>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Link to={`teams/${team.id}`}>View</Link>
+const DashboardTeamCard = ({ team }: { team: Team }): JSX.Element => (
+  <Card sx={{ position: 'relative' }}>
+    <CardContent>
+      <Typography variant="h5">
+        <Box
+          component="span"
+          sx={{ color: 'primary.main', fontWeight: 'bold' }}
+        >
+          {team.name}
         </Box>
-      </CardContent>
-    </Card>
-  ) : (
-    <Card sx={{ position: 'relative' }}>
-      <CardContent>
-        <Typography variant="h5">
-          <Box
-            component="span"
-            sx={{ color: 'primary.main', fontWeight: 'bold' }}
-          >
-            -
-          </Box>
-        </Typography>
-        <Typography variant="h6">- Projects</Typography>
-        <Typography variant="body2" sx={{ mb: 3.25 }}>
-          - Members
-        </Typography>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Link to={`teams`}>View</Link>
-        </Box>
-      </CardContent>
-    </Card>
-  )
+      </Typography>
+      <Typography variant="h6">
+        <>{Object.values(team.projects).length || 0} Projects</>
+      </Typography>
+      <Typography variant="body2" sx={{ mb: 3.25 }}>
+        <>{Object.values(team.members).length || 0} Members</>
+      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <Link to={`teams/${team.id}`}>View</Link>
+      </Box>
+    </CardContent>
+  </Card>
+)
 
 export default DashboardTeamCard

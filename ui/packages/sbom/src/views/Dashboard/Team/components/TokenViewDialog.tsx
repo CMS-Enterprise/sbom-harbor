@@ -5,7 +5,7 @@ import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
-import Grid from '@mui/material/Grid'
+import Grid2 from '@mui/material/Unstable_Grid2'
 import useCopyToClipboard from '@/hooks/useCopyToClipboard'
 import Icon from '@mui/material/Icon'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
@@ -57,20 +57,20 @@ const TokenViewDialog = ({ setOpen, token }: InputProps) => {
           pipeline.
         </DialogContentText>
         <Box sx={{ mt: 4, width: '100%' }}>
-          <Grid
+          <Grid2
             container
             spacing={0}
             direction="row"
             alignItems="flex-end"
             sx={{ mb: 4 }}
           >
-            <Grid item xs={10}>
+            <Grid2 xs={10}>
               <code>
                 <pre>{token}</pre>
               </code>
-            </Grid>
-          </Grid>
-          <Grid item xs={12}>
+            </Grid2>
+          </Grid2>
+          <Grid2 xs={12}>
             <Button variant="text" onClick={handleCopyToClipboard}>
               {/* TODO: add icon */}
               Copy to Clipboard
@@ -80,7 +80,7 @@ const TokenViewDialog = ({ setOpen, token }: InputProps) => {
                 <CheckCircleIcon />
               </Icon>
             )}
-          </Grid>
+          </Grid2>
           <DialogActions>
             <Button variant="outlined" onClick={handleClose}>
               Close

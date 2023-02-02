@@ -27,11 +27,15 @@ export type AppConfig = {
 }
 
 export enum RouteIds {
+  AUTHED_APP = 'authed-app',
+  DASHBOARD = 'dashboard',
   MAIN = 'main',
   LOGIN = 'login',
   LOGOUT = 'logout',
   TEAM = 'team',
   TEAM_EDIT = 'team-edit',
+  TEAM_NEW = 'team-new',
+  TEAM_VIEW = 'team-view',
 }
 
 //* User (Cognito)
