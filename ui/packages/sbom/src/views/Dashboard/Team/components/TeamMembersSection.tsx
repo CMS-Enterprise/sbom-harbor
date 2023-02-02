@@ -84,7 +84,6 @@ const TeamMembersSection = ({
             margin="none"
             id={`${name}`}
             name={`${name}`}
-            required
             fullWidth
             onChange={handleChange}
             value={newEmail}
