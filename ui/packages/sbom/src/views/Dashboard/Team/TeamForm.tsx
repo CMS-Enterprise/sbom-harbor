@@ -25,6 +25,7 @@ import Paper from '@mui/material/Paper'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import updateTeam from '@/api/updateTeam'
+import Fallback from '@/components/SimpleLoadingFallback'
 import UserAutocomplete from '@/components/UserAutocomplete'
 import SubmitButton from '@/components/forms/SubmitButton'
 import { useAlert, DEFAULT_ALERT_TIMEOUT } from '@/hooks/useAlert'
@@ -35,8 +36,7 @@ import { defaultFormState, defaultProject } from './constants'
 import TeamMembersSection from './components/TeamMembersSection'
 import TeamViewProjectCreateCard from './components/TeamViewProjectCreateCard'
 import TeamViewProjectCreationCard from './components/TeamViewProjectCreationCard'
-import { FormState, FormTeamState } from './types'
-import Fallback from '@/components/SimpleLoadingFallback'
+import { FormState } from './types'
 
 /**
  * A component that renders a page with a form for creating/editing a team.
@@ -89,7 +89,7 @@ const TeamForm = () => {
   )
 
   React.useEffect(() => {
-    if (newTeamRouteMatch || Object.values(data).length === 0) return
+    if (newTeamRouteMatch) return
     // if this is an edit form, set the form input state to the team data
     data.then((data) => {
       setFormInput(data)

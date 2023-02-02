@@ -57,7 +57,7 @@ type RenderCellProps = {
 type TokenUpdatePayload = {
   name?: string
   enabled?: boolean
-  expires?: string
+  expires?: TDateISO
 }
 
 /**
@@ -295,7 +295,6 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
           return (
             <Typography
               variant="caption"
-              textAlign="center"
               sx={{ color: isExpired ? 'red' : 'green', width: '100%' }}
             >
               {isExpired ? 'Expired' : 'Active'}
@@ -310,7 +309,6 @@ const TokensTable = ({ teamId, tokens }: InputProps) => {
         renderCell: ({ row: { enabled } }: RenderCellProps): JSX.Element => (
           <Typography
             variant="caption"
-            textAlign="center"
             sx={{ color: !enabled ? 'red' : 'green', width: '100%' }}
           >
             {enabled ? 'Enabled' : 'Disabled'}

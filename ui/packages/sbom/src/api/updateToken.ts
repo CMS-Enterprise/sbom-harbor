@@ -26,10 +26,10 @@ const updateToken = async ({
   }
 }): Promise<Response> =>
   harborRequest({
-    path: `/token/${tokenId}?teamId=${teamId}`,
-    method: 'PUT',
-    jwtToken,
     body,
+    jwtToken,
+    method: 'PUT',
+    path: `/token/${tokenId}?teamId=${teamId}`,
     signal: abortController.signal,
   })
 

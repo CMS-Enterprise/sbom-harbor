@@ -26,10 +26,10 @@ const uploadSBOM = async ({
   fileContents: string
 }): Promise<Response> =>
   harborRequest({
-    path: `${teamId}/${projectId}/${codebaseId}/sbom`,
-    method: 'POST',
     body: JSON.parse(fileContents),
     jwtToken: token,
+    method: 'POST',
+    path: `${teamId}/${projectId}/${codebaseId}/sbom`,
     signal: abortController.signal,
   })
 

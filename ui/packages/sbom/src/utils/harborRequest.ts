@@ -17,7 +17,7 @@ type HarborRequestParams = {
 /**
  * Make a request to the Harbor API.
  * @param {[Object]} body Optional request body.
- * @param {[boolean]} children Optional value of the children query param.
+ * @param {[boolean]} children Required value of the children query param.
  * @param {string} jwtToken The Cognito JWT Token.
  * @param {[string='GET']} method Optional HTTP method, defaults to 'GET'.
  * @param {string} path The path to the API endpoint.
@@ -41,7 +41,7 @@ const harborRequest = async ({
   const url = sanitizeUrl(`${CONFIG.API_URL}/v1/${path}`)
 
   // append the children=true query param to the url
-  if (typeof children !== undefined && children !== null) {
+  if (typeof children !== 'undefined' && children !== null) {
     url.searchParams.append('children', `${children}`)
   }
 

@@ -21,10 +21,10 @@ const createToken = async ({
   expires: TDateISO
 }): Promise<Response> =>
   harborRequest({
-    path: `/token?teamId=${teamId}`,
-    method: 'POST',
-    jwtToken,
     body: { name, expires },
+    jwtToken,
+    method: 'POST',
+    path: `/token?teamId=${teamId}`,
     signal: abortController.signal,
   })
 

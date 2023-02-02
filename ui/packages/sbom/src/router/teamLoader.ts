@@ -22,6 +22,7 @@ const teamLoader = ({
       .then(
         (jwtToken: string): Promise<Response> =>
           harborRequest({
+            children: true,
             jwtToken,
             path: `team/${teamId}`,
             signal,
