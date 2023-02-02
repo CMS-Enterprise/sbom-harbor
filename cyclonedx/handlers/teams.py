@@ -86,10 +86,9 @@ def _do_get(event: dict, db_client: HarborDBClient) -> dict:
 
     return harbor_response(200, team.to_json())
 
-def _do_get_team_name(event: dict, db_client: HarborDBClient) -> str:
+def _do_get_team_name(request_body: dict, db_client: HarborDBClient) -> bool:
 
-    body = _get_request_body_as_dict(event)
-    team_name = body['name']
+    team_name = request_body['name']
     team_exists: bool = db_client.get_team_name(team_name)
     return team_exists
 
@@ -118,14 +117,15 @@ def _add_creating_member(
 
 
 def _do_post(event: dict, db_client: HarborDBClient) -> dict:
+    
+     # Create new team object
+    request_body: dict = loads(event["body"])
+
     # Check to see if team already exists
-    team_exists = _do_get_team_name(event, db_client)
+    team_exists = _do_get_team_name(request_body, db_client)
 
     if team_exists:
         raise DatabaseError("Team name already exists in harbor")
-
-    # Create new team object
-    request_body: dict = loads(event["body"])
 
     team_id: str = generate_model_id()
 

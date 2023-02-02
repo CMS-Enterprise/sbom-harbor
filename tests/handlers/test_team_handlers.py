@@ -106,7 +106,7 @@ def test_get_team_name():
     # Create a 2nd time which will attempt to use the same team name as the first call which should result in HTTP 400
     dupe_response: dict = create(team_handler, username=email[1])
 
-    assert dupe_response["status_code"] == 400
+    assert dupe_response["statusCode"] == 400
 
 @mock_dynamodb
 @mock_cognitoidp
