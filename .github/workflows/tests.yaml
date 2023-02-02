@@ -12,6 +12,13 @@ on:
       - reopened
       - synchronize
 
+# Rather counterintuitive, concurrency is used to ensure that a workflow runs *singularly* per pull request.
+# When a PR is updated, cancel any currently running workflows triggered by previous pushes,
+# as they are essentially redundant and made moot by later pushes
+# This will ensure that workflows do not block runners by executing unnecessarily
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   AWS_REGION: us-east-1
@@ -23,6 +30,10 @@ jobs:
     steps:
 
       - uses: actions/checkout@v3
+
+        # virtual environments in the runner cause issues
+      - name: DISABLE - virtual environment
+        run: poetry config virtualenvs.create false --local
 
       - name: INSTALL - project
         run: poetry install --no-interaction
