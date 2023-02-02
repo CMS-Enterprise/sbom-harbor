@@ -5,12 +5,12 @@
  * @module @cyclonedx/ui/sbom/views/Dashboard/Dashboard
  */
 import * as React from 'react'
-import { useNavigate, useLoaderData } from 'react-router-dom'
+import { useNavigate, useLoaderData, Await } from 'react-router-dom'
 import Box from '@mui/material/Box'
-import Container from '@mui/material/Container'
-import Grid from '@mui/material/Grid'
-import DashboardTeamCard from './Team/components/DashboardTeamCard'
-import DashboardTeamCreationCard from './Team/components/DashboardTeamCreateCard'
+import Grid2 from '@mui/material/Unstable_Grid2'
+import Fallback from '@/components/SimpleLoadingFallback'
+import DashboardTeamCard from '@/views/Dashboard/Team/components/DashboardTeamCard'
+import DashboardTeamCreationCard from '@/views/Dashboard/Team/components/DashboardTeamCreateCard'
 import { Team } from '@/types'
 
 const DashboardContainer = (): JSX.Element => {
@@ -18,7 +18,7 @@ const DashboardContainer = (): JSX.Element => {
   const navigate = useNavigate()
 
   // hook for getting the route loader data
-  const teams = useLoaderData() as Team[]
+  const { data } = useLoaderData() as { data: Team[] }
 
   // Callback function that redirects the user to the new team creation
   // view. This callback does not depend on `navigate`, so it's not
@@ -30,27 +30,30 @@ const DashboardContainer = (): JSX.Element => {
   /* eslint-enable react-hooks/exhaustive-deps */
 
   return (
-    <Box sx={{ display: 'flex' }} data-testid="Dashboard">
-      <Box
-        sx={{
-          flexGrow: 1,
-          height: 'auto',
-          overflow: 'scroll',
-        }}
-      >
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-          <Grid container spacing={6} className="match-height">
-            <Grid item xs={12} md={4}>
-              <DashboardTeamCreationCard onClick={navigateToCreateTeam} />
-            </Grid>
-            {teams?.map((team: Team) => (
-              <Grid item xs={12} md={4} key={team.id}>
-                <DashboardTeamCard team={team} />
-              </Grid>
-            ))}
-          </Grid>
-        </Container>
-      </Box>
+    <Box sx={{ flexGrow: 1 }}>
+      <Grid2 container spacing={6} className="match-height">
+        <React.Suspense fallback={<Fallback />}>
+          <Await
+            resolve={data}
+            errorElement={<div>Could not load teams 😬</div>}
+            // eslint-disable-next-line react/no-children-prop
+            children={(resolvedTeams: Team[]) => (
+              <>
+                <Grid2 xs={12} md={4}>
+                  <DashboardTeamCreationCard onClick={navigateToCreateTeam} />
+                </Grid2>
+                {resolvedTeams &&
+                  resolvedTeams.length > 0 &&
+                  resolvedTeams.map((team: Team) => (
+                    <Grid2 xs={12} md={4} key={team.id}>
+                      <DashboardTeamCard team={team} />
+                    </Grid2>
+                  ))}
+              </>
+            )}
+          />
+        </React.Suspense>
+      </Grid2>
     </Box>
   )
 }
