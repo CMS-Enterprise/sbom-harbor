@@ -66,9 +66,13 @@ def test_sbom_ingress():
     """
 
     retest: bool = False
-    retest_team_id: str = ""
-    retest_project_id: str = ""
-    retest_codebase_id: str = ""
+    retest_team_id: str = "0bf4a009-bd58-49a9-8ad0-65099b018b3c"
+    retest_project_id: str = "f20ae819-9a41-4442-aa2a-0006541e6026"
+    #retest_codebase_id: str = "32395d5a-0d4e-41cc-82af-b80673461b77"  # Backend
+    retest_codebase_id: str = "f43419b9-cb16-4207-b782-52b95e8ff75a"  # Frontend
+
+    sbom_folder: Traversable = files(sboms)
+    sbom_obj: Traversable = sbom_folder.joinpath("panther_go.json")
 
     missing_ids: bool = "" in (
         retest_team_id,
@@ -80,8 +84,6 @@ def test_sbom_ingress():
         if missing_ids:
             raise ValueError("Need all the ids for a retest")
 
-    sbom_folder: Traversable = files(sboms)
-    sbom_obj: Traversable = sbom_folder.joinpath("panther_python.json")
     sbom: dict = loads(sbom_obj.read_text())
 
     cf_url: str = get_cloudfront_url()
@@ -150,8 +152,8 @@ def test_sbom_ingress():
             Bucket=s3_bucket_name,
             Key=dt_findings_s3_object_key,
             WaiterConfig={
-                "Delay": 6,
-                "MaxAttempts": 10,
+                "Delay": 10,
+                "MaxAttempts": 100,
             },
         )
     except botocore.exceptions.ClientError as ce:
@@ -181,19 +183,19 @@ def test_sbom_ingress():
         f"Found S3 object containing Ion Channel findings: {dt_findings_s3_object_key}"
     )
 
-    s3_resource = session.resource("s3")
-
+    # s3_resource = session.resource("s3")
+    #
     # Delete the files in S3
-    s3_resource.Object(s3_bucket_name, sbom_s3_object_key).delete()
-    s3_resource.Object(s3_bucket_name, dt_findings_s3_object_key).delete()
-    s3_resource.Object(s3_bucket_name, ic_findings_s3_object_key).delete()
-
-    # Clean up the database
-    cleanup(
-        team_id=team_id,
-        team_url=get_team_url(cf_url),
-        jwt=jwt,
-    )
+    # s3_resource.Object(s3_bucket_name, sbom_s3_object_key).delete()
+    # s3_resource.Object(s3_bucket_name, dt_findings_s3_object_key).delete()
+    # s3_resource.Object(s3_bucket_name, ic_findings_s3_object_key).delete()
+    #
+    # # Clean up the database
+    # cleanup(
+    #     team_id=team_id,
+    #     team_url=get_team_url(cf_url),
+    #     jwt=jwt,
+    # )
 
     print(
         f"IDS for retest: team_id({team_id}), project_id({project_id}), codebase_id({codebase_id})"

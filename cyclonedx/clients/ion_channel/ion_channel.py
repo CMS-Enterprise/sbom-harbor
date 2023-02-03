@@ -1,7 +1,9 @@
 """
 -> A module to house the Ion Channel Client and supporting functions
 """
+import datetime
 import logging
+from datetime import timedelta
 from logging import config
 from time import sleep
 from typing import IO, Union
@@ -462,6 +464,9 @@ class IonChannelClient:
         complete = False
         finished_projects: list[str] = []
         errored_projects: list[str] = []
+
+        start = datetime.datetime.now()
+
         while not complete:
             # We hope it's done.
             complete = True
@@ -472,6 +477,11 @@ class IonChannelClient:
                 team_id: str = analysis["team_id"]
                 project_id: str = analysis["project_id"]
                 analysis_id: str = analysis["analysis_id"]
+
+                elapsed_time = datetime.datetime.now() - start
+                timeout = timedelta(minutes=12)
+                if elapsed_time > timeout:
+                    raise Exception("Ion Channel Request bailing before timeout")
 
                 # Do not analyze this project if it has
                 # already completed or failed
@@ -494,8 +504,8 @@ class IonChannelClient:
                     complete = False
                     logger.info(status_rsp_dict["data"]["message"])
 
-                    # Try not to hammer the Ion Channel API
-                    sleep(1)
+                 # Try not to hammer the Ion Channel API
+                sleep(30)
 
             logger.info("Extracting data from %s projects" % len(finished_projects))
             logger.info("%s projects are failing" % len(errored_projects))

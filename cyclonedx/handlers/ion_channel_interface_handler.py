@@ -36,31 +36,48 @@ def ic_interface_handler(event: dict = None, context: dict = None):
     # is created.
     sbom_name: str = f"{team}-{project}-{codebase}"
 
-    # Create an Ion Channel Request Factory
-    # and import the SBOM
-    ic_client = IonChannelClient(sbom_name, True)
+    try:
 
-    # If the SBOM already exists, then the projects must
-    # be archived, or they will be duplicated in Ion Channel
-    if ic_client.already_exists:
-        ic_client.archive_existing_projects()
+        # Create an Ion Channel Request Factory
+        # and import the SBOM
+        ic_client = IonChannelClient(sbom_name, True)
 
-    ic_client.import_sbom(sbom_str_file)
-    ic_client.monitor_sbom_analysis()
+        # If the SBOM already exists, then the projects must
+        # be archived, or they will be duplicated in Ion Channel
+        if ic_client.already_exists:
+            ic_client.archive_existing_projects()
 
-    report: dict = ic_client.get_report()
+        ic_client.import_sbom(sbom_str_file)
+        ic_client.monitor_sbom_analysis()
 
-    findings_object: dict = {
-        # This key is necessary to set the name of the
-        # folder under the summarized data folder
-        "meta": {
-            "application": "Ion-Channel",
-        },
-        # Without this key, the summarizer will break
-        "project": {},
-        # Here is the actual data
-        "report": report,
-    }
+        report: dict = ic_client.get_report()
+
+        findings_object: dict = {
+            # This key is necessary to set the name of the
+            # folder under the summarized data folder
+            "meta": {
+                "application": "Ion-Channel",
+            },
+            # Without this key, the summarizer will break
+            "project": {},
+            # Here is the actual data
+            "report": report,
+        }
+
+    except Exception as e:
+
+        findings_object: dict = {
+            # This key is necessary to set the name of the
+            # folder under the summarized data folder
+            "meta": {
+                "application": "Ion-Channel",
+                "error": "ION CHANNEL FAILURE: timeout"
+            },
+            # Without this key, the summarizer will break
+            "project": {},
+            # Here is the actual data
+            "report": {},
+        }
 
     findings_bytes = bytearray(dumps(findings_object), "utf-8")
     findings_key: str = f"findings-ic-{key}"

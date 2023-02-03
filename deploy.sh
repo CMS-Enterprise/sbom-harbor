@@ -31,7 +31,7 @@ echo "    ENRICHMENTS: $ENRICHMENTS
     "
 
 if [[ $DEPLOY_ONLY == 0 ]]; then
-  poetry run clean > /dev/null 2>&1
+  poetry run clean 
   poetry -q install
   poetry build
   pip install --upgrade -t tmp dist/*.whl

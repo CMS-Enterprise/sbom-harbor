@@ -23,17 +23,18 @@ def test_create_cognito_users():
     """
 
     usernames = [
-        "sbomadmin",
-        "quinn",
-        "quinton",
-        "quison",
-        "heather",
-        "bill",
-        "martha",
-        "fred",
-        "maria",
-        "sam",
-        "linda",
+        # "sbomadmin",
+        "daniel.bowne"
+        # "quinn",
+        # "quinton",
+        # "quison",
+        # "heather",
+        # "bill",
+        # "martha",
+        # "fred",
+        # "maria",
+        # "sam",
+        # "linda",
     ]
 
     current_env: str = get_current_environment()
