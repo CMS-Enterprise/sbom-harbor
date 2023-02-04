@@ -1,3 +1,5 @@
+const API_ROUTE = '/api/v1'
+
 enum NodeEnv {
   PRODUCTION = 'production',
   TEST = 'test',
@@ -54,7 +56,7 @@ export function validateEnvironment(): EnvVarsType & { API_URL: string } {
     USER_POOL_ID: ENV.USER_POOL_ID,
     USER_POOL_CLIENT_ID: ENV.USER_POOL_CLIENT_ID,
     CF_DOMAIN: ENV.CF_DOMAIN,
-    API_URL: getApiUrl(ENV.CF_DOMAIN).toString(),
+    API_URL: `${getApiUrl(ENV.CF_DOMAIN).toString()}`,
   }
 }
 
@@ -63,7 +65,7 @@ export function validateEnvironment(): EnvVarsType & { API_URL: string } {
  * @param {string} cfDomain the cloudfront domain
  * @returns the cloudfront domain with a protocol
  */
-export function addProtocolToCloudfrontDomain(cfDomain: string): string {
+export function addProtocol(cfDomain: string): string {
   const protocol = cfDomain.split('://')[0]
   if (protocol && protocol.match(/^(http|https)$/)) {
     return cfDomain
@@ -85,7 +87,7 @@ export function getApiUrl(cfDomain: string): URL {
     if (!trimmed || typeof trimmed !== 'string') {
       throw new Error('(must be a non-empty string)')
     }
-    return new URL(addProtocolToCloudfrontDomain(`${trimmed}/api`))
+    return new URL(`${addProtocol(trimmed)}${API_ROUTE}`)
   } catch (error) {
     console.error(error)
     throw new Error(`Invalid URL ${cfDomain} ${(error as Error).message}`)

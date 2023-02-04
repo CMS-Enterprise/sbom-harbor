@@ -59,7 +59,7 @@ export const DataProvider = ({
         return
       }
 
-      const url = new URL(`${CONFIG.API_URL}/v1/teams`)
+      const url = new URL(`${CONFIG.API_URL}/teams`)
       url.searchParams.append('children', 'true')
 
       const teams = await fetch(url, {

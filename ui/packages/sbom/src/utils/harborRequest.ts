@@ -38,7 +38,7 @@ const harborRequest = async ({
   }
 
   // create the url object with the path
-  const url = sanitizeUrl(`${CONFIG.API_URL}/v1/${path}`)
+  const url = sanitizeUrl(`${CONFIG.API_URL}/${path}`)
 
   // append the children=true query param to the url
   if (typeof children !== 'undefined' && children !== null) {

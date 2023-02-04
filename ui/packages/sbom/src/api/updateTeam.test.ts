@@ -1,8 +1,9 @@
 import updateTeam from '@/api/updateTeam'
-import { BuildTool, CodebaseLanguage } from '@/types'
 import getFutureDate from '@/utils/getFutureDate'
+import { BuildTool, CodebaseLanguage } from '@/types'
 
-const apiUrl = 'https://localhost:3000/api/v1/team'
+// test environment variables are set in craco.config.ts
+const apiUrl = `${process.env.API_URL}/team`
 
 const member = {
   isTeamLead: true,
@@ -68,15 +69,15 @@ test('calls makes a fetch request with correct body', async () => {
 })
 
 test('creates a new team on the update team route', async () => {
+  const expectedUrl = `${apiUrl}?children=true`
   await updateTeam(updateTeamParams)
   const [[requestUrl]] = (global.fetch as jest.Mock).mock.calls
-  const desiredUrl = `${apiUrl}?children=true`
-  expect(requestUrl.toString()).toStrictEqual(desiredUrl)
+  expect(requestUrl.toString()).toStrictEqual(expectedUrl)
 })
 
 test('updates an existing team on the update team route', async () => {
+  const expectedUrl = `${apiUrl}/${teamId}?children=true`
   await updateTeam({ ...updateTeamParams, newTeamRouteMatch: false })
   const [[requestUrl]] = (global.fetch as jest.Mock).mock.calls
-  const desiredUrl = `${apiUrl}/${teamId}?children=true`
-  expect(requestUrl.toString()).toStrictEqual(desiredUrl)
+  expect(requestUrl.toString()).toStrictEqual(expectedUrl)
 })

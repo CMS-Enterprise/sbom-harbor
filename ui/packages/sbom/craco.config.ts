@@ -5,10 +5,10 @@
 if (process.env.NODE_ENV === 'test') {
   process.env.ENVIRONMENT = 'test'
   process.env.AWS_REGION = 'us-east-1'
-  process.env.CF_DOMAIN = 'localhost:3000'
-  process.env.API_URL = `http://${process.env.CF_DOMAIN}`
   process.env.USER_POOL_ID = 'us-east-1_123456789'
   process.env.USER_POOL_CLIENT_ID = '1234567890123456789012'
+  process.env.CF_DOMAIN = 'localhost:3000'
+  process.env.API_URL = 'http://localhost:3000/api/v1'
 }
 
 import { resolve } from 'path'

@@ -26,8 +26,8 @@ export const CONFIG = {
   AWS_REGION,
   USER_POOL_ID,
   USER_POOL_CLIENT_ID,
-  TEAM_API_URL: `${API_URL}/v1/team`,
-  TEAMS_API_URL: `${API_URL}/v1/teams`,
-  USER_API_URL: `${API_URL}/v1/user`,
-  USER_API_SEARCH_URL: `${API_URL}/v1/user/search`,
+  TEAM_API_URL: `${API_URL}/team`,
+  TEAMS_API_URL: `${API_URL}/teams`,
+  USER_API_URL: `${API_URL}/user`,
+  USER_API_SEARCH_URL: `${API_URL}/user/search`,
 } as AppConfig
