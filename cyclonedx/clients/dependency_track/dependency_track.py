@@ -21,15 +21,14 @@ from cyclonedx.constants import (
 )
 from cyclonedx.dtendpoints import DTEndpoints
 
-config.fileConfig(PYTHON_LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
-
-
 def __change_dt_root_pwd():
 
     """
     -> Change the root password in Dependency Track
     """
+
+    logger = logging.getLogger("__change_dt_root_pwd")
+    logger.setLevel(logging.INFO)
 
     logger.info("@START __change_dt_root_pwd()")
 
@@ -108,6 +107,9 @@ def __get_jwt(root_pwd=None):
     -> Get JWT from Dependency Track
     """
 
+    logger = logging.getLogger("__get_jwt")
+    logger.setLevel(logging.INFO)
+
     logger.info("@START __get_jwt()")
 
     if root_pwd is None:
@@ -151,6 +153,9 @@ def __get_teams():
     -> Get teams from Dependency Track
     """
 
+    logger = logging.getLogger("__get_teams")
+    logger.setLevel(logging.INFO)
+
     logger.info("@START __get_teams()")
 
     jwt = __get_jwt()
@@ -178,6 +183,9 @@ def __get_automation_team_data_from_dt():
     -> Get the automation team info from Dependency Track
     """
 
+    logger = logging.getLogger("__get_automation_team_data_from_dt")
+    logger.setLevel(logging.INFO)
+
     logger.info("@START __get_automation_team_data_from_dt()")
 
     for team in __get_teams():
@@ -195,6 +203,9 @@ def __set_team_permissions(team_uuid):
     """
     -> Set the permissions for a team in Dependency Track
     """
+
+    logger = logging.getLogger("__set_team_permissions")
+    logger.setLevel(logging.INFO)
 
     logger.info("@START __set_team_permissions()")
 
@@ -275,6 +286,9 @@ def __get_records_from_event(event) -> list:
     be a 'body' key, and it will contain the JSON object
     as a **string** that the POST body contained.
     """
+
+    logger = logging.getLogger("__get_records_from_event")
+    logger.setLevel(logging.INFO)
 
     logger.info("Incoming Event: %s", event)
     logger.info("Incoming Event Type: %s", type(event))
@@ -360,6 +374,9 @@ def __get_findings(project_uuid: str, sbom_token: str) -> dict:
     -> Extract the findings from Dependency Track
     """
 
+    logger = logging.getLogger("__get_findings")
+    logger.setLevel(logging.INFO)
+
     key = __get_api_key()
 
     headers = {
@@ -430,6 +447,9 @@ def __create_project():
     -> Create a project in Dependency Track
     """
 
+    logger = logging.getLogger("__create_project")
+    logger.setLevel(logging.INFO)
+
     key = __get_api_key()
 
     create_project_headers: dict = {
@@ -466,6 +486,9 @@ def __create_project():
 
 def __delete_project(project_uuid: str):
 
+    logger = logging.getLogger("__delete_project")
+    logger.setLevel(logging.INFO)
+
     api_key = __get_api_key()
 
     create_project_headers: dict = {
@@ -485,6 +508,9 @@ def __delete_project(project_uuid: str):
 
 
 def __upload_sbom(project_uuid, bom_str_file):
+
+    logger = logging.getLogger("__upload_sbom")
+    logger.setLevel(logging.INFO)
 
     api_key = __get_api_key()
 
@@ -522,6 +548,11 @@ def __upload_sbom(project_uuid, bom_str_file):
 
 
 def __get_api_key():
+
+    logger = logging.getLogger("__get_api_key")
+    logger.setLevel(logging.INFO)
+
+    logger.info("Getting the DT API Key")
 
     ssm: BaseClient = client("ssm")
 

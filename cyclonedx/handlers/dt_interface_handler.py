@@ -17,10 +17,6 @@ from cyclonedx.clients.dependency_track.dependency_track import (
 )
 from cyclonedx.constants import PYTHON_LOGGING_CONFIG, SBOM_BUCKET_NAME_KEY, SBOM_S3_KEY
 
-config.fileConfig(PYTHON_LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
-
-
 def dt_interface_handler(event: dict = None, context: dict = None):
 
     """Dependency Track Ingress Handler
@@ -28,6 +24,9 @@ def dt_interface_handler(event: dict = None, context: dict = None):
     to get findings.  To accomplish this, a project must be created in DT, the
     SBOM submitted under that project, then the project is deleted.
     """
+
+    logger = logging.getLogger("__upload_sbom")
+    logger.setLevel(logging.INFO)
 
     s3_resource = resource("s3")
 

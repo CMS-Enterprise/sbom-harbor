@@ -62,7 +62,7 @@ class DependencyTrackInterfaceLambda(Construct):
                 "CDK_DEFAULT_ACCOUNT": AWS_ACCOUNT_ID,
                 "ENVIRONMENT": ENVIRONMENT,
             },
-            timeout=Duration.minutes(1),
+            timeout=Duration.minutes(15),
             security_groups=[dt_func_sg],
             memory_size=512,
         )
