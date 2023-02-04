@@ -3,6 +3,8 @@ set -eo pipefail
 
 source ./deploy-preamble.sh
 
+echo "\nDeploying...\n"
+
 ENRICHMENTS=""
 UI=0
 DEPLOY_ONLY=0
@@ -19,15 +21,15 @@ while getopts "eudp" arg; do
     p) PILOT=1
        ;;
     ?)
-      echo "Invalid option: -$OPTARG"
+      echo "Invalid option: -${OPTARG}"
       ;;
   esac
 done
 
-echo "    ENRICHMENTS: $ENRICHMENTS
-    UI: $UI
-    PILOT: $PILOT
-    DEPLOY ONLY: $DEPLOY_ONLY
+echo "    ENRICHMENTS: ${ENRICHMENTS}
+    UI: ${UI}
+    PILOT: ${PILOT}
+    DEPLOY ONLY: ${DEPLOY_ONLY}
     "
 
 if [[ $DEPLOY_ONLY == 0 ]]; then
