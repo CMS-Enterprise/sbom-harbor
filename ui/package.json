@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "yarn workspace @cyclonedx/ui-sbom run clean",
     "build": "NODE_ENV=production yarn workspace @cyclonedx/ui-sbom run build",
-    "start": "NODE_ENV=development yarn workspace @cyclonedx/ui-sbom run start",
+    "start": "NODE_ENV=development ENVIRONMENT=local yarn workspace @cyclonedx/ui-sbom run start",
     "test": "NODE_ENV=test yarn workspace @cyclonedx/ui-sbom run test",
     "watch": "NODE_ENV=test yarn workspace @cyclonedx/ui-sbom run watch",
     "check": "yarn workspace @cyclonedx/ui-sbom run check",

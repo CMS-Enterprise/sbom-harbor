@@ -16,6 +16,7 @@ import {
  */
 export type AppConfig = {
   // Environment
+  ENVIRONMENT: string
   NODE_ENV: string
 
   // AWS

@@ -25,6 +25,6 @@
     "strict": true,
     "types": ["node", "react", "react-dom", "jest", "@testing-library/jest-dom"]
   },
-  "include": ["src", "declaration.d.ts", "src/utils/validateEnv.ts"],
+  "include": ["src", "declaration.d.ts", "src/utils/validateEnvironment.ts"],
   "exclude": ["node_modules"]
 }
