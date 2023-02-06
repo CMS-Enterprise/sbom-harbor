@@ -26,7 +26,6 @@ from deploy.stacks import (
 )
 from deploy.stacks.SBOMIngressApiStack import SBOMIngressApiStack
 from deploy.util import DynamoTableManager
-from tests.data.create_cognito_users import test_create_cognito_users
 
 config.fileConfig(PYTHON_LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
@@ -121,11 +120,3 @@ def run() -> None:
     no_req_approval = "--require-approval never"
 
     system(f"cdk deploy --all {no_req_approval}")
-
-
-def setup_admin_user() -> None:
-    """
-    This method creates the users table in the database.
-    """
-
-    test_create_cognito_users()

@@ -2,25 +2,20 @@
 -> Module to house functions to create cognito users
 -> for test.
 """
-import boto3
 from botocore.exceptions import ClientError
 
 from cyclonedx.clients.ciam import CognitoUserData
-from cyclonedx.constants import USER_MANAGEMENT_STACK_ID
-from tests import get_boto_session, get_current_environment
+from cyclonedx.constants import environize
 from tests.conftest import FINAL_TEST_PASSWORD
 
-session = get_boto_session()
 
-cognito_client = session.client("cognito-idp")
-cfn_client = session.client("cloudformation")
-
-
-def test_create_cognito_users():
+def test_create_cognito_users(session, environment):
 
     """
     -> Test to generate cognito users in the AWS account
     """
+    cognito_client = session.client("cognito-idp")
+    cfn_client = session.client("cloudformation")
 
     usernames = [
         "sbomadmin",
@@ -35,10 +30,7 @@ def test_create_cognito_users():
         "sam",
         "linda",
     ]
-
-    current_env: str = get_current_environment()
-
-    stack_name: str = f"{current_env}-harbor-user-management-use1"
+    stack_name: str = environize("harbor-user-management", environment=environment)
 
     response = cfn_client.describe_stacks(StackName=stack_name)
 

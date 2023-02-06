@@ -17,11 +17,13 @@ ENVIRONMENT = ENVIRONMENT.lower()
 AWS_REGION_SHORT = regionCodes.get(AWS_REGION)
 
 
-def environize(name: str, delimiter: str = "-", include_account=False) -> str:
+def environize(
+    name: str, delimiter: str = "-", include_account=False, environment=ENVIRONMENT
+) -> str:
     """environize returns a name that is unique per environment.
     Set include_account=True for resources that need to be globally unique such as S3 buckets."""
 
-    environment_unique_name = f"{ENVIRONMENT}{delimiter}{name}"
+    environment_unique_name = f"{environment}{delimiter}{name}"
     if include_account:
         environment_unique_name += f"{delimiter}{AWS_ACCOUNT_ID}"
     environment_unique_name += f"{delimiter}{AWS_REGION_SHORT}"

@@ -20,13 +20,13 @@ from tests.e2e import (
 )
 
 
-def test_no_duplicate_projects_on_create():
+def test_no_duplicate_projects_on_create(session, environment):
 
     """
     -> Verify that creating a team with 2 projects does not duplicate the projects
     """
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
     jwt: str = login(cf_url)
 
     # Create a team with 2 projects
@@ -77,13 +77,13 @@ def test_no_duplicate_projects_on_create():
     )
 
 
-def test_no_duplicate_projects_on_update():
+def test_no_duplicate_projects_on_update(session, environment):
 
     """
     -> Verify that creating a team with 2 projects does not duplicate the projects
     """
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
     jwt: str = login(cf_url)
 
     # Create a team with 2 projects
@@ -163,13 +163,13 @@ def test_no_duplicate_projects_on_update():
     )
 
 
-def test_update_project():
+def test_update_project(session, environment):
 
     """
     -> Test updating a project
     """
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
     jwt: str = login(cf_url)
 
     # Create a team with 2 projects
