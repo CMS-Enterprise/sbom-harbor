@@ -11,7 +11,7 @@ from typing import Union
 import boto3
 from boto3 import resource
 
-import cyclonedx.schemas as schemas
+from cyclonedx import schemas
 from cyclonedx.clients import HarborDBClient
 from cyclonedx.constants import (
     PYTHON_LOGGING_CONFIG,
