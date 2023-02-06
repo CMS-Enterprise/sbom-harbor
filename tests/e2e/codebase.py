@@ -19,13 +19,13 @@ from tests.e2e import (
 )
 
 
-def test_codebase_update():
+def test_codebase_update(session, environment):
 
     """
     -> Test updating a codebase
     """
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
     jwt: str = login(cf_url)
 
     create_rsp: dict = create_team_with_projects(
@@ -110,13 +110,13 @@ def test_codebase_update():
     )
 
 
-def test_get_codebase_response():
+def test_get_codebase_response(session, environment):
 
     """
     -> Test getting a codebase
     """
 
-    cf_url: str = get_cloudfront_url()
+    cf_url: str = get_cloudfront_url(session, environment)
     jwt: str = login(cf_url)
 
     create_rsp: dict = create_team_with_projects(

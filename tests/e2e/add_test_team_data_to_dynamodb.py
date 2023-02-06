@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 
 import boto3
 
-from cyclonedx.clients.db.dynamodb import HarborDBClient
 from cyclonedx.constants import (
     HARBOR_TEAMS_TABLE_PARTITION_KEY,
     HARBOR_TEAMS_TABLE_SORT_KEY,
@@ -21,17 +20,9 @@ from cyclonedx.model.member import Member
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
 from cyclonedx.model.token import Token
-from tests import get_boto_session, get_harbor_table_name, get_harbor_client
-
-harbor_table: str = get_harbor_table_name()
-
-session = get_boto_session()
+from tests.e2e import get_harbor_client, get_harbor_table_name
 
 boto3.set_stream_logger(name="botocore", level=logging.DEBUG)
-
-ddb_resource = session.resource("dynamodb")
-ddb_client = session.client("dynamodb")
-teams_table = ddb_resource.Table(harbor_table)
 
 project_id = "test-project-id"
 project_name = "Test Project Name"
@@ -52,12 +43,16 @@ created = datetime.now()
 expires = now + timedelta(days=100)
 token_val = str(uuid.uuid4())
 
-def test_write_to_db():
 
+def test_write_to_db(session, environment):
     """
     -> This is a test to see if we can write to the database.
     -> If this test fails, then we will be unable to add the test team.
     """
+    harbor_table: str = get_harbor_table_name(environment)
+
+    ddb_resource = session.resource("dynamodb")
+    teams_table = ddb_resource.Table(harbor_table)
 
     print(f"Attempting to write to {harbor_table}")
     teams_table.put_item(
@@ -70,7 +65,7 @@ def test_write_to_db():
     )
 
 
-def test_add_test_team():
+def test_add_test_team(session, environment):
 
     """
     -> This function adds a test team to
@@ -80,14 +75,14 @@ def test_add_test_team():
     for team_id in ["dawn-patrol", "dusk-patrol"]:
 
         try:
-            get_harbor_client().delete(
+            get_harbor_client(session, environment).delete(
                 Team(team_id=team_id),
                 recurse=True,
             )
         except DatabaseError:
             ...
 
-        get_harbor_client().create(
+        get_harbor_client(session, environment).create(
             Team(
                 team_id=team_id,
                 name=team_id,

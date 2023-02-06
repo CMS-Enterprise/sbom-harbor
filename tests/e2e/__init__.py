@@ -1,19 +1,14 @@
-"""
--> init file for e2e tests module
-"""
-from io import BufferedReader
-from json import dumps, loads
-from os import listdir, getcwd
-from subprocess import Popen, PIPE
+from json import dumps
 
 import boto3
 import requests
 from requests import Response, delete, get, post
 
+from cyclonedx.clients import HarborDBClient
+from cyclonedx.constants import AWS_REGION_SHORT
 from cyclonedx.model.codebase import CodeBase
 from cyclonedx.model.project import Project
 from cyclonedx.model.team import Team
-from tests import get_boto_session, get_current_environment
 
 
 class TestCodebaseValues:
@@ -55,59 +50,88 @@ def print_response(response: Response):
     print(f"Response: ({status_code}) {dump}")
 
 
-def get_cloudfront_url():
+def create_codebase(team_id: str, project_id: str, cf_url: str, jwt: str):
 
     """
-    -> Extracts the CloudFront url using boto3
+    -> Create a codebase using the HTTP API
     """
 
-    session = get_boto_session()
-
-    environment: str = get_current_environment()
-
-    client = session.client("cloudfront")
-    distributions = client.list_distributions()
-    distribution_list = distributions["DistributionList"]
-
-    try:
-
-        sbom_api_distribution = list(
-            filter(
-                lambda d: "Comment" in d and d["Comment"] == environment,
-                distribution_list["Items"],
-            ),
-        )[0]
-
-        cf_domain_name = sbom_api_distribution["DomainName"]
-        cf_url = f"https://{cf_domain_name}"
-        print(f"CloudFront url is: {cf_url}")
-        return cf_url
-    except KeyError:
-        ...
-
-
-def login(cf_url: str) -> str:
-
-    """
-    -> Gets a JWT so we can make requests
-    """
-
-    login_url = f"{cf_url}/api/v1/login"
-    user = "sbomadmin@aquia.io"
-    password = "L0g1nTe5tP@55!"
-
-    print(f"Sending To: POST:{login_url}, With: {user}, {password}")
-    login_rsp = requests.post(
-        login_url,
+    codebase_url: str = f"{cf_url}/api/v1/codebase"
+    codebase_url = f"{codebase_url}?teamId={team_id}"
+    codebase_url = f"{codebase_url}&projectId={project_id}"
+    print(f"Sending To: POST:{codebase_url}")
+    create_codebase_rsp: Response = post(
+        codebase_url,
+        headers={
+            "Authorization": jwt,
+        },
         json={
-            "username": user,
-            "password": password,
+            CodeBase.Fields.NAME: TestCodebaseValues.NAME,
+            CodeBase.Fields.LANGUAGE: TestCodebaseValues.LANGUAGE,
+            CodeBase.Fields.BUILD_TOOL: TestCodebaseValues.BUILD_TOOL,
+            CodeBase.Fields.CLONE_URL: TestCodebaseValues.CLONE_URL,
+        },
+    )
+    print_response(create_codebase_rsp)
+    codebase_json: dict = create_codebase_rsp.json()
+    return codebase_json.get(CodeBase.Fields.ID)
+
+
+def get_upload_url(cf_url: str, team_id: str, project_id: str, codebase_id: str):
+
+    """
+    -> Get the "Upload" Url
+    """
+
+    return f"{cf_url}/api/v1/{team_id}/{project_id}/{codebase_id}/sbom"
+
+
+def get_entity_by_id(
+    team_id: str,
+    entity_key: str,
+    entity_id: str,
+    cf_url: str,
+    jwt: str,
+) -> dict:
+
+    """
+    -> Get an entity by the id
+    """
+
+    url: str = f"{cf_url}/api/v1/{entity_key}/{entity_id}"
+    url = f"{url}?teamId={team_id}"
+    get_rsp: Response = get(
+        url,
+        headers={
+            "Authorization": jwt,
         },
     )
 
-    login_rsp_json = login_rsp.json()
-    print(f"Login Response: {dumps(login_rsp_json, indent=2)}")
-    return login_rsp_json["token"]
+    return get_rsp.json()
+
+
+def get_upload_token(
+    cf_url: str,
+    jwt: str,
+    team_id: str,
+):
+
+    """
+    -> Get the first upload token in a team
+    """
+
+    url: str = f"{cf_url}/api/v1/tokens"
+    url = f"{url}?teamId={team_id}"
+    get_rsp: Response = get(
+        url,
+        headers={
+            "Authorization": jwt,
+        },
+    )
+
+    token_json: dict = get_rsp.json()
+
+    return token_json[0]["token"]
 
 
 def create_team_with_projects(
@@ -158,85 +182,65 @@ def get_team_url(cf_url: str):
     return f"{cf_url}/api/v1/team"
 
 
-def get_upload_url(cf_url: str, team_id: str, project_id: str, codebase_id: str):
+def login(cf_url: str) -> str:
 
     """
-    -> Get the "Upload" Url
+    -> Gets a JWT so we can make requests
     """
 
-    return f"{cf_url}/api/v1/{team_id}/{project_id}/{codebase_id}/sbom"
+    login_url = f"{cf_url}/api/v1/login"
+    user = "sbomadmin@aquia.io"
+    password = "L0g1nTe5tP@55!"
 
-
-def create_codebase(team_id: str, project_id: str, cf_url: str, jwt: str):
-
-    """
-    -> Create a codebase using the HTTP API
-    """
-
-    codebase_url: str = f"{cf_url}/api/v1/codebase"
-    codebase_url = f"{codebase_url}?teamId={team_id}"
-    codebase_url = f"{codebase_url}&projectId={project_id}"
-    print(f"Sending To: POST:{codebase_url}")
-    create_codebase_rsp: Response = post(
-        codebase_url,
-        headers={
-            "Authorization": jwt,
-        },
+    print(f"Sending To: POST:{login_url}, With: {user}, {password}")
+    login_rsp = requests.post(
+        login_url,
         json={
-            CodeBase.Fields.NAME: TestCodebaseValues.NAME,
-            CodeBase.Fields.LANGUAGE: TestCodebaseValues.LANGUAGE,
-            CodeBase.Fields.BUILD_TOOL: TestCodebaseValues.BUILD_TOOL,
-            CodeBase.Fields.CLONE_URL: TestCodebaseValues.CLONE_URL,
-        },
-    )
-    print_response(create_codebase_rsp)
-    codebase_json: dict = create_codebase_rsp.json()
-    return codebase_json.get(CodeBase.Fields.ID)
-
-
-def get_entity_by_id(
-    team_id: str,
-    entity_key: str,
-    entity_id: str,
-    cf_url: str,
-    jwt: str,
-) -> dict:
-
-    """
-    -> Get an entity by the id
-    """
-
-    url: str = f"{cf_url}/api/v1/{entity_key}/{entity_id}"
-    url = f"{url}?teamId={team_id}"
-    get_rsp: Response = get(
-        url,
-        headers={
-            "Authorization": jwt,
+            "username": user,
+            "password": password,
         },
     )
 
-    return get_rsp.json()
+    login_rsp_json = login_rsp.json()
+    print(f"Login Response: {dumps(login_rsp_json, indent=2)}")
+    return login_rsp_json["token"]
 
 
-def get_upload_token(
-    cf_url: str,
-    jwt: str,
-    team_id: str,
-):
+def get_harbor_table_name(environment: str):
+    return f"{environment}-HarborTeams-{AWS_REGION_SHORT}"
+
+
+def get_harbor_client(session: boto3.Session, environment: str):
+    resource = session.resource("dynamodb")
+    htn: str = get_harbor_table_name(environment)
+
+    print(f"Working with Harbor Table: (> {htn} <)")
+
+    return HarborDBClient(resource, htn)
+
+
+def get_cloudfront_url(session: boto3.Session, environment: str):
 
     """
-    -> Get the first upload token in a team
+    -> Extracts the CloudFront url using boto3
     """
 
-    url: str = f"{cf_url}/api/v1/tokens"
-    url = f"{url}?teamId={team_id}"
-    get_rsp: Response = get(
-        url,
-        headers={
-            "Authorization": jwt,
-        },
-    )
+    client = session.client("cloudfront")
+    distributions = client.list_distributions()
+    distribution_list = distributions["DistributionList"]
 
-    token_json: dict = get_rsp.json()
+    try:
 
-    return token_json[0]["token"]
+        sbom_api_distribution = list(
+            filter(
+                lambda d: "Comment" in d and d["Comment"] == environment,
+                distribution_list["Items"],
+            ),
+        )[0]
+
+        cf_domain_name = sbom_api_distribution["DomainName"]
+        cf_url = f"https://{cf_domain_name}"
+        print(f"CloudFront url is: {cf_url}")
+        return cf_url
+    except KeyError:
+        ...
