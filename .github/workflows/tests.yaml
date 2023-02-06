@@ -1,4 +1,4 @@
-name: Tests
+name: TESTS - Lint and Unit
 
 on:
   push:
@@ -12,6 +12,13 @@ on:
       - reopened
       - synchronize
 
+# Rather counterintuitive, concurrency is used to ensure that a workflow runs *singularly* per pull request.
+# When a PR is updated, cancel any currently running workflows triggered by previous pushes,
+# as they are essentially redundant and made moot by later pushes
+# This will ensure that workflows do not block runners by executing unnecessarily
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   AWS_REGION: us-east-1
@@ -19,46 +26,31 @@ env:
 
 jobs:
   backend:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted,dev]
     steps:
 
       - uses: actions/checkout@v3
 
-      - name: INSTALL - python@3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-
-      - name: INSTALL - poetry
-        uses: snok/install-poetry@v1.3.3
-        with:
-          virtualenvs-create: false
-          installer-parallel: true
-
-      - name: INSTALL - pylint
-        run: pip install pylint==2.15.5
-
-      - name: INSTALL - zip
-        run: sudo apt-get install zip -y
+        # disable virtual environment to reuse cache between workflow runs
+      - name: CONFIG - virtual environment
+        run: poetry config virtualenvs.create false
 
       - name: INSTALL - project
         run: poetry install --no-interaction
+
+      - name: TEST - lint
+        run: pylint --rcfile ./.pylintrc cyclonedx/ || pylint-exit $?
 
       - name: TEST - unit
         run: python -m pytest -v --cov=cyclonedx/ tests/
 
   frontend:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted,dev]
     defaults:
       run:
         working-directory: ui
     steps:
       - uses: actions/checkout@v3
-
-      - uses: actions/setup-node@v3
-        with:
-          node-version: "18.0.0"
-          registry-url: "https://registry.npmjs.org"
 
       - name: Debug
         run: |
