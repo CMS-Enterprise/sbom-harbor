@@ -104,25 +104,24 @@ jobs:
           node-version: "18.0.0"
           registry-url: "https://registry.npmjs.org"
 
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "dir=$(yarn --cwd ui config get cacheFolder)" >> $GITHUB_OUTPUT
+
+      - name: cache .yarn/
+        id: yarn-cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: yarn-cache-folder-${{ hashFiles('ui/**/yarn.lock', 'ui/.yarnrc.yml') }}
+          restore-keys: |
+            yarn-cache-folder-
+
       - name: DEBUG - node, npm, yarn versions
         run: |
           echo "node --version: $(node --version)"
           echo "npm --version: $(npm --version)"
           echo "yarn --version: $(yarn --version)"
-
-      - name: CACHE - .yarn/
-        id: cache-yarn-cache
-        uses: actions/cache@v3
-        with:
-          path: ui/.yarn/
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-
-      - name: CACHE - node_modules/
-        uses: actions/cache@v3
-        id: cache-node-modules
-        with:
-          path: ui/node_modules
-          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/yarn.lock') }}
 
       - name: INSTALL - ui dependencies
         working-directory: ui
@@ -130,7 +129,7 @@ jobs:
 
       - name: BUILD - ui assets
         working-directory: ui
-        run: CI=true yarn build
+        run: yarn build
         env:
           NODE_ENV: development
           CF_DOMAIN: ${{ steps.cloudformation.outputs.CF_DOMAIN }}

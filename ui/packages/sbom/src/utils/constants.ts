@@ -6,7 +6,7 @@
 import { AppConfig } from '@/types'
 
 // parse `CONFIG` from environment variables
-const apiUrl = `${process.env.CF_DOMAIN}/api`
+const apiUrl = `https://${process.env.CF_DOMAIN}/api`
 
 /**
  * Set global configuration for the application provided by webpack (craco) at build time.

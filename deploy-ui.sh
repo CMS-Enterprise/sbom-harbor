@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
-# set -euxo pipefail
 source ./deploy-ui-preamble.sh
 
-echo "\Deploying Harbor UI...\n"
+echo "Building Harbor UI..."
 
-cd ui
-rm -rf ./packages/sbom/build
-yarn install
-yarn build
+yarn --cwd ui clean
+yarn --cwd ui install
+yarn --cwd ui build
 
-aws s3 sync ./packages/sbom/build s3://${ASSETS_BUCKET}
+echo "Deploying Harbor UI to \"s3://${ASSETS_BUCKET}\"..."
 
-cd ..
+aws s3 sync ui/packages/sbom/build "s3://${ASSETS_BUCKET}"

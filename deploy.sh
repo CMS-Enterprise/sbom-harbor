@@ -12,7 +12,7 @@ PILOT=0
 
 while getopts "eudp" arg; do
   case "${arg}" in
-    e) ENRICHMENTS="$ENVIRONMENT-harbor-enrichment-$AWS_REGION_SHORT"
+    e) ENRICHMENTS="${ENVIRONMENT}-harbor-enrichment-${AWS_REGION_SHORT}"
        ;;
     u) UI=1
        ;;
