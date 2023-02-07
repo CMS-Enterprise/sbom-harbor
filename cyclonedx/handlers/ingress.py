@@ -2,21 +2,19 @@
 -> Module to house the SBOM Ingress Handler
 """
 import datetime
-import logging
 from json import dumps
-from logging import config
 from os import environ
 from uuid import uuid4
 
 from boto3 import resource
 from jsonschema.exceptions import ValidationError
 
+from cyclonedx import harbor_logger
 from cyclonedx.clients.dependency_track.dependency_track import (
     __create_pristine_response_obj,
     __get_body_from_event,
 )
 from cyclonedx.constants import (
-    PYTHON_LOGGING_CONFIG,
     S3_META_CODEBASE_KEY,
     S3_META_PROJECT_KEY,
     S3_META_TEAM_KEY,
@@ -25,8 +23,8 @@ from cyclonedx.constants import (
 )
 from cyclonedx.core import CycloneDxCore
 
-config.fileConfig(PYTHON_LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
+# config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = harbor_logger.getChild(__name__)
 
 
 def sbom_ingress_handler(event: dict = None, context: dict = None) -> dict:

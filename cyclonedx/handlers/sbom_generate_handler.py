@@ -1,18 +1,15 @@
 """
 -> Module to house the SBOM Generator Handler
 """
-import logging
-from logging import config
-
-from cyclonedx.constants import PYTHON_LOGGING_CONFIG
+from cyclonedx import harbor_logger
 from cyclonedx.handlers.common import (
     QueryStringKeys,
     _extract_value_from_qs,
     harbor_response,
 )
 
-config.fileConfig(PYTHON_LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
+# config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = harbor_logger.getChild(__name__)
 
 
 def sbom_generate_handler(event: dict = None, context: dict = None) -> dict:

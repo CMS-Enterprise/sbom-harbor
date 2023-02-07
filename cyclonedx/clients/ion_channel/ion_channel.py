@@ -1,8 +1,6 @@
 """
 -> A module to house the Ion Channel Client and supporting functions
 """
-import logging
-from logging import config
 from time import sleep
 from typing import IO, Union
 
@@ -12,11 +10,12 @@ from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 from requests import Response
 
-from cyclonedx.constants import IC_API_KEY, IC_RULESET_TEAM_ID, PYTHON_LOGGING_CONFIG
+from cyclonedx import harbor_logger
+from cyclonedx.constants import IC_API_KEY, IC_RULESET_TEAM_ID
 from cyclonedx.exceptions.ion_channel import IonChannelError
 
-config.fileConfig(PYTHON_LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
+# config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = harbor_logger.getChild(__name__)
 
 # pylint: disable = R0902
 
@@ -224,9 +223,7 @@ class IonChannelClient:
     def __get_sbom_data(self, team_name: str, create_if_missing: bool):
 
         # Get all of our existing SBOMs in Ion Channel
-        get_sboms_rsp: dict = self.__get(
-            f"{self.get_sboms_url}?org_id={self.org_id}"
-        )
+        get_sboms_rsp: dict = self.__get(f"{self.get_sboms_url}?org_id={self.org_id}")
 
         response_data: dict = get_sboms_rsp["data"]
         software_lists: list = response_data["softwareLists"]

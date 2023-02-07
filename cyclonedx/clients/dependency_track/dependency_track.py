@@ -1,8 +1,6 @@
 """ This Module has all the utility functions
 necessary to interoperate with Dependency Track."""
-import logging
 from json import dumps, loads
-from logging import config
 from time import sleep
 from uuid import uuid4
 
@@ -12,17 +10,17 @@ from jsonschema.exceptions import ValidationError
 from requests import Response, get, post, put
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
+from cyclonedx import harbor_logger
 from cyclonedx.constants import (
     DT_API_KEY,
     DT_DEFAULT_ADMIN_PWD,
     DT_ROOT_PWD,
     EMPTY_VALUE,
-    PYTHON_LOGGING_CONFIG,
 )
 from cyclonedx.dtendpoints import DTEndpoints
 
-config.fileConfig(PYTHON_LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
+# config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = harbor_logger.getChild(__name__)
 
 
 def __change_dt_root_pwd():

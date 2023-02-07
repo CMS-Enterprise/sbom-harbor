@@ -4,8 +4,10 @@ This is the start of the CycloneDX Core Python Module
 
 import importlib.resources as pr
 from json import loads
+
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
+
 from cyclonedx import schemas
 
 

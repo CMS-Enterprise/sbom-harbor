@@ -1,14 +1,12 @@
 """
 -> Module to house the CognitoUserData class
 """
-import logging
-from logging import config
 from typing import Callable
 
-from cyclonedx.constants import PYTHON_LOGGING_CONFIG
+from cyclonedx import harbor_logger
 
-config.fileConfig(PYTHON_LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
+# config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = harbor_logger.getChild(__name__)
 
 
 class CognitoUserData:

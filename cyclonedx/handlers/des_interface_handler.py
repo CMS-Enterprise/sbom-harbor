@@ -1,19 +1,16 @@
 """
 -> Module for the Default Enrichment Source Handler
 """
-import logging
 from json import dumps, loads
-from logging import config
 from time import sleep
 
 import requests
 from boto3 import resource
 
-from cyclonedx.constants import PYTHON_LOGGING_CONFIG
+from cyclonedx import harbor_logger
 from cyclonedx.handlers.common import _get_sbom
 
-config.fileConfig(PYTHON_LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
+logger = harbor_logger.getChild(__name__)
 
 
 def des_interface_handler(event: dict = None, context: dict = None):

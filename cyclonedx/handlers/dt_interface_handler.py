@@ -1,13 +1,12 @@
 """
 -> Module for the Dependency Track Interface Handler
 """
-import logging
 from io import StringIO
 from json import dumps
-from logging import config
 
 from boto3 import resource
 
+from cyclonedx import harbor_logger
 from cyclonedx.clients.dependency_track.dependency_track import (
     __create_project,
     __delete_project,
@@ -15,10 +14,10 @@ from cyclonedx.clients.dependency_track.dependency_track import (
     __upload_sbom,
     __validate,
 )
-from cyclonedx.constants import PYTHON_LOGGING_CONFIG, SBOM_BUCKET_NAME_KEY, SBOM_S3_KEY
+from cyclonedx.constants import SBOM_BUCKET_NAME_KEY, SBOM_S3_KEY
 
-config.fileConfig(PYTHON_LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
+# config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = harbor_logger.getChild(__name__)
 
 
 def dt_interface_handler(event: dict = None, context: dict = None):

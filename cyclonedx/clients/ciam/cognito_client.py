@@ -1,26 +1,29 @@
 """
 -> Module to house the HarborCognitoClient class
 """
-import logging
-from logging import config
 from os import environ
 
 import boto3
 import botocore.exceptions
 
+from cyclonedx import harbor_logger
 from cyclonedx.clients.ciam.jwt_data import JwtData
 from cyclonedx.clients.ciam.user_data import CognitoUserData
 from cyclonedx.constants import (
     COGNITO_TEAM_DELIMITER,
-    PYTHON_LOGGING_CONFIG,
     USER_POOL_CLIENT_ID_KEY,
     USER_POOL_ID_KEY,
 )
 from cyclonedx.exceptions.ciam_exception import HarborCiamError
 from cyclonedx.model.member import Member
 
-config.fileConfig(PYTHON_LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger('')
+# logger.setLevel(logging.DEBUG)
+# sh = logging.StreamHandler(sys.stdout)
+# formatter = logging.Formatter('[%(asctime)s] %(levelname)s [%(filename)s.%(funcName)s:%(lineno)d] %(message)s', datefmt='%a, %d %b %Y %H:%M:%S')
+# sh.setFormatter(formatter)
+# logger.addHandler(sh)
+logger = harbor_logger.getChild(__name__)
 
 
 class HarborCognitoClient:
@@ -31,11 +34,17 @@ class HarborCognitoClient:
 
     @staticmethod
     def get_jwt_data(token: str) -> JwtData:
-
+        # logger2 = logging.getLogger(__name__)
         """
         -> returns a JwtData object useful for extracting values from a JWT
         """
+        # print("getting shit-------------")
 
+        logger.info("Component INFO TEST----------- ")
+        logger.error("this is an error oh noes %s", "fuck")
+        logger.debug("DEBUG ----------- ")
+        logger.warning("WARNING ----------- ")
+        logger.critical("CRITICAL ----------- ")
         return JwtData(token)
 
     def __find_username_by_email(self: "HarborCognitoClient", user_email: str) -> str:

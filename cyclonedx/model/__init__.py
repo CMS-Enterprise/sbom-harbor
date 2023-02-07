@@ -6,19 +6,17 @@ from __future__ import annotations
 
 import abc
 import copy
-import logging
 from enum import Enum
-from logging import config
 from uuid import uuid4
 
+from cyclonedx import harbor_logger
 from cyclonedx.constants import (
     HARBOR_TEAMS_TABLE_PARTITION_KEY,
     HARBOR_TEAMS_TABLE_SORT_KEY,
-    PYTHON_LOGGING_CONFIG,
 )
 
-config.fileConfig(PYTHON_LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
+# config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = harbor_logger.getChild(__name__)
 
 
 def generate_model_id(model_id: str = ""):

@@ -2,19 +2,16 @@
 -> Common Handler Functions
 """
 import importlib.resources as pr
-import logging
 from io import StringIO
 from json import dumps, loads
-from logging import config
 from typing import Union
 
 import boto3
 from boto3 import resource
 
-from cyclonedx import schemas
+from cyclonedx import harbor_logger, schemas
 from cyclonedx.clients import HarborDBClient
 from cyclonedx.constants import (
-    PYTHON_LOGGING_CONFIG,
     S3_META_CODEBASE_KEY,
     S3_META_PROJECT_KEY,
     S3_META_TEAM_KEY,
@@ -29,8 +26,8 @@ from cyclonedx.model.team import Team
 
 team_schema = loads(pr.read_text(schemas, "team.schema.json"))
 
-config.fileConfig(PYTHON_LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
+# config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = harbor_logger.getChild(__name__)
 
 
 class ContextKeys:

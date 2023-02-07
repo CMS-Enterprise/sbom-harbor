@@ -1,25 +1,23 @@
 """
 -> Module for the Enrichment Ingress Handler
 """
-import logging
 from json import dumps
-from logging import config
 
 import boto3
 from jsonschema.exceptions import ValidationError
 
+from cyclonedx import harbor_logger
 from cyclonedx.clients.dependency_track.dependency_track import __get_records_from_event
 from cyclonedx.constants import (
     EVENT_BUS_DETAIL_TYPE,
     EVENT_BUS_NAME,
     EVENT_BUS_SOURCE,
-    PYTHON_LOGGING_CONFIG,
     SBOM_BUCKET_NAME_KEY,
     SBOM_S3_KEY,
 )
 
-config.fileConfig(PYTHON_LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
+# config.fileConfig(PYTHON_LOGGING_CONFIG)
+logger = harbor_logger.getChild(__name__)
 
 
 def enrichment_ingress_handler(event: dict = None, context: dict = None):
