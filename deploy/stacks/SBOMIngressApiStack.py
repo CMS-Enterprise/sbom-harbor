@@ -224,7 +224,8 @@ class SBOMIngressApiStack(Stack):
             ),
         )
 
-        SBOMIngressApiStack.__enable_logging(self.api)
+        # FIXME: disabled logging to prevent error in CDK deploy
+        # SBOMIngressApiStack.__enable_logging(self.api)
 
         lambda_factory = LambdaFactory(
             self,
