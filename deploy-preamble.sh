@@ -60,6 +60,18 @@ export AWS_ACCOUNT_ID=$(echo ${CALLER_IDENTITY} | jq -r '.Account')
 export AWS_USER_ID=$(echo ${CALLER_IDENTITY} | jq -r '.UserId')
 export CDK_ROLE_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:role/delegatedadmin/developer/cdk-hnb659fds-cfn-exec-role-${AWS_ACCOUNT_ID}-us-east-1"
 
+# get cloudformation values for the cognito user pool
+export USER_POOL="$(aws cloudformation describe-stacks --stack-name ${ENVIRONMENT}-harbor-user-management-${AWS_REGION_SHORT} --query 'Stacks[0].Outputs')"
+
+# extract specific values with jq
+export USER_POOL_ID="$(echo ${USER_POOL} | jq -r '.[] | select(.OutputKey|test("ExportsOutputRefCognitoUserPool"))| .OutputValue')"
+export USER_POOL_CLIENT_ID="$(echo ${USER_POOL} | jq -r '.[] | select(.OutputKey|test("ExportsOutputRefUserPoolAppClient"))| .OutputValue')"
+
+# get cloudformation values for the frontend
+FRONTEND="$(aws cloudformation describe-stacks --stack-name ${ENVIRONMENT}-harbor-frontend-${AWS_REGION_SHORT} --query 'Stacks[0].Outputs')"
+export ASSETS_BUCKET="$(echo ${FRONTEND} | jq -r '.[] | select(.OutputKey=="WebAssetsBucketName") | .OutputValue')"
+export CF_DOMAIN="$(echo ${FRONTEND} | jq -r '.[] | select(.OutputKey=="CloudFrontDomain") | .OutputValue')"
+
 echo "Ready to deploy SBOM Harbor application with the following settings:
 
     AWS Configuration:
@@ -71,4 +83,11 @@ echo "Ready to deploy SBOM Harbor application with the following settings:
     REGION: ${AWS_REGION}
     ACCOUNT: ${AWS_ACCOUNT_ID}
     CDK ROLE: ${CDK_ROLE_ARN}
+
+    UI Configuration:
+    ------------------------------------------
+    ASSETS_BUCKET: ${ASSETS_BUCKET}
+    CF_DOMAIN: ${CF_DOMAIN}
+    USER_POOL_ID: ${USER_POOL_ID}
+    USER_POOL_CLIENT_ID: ${USER_POOL_CLIENT_ID}
 "
