@@ -99,9 +99,15 @@ Deploys the zip file to AWS Lambda using AWS CDK.
 
 ## Developing UX/UI (Node.js, TypeScript, Yarn)]
 
-First, `cd ui` to enter the `ui/` directory.
+First, set environment variables for local development,
 
-`yarn install`
+```sh
+ENVIRONMENT=<CMS_environment_name> source ./deploy-preamble.sh
+```
+
+Then, `cd ui` to enter the `ui/` directory, and use the following commands:
+
+`yarn`
 
 Installs `node_modules` dependencies for the root package and each package in the `workspaces` directories defined in package.json
 
@@ -129,7 +135,7 @@ Generates a dependency graph of the built production bundle.
 
 `./deploy-ui.sh` will use `yarn` to install dependencies, build static assets, and upload them to the `web-assets` S3 bucket.
 
-**Note**: If it is not immediately obvious, since the deploy scripts described above use `poetry` you must run them from inside a `poetry` shell and you must install all dependencies (i.e. run `poetry shell` and then `poetry install`). 
+**Note**: If it is not immediately obvious, since the deploy scripts described above use `poetry` you must run them from inside a `poetry` shell and you must install all dependencies (i.e. run `poetry shell` and then `poetry install`).
 
 These scripts will _default_ to `ENVIRONMENT=sandbox` using AWS credentials for your personal sandbox account. To deploy to `harbor-dev` you can execute the scripts like so `ENVIRONMENT=dev AWS_PROFILE=harbor-dev ./deploy.sh`
 
