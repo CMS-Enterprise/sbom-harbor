@@ -40,10 +40,10 @@ This project depends on Python version: `3.9.10` and Node.js version: `^18.0.0`.
     - Enable `corepack` to use `yarn`:
         `corepack enable` ([docs)
 
-4. Configure virtual envrionment and install local dependencies:
+4. Configure virtual environment and install local dependencies:
     - Clone Repository: `git clone git@github.com:cms-enterprise/sbom-harbor.git`
     - Cd into repo: `cd cyclonedx-python`
-    - Start Poetry shell: `poetry shell`. This creates your virtual environment where your deps can be installed.
+    - Start Poetry shell: `poetry shell`. This creates your virtual environment where your dependencies can be installed.
     - Install Python dependencies: `poetry install`.
     - Install pre-commit hooks: `pre-commit install`
 
@@ -137,7 +137,7 @@ Generates a dependency graph of the built production bundle.
 
 **Note**: If it is not immediately obvious, since the deploy scripts described above use `poetry` you must run them from inside a `poetry` shell and you must install all dependencies (i.e. run `poetry shell` and then `poetry install`).
 
-These scripts will _default_ to `ENVIRONMENT=sandbox` using AWS credentials for your personal sandbox account. To deploy to `harbor-dev` you can execute the scripts like so `ENVIRONMENT=dev AWS_PROFILE=harbor-dev ./deploy.sh`
+These scripts will _default_ to `ENVIRONMENT=e<ticket id>` using AWS credentials for the `cms-dev` environment, where the ticket id is pulled from the branch name following the convention: `ISPGCASP-<ticket id #>/<hyphen-delimited-description>`.
 
 ### Deploying to CMS
 
@@ -150,12 +150,13 @@ In cases where it is necessary to manually initiate deployments to CMS, execute 
 CMS dev `ENVIRONMENT=dev AWS_PROFILE=cms-dev ./deploy.sh -e -u -p`
 CMS prod `ENVIRONMENT=prod AWS_PROFILE=cms-prod ./deploy.sh -e -u -p`
 
+To deploy to a temporary ephemeral environment, `e1234` you can execute the scripts like so `ENVIRONMENT=e1234 AWS_PROFILE=cms-dev ./deploy.sh -e -u -p`
 
 ### DESTROY ephemeral environments
 
 Your automatically generated ephemeral environment would have a name matching the pattern: `^e\d{4}$`
 
-Simply run `./destroy.sh` to delete the current branches ephemeral environment.
+Simply run `./destroy.sh` to delete the current branch's ephemeral environment.
 
 If necessary you can specify a different environment:
 `ENVIRONMENT=something ./destroy.sh`
