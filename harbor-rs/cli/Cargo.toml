@@ -1,0 +1,17 @@
+[package]
+name = "harbor"
+version = "0.0.1"
+description = "CLI to simply emit various events to a specified Harbor instance to start, update or terminate processes."
+authors = ["Quinn Peters <quinn.peters@aquia.io>"]
+edition = "2018"
+license = "MIT"
+repository = "https://github.com/CMS-Enterprise/sbom-harbor"
+keywords = ["SBOM", "harbor", "cli"]
+readme = "README.md"
+
+[dependencies]
+clap = { version = "4.1.4", default-features = true }
+
+[profile.release]
+lto = true
+
