@@ -52,11 +52,6 @@ jobs:
         working-directory: ui
 
     steps:
-      - uses: actions/setup-node@v3
-        with:
-          node-version: "18.0.0"
-          registry-url: "https://registry.npmjs.org"
-
       - uses: actions/checkout@v3
 
       - name: Debug
