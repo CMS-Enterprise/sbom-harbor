@@ -17,7 +17,10 @@ pub struct Team {
     #[serde(default = "Vec::new")]
     pub projects: Vec<Project>,
     /// Tokens associated with the Team.
+<<<<<<< HEAD:harbor-rs/core/src/models.rs
     #[serde(default = "Vec::new")]
+=======
+>>>>>>> 51e7f1f (feat: now working on json):harbor-rs/src/entities_old.rs
     pub tokens: Vec<Token>,
 }
 

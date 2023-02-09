@@ -1,5 +1,5 @@
 [package]
-name = "harbor-cli"
+name = "harbor"
 version = "0.0.1"
 description = "CLI to simply emit various events to a specified Harbor instance to start, update or terminate processes."
 authors = ["Quinn Peters <quinn.peters@aquia.io>"]
@@ -11,21 +11,12 @@ readme = "README.md"
 
 [dependencies]
 clap = { version = "4.1.4", default-features = true }
+octocrab = "0.18.1"
 serde = { version = "1.0.92", features = ["derive"] }
+serde_json = "1.0"
 tokio = { version = "1.25.0", features = ["full"] }
 reqwest = { version = "0.11", features = ["json"] }
-serde_json = "1.0"
-octocrab = "0.18.1"
-aws-config = "0.54.1"
-aws-sdk-dynamodb = "0.24.0"
-
-[dependencies.aqum]
-path = "../aqum"
-version = "0.1.0"
 
 [profile.release]
 lto = true
 
-[[bin]]
-name = "harbor-cli"
-path = "src/bin/main.rs"

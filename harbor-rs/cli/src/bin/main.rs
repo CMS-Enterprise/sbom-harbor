@@ -1,26 +1,12 @@
-
-
+use std::io;
 use clap::{Arg, ArgAction, Command, ArgMatches};
-use std::result::Result;
-use std::error::Error;
+use std::process::{Command as SysCommand, Output};
+use io::Result;
+use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use std::env;
 use octocrab::params;
-use aws_sdk_dynamodb::{Client as DynamoClient, Error as DynamoError};
-use aws_sdk_dynamodb::output::ListTablesOutput;
-use aws_sdk_dynamodb::types::SdkError;
-use aws_sdk_dynamodb::error::ListTablesError;
 
-use aws_config::meta::region::RegionProviderChain;
-
-use harbor_cli::commands::PilotCommand;
-
-// use std::collections::HashMap;
-// use aws_sdk_dynamodb::model::{
-//     AttributeDefinition, KeySchemaElement,
-//     KeyType, ProvisionedThroughput,
-//     ScalarAttributeType,
-// };
 
 fn get_matches() -> ArgMatches {
     return Command::new("harbor-cli")
@@ -48,23 +34,64 @@ fn get_matches() -> ArgMatches {
             .num_args(1),
     )
     .subcommand(
-        Command::new("pilot")
+        Command::new("start")
             .about("Start a Pilot Execution")
     )
     .get_matches();
 }
 
-// async fn create_team() -> Result<()> {
-//
-//     let cf_domain = get_cf_domain();
-//     let resp = reqwest::get(cf_domain)
-//         .await?
-//         .json::<HashMap<String, String>>()
-//         .await?;
-//     println!("{:#?}", resp);
-//     // Ok("")
-// }
+async fn create_team() -> Result<&str> {
 
+    let cf_domain = get_cf_domain();
+
+
+
+    let resp = reqwest::get(cf_domain)
+        .await?
+        .json::<HashMap<String, String>>()
+        .await?;
+    println!("{:#?}", resp);
+    Ok("")
+}
+
+fn get_ctkey_output() -> Result<Output> {
+    return SysCommand::new("ctkey")
+        .arg("viewjson")
+        .arg("--username")
+        .arg("")
+        .arg("--account")
+        .arg("")
+        .arg("--cloud-access-role")
+        .arg("")
+        .arg("--url")
+        .arg("https://cloudtamer.cms.gov")
+        .arg("--idms")
+        .arg("2")
+        .arg("--password")
+        .arg("")
+        .output();
+}
+
+fn get_ct_key_data() -> CtKeyData {
+    let output = get_ctkey_output();
+    return match output {
+        Ok(output) => {
+            let stdout_results = String::from_utf8_lossy(&output.stdout);
+            let ct_key_data = serde_json::from_str::<CtKeyResults>(stdout_results.as_ref());
+            let json = match ct_key_data {
+                Ok(v) => v,
+                Err(e) => {
+                    panic!("ERROR: {}", e);
+                },
+            };
+
+            json.data
+        },
+        Err(e) => {
+            panic!("`ctkey` was not found! Check your PATH! {}", e)
+        },
+    }
+}
 
 fn get_gh_token() -> String {
     return match env::var("GH_FETCH_TOKEN") {
@@ -73,152 +100,12 @@ fn get_gh_token() -> String {
     }
 }
 
-// async fn create_table() -> Result<(), DynamoError> {
-//
-//     let shared_config = aws_config::load_from_env().await;
-//     let client = DynamoClient::new(&shared_config);
-//
-//     let new_table = client
-//         .create_table()
-//         .table_name("test-table")
-//         .key_schema(
-//             KeySchemaElement::builder()
-//                 .attribute_name("k")
-//                 .key_type(KeyType::Hash)
-//                 .build(),
-//         )
-//         .attribute_definitions(
-//             AttributeDefinition::builder()
-//                 .attribute_name("k")
-//                 .attribute_type(ScalarAttributeType::S)
-//                 .build(),
-//         )
-//         .provisioned_throughput(
-//             ProvisionedThroughput::builder()
-//                 .write_capacity_units(10)
-//                 .read_capacity_units(10)
-//                 .build(),
-//         )
-//         .send()
-//         .await?;
-//     println!(
-//         "new table: {:#?}",
-//         &new_table.table_description().unwrap().table_arn().unwrap()
-//     );
-//
-//     Ok(())
-// }
-
-// Result<Vec<String>, dyn Error>
-// pub async fn list_tables() -> Result<(), dyn Error> {
-//     let shared_config = aws_config::load_from_env().await;
-//     let client = DynamoClient::new(&shared_config);
-//     let result = client.list_tables().send().await;
-//
-//     let result_value = match result {
-//         Ok(v) => v,
-//         Err(e) => panic!(e)
-//     };
-//
-//     let table_names = result_value.
-//
-//     let table_names = match result_value {
-//         Some(v) => v,
-//         None => panic!("There was NONE when looking for table names")
-//     };
-//
-//     Ok(table_names);
-// }
-
-pub async fn list_tables_one() ->  Result<(), aws_sdk_dynamodb::Error> {
-
-    println!("Extracting Config");
-    let shared_config = aws_config::load_from_env().await;
-
-    println!("Creating Client");
-    let client = DynamoClient::new(&shared_config);
-
-    println!("Creating Request");
-    let req = client.list_tables();
-
-    println!("Waiting on Response");
-    let resp = req.send().await?;
-    println!("Received Response, printing tables:");
-    println!("Current DynamoDB tables: {:?}", resp.table_names.unwrap());
-
-    Ok(())
-}
-
-async fn list_tables_three() -> Result<(), DynamoError> {
-    let region_provider = RegionProviderChain::default_provider().or_else("us-east-1");
-    let config = aws_config::from_env().region(region_provider).load().await;
-    let client = DynamoClient::new(&config);
-
-    // println!("Config: {:#?}", config);
-
-    let resp = client.list_tables().send().await;
-
-    println!("Response: {:#?}", resp);
-
-    let value = match resp {
+fn get_cf_domain() -> String {
+    return match env::var("CF_DOMAIN") {
         Ok(v) => v,
-        Err(sdk_err) => panic!("{}", sdk_err)
-    };
-
-    println!("Tables:");
-
-    let names = value.table_names().unwrap_or_default();
-
-    for name in names {
-        println!("  {}", name);
+        Err(e) => panic!("$CF_DOMAIN is not set ({})", e)
     }
-
-    println!();
-    println!("Found {} tables", names.len());
-
-    Ok(())
 }
-
-// async fn list_tables_two() -> Result<(), DynamoError> {
-//     let region_provider = RegionProviderChain::default_provider().or_else("us-east-1");
-//     let config = aws_config::from_env().region(region_provider).load().await;
-//     let client = DynamoClient::new(&config);
-//
-//     println!("Listing tables: ");
-//
-//     let resp = client.list_tables().send().await;
-//
-//     let value = match resp {
-//         Ok(v) => v,
-//         Err(sdk_err) => match sdk_err {
-//             ConstructionFailure(f) => println!("ConstructionFailure {}", f),
-//             TimeoutError(f) => println!("TimeoutError {}", f),
-//             DispatchFailure(f) => println!("DispatchFailure {}", f),
-//             ResponseError(f) => println!("ResponseError {}", f),
-//             ServiceError(f) => println!("ServiceError {}", f),
-//         },
-//     };
-//
-//     println!("Tables:");
-//
-//     let names = value.table_names().unwrap_or_default();
-//
-//     for name in names {
-//         println!("  {}", name);
-//     }
-//
-//     println!();
-//     println!("Found {} tables", names.len());
-//
-//     Ok(())
-// }
-
-// fn get_cf_domain() -> String {
-//     return match env::var("CF_DOMAIN") {
-//         Ok(v) => v,
-//         Err(e) => panic!("$CF_DOMAIN is not set ({})", e)
-//     }
-// }
 
 async fn list_repos() {
 
@@ -276,23 +163,11 @@ async fn main() {
                 Some(("start", _)) => {
                     println!("Start matched, lets get it on");
 
-                    // list_repos().await;
+                    let ct_key_data = get_ct_key_data();
+                    print!("DATA: {}", ct_key_data.access_key);
 
-                    let result = list_tables_three().await;
+                    list_repos().await;
 
-                    match result {
-                        Ok(_) => {}
-                        Err(e) => {
-                            println!("{:#?}", e);
-                            return
-                        }
-                    }
-
-                    // dbg!(val).expect("TODO: panic message");
-
-                    // for table in list_tables().await? {
-                    //     println!("  {}", table);
-                    // }
                 }
                 None => println!("Nothing"),
                 Some((&_, _)) => todo!()
