@@ -5,6 +5,8 @@
 
 cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd
 
+echo "HERE 0"
+
 declare -A regionShortCodes
 regionShortCodes[us-east-1]="use1"
 regionShortCodes[us-east-2]="use2"
@@ -36,6 +38,7 @@ if [[ -z ION_CHANNEL_TOKEN ]]; then
   export ION_CHANNEL_TOKEN="IonChannelDummyToken"
 fi
 
+echo "HERE 3"
 # if [[ -z ION_CHANNEL_TEAM_ID ]]; then
 #   export ION_CHANNEL_TEAM_ID="none"
 # fi
@@ -47,6 +50,7 @@ export AWS_USER_ID=$(echo "$CALLER_IDENTITY" | jq -r '.UserId')
 export CDK_ROLE_ARN="arn:aws:iam::$AWS_ACCOUNT_ID:role/delegatedadmin/developer/cdk-hnb659fds-cfn-exec-role-$AWS_ACCOUNT_ID-us-east-1"
 
 
+echo "HERE 4"
 echo "Deploying SBOM Harbor application with the following settings:
     PROFILE: $AWS_PROFILE
     USER: $AWS_USER_ID
