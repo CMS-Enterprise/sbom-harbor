@@ -44,7 +44,7 @@ class HarborCognitoClient:
         logger.error("this is an error oh noes %s", "fuck")
         logger.debug("DEBUG ----------- ")
         logger.warning("WARNING ----------- ")
-        logger.critical("CRITICAL ----------- ")
+        logger.critical("This is a critical error: %s", "my stack trace")
         return JwtData(token)
 
     def __find_username_by_email(self: "HarborCognitoClient", user_email: str) -> str:
