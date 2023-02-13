@@ -1,12 +1,19 @@
-use std::io;
+
+
 use clap::{Arg, ArgAction, Command, ArgMatches};
-use std::process::{Command as SysCommand, Output};
-use io::Result;
-use std::collections::HashMap;
+use std::result::Result;
+use std::error::Error;
 use serde::{Serialize, Deserialize};
 use std::env;
 use octocrab::params;
+use aws_sdk_dynamodb::{Client as DynamoClient, Error as DynamoError};
 
+// use std::collections::HashMap;
+// use aws_sdk_dynamodb::model::{
+//     AttributeDefinition, KeySchemaElement,
+//     KeyType, ProvisionedThroughput,
+//     ScalarAttributeType,
+// };
 
 fn get_matches() -> ArgMatches {
     return Command::new("harbor-cli")
@@ -40,58 +47,17 @@ fn get_matches() -> ArgMatches {
     .get_matches();
 }
 
-async fn create_team() -> Result<&str> {
+// async fn create_team() -> Result<()> {
+//
+//     let cf_domain = get_cf_domain();
+//     let resp = reqwest::get(cf_domain)
+//         .await?
+//         .json::<HashMap<String, String>>()
+//         .await?;
+//     println!("{:#?}", resp);
+//     // Ok("")
+// }
 
-    let cf_domain = get_cf_domain();
-
-
-
-    let resp = reqwest::get(cf_domain)
-        .await?
-        .json::<HashMap<String, String>>()
-        .await?;
-    println!("{:#?}", resp);
-    Ok("")
-}
-
-fn get_ctkey_output() -> Result<Output> {
-    return SysCommand::new("ctkey")
-        .arg("viewjson")
-        .arg("--username")
-        .arg("")
-        .arg("--account")
-        .arg("")
-        .arg("--cloud-access-role")
-        .arg("")
-        .arg("--url")
-        .arg("https://cloudtamer.cms.gov")
-        .arg("--idms")
-        .arg("2")
-        .arg("--password")
-        .arg("")
-        .output();
-}
-
-fn get_ct_key_data() -> CtKeyData {
-    let output = get_ctkey_output();
-    return match output {
-        Ok(output) => {
-            let stdout_results = String::from_utf8_lossy(&output.stdout);
-            let ct_key_data = serde_json::from_str::<CtKeyResults>(stdout_results.as_ref());
-            let json = match ct_key_data {
-                Ok(v) => v,
-                Err(e) => {
-                    panic!("ERROR: {}", e);
-                },
-            };
-
-            json.data
-        },
-        Err(e) => {
-            panic!("`ctkey` was not found! Check your PATH! {}", e)
-        },
-    }
-}
 
 fn get_gh_token() -> String {
     return match env::var("GH_FETCH_TOKEN") {
@@ -100,12 +66,56 @@ fn get_gh_token() -> String {
     }
 }
 
-fn get_cf_domain() -> String {
-    return match env::var("CF_DOMAIN") {
-        Ok(v) => v,
-        Err(e) => panic!("$CF_DOMAIN is not set ({})", e)
-    }
+// async fn create_table() -> Result<(), DynamoError> {
+//
+//     let shared_config = aws_config::load_from_env().await;
+//     let client = DynamoClient::new(&shared_config);
+//
+//     let new_table = client
+//         .create_table()
+//         .table_name("test-table")
+//         .key_schema(
+//             KeySchemaElement::builder()
+//                 .attribute_name("k")
+//                 .key_type(KeyType::Hash)
+//                 .build(),
+//         )
+//         .attribute_definitions(
+//             AttributeDefinition::builder()
+//                 .attribute_name("k")
+//                 .attribute_type(ScalarAttributeType::S)
+//                 .build(),
+//         )
+//         .provisioned_throughput(
+//             ProvisionedThroughput::builder()
+//                 .write_capacity_units(10)
+//                 .read_capacity_units(10)
+//                 .build(),
+//         )
+//         .send()
+//         .await?;
+//     println!(
+//         "new table: {:#?}",
+//         &new_table.table_description().unwrap().table_arn().unwrap()
+//     );
+//
+//     Ok(())
+// }
+
+pub async fn list_tables() -> Result<Vec<String>, dyn Error> {
+    let shared_config = aws_config::load_from_env().await;
+    let client = DynamoClient::new(&shared_config);
+    let paginator = client.list_tables().into_paginator().items().send();
+    let table_names = paginator.collect::<Result<Vec<String>, dyn Error>>().await?;
+    Ok(table_names)
 }
+
+// fn get_cf_domain() -> String {
+//     return match env::var("CF_DOMAIN") {
+//         Ok(v) => v,
+//         Err(e) => panic!("$CF_DOMAIN is not set ({})", e)
+//     }
+// }
 
 async fn list_repos() {
 
@@ -163,11 +173,11 @@ async fn main() {
                 Some(("start", _)) => {
                     println!("Start matched, lets get it on");
 
-                    let ct_key_data = get_ct_key_data();
-                    print!("DATA: {}", ct_key_data.access_key);
-
                     list_repos().await;
 
+                    for table in list_tables().await? {
+                        println!("  {}", table);
+                    }
                 }
                 None => println!("Nothing"),
                 Some((&_, _)) => todo!()
