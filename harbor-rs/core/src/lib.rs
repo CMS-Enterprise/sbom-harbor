@@ -1,5 +1,3 @@
-extern crate core;
-
 /// The Models module contains the API types defined by the OpenAPI specification for this API.
 pub mod models;
 

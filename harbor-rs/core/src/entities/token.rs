@@ -53,7 +53,7 @@ impl Token {
 
         match DateTime::parse_from_rfc3339(&self.expires) {
             Ok(expiry) => Ok(Utc::now() >= expiry),
-            Err(err) => Err(Error::InternalServerError(format!("error parsing token expires: {}", err.to_string()))),
+            Err(err) => Err(Error::Parse(format!("error parsing token expires: {}", err.to_string()))),
         }
     }
 }

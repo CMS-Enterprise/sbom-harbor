@@ -1,9 +1,6 @@
 use std::io;
 use clap::{Arg, ArgAction, Command, ArgMatches};
 use std::process::{Command as SysCommand, Output};
-use io::Result;
-use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
 use std::env;
 use octocrab::params;
 
