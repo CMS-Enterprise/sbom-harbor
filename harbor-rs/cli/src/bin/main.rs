@@ -40,59 +40,6 @@ fn get_matches() -> ArgMatches {
     .get_matches();
 }
 
-// async fn create_team() -> Result<&str> {
-//
-//     let cf_domain = get_cf_domain();
-//
-//
-//
-//     let resp = reqwest::get(cf_domain)
-//         .await?
-//         .json::<HashMap<String, String>>()
-//         .await?;
-//     println!("{:#?}", resp);
-//     Ok("")
-// }
-
-fn get_ctkey_output() -> Result<Output> {
-    return SysCommand::new("ctkey")
-        .arg("viewjson")
-        .arg("--username")
-        .arg("")
-        .arg("--account")
-        .arg("")
-        .arg("--cloud-access-role")
-        .arg("")
-        .arg("--url")
-        .arg("https://cloudtamer.cms.gov")
-        .arg("--idms")
-        .arg("2")
-        .arg("--password")
-        .arg("")
-        .output();
-}
-
-fn get_ct_key_data() -> CtKeyData {
-    let output = get_ctkey_output();
-    return match output {
-        Ok(output) => {
-            let stdout_results = String::from_utf8_lossy(&output.stdout);
-            let ct_key_data = serde_json::from_str::<CtKeyResults>(stdout_results.as_ref());
-            let json = match ct_key_data {
-                Ok(v) => v,
-                Err(e) => {
-                    panic!("ERROR: {}", e);
-                },
-            };
-
-            json.data
-        },
-        Err(e) => {
-            panic!("`ctkey` was not found! Check your PATH! {}", e)
-        },
-    }
-}
-
 fn get_gh_token() -> String {
     return match env::var("GH_FETCH_TOKEN") {
         Ok(v) => v,
@@ -139,18 +86,6 @@ async fn list_repos() {
     }
 }
 
-#[derive(Serialize, Deserialize)]
-struct CtKeyResults {
-    data: CtKeyData
-}
-
-#[derive(Serialize, Deserialize)]
-struct CtKeyData {
-    access_key: String,
-    secret_access_key: String,
-    session_token: String,
-}
-
 #[tokio::main]
 async fn main() {
 
@@ -162,12 +97,7 @@ async fn main() {
             match matches.subcommand() {
                 Some(("start", _)) => {
                     println!("Start matched, lets get it on");
-
-                    let ct_key_data = get_ct_key_data();
-                    print!("DATA: {}", ct_key_data.access_key);
-
                     list_repos().await;
-
                 }
                 None => println!("Nothing"),
                 Some((&_, _)) => todo!()
