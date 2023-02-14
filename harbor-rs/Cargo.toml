@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "api",
+    "cli",
 #    "client",
     "core",
 #    "pilot"

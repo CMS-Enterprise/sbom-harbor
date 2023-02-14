@@ -13,6 +13,8 @@ use aws_sdk_dynamodb::error::ListTablesError;
 
 use aws_config::meta::region::RegionProviderChain;
 
+use harbor_cli::commands::PilotCommand;
+
 // use std::collections::HashMap;
 // use aws_sdk_dynamodb::model::{
 //     AttributeDefinition, KeySchemaElement,
@@ -46,7 +48,7 @@ fn get_matches() -> ArgMatches {
             .num_args(1),
     )
     .subcommand(
-        Command::new("start")
+        Command::new("pilot")
             .about("Start a Pilot Execution")
     )
     .get_matches();
@@ -276,10 +278,18 @@ async fn main() {
 
                     // list_repos().await;
 
-                    list_tables_three().await?;
+                    let result = list_tables_three().await;
+
+                    match result {
+                        Ok(_) => {}
+                        Err(e) => {
+                            println!("{:#?}", e);
+                            return
+                        }
+                    }
 
                     // dbg!(val).expect("TODO: panic message");
-                    
+
                     // for table in list_tables().await? {
                     //     println!("  {}", table);
                     // }

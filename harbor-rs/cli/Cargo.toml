@@ -1,5 +1,5 @@
 [package]
-name = "harbor"
+name = "harbor-cli"
 version = "0.0.1"
 description = "CLI to simply emit various events to a specified Harbor instance to start, update or terminate processes."
 authors = ["Quinn Peters <quinn.peters@aquia.io>"]
@@ -19,6 +19,13 @@ octocrab = "0.18.1"
 aws-config = "0.54.1"
 aws-sdk-dynamodb = "0.24.0"
 
+[dependencies.aqum]
+path = "../aqum"
+version = "0.1.0"
+
 [profile.release]
 lto = true
 
+[[bin]]
+name = "harbor-cli"
+path = "src/bin/main.rs"
