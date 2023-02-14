@@ -224,7 +224,7 @@ class SBOMIngressApiStack(Stack):
             ),
         )
 
-        SBOMIngressApiStack.__enable_logging(self.api)
+        # SBOMIngressApiStack.__enable_logging(self.api)
 
         lambda_factory = LambdaFactory(
             self,

@@ -1,5 +1,6 @@
 """ This Module has all the utility functions
 necessary to interoperate with Dependency Track."""
+from datetime import datetime, timedelta
 import logging
 from json import dumps, loads
 from logging import config
@@ -384,7 +385,14 @@ def __get_findings(project_uuid: str, sbom_token: str) -> dict:
         "Accept": "application/json",
     }
 
+    ten_minutes = timedelta(minutes=10)
+    bail_time = datetime.now() + ten_minutes
     while not __findings_ready(key, sbom_token):
+
+        right_now = datetime.now()
+        if right_now >= bail_time:
+            return {}
+
         sleep(0.5)
         logger.info("Not ready...")
 

@@ -54,6 +54,8 @@ def summarizer_handler(event: dict = None, context: dict = None):
             sbom_name = result[SBOM_S3_KEY]
 
         if not original_sbom:
+
+            # TODO raw/sbom
             sbom_object = get_object_from_s3(s3, bucket_name, sbom_name)
             original_sbom = loads(sbom_object["Body"].read().decode("utf-8"))
             original_sbom_metadata = sbom_object["Metadata"]
@@ -61,6 +63,7 @@ def summarizer_handler(event: dict = None, context: dict = None):
         results = result["results"]
         findings_s3_payload = results["Payload"]
 
+        # TODO raw/findings/dt
         s3_object = get_object_from_s3(s3, bucket_name, findings_s3_payload)
         findings_string = s3_object["Body"].read().decode("utf-8")
         findings_s3_json = loads(findings_string)
@@ -141,6 +144,14 @@ def get_object_from_s3(s3: resource, bucket_name: str, key: str) -> dict:
 
 def add_metadata_to_finding(finding_json: dict, metadata: dict):
     """adds metadata to the findings"""
+
+    if "project" not in finding_json:
+        finding_json["project"] = {
+            "name": "none",
+            "team": "none",
+            "codebase": "none",
+        }
+
     finding_json["project"]["name"] = metadata[S3_META_PROJECT_KEY]
     finding_json["project"]["team"] = metadata[S3_META_TEAM_KEY]
     finding_json["project"]["codebase"] = metadata[S3_META_CODEBASE_KEY]

@@ -53,6 +53,7 @@ def sbom_ingress_handler(event: dict = None, context: dict = None) -> dict:
     logger.info("Bucket name from env(SBOM_BUCKET_NAME_EV) %s", bucket_name)
 
     # Generate the name of the object in S3
+    # TODO raw/sbom
     key = f"sbom-{uuid4()}"
     logger.info("Putting object in S3 with key: %s", key)
 
