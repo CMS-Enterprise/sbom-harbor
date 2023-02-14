@@ -114,7 +114,7 @@ First, run the build script to cross-compile the binary for Amazon Linux. Detail
 be found at the end of this document.
 
 ```shell
-./pilot-build.
+./pilot-build.sh
 ```
 
 Next, build a Lambda image that has the compiled binary loaded.

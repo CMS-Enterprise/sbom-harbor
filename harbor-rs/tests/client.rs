@@ -5,7 +5,7 @@ mod common;
 
 use crate::common::{get_test_context, teardown};
 
-use harbor::client::Client;
+use harbor::lib::Client;
 
 #[async_std::test]
 async fn can_login() -> anyhow::Result<()> {
