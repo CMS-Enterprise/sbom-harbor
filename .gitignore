@@ -36,12 +36,14 @@ harbor-documentation/openapi.json
 **/target/
 **/.cargo/
 **/Cargo.lock
+
 tests/fixtures/debug.log
 tests/fixtures/pilot-request.json
 tests/fixtures/HARBOR_PILOT_REQUEST
 tests/fixtures/GET_TEAM_REQUEST
 cargo-generate/bundle.json
 cargo-generate/output.json
+
 
 # OpenAPI generator
 **/.openapi-generator/
@@ -51,3 +53,6 @@ cargo-generate/output.json
 
 # devenv
 devenv/mongodb/
+**/server/gen
+
+

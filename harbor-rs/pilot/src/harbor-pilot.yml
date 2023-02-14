@@ -1,0 +1,23 @@
+name: Harbor Pilot
+run-name: Harbor Pilot ${{ github.sha }}
+on:
+  push:
+    branches:
+      - 'main'
+jobs:
+  Harbor-Pilot:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+      - run: echo "🔎 The name of the branch is ${{ github.ref }} and the repository is ${{ github.repository }}."
+      - name: Harbor Pilot
+        run: |
+          REQUEST=$(echo ${{ secrets.HARBOR_PILOT_REQUEST }} | base64 -d)
+          curl -X POST \
+          -s -o /dev/null \
+          -H "Content-Type: application/json" \
+          -d "$(echo $REQUEST)" \
+          "$(echo $REQUEST | jq -r '.apiGatewayUrl')"
+
+      - run: echo "🍏 This job's status is ${{ job.status }}."

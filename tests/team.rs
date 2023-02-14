@@ -1,12 +1,12 @@
-use aquia::config::Config;
-use aquia::dynamo::Store;
+use aqum::dynamo::{Entity as DynamoEntity, Store};
 use uuid::Uuid;
 use harbor::entities::{Entity, Team};
-use harbor::team::get_team::handle_request as handle_get_team;
-use harbor::team::get_teams::handle_request as handle_get_teams;
-use harbor::team::post_team::handle_request as handle_post_team;
-use harbor::team::put_team::handle_request as handle_put_team;
-use harbor::team::delete_team::handle_request as handle_delete_team;
+use harbor::team::get_team_handler::handle_request as handle_get_team;
+use harbor::team::get_teams_handler::handle_request as handle_get_teams;
+use harbor::team::post_team_handler::handle_request as handle_post_team;
+use harbor::team::put_team_handler::handle_request as handle_put_team;
+use harbor::team::delete_team_handler::handle_request as handle_delete_team;
+use crate::common::ApiMockFactory;
 
 mod common;
 
@@ -18,28 +18,31 @@ fn test_team() -> Team {
     team
 }
 
+
 #[async_std::test]
 async fn can_handle_get_team() -> Result<(), String> {
     let config = Config::new().await.map_err(|e| e.to_string())?;
     let store = Store::new(config);
     let mut team = test_team();
+    let mut insert = team.clone();
 
     // Insert the test team.
-    store.insert::<Team>(Box::new(team.clone())).await.map_err(|e| e.to_string())?;
+    store.insert::<Team>(&mut insert).await.map_err(|e| e.to_string())?;
 
     team.load().map_err(|e| format!("{}", e) )?;
 
     // Validate it was written.
-    let query = team.clone();
-    let query: Option<Team> = store.find(Box::new(query)).await.map_err(|e| e.to_string())?;
+    let mut query = team.clone();
+    let query: Option<Team> = store.find(&mut query).await.map_err(|e| e.to_string())?;
     assert!(query.is_some());
 
     let query = query.unwrap();
     assert_eq!(query.id, team.id);
     assert_eq!(query.name, team.name);
 
+    let req = ApiMockFactory::get_team_request(Some(team.id.clone()))?;
     // Get Team from handler.
-    let resp = handle_get_team(team.id.as_str()).await;
+    let resp = handle_get_team(&req).await;
     assert!(!resp.is_err(), "{:?}", resp);
 
     let resp = resp.unwrap();
@@ -61,15 +64,16 @@ async fn can_handle_get_teams() -> Result<(), String> {
     let config = Config::new().await.map_err(|e| e.to_string())?;
     let store = Store::new(config);
     let mut team = test_team();
+    let mut insert = team.clone();
 
     // Insert the test team.
-    store.insert::<Team>(Box::new(team.clone())).await.map_err(|e| e.to_string())?;
+    store.insert::<Team>(&mut insert).await.map_err(|e| e.to_string())?;
 
     team.load().map_err(|e| format!("{}", e) )?;
 
     // Validate it was written.
-    let query = team.clone();
-    let query: Option<Team> = store.find(Box::new(query)).await.map_err(|e| e.to_string())?;
+    let mut query = team.clone();
+    let query: Option<Team> = store.find(&mut query).await.map_err(|e| e.to_string())?;
     assert!(query.is_some());
 
     let query = query.unwrap();
@@ -109,8 +113,8 @@ async fn can_handle_post_team() -> Result<(), String> {
     let config = Config::new().await.map_err(|e| e.to_string())?;
     let store = Store::new(config);
 
-    let query = team.clone();
-    let query: Option<Team> = store.find(Box::new(query)).await.map_err(|e| e.to_string())?;
+    let mut query = team.clone();
+    let query: Option<Team> = store.find(&mut query).await.map_err(|e| e.to_string())?;
 
     assert!(query.is_some());
 
@@ -134,13 +138,15 @@ async fn can_handle_put_team() -> Result<(), String> {
     let config = Config::new().await.map_err(|e| e.to_string())?;
     let store = Store::new(config);
     let team = test_team();
+    let mut insert = team.clone();
 
     // Insert the test team.
-    store.insert::<Team>(Box::new(team.clone())).await.map_err(|e| e.to_string())?;
+    store.insert::<Team>(&mut insert).await.map_err(|e| e.to_string())?;
 
     // Validate it was written.
-    let query = team.clone();
-    let query: Option<Team> = store.find(Box::new(query)).await.map_err(|e| e.to_string())?;
+    let mut query = team.clone();
+
+    let query: Option<Team> = store.find(&mut query).await.map_err(|e| e.to_string())?;
     assert!(query.is_some());
 
     let query = query.unwrap();
@@ -154,7 +160,8 @@ async fn can_handle_put_team() -> Result<(), String> {
 
     assert!(resp.is_some(), "{:?}", resp);
 
-    let query: Option<Team> = store.find(Box::new(query)).await.map_err(|e| e.to_string())?;
+    let mut query = update.clone();
+    let query: Option<Team> = store.find(&mut query).await.map_err(|e| e.to_string())?;
 
     assert!(query.is_some());
 
@@ -178,13 +185,14 @@ async fn can_handle_delete_team() -> Result<(), String> {
     let config = Config::new().await.map_err(|e| e.to_string())?;
     let store = Store::new(config);
     let team = test_team();
+    let mut insert = team.clone();
 
     // Insert the test team.
-    store.insert::<Team>(Box::new(team.clone())).await.map_err(|e| e.to_string())?;
+    store.insert::<Team>(&mut insert).await.map_err(|e| e.to_string())?;
 
     // Validate it was written.
-    let query = team.clone();
-    let query: Option<Team> = store.find(Box::new(query)).await.map_err(|e| e.to_string())?;
+    let mut query = team.clone();
+    let query: Option<Team> = store.find(&mut query).await.map_err(|e| e.to_string())?;
 
     assert!(query.is_some());
     let query = query.unwrap();
@@ -192,10 +200,11 @@ async fn can_handle_delete_team() -> Result<(), String> {
     assert_eq!(query.name, team.name);
 
     // Delete the team by id.
-    handle_delete_team(team.id).await.map_err(|e| e.to_string())?;
+    handle_delete_team(team.id.clone()).await.map_err(|e| e.to_string())?;
 
     // Validate it is deleted.
-    let query: Option<Team> = store.find(Box::new(query)).await.map_err(|e| e.to_string())?;
+    let mut query = team.clone();
+    let query: Option<Team> = store.find(&mut query).await.map_err(|e| e.to_string())?;
     assert!(query.is_none());
 
     Ok(())

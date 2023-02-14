@@ -10,12 +10,16 @@ use aws_lambda_events::apigw::{
 };
 use aws_lambda_events::http::HeaderMap;
 use dotenv;
-use harbor::client::Client;
+use harbor::lib::Client;
 use harbor::entities::Team;
 use hyper::http;
 use uuid::Uuid;
 
-use harbor::pilot::PilotRequest;
+use harbor::handler::PilotRequest;
+
+mod api;
+
+pub use api::{MockFactory as ApiMockFactory, TEST_TEAM_ID};
 
 static INIT: Once = Once::new();
 
@@ -64,7 +68,7 @@ pub async fn get_test_context() -> Result<TestContext> {
     let test_org = format!("test-{}", Uuid::new_v4());
 
     let mut team = client
-        .get_or_create_team(String::from(""), test_org)
+        .get_or_create_team(String::from("7a33b3df-e5c8-4e81-a284-ed33abb53a68"), test_org)
         .await?;
 
     let project = client
