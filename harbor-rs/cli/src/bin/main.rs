@@ -7,6 +7,11 @@ use serde::{Serialize, Deserialize};
 use std::env;
 use octocrab::params;
 use aws_sdk_dynamodb::{Client as DynamoClient, Error as DynamoError};
+use aws_sdk_dynamodb::output::ListTablesOutput;
+use aws_sdk_dynamodb::types::SdkError;
+use aws_sdk_dynamodb::error::ListTablesError;
+
+use aws_config::meta::region::RegionProviderChain;
 
 // use std::collections::HashMap;
 // use aws_sdk_dynamodb::model::{
@@ -102,13 +107,109 @@ fn get_gh_token() -> String {
 //     Ok(())
 // }
 
-pub async fn list_tables() -> Result<Vec<String>, dyn Error> {
+// Result<Vec<String>, dyn Error>
+// pub async fn list_tables() -> Result<(), dyn Error> {
+//     let shared_config = aws_config::load_from_env().await;
+//     let client = DynamoClient::new(&shared_config);
+//     let result = client.list_tables().send().await;
+//
+//     let result_value = match result {
+//         Ok(v) => v,
+//         Err(e) => panic!(e)
+//     };
+//
+//     let table_names = result_value.
+//
+//     let table_names = match result_value {
+//         Some(v) => v,
+//         None => panic!("There was NONE when looking for table names")
+//     };
+//
+//     Ok(table_names);
+// }
+
+pub async fn list_tables_one() ->  Result<(), aws_sdk_dynamodb::Error> {
+
+    println!("Extracting Config");
     let shared_config = aws_config::load_from_env().await;
+
+    println!("Creating Client");
     let client = DynamoClient::new(&shared_config);
-    let paginator = client.list_tables().into_paginator().items().send();
-    let table_names = paginator.collect::<Result<Vec<String>, dyn Error>>().await?;
-    Ok(table_names)
+
+    println!("Creating Request");
+    let req = client.list_tables();
+
+    println!("Waiting on Response");
+    let resp = req.send().await?;
+    println!("Received Response, printing tables:");
+    println!("Current DynamoDB tables: {:?}", resp.table_names.unwrap());
+
+    Ok(())
 }
+
+async fn list_tables_three() -> Result<(), DynamoError> {
+    let region_provider = RegionProviderChain::default_provider().or_else("us-east-1");
+    let config = aws_config::from_env().region(region_provider).load().await;
+    let client = DynamoClient::new(&config);
+
+    // println!("Config: {:#?}", config);
+
+    let resp = client.list_tables().send().await;
+
+    println!("Response: {:#?}", resp);
+
+    let value = match resp {
+        Ok(v) => v,
+        Err(sdk_err) => panic!("{}", sdk_err)
+    };
+
+    println!("Tables:");
+
+    let names = value.table_names().unwrap_or_default();
+
+    for name in names {
+        println!("  {}", name);
+    }
+
+    println!();
+    println!("Found {} tables", names.len());
+
+    Ok(())
+}
+
+// async fn list_tables_two() -> Result<(), DynamoError> {
+//     let region_provider = RegionProviderChain::default_provider().or_else("us-east-1");
+//     let config = aws_config::from_env().region(region_provider).load().await;
+//     let client = DynamoClient::new(&config);
+//
+//     println!("Listing tables: ");
+//
+//     let resp = client.list_tables().send().await;
+//
+//     let value = match resp {
+//         Ok(v) => v,
+//         Err(sdk_err) => match sdk_err {
+//             ConstructionFailure(f) => println!("ConstructionFailure {}", f),
+//             TimeoutError(f) => println!("TimeoutError {}", f),
+//             DispatchFailure(f) => println!("DispatchFailure {}", f),
+//             ResponseError(f) => println!("ResponseError {}", f),
+//             ServiceError(f) => println!("ServiceError {}", f),
+//         },
+//     };
+//
+//     println!("Tables:");
+//
+//     let names = value.table_names().unwrap_or_default();
+//
+//     for name in names {
+//         println!("  {}", name);
+//     }
+//
+//     println!();
+//     println!("Found {} tables", names.len());
+//
+//     Ok(())
+// }
 
 // fn get_cf_domain() -> String {
 //     return match env::var("CF_DOMAIN") {
@@ -173,11 +274,15 @@ async fn main() {
                 Some(("start", _)) => {
                     println!("Start matched, lets get it on");
 
-                    list_repos().await;
+                    // list_repos().await;
 
-                    for table in list_tables().await? {
-                        println!("  {}", table);
-                    }
+                    list_tables_three().await?;
+
+                    // dbg!(val).expect("TODO: panic message");
+                    
+                    // for table in list_tables().await? {
+                    //     println!("  {}", table);
+                    // }
                 }
                 None => println!("Nothing"),
                 Some((&_, _)) => todo!()
