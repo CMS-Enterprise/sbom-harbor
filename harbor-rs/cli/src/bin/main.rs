@@ -40,19 +40,19 @@ fn get_matches() -> ArgMatches {
     .get_matches();
 }
 
-async fn create_team() -> Result<&str> {
-
-    let cf_domain = get_cf_domain();
-
-
-
-    let resp = reqwest::get(cf_domain)
-        .await?
-        .json::<HashMap<String, String>>()
-        .await?;
-    println!("{:#?}", resp);
-    Ok("")
-}
+// async fn create_team() -> Result<&str> {
+//
+//     let cf_domain = get_cf_domain();
+//
+//
+//
+//     let resp = reqwest::get(cf_domain)
+//         .await?
+//         .json::<HashMap<String, String>>()
+//         .await?;
+//     println!("{:#?}", resp);
+//     Ok("")
+// }
 
 fn get_ctkey_output() -> Result<Output> {
     return SysCommand::new("ctkey")
