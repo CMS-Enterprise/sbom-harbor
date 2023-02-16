@@ -40,18 +40,6 @@ fi
 #   export ION_CHANNEL_TEAM_ID="none"
 # fi
 
-# unset any existing environment variable values
-unset \
-  AWS_REGION_SHORT \
-  AWS_ACCOUNT_ID \
-  AWS_USER_ID \
-  CDK_ROLE_ARN \
-  USER_POOL \
-  USER_POOL_ID \
-  USER_POOL_CLIENT_ID \
-  ASSETS_BUCKET \
-  CF_DOMAIN
-
 # get the short name for the AWS region
 export AWS_REGION_SHORT=${regionShortCodes[$AWS_REGION]}
 
