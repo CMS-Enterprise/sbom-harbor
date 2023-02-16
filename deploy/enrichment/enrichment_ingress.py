@@ -66,7 +66,7 @@ class EnrichmentIngressLambda(Construct):
             s3.EventType.OBJECT_CREATED,
             s3n.LambdaDestination(self.func),
             s3.NotificationKeyFilter(
-                prefix="sbom",
+                prefix="raw/sbom/sbom",
             ),
         )
 

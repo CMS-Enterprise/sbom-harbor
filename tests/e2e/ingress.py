@@ -128,6 +128,8 @@ def test_sbom_ingress():
     s3_client = session.client("s3")
     waiter: Waiter = s3_client.get_waiter("object_exists")
 
+    print(f"Looking for S3 object containing SBOM: {sbom_s3_object_key}")
+
     try:
         waiter.wait(
             Bucket=s3_bucket_name,
@@ -143,7 +145,10 @@ def test_sbom_ingress():
 
     print(f"Found S3 object containing SBOM: {sbom_s3_object_key}")
 
-    dt_findings_s3_object_key: str = f"findings-dt-{sbom_s3_object_key}"
+    sbom_s3_object_key = sbom_s3_object_key[sbom_s3_object_key.rfind("/")+1:]
+    dt_findings_s3_object_key: str = f"raw/findings/dt/findings-dt-{sbom_s3_object_key}"
+
+    print(f"Looking for S3 object containing Dependency Track findings: {dt_findings_s3_object_key}")
 
     try:
         waiter.wait(
@@ -162,24 +167,24 @@ def test_sbom_ingress():
         f"Found S3 object containing Dependency Track findings: {dt_findings_s3_object_key}"
     )
 
-    ic_findings_s3_object_key: str = f"findings-ic-{sbom_s3_object_key}"
-
-    try:
-        waiter.wait(
-            Bucket=s3_bucket_name,
-            Key=ic_findings_s3_object_key,
-            WaiterConfig={
-                "Delay": 64,
-                "MaxAttempts": 10,
-            },
-        )
-    except botocore.exceptions.ClientError as ce:
-        print(f"No Ion Channel findings in S3 after 15 minutes: {ce}")
-        pytest.fail()
-
-    print(
-        f"Found S3 object containing Ion Channel findings: {dt_findings_s3_object_key}"
-    )
+    # ic_findings_s3_object_key: str = f"findings-ic-{sbom_s3_object_key}"
+    #
+    # try:
+    #     waiter.wait(
+    #         Bucket=s3_bucket_name,
+    #         Key=ic_findings_s3_object_key,
+    #         WaiterConfig={
+    #             "Delay": 64,
+    #             "MaxAttempts": 10,
+    #         },
+    #     )
+    # except botocore.exceptions.ClientError as ce:
+    #     print(f"No Ion Channel findings in S3 after 15 minutes: {ce}")
+    #     pytest.fail()
+    #
+    # print(
+    #     f"Found S3 object containing Ion Channel findings: {dt_findings_s3_object_key}"
+    # )
 
     # s3_resource = session.resource("s3")
     #

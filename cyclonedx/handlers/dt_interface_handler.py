@@ -65,7 +65,11 @@ def dt_interface_handler(event: dict = None, context: dict = None):
     findings_bytes = bytearray(dumps(findings), "utf-8")
 
     # TODO raw/findings/dt
-    findings_key: str = f"findings-dt-{key}"
+
+    if "/" in key:
+        key = key[key.rfind("/")+1:]
+
+    findings_key: str = f"raw/findings/dt/findings-dt-{key}"
     s3_resource.Object(bucket_name, findings_key).put(
         Body=findings_bytes,
     )
