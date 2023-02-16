@@ -24,7 +24,7 @@ pub fn environize(resource: &str) -> Result<String, Error> {
     let short_code = REGION_SHORT_CODES.get(region.as_str());
 
     match short_code {
-        None => Err(Error::InternalServerError(format!("unsupported region: {}", region))),
+        None => Err(Error::Config(format!("unsupported region: {}", region))),
         Some(code) => Ok(format!("{}-{}-{}", environment, resource, code)),
     }
 }
@@ -59,6 +59,6 @@ pub async fn sdk_config_from_env() -> Result<SdkConfig, Error> {
 
 impl From<VarError> for Error {
     fn from(err: VarError) -> Self {
-        Error::InternalServerError(format!("{:?}", err))
+        Error::Config(format!("{:?}", err))
     }
 }

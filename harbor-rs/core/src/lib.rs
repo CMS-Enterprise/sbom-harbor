@@ -63,7 +63,7 @@ pub mod services;
 
 
 
-pub mod error;
-pub use error::Error;
+pub mod errors;
+pub use errors::Error;
 
 pub mod auth;
