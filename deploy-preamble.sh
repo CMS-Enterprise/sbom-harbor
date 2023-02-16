@@ -5,6 +5,12 @@
 
 cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd
 
+declare -A regionShortCodes
+regionShortCodes[us-east-1]="use1"
+regionShortCodes[us-east-2]="use2"
+regionShortCodes[us-west-1]="usw1"
+regionShortCodes[us-west-2]="usw2"
+
 if [[ -z $AWS_REGION ]]; then
   export AWS_REGION=$(aws configure get region --output text)
 fi
@@ -47,12 +53,7 @@ unset \
   CF_DOMAIN
 
 # get the short name for the AWS region
-case "${AWS_REGION}" in
-  "us-east-2") export AWS_REGION_SHORT="use2";;
-  "us-east-1") export AWS_REGION_SHORT="use1";;
-  "us-west-1") export AWS_REGION_SHORT="usw1";;
-  "us-west-2") export AWS_REGION_SHORT="usw2";;
-esac
+export AWS_REGION_SHORT=${regionShortCodes[$AWS_REGION]}
 
 # get AWS account ID, user ID, and CDK role ARN
 CALLER_IDENTITY=$(aws sts get-caller-identity)
