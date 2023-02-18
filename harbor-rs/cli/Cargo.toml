@@ -10,6 +10,7 @@ keywords = ["SBOM", "harbor", "cli"]
 readme = "README.md"
 
 [dependencies]
+aqum = { version = "0.1.0", path = "../aqum" }
 clap = { version = "4.1.4", default-features = true }
 octocrab = "0.18.1"
 serde = { version = "1.0.92", features = ["derive"] }
@@ -17,6 +18,9 @@ serde_json = "1.0"
 tokio = { version = "1.25.0", features = ["full"] }
 reqwest = { version = "0.11", features = ["json"] }
 thiserror = "1.0"
+aws-config = "0.54.1"
+aws-sdk-config = "0.24.0"
+aws-sdk-dynamodb = "0.24.0"
 
 [dependencies.harbor-core]
 path = "../core"
