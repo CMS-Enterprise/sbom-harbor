@@ -6,6 +6,8 @@ pub enum Error {
     Config(String),
     #[error("invalid format")]
     Format(String),
+    #[error("migrations error")]
+    Migrations(String),
     #[error("runtime error")]
     Runtime(String),
 }

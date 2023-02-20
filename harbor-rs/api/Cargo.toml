@@ -9,7 +9,7 @@ documentation.workspace = true
 async-trait = "0.1.63"
 aws-config = "0.54.1"
 axum = { version = "0.6.4", features = ["form", "headers", "http2", "json", "macros", "matched-path", "multipart", "query", "tokio", "tower-log", "ws"] }
-chrono = "0.4.23"
+chrono = "0.4.5"
 jsonwebtoken = "8.2.0"
 git2 = "0.16.1"
 serde = "1.0.147"

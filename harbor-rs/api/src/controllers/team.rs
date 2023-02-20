@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use aqum::dynamo::{resolve_children, Service as AqumService};
+use aqum::dynamo::{Service as AqumService};
 use axum::{debug_handler, Json};
 use axum::extract::{Path, Query, State};
 use tracing::instrument;
@@ -12,9 +12,10 @@ use harbor_core::services::{CreateTeamContext, TeamContext, TeamService, UpdateT
 use aqum::dynamo::Store;
 
 use crate::auth::Claims;
+use crate::controllers::resolve_children;
 use crate::Error;
 
-pub type DynTeamService<'a, Team, TeamEntity, TeamContext> = Arc<dyn AqumService<'a, Team, TeamEntity, TeamContext>>;
+pub type DynTeamService<'a, Team, TeamEntity, TeamContext> = Arc<dyn AqumService<'a, Team, TeamEntity>>;
 
 pub fn new_service<'a>(store: Arc<Store>) -> DynTeamService<'a, Team, TeamEntity, TeamContext> {
     Arc::new(TeamService::new(store))

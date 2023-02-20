@@ -17,14 +17,6 @@ fn test_team_model(test_name: &str) -> Team {
     }
 }
 
-// fn test_team_entity() -> TeamEntity {
-//     let id = Uuid::new_v4();
-//     let team_name = format!("team-test-{}", id);
-//     let mut team = TeamEntity::new(team_name);
-//     team.id = id.to_string();
-//     team
-// }
-
 #[async_std::test]
 async fn can_crud_team() -> Result<(), Error> {
     let config = sdk_config_from_env()
