@@ -9,18 +9,7 @@ use crate::auth::ResourceKind;
 
 use aqum::Error;
 
-pub async fn sync(ctx: Context) -> Result<Vec<LogEntry>, Error> {
-    let service = MigrationService::new(&ctx).await?;
-    let mut log_entries = vec![];
-
-    let entry = init_auth(&service).await?;
-    log_entries.push(entry);
-
-    Ok(log_entries)
-}
-
-
-pub async fn init_auth(service: &MigrationService) -> Result<LogEntry, Error> {
+pub async fn up(service: &MigrationService) -> Result<LogEntry, Error> {
     let migration = InitAuth{};
     service.apply(&migration, Direction::Up)
         .await
