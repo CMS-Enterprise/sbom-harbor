@@ -76,12 +76,13 @@ async fn main() {
     let config = sdk_config_from_env().await.expect("failed to load config from environment");
     // let authorizer = Authorizer::new(&config).unwrap().expect("failed to load authorizer");
     let store = Arc::new(Store::new(config));
-    let team_service = controllers::team::new_service(store);
+    // let team_service = controllers::team::new_service(store);
 
     let harbor = Router::new()
         .fallback(handler_404)
-        .route("/team/:id", get(controllers::team::get))
-        .with_state(team_service)
+        //.route("/team/:id", get(controllers::team::get))
+        .with_state(store)
+        //.with_state(team_service)
         .layer(cors)
         .layer(tracer);
 

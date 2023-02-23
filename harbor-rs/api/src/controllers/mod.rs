@@ -22,7 +22,7 @@ pub fn resolve_children(query: HashMap<String, String>) -> bool {
 /// Retrieves an id from the querystring by key name.
 pub fn resolve_id(id_key: String, query: HashMap<String, String>) -> Result<String, Error> {
     match query.get(id_key.as_str()) {
-        None => Err(Error::Entity(format!("missing required parameter {}", id_key))),
+        None => Err(Error::InvalidParameters(format!("missing required parameter {}", id_key))),
         Some(id) => Ok(id.to_string())
     }
 }

@@ -15,7 +15,7 @@ pub enum ResourceKind {
 impl Display for ResourceKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ResourceKind::Any => write!(f, aqum::mongodb::auth::ANY_RESOURCE_KIND),
+            ResourceKind::Any => write!(f, "*"),
             ResourceKind::Team => write!(f, "team"),
             ResourceKind::Project => write!(f, "project"),
             ResourceKind::Codebase => write!(f, "codebase"),

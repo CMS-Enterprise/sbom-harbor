@@ -1,6 +1,5 @@
 use std::sync::Arc;
 use aqum::dynamo::{Service, Store};
-use uuid::Uuid;
 use harbor_core::entities::{Team as TeamEntity};
 use harbor_core::models::*;
 use harbor_core::services::*;

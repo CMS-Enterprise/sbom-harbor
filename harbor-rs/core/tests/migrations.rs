@@ -1,14 +1,14 @@
 use aqum::Error;
+use aqum::mongodb::auth::init_default_auth::apply_all;
 use aqum::mongodb::Context;
-use aqum::mongodb::migrations::{Direction, MigrationService};
+use aqum::mongodb::migrations::{Effect, MigrationService};
 
-use harbor_core::auth::migrations::init_auth;
 
 // TODO: Dynamic test config.  Currently requires you to run docker instance before running tests.
 fn test_context() -> Context {
     Context{
         connection_uri: "mongodb://localhost:27017".to_string(),
-        database: "harbor".to_string(),
+        db_name: "harbor".to_string(),
     }
 }
 
@@ -21,11 +21,11 @@ async fn can_init_auth() -> Result<(), Error> {
     let service = MigrationService::new(&ctx).await?;
 
     // Initialize the db.
-    let log_entry = init_auth(&service).await?;
+    let log_entry = apply_all(&service).await?;
 
     assert!(!log_entry.id.is_empty());
     assert_eq!("init_auth", log_entry.name);
-    assert_eq!(log_entry.direction, Direction::Up);
+    assert_eq!(log_entry.effect, Effect::Commit);
 
     // TODO: Assert single log entry and populated db.
 
