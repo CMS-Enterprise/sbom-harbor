@@ -3,6 +3,7 @@ use aqum::mongodb::auth::init_default_auth::apply_all;
 use aqum::mongodb::migrations::{LogEntry, MigrationService};
 use aqum::Error;
 
+#[allow(dead_code)]
 pub async fn sync(ctx: Context) -> Result<Vec<LogEntry>, Error> {
     let service = MigrationService::new(&ctx).await?;
     let mut log_entries = vec![];

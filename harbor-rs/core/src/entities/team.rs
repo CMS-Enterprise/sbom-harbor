@@ -1,10 +1,7 @@
 use core::default::Default;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
-use crate::entities::{Discriminator, Member};
-use crate::entities::Project;
-use crate::entities::Token;
+use crate::entities::{Member, Project, Token};
 
 ///  A Team is a named entity that can contain 3 child types:
 /// - [Project]
@@ -12,20 +9,8 @@ use crate::entities::Token;
 /// - [Token]
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Team {
-    /// The DynamoDB partition key for the item entry.
-    #[serde(rename = "TeamId")]
-    pub partition_key: String,
-
-    /// The DynamoDB sort key for the item entry.
-    #[serde(rename = "EntityKey")]
-    pub sort_key: String,
-
-    /// The id of the Team. Teams are the aggregate root, so they are their own parent.
-    #[serde(rename = "parentId")]
-    pub parent_id: String,
-
     /// The unique identifier for the Team.
-    #[serde(skip_deserializing)]
+    #[serde(rename = "_id")]
     pub id: String,
 
     /// The name of the team.
@@ -47,13 +32,8 @@ pub struct Team {
 impl Team {
     /// Constructor function for creating new team instances.
     pub fn new(name: String) -> Self {
-        let id = Uuid::new_v4().to_string();
-
         Self {
-            partition_key: id.clone(),
-            sort_key: Discriminator::Team.to_sort_key(&id).unwrap(),
-            parent_id: id.clone(),
-            id,
+            id: "".to_string(),
             name,
             members: Default::default(),
             projects: Default::default(),

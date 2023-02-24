@@ -1,4 +1,11 @@
 use serde::{Deserialize, Serialize};
+use aqum::mongodb::{MongoDocument, mongo_doc};
+
+mongo_doc!(Codebase);
+mongo_doc!(Member);
+mongo_doc!(Project);
+mongo_doc!(Team);
+mongo_doc!(Token);
 
 ///  A Team is a named entity that can contain 3 child types:
 /// - [Project]

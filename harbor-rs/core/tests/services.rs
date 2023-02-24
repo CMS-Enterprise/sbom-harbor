@@ -61,7 +61,7 @@ async fn can_crud_team() -> Result<(), Error> {
     assert_eq!(updated.name, updated_name);
 
 
-    let ctx = TeamsContext::new(false);
+    let ctx = ListTeamsContext::new(false);
     let teams = service.list(&ctx).await?;
     assert!(!teams.is_empty());
 
