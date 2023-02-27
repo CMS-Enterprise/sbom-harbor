@@ -1,12 +1,19 @@
 use std::sync::Arc;
-use aqum::dynamo::{Service, Store};
-use harbor_core::entities::{Team as TeamEntity};
+use aqum::mongodb::{Context, Service, Store};
 use harbor_core::models::*;
 use harbor_core::services::*;
-use harbor_core::config::sdk_config_from_env;
 use harbor_core::Error;
 
-fn test_team_model(test_name: &str) -> Team {
+
+fn test_context() -> Context {
+    Context{
+        connection_uri: "mongodb://localhost:27017".to_string(),
+        db_name: "harbor".to_string(),
+        key_name: "id".to_string(),
+    }
+}
+
+fn test_team_model(test_name: &str) -> harbor_core::models::Team {
     Team{
         id: "".to_string(),
         name: test_name.to_string(),
@@ -18,61 +25,44 @@ fn test_team_model(test_name: &str) -> Team {
 
 #[async_std::test]
 async fn can_crud_team() -> Result<(), Error> {
-    let config = sdk_config_from_env()
-        .await
-        .expect("failed to load config from environment");
+    let ctx = test_context();
+        // sdk_config_from_env()
+        // .await
+        // .expect("failed to load config from environment");
 
-    let store = Store::new(config);
+    let store = Store::new(&ctx).await;
+    let store = store.unwrap();
     let service = TeamService::new(Arc::new(store));
 
-    let model = test_team_model("can_crud_team");
+    let mut model = test_team_model("can_crud_team");
+    service.insert(&mut model).await?;
 
-    let ctx = CreateTeamContext{
-        team: model.clone(),
-        children: false,
-    };
-
-    let model = service.insert(&ctx).await?;
-    assert!(!model.id.is_empty());
-
-    let ctx = TeamContext{
-        id: model.id.clone(),
-        children: false
-    };
-
-    let saved = service.find(&ctx).await?;
+    let saved = service.find(model.id.clone().as_str()).await?;
     assert!(saved.is_some());
 
-    let mut saved = saved.unwrap();
+    let saved = saved.unwrap();
     assert_eq!(model.id, saved.id);
     assert_eq!(model.name, saved.name);
 
     let updated_name = format!("{}-{}", saved.name, "updated");
-    saved.name = updated_name.clone();
+    let mut updated = saved.clone();
+    updated.name = updated_name.clone();
 
-    let ctx = UpdateTeamContext{
-        id: saved.id.clone(),
-        team: saved.clone(),
-        children: false,
-    };
+    service.update(&updated).await?;
 
-    let updated = service.update(&ctx).await?;
+    let saved = service.find(model.id.clone().as_str()).await?;
+    assert!(saved.is_some());
+
+    let saved = saved.unwrap();
     assert_eq!(saved.id, updated.id);
     assert_eq!(updated.name, updated_name);
 
-
-    let ctx = ListTeamsContext::new(false);
-    let teams = service.list(&ctx).await?;
+    let teams = service.list().await?;
     assert!(!teams.is_empty());
 
-    let ctx = TeamContext{
-        id: updated.id.clone(),
-        children: false
-    };
+    service.delete(updated.id.as_str()).await?;
 
-    service.delete(&ctx).await?;
-
-    let deleted = service.find(&ctx).await?;
+    let deleted = service.find(updated.id.as_str()).await?;
     assert!(deleted.is_none());
     Ok(())
 }

@@ -78,6 +78,8 @@ async fn main() {
     let store = Store::new(&Context{
         connection_uri: "mongodb://localhost:27017".to_string(),
         db_name: "harbor".to_string(),
+        key_name: "id".to_string(),
+
     }).await.unwrap();
 
     let team_service = controllers::team::new_service(Arc::new(store));

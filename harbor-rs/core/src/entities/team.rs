@@ -1,33 +1,9 @@
 use core::default::Default;
-use serde::{Deserialize, Serialize};
+use chrono::{DateTime, Utc};
+use uuid::Uuid;
 
-use crate::entities::{Member, Project, Token};
-
-///  A Team is a named entity that can contain 3 child types:
-/// - [Project]
-/// - [Member]
-/// - [Token]
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
-pub struct Team {
-    /// The unique identifier for the Team.
-    #[serde(rename = "_id")]
-    pub id: String,
-
-    /// The name of the team.
-    pub name: String,
-
-    /// Members of the Team.
-    #[serde(default = "Vec::new")]
-    pub members: Vec<Member>,
-
-    /// Projects that are owned by the Team.
-    #[serde(default = "Vec::new")]
-    pub projects: Vec<Project>,
-
-    /// Tokens associated with the Team.
-    #[serde(default = "Vec::new")]
-    pub tokens: Vec<Token>,
-}
+use crate::Error;
+use crate::models::{Codebase, Member, Project, Team, Token};
 
 impl Team {
     /// Constructor function for creating new team instances.
@@ -75,5 +51,45 @@ impl Team {
             .next();
 
         sbom_token
+    }
+}
+
+impl Project {
+    pub fn new(name: String, fisma: Option<String>) -> Self {
+        Self {
+            id: "".to_string(),
+            name,
+            fisma: fisma.unwrap_or("".to_string()),
+            codebases: vec![],
+        }
+    }
+
+    pub fn codebases(&mut self, codebase: Codebase) -> &Self {
+        self.codebases.push(codebase);
+        self
+    }
+}
+
+impl Token {
+    pub fn new(name: String, expires: String, enabled: Option<bool>) -> Self {
+        Self {
+            id: "".to_string(),
+            name,
+            token: Uuid::new_v4().to_string(),
+            enabled: enabled.unwrap_or(false),
+            expires,
+        }
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn expired(&self) -> Result<bool, Error> {
+        if self.expires.is_empty() {
+            return Ok(false);
+        }
+
+        match DateTime::parse_from_rfc3339(&self.expires) {
+            Ok(expiry) => Ok(Utc::now() >= expiry),
+            Err(err) => Err(Error::Format(format!("error parsing token expires: {}", err.to_string()))),
+        }
     }
 }
