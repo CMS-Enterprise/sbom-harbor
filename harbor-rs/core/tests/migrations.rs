@@ -25,7 +25,7 @@ async fn can_init_auth() -> Result<(), Error> {
     let log_entry = apply_all(&service).await?;
 
     assert!(!log_entry.id.is_empty());
-    assert_eq!("init_auth", log_entry.name);
+    assert_eq!("init_default_auth", log_entry.name);
     assert_eq!(log_entry.effect, Effect::Commit);
 
     // TODO: Assert single log entry and populated db.
