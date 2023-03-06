@@ -3,8 +3,6 @@ use async_std;
 mod common;
 
 use aqum::Error;
-use aqum::dynamo::Store;
-use aqum::dynamo::from_entity;
 use harbor::api;
 use harbor::entities::{Codebase, Discriminator, Entity, Project, Team};
 

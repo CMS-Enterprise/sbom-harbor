@@ -1,40 +1,32 @@
 use std::sync::Arc;
-use aqum::dynamo::Service as AqumService;
 use axum::{debug_handler, Json};
-use axum::extract::{Path, Query, State};
+use axum::extract::{Path, State};
 use tracing::instrument;
-use uuid::Uuid;
 
 use harbor_core::models::Team;
-use harbor_core::entities::Team as TeamEntity;
-use harbor_core::services::{TeamContext, TeamService};
-use aqum::dynamo::Store;
+use harbor_core::services::TeamService;
+use aqum::mongodb::{Service, Store};
 
 use crate::auth::Claims;
 use crate::Error;
 
-pub type DynTeamService<'a, Team, TeamEntity, TeamContext> = Arc<dyn AqumService<'a, Team, TeamEntity, TeamContext>>;
+pub type DynTeamService = Arc<TeamService>;
 
-pub fn new_service<'a>(store: Arc<Store>) -> DynTeamService<'a, Team, TeamEntity, TeamContext> {
+pub fn new_service<'a>(store: Arc<Store>) -> Arc<TeamService> {
     Arc::new(TeamService::new(store))
 }
 
+// WATCH: Trying to get by without a custom extractor.
 #[instrument]
 #[debug_handler]
 pub async fn get(
     _claims: Claims,
-    Path(id): Path<Uuid>,
-    State(service): State<DynTeamService<'static, Team, TeamEntity, TeamContext>>) -> Result<Json<Team>, Error> {
-
-    let children = false;
-
-    let ctx = TeamContext {
-        id: id.to_string(),
-        children,
-    };
+    // Query(query): Query<HashMap<String, String>>,
+    Path(id): Path<String>,
+    State(service): State<DynTeamService>) -> Result<Json<Team>, Error> {
 
     let team = service
-        .get(&ctx)
+        .find(id.as_str())
         .await
         .map_err(|e| Error::InternalServerError(e.to_string()))?;
 
@@ -42,4 +34,24 @@ pub async fn get(
         None => Err(Error::DoesNotExist(format!("team not found: {}", id))),
         Some(t) => Ok(t.into()),
     }
+}
+
+#[instrument]
+#[debug_handler]
+pub async fn list(
+    _claims: Claims,
+    // Query(children): Query<HashMap<String, String>>,
+    State(service): State<DynTeamService>) -> Result<Json<Vec<Team>>, Error> {
+
+    // TODO: Does a children flag still hold?
+    // let ctx = ListTeamsContext {
+    //     children: resolve_children(query)
+    // };
+
+    let teams = service
+        .list()
+        .await
+        .map_err(|e| Error::InternalServerError(e.to_string()))?;
+
+    Ok(teams.into())
 }

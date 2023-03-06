@@ -1,4 +1,12 @@
 use serde::{Deserialize, Serialize};
+use aqum::auth::User;
+use aqum::mongodb::{MongoDocument, mongo_doc};
+
+mongo_doc!(Codebase);
+mongo_doc!(Member);
+mongo_doc!(Project);
+mongo_doc!(Team);
+mongo_doc!(Token);
 
 ///  A Team is a named entity that can contain 3 child types:
 /// - [Project]
@@ -28,10 +36,15 @@ pub struct Member {
     pub id: String,
     /// The email address for the Member.
     pub email: String,
-    // TODO: Consider roles
-    /// Flag indicating whether the member is a team lead.
-    #[serde(rename = "isTeamLead")]
-    is_team_lead: bool,
+}
+
+impl From<User> for Member {
+    fn from(value: User) -> Self {
+        Self{
+            id: value.id,
+            email: value.email,
+        }
+    }
 }
 
 /// A Project is a named entity that can contain 1 child type:
