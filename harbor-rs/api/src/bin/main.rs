@@ -14,9 +14,9 @@ use tower_http::cors::{Any, CorsLayer};
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
 use tracing::Span;
 
-use aqum::dynamo::Store;
+use aqum::mongodb::{Context, Store};
 use harbor_api::controllers;
-use harbor_core::config::sdk_config_from_env;
+// use harbor_core::config::sdk_config_from_env;
 
 const X_API_KEY: &'static str = "x-api-key";
 const X_AMZ_DATE: &'static str = "x-amz-date";
@@ -73,14 +73,21 @@ async fn main() {
         );
 
     // Load injectable types.
-    let config = sdk_config_from_env().await.expect("failed to load config from environment");
+    // let config = sdk_config_from_env().await.expect("failed to load config from environment");
     // let authorizer = Authorizer::new(&config).unwrap().expect("failed to load authorizer");
-    let store = Arc::new(Store::new(config));
-    let team_service = controllers::team::new_service(store);
+    let store = Store::new(&Context{
+        connection_uri: "mongodb://localhost:27017".to_string(),
+        db_name: "harbor".to_string(),
+        key_name: "id".to_string(),
+
+    }).await.unwrap();
+
+    let team_service = controllers::team::new_service(Arc::new(store));
 
     let harbor = Router::new()
         .fallback(handler_404)
         .route("/team/:id", get(controllers::team::get))
+        //.with_state(store)
         .with_state(team_service)
         .layer(cors)
         .layer(tracer);

@@ -1,4 +1,3 @@
-use aqum::dynamo::{Entity as DynamoEntity, Store};
 use uuid::Uuid;
 use harbor::entities::{Entity, Team};
 use harbor::team::get_team_handler::handle_request as handle_get_team;
