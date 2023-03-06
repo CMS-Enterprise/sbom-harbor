@@ -11,10 +11,9 @@ pub mod config;
 /// entity relationships.
 ///
 /// Entities are the things that the Service Layer manages. Some entities, on the server side,
-/// may be persisted as entries in DynamoDB and therefore contain additional fields related to
-/// DynamoDB structural concerns (e.g. partition_key, sort_key). Some entities are materialized
-/// at runtime for the only for the purpose of executing business logic, and
-/// are never serialized or persisted.
+/// may be persisted as entries in a database and therefore contain additional fields related to
+/// database structural concerns. Some entities are materialized at runtime for the only for the
+/// purpose of executing business logic, and are never serialized or persisted.
 ///
 /// An Entity can be a standalone thing that represents and manages only itself, or it
 /// can be an Aggregate Root. An Aggregate Root is an Entity that represents and manages itself,
