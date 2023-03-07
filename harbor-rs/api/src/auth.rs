@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::Error;
 
-// use harbor_core::auth::Authenticator;
+// use harbcore::auth::Authenticator;
 
 // TODO: Figure out how to move the JWT aspect of the Authenticator to this crate.
 #[derive(Debug, Serialize, Deserialize)]

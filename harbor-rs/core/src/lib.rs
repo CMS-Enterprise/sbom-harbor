@@ -31,7 +31,7 @@ pub mod config;
 /// ```rust
 /// use chrono::{DateTime, Utc};
 /// use serde::{Deserialize, Serialize};
-/// use harbor_core::Error;
+/// use harbcore::Error;
 ///
 ///#[derive(Clone, Debug, Deserialize, Serialize)]
 /// pub struct Token {

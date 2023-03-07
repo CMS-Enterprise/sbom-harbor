@@ -1,5 +1,5 @@
 [package]
-name = "harbor-core"
+name = "harbcore"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -32,12 +32,12 @@ dotenv = "0.15.0"
 tokio-test = "*"
 uuid = { version = "1.2.2", features = ["serde", "v4"] }
 
-[dependencies.aqum]
-path = "../aqum"
+[dependencies.platform]
+path = "../platform"
 version = "0.1.0"
 
 [lib]
-name = "harbor_core"           # The name of the target.
-path = "src/lib.rs"    # The source file of the target.
-proc-macro = false     # Set to `true` for a proc-macro library.
-crate-type = ["lib"]   # The crate types to generate.
+name = "harbcore"
+path = "src/lib.rs"
+proc-macro = false
+crate-type = ["lib"]
