@@ -13,8 +13,8 @@ pub enum Error {
 }
 
 
-impl From<aqum::Error> for Error {
-    fn from(value: aqum::Error) -> Self {
+impl From<platform::Error> for Error {
+    fn from(value: platform::Error) -> Self {
         Error::Runtime(format!("{:?}", value))
     }
 }

@@ -3,9 +3,6 @@ extern crate core;
 /// The Models module contains the API types defined by the OpenAPI specification for this API.
 pub mod models;
 
-/// The config module contains functions that are used to retrieve runtime configuration.
-pub mod config;
-
 /// The Entities module contains representations of the state that is managed
 /// by the Harbor HTTP API as well as associated domain logic relevant to managing
 /// entity relationships.
@@ -31,7 +28,7 @@ pub mod config;
 /// ```rust
 /// use chrono::{DateTime, Utc};
 /// use serde::{Deserialize, Serialize};
-/// use harbor_core::Error;
+/// use harbcore::Error;
 ///
 ///#[derive(Clone, Debug, Deserialize, Serialize)]
 /// pub struct Token {

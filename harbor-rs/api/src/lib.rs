@@ -5,4 +5,4 @@ mod errors;
 pub use errors::Error;
 
 // Re-export models so that clients can bind.
-pub use harbor_core::models::*;
+pub use harbcore::models::*;

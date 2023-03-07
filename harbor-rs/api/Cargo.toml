@@ -28,12 +28,12 @@ ctor = "0.1.26"
 dotenv = "0.15.0"
 tokio-test = "*"
 
-[dependencies.aqum]
-path = "../aqum"
+[dependencies.harbcore]
+path = "../core"
 version = "0.1.0"
 
-[dependencies.harbor-core]
-path = "../core"
+[dependencies.platform]
+path = "../platform"
 version = "0.1.0"
 
 [[bin]]
