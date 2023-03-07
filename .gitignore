@@ -44,7 +44,6 @@ tests/fixtures/GET_TEAM_REQUEST
 cargo-generate/bundle.json
 cargo-generate/output.json
 
-
 # OpenAPI generator
 **/.openapi-generator/
 **/tests/gen
@@ -54,5 +53,3 @@ cargo-generate/output.json
 # devenv
 devenv/mongodb/
 **/server/gen
-
-
