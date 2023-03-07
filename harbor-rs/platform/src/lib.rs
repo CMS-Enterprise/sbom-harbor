@@ -10,6 +10,9 @@ pub mod auth;
 /// The `cognito` module provides high level abstractions over the AWS Cognito SDK.
 pub mod cognito;
 
+/// The config module contains functions that are used to retrieve runtime configuration.
+pub mod config;
+
 /// The `errors` module provides common error types for the library.
 pub mod errors;
 
