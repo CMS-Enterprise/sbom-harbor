@@ -1,6 +1,0 @@
-FROM public.ecr.aws/lambda/provided:al2-x86_64
-RUN yum install -y git curl tar
-RUN mkdir -p /opt/bin
-RUN curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /opt/bin v0.62.1
-COPY target/lambda/release/output/pilot/bootstrap /var/runtime
-CMD [ "function.handler" ]

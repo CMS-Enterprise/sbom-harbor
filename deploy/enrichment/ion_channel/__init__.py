@@ -1,1 +1,0 @@
-from .ion_channel_interface import IonChannelInterfaceLambda
