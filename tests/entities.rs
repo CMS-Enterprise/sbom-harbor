@@ -2,7 +2,7 @@ use async_std;
 
 mod common;
 
-use aqum::Error;
+use platform::Error;
 use harbor::api;
 use harbor::entities::{Codebase, Discriminator, Entity, Project, Team};
 

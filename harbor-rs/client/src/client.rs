@@ -3,11 +3,15 @@ use std::fmt::Result as StdResult;
 use std::fmt::{Display, Formatter};
 
 use anyhow::{anyhow, bail, Result};
+<<<<<<< HEAD
 <<<<<<<< HEAD:client/src/client.rs
 use platform::hyper::*;
 ========
 use aqum::hyper::*;
 >>>>>>>> 32167e2 (refactor to axum and workspaces (#38)):harbor-rs/client/src/client.rs
+=======
+use platform::hyper::*;
+>>>>>>> c4c15d7 (Add platform crate (#42))
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tracing::info;

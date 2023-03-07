@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use aqum::auth::User;
-use aqum::mongodb::{MongoDocument, mongo_doc};
+use platform::auth::User;
+use platform::mongodb::{MongoDocument, mongo_doc};
 
 mongo_doc!(Codebase);
 mongo_doc!(Member);

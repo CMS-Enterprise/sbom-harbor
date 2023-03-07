@@ -1,8 +1,8 @@
 use std::sync::Arc;
-use aqum::mongodb::{Context, Service, Store};
-use harbor_core::models::*;
-use harbor_core::services::*;
-use harbor_core::Error;
+use platform::mongodb::{Context, Service, Store};
+use harbcore::models::*;
+use harbcore::services::*;
+use harbcore::Error;
 
 
 fn test_context() -> Context {
@@ -13,7 +13,7 @@ fn test_context() -> Context {
     }
 }
 
-fn test_team_model(test_name: &str) -> harbor_core::models::Team {
+fn test_team_model(test_name: &str) -> harbcore::models::Team {
     Team{
         id: "".to_string(),
         name: test_name.to_string(),
