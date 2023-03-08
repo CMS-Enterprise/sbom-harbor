@@ -14,6 +14,7 @@ tmp/
 **/temp/
 **/.cache/
 **/.temp/
+**/generated/
 
 # macos
 **/.DS_Store

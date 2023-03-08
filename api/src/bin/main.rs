@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 use axum::{
-    routing::{get},
+    routing::{get, post, put, delete},
     Router,
 };
 use axum::http::{Method, Request, StatusCode};
@@ -86,8 +86,11 @@ async fn main() {
 
     let harbor = Router::new()
         .fallback(handler_404)
+        .route("/teams", get(controllers::team::list))
         .route("/team/:id", get(controllers::team::get))
-        //.with_state(store)
+        .route("/team", post(controllers::team::post))
+        .route("/team/:id", put(controllers::team::put))
+        .route("/team/:id", delete(controllers::team::delete))
         .with_state(team_service)
         .layer(cors)
         .layer(tracer);

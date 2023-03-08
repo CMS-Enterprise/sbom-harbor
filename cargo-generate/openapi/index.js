@@ -29,7 +29,7 @@ results.forEach(adapter => {
     }
 
     //let command = `cd ../ && cargo generate --init DerekStrickland/generate-rust-lambda lambda ${adapter.toOpts()}`;
-    let command = `cargo generate --path ../ fargate ${adapter.toOpts()}`;
+    let command = `cargo generate --path ../ harbor ${adapter.toOpts()}`;
     commands.push(command);
 
     console.log(`command: ${command}`);
