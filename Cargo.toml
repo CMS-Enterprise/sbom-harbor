@@ -5,6 +5,7 @@ members = [
     "core",
 #    "pilot"
     "platform",
+    "cli",
 ]
 
 [workspace.package]
