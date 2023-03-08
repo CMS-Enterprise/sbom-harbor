@@ -1,59 +1,75 @@
-use std::io;
-use clap::{Arg, ArgAction, Command, ArgMatches};
-use std::process::{Command as SysCommand, Output};
 use std::env;
-use platform::hyper::{ContentType, get, post};
+use std::format;
+use std::process::{Command as SysCommand, Output};
+
+use clap::{Arg, ArgAction, ArgMatches, Command};
+use serde::de::DeserializeOwned;
+use serde::Serialize;
+
+use anyhow::{anyhow, Result as AnyhowResult};
+use harbor_cli::http::{ContentType, get};
 
 fn get_matches() -> ArgMatches {
     return Command::new("harbor-cli")
-    .about("SBOM Harbor Runtime CLI")
-    .version("0.0.1")
-    .subcommand_required(false)
-    .arg_required_else_help(true)
-    .author("SBOM Harbor Team")
-    .arg(
-        Arg::new("account")
-            .short('a')
-            .required(true)
-            .long("account")
-            .help("aws account id")
-            .action(ArgAction::Set)
-            .num_args(1),
-    )
-    .arg(
-        Arg::new("env")
-            .short('e')
-            .required(true)
-            .long("env")
-            .help("environment, ephemeral or permanent.")
-            .action(ArgAction::Set)
-            .num_args(1),
-    )
-    .subcommand(
-        Command::new("start")
-            .about("Start a Pilot Execution")
-    )
-    .get_matches();
+        .about("SBOM Harbor Runtime CLI")
+        .version("0.0.1")
+        .subcommand_required(false)
+        .arg_required_else_help(true)
+        .author("SBOM Harbor Team")
+        .arg(
+            Arg::new("account")
+                .short('a')
+                .required(true)
+                .long("account")
+                .help("aws account id")
+                .action(ArgAction::Set)
+                .num_args(1),
+        )
+        .arg(
+            Arg::new("env")
+                .short('e')
+                .required(true)
+                .long("env")
+                .help("environment, ephemeral or permanent.")
+                .action(ArgAction::Set)
+                .num_args(1),
+        )
+        .subcommand(
+            Command::new("start")
+                .about("Start a Pilot Execution")
+        )
+        .get_matches();
 }
 
 fn get_gh_token() -> String {
     return match env::var("GH_FETCH_TOKEN") {
         Ok(v) => v,
         Err(e) => panic!("$GH_FETCH_TOKEN is not set ({})", e)
-    }
+    };
 }
 
 fn get_cf_domain() -> String {
     return match env::var("CF_DOMAIN") {
         Ok(v) => v,
         Err(e) => panic!("$CF_DOMAIN is not set ({})", e)
-    }
+    };
 }
 
 async fn list_repos() {
+    let token: String = get_gh_token();
+    let org_name: &str = "cmsgov";
+    let github_org_url: String = format!("https://api.github.com/orgs/{org_name}/repos");
 
-    let token = get_gh_token();
+    let payload = serde_json::from_str("{}");
 
+    let response: AnyhowResult<Option<String>> = get(
+        github_org_url.as_str(),
+        ContentType::Json,
+        token.as_str(),
+        Some()
+    ).await;
+
+    println!("{:#?}", response);
 
     // curl -X GET -u <UserName>:<Generated-Token>https://api.github.com/orgs/<Org-Name>/repos | grep -w clone_url
 
@@ -92,7 +108,6 @@ async fn list_repos() {
 
 #[tokio::main]
 async fn main() {
-
     let matches = get_matches();
     if let Some(aws_account) = matches.get_one::<String>("account") {
         println!("Account Number: {}", aws_account);
