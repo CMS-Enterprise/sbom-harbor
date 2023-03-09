@@ -16,7 +16,8 @@ trait Opts {
 
 ///
 trait Command<T>
-where T: Opts + Send + Sync
+where
+    T: Opts + Send + Sync,
 {
     fn execute(opts: T) -> i32;
 }

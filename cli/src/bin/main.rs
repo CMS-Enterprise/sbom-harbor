@@ -2,12 +2,13 @@ use std::env;
 use std::format;
 use std::process::{Command as SysCommand, Output};
 
-use clap::{Arg, ArgAction, ArgMatches, Command};
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-
 use anyhow::{anyhow, Result as AnyhowResult};
-use harbor_cli::http::{ContentType, get};
+use clap::{Arg, ArgAction, ArgMatches, Command};
+use harbor_cli::commands::{PilotFactory, PilotKind, PilotOps, PilotOpts};
+use harbor_cli::http::{get, ContentType};
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+use std::any::type_name;
 
 fn get_matches() -> ArgMatches {
     return Command::new("harbor-cli")
@@ -34,76 +35,12 @@ fn get_matches() -> ArgMatches {
                 .action(ArgAction::Set)
                 .num_args(1),
         )
-        .subcommand(
-            Command::new("start")
-                .about("Start a Pilot Execution")
-        )
+        .subcommand(Command::new("start").about("Start a Pilot Execution"))
         .get_matches();
 }
 
-fn get_gh_token() -> String {
-    return match env::var("GH_FETCH_TOKEN") {
-        Ok(v) => v,
-        Err(e) => panic!("$GH_FETCH_TOKEN is not set ({})", e)
-    };
-}
-
-fn get_cf_domain() -> String {
-    return match env::var("CF_DOMAIN") {
-        Ok(v) => v,
-        Err(e) => panic!("$CF_DOMAIN is not set ({})", e)
-    };
-}
-
-async fn list_repos() {
-    let token: String = get_gh_token();
-    let org_name: &str = "cmsgov";
-    let github_org_url: String = format!("https://api.github.com/orgs/{org_name}/repos");
-
-    let payload = serde_json::from_str("{}");
-
-    let response: AnyhowResult<Option<String>> = get(
-        github_org_url.as_str(),
-        ContentType::Json,
-        token.as_str(),
-        Some()
-    ).await;
-
-    println!("{:#?}", response);
-
-    // curl -X GET -u <UserName>:<Generated-Token>https://api.github.com/orgs/<Org-Name>/repos | grep -w clone_url
-
-    // let project: Option<Project> =
-    //     post(create_project_url.as_str(), token.as_str(), Some(project)).await?;
-    // let team: Option<Team> = get(url.as_str(), token.as_str(), None::<Team>).await?;
-
-    // Ok(team.unwrap());
-    // let octocrab = octocrab::OctocrabBuilder::new()
-    //     .personal_token(token)
-    //     .build()
-    //     .unwrap();
-    //
-    // let current_page = octocrab
-    //     .orgs("cmsgov")
-    //     .list_repos()
-    //     .repo_type(params::repos::Type::Sources)
-    //     .sort(params::repos::Sort::Pushed)
-    //     .direction(params::Direction::Descending)
-    //     .per_page(100)
-    //     .page(1u32)
-    //     .send()
-    //     .await;
-
-    // let mut current_page_value = match current_page {
-    //     Ok(v) => v,
-    //     Err(e) => panic!("Error trying to get page: {}", e)
-    // };
-    //
-    // let prs = current_page_value.take_items();
-    //
-    // for pr in prs.iter() {
-    //     println!("Value: {}", pr.url.as_str());
-    // }
+fn type_of<T>(_: T) -> &'static str {
+    type_name::<T>()
 }
 
 #[tokio::main]
@@ -115,11 +52,14 @@ async fn main() {
             println!("Environment: {}", env);
             match matches.subcommand() {
                 Some(("start", _)) => {
-                    println!("Start matched, lets get it on");
-                    list_repos().await;
+                    let provider = PilotFactory::new(PilotOpts {
+                        provider: PilotKind.GITHUB,
+                    });
+
+                    provider.scan();
                 }
                 None => println!("Nothing"),
-                Some((&_, _)) => todo!()
+                Some((&_, _)) => todo!(),
             }
         }
     }
