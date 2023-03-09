@@ -47,6 +47,8 @@ pub async fn get(
     }
 }
     {% when "post"%}
+#[instrument]
+#[debug_handler]
 pub async fn post(
     _claims: Claims,
     State(service): State<Dyn{{ response_type }}Service>,

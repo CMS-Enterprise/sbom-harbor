@@ -1,6 +1,6 @@
 [template]
 include = ["commands", "controllers", "services"]
-exclude = ["openapi"]
+
 
 [placeholders.operation_type]
 type = "string"

@@ -14,7 +14,10 @@ tmp/
 **/temp/
 **/.cache/
 **/.temp/
+
+# generated files and folders
 **/generated/
+**/generated.rs
 
 # macos
 **/.DS_Store

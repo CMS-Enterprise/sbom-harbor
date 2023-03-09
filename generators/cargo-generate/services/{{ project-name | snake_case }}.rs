@@ -8,7 +8,7 @@ pub struct {{ response_type }}Service {
     store: Arc<Store>,
 }
 
-impl TeamService {
+impl {{ response_type }}Service {
     pub fn new(store: Arc<Store>) -> {{ response_type }}Service {
         {{ response_type }}Service { store }
     }
