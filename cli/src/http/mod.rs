@@ -1,18 +1,13 @@
-use std::fmt::{Display, Formatter};
 use anyhow::{anyhow, Result as AnyhowResult};
-use hyper::{
-    Body as HyperBody,
-    Client as HyperClient,
-    Uri as HyperUri,
-    Method,
-    Request,
-    StatusCode,
-};
+use core::convert::TryFrom;
 use hyper::body::to_bytes;
+use hyper::{
+    Body as HyperBody, Client as HyperClient, Method, Request, StatusCode, Uri as HyperUri,
+};
 use hyper_rustls::HttpsConnectorBuilder;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use core::convert::TryFrom;
+use std::fmt::{Display, Formatter};
 
 const CONTENT_TYPE: &str = "Content-Type";
 const USER_AGENT: &str = "User-Agent";
@@ -52,7 +47,14 @@ pub async fn post<T: Serialize, U: DeserializeOwned>(
     token: &str,
     payload: Option<T>,
 ) -> AnyhowResult<Option<U>> {
-    request(Method::POST, url, content_type, String::from(token), payload).await
+    request(
+        Method::POST,
+        url,
+        content_type,
+        String::from(token),
+        payload,
+    )
+    .await
 }
 
 /// Performs a DELETE request to the specified URL.
@@ -64,7 +66,14 @@ pub async fn delete<T: Serialize, U: DeserializeOwned>(
     token: &str,
     payload: Option<T>,
 ) -> AnyhowResult<Option<U>> {
-    request(Method::DELETE, url, content_type, String::from(token), payload).await
+    request(
+        Method::DELETE,
+        url,
+        content_type,
+        String::from(token),
+        payload,
+    )
+    .await
 }
 
 /// Performs an HTTP request with the specified HTTP Method.
@@ -115,7 +124,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
         Ok(r) => r,
         Err(err) => {
             let msg = format!("error making request: {}", err);
-            return Err(anyhow!(msg));
+            return Err(anyhow!(format!("<added 0> {}", msg)));
         }
     };
 
