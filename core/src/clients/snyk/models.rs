@@ -1,3 +1,4 @@
+/// Generated and then manipulated from Snyk Rest API v2023-03-08
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
@@ -28,8 +29,51 @@ pub struct JsonApi {
 }
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
+pub struct ListOrgProjects200Response {
+    #[serde(rename = "data", skip_serializing_if = "Option::is_none")]
+    pub data: Option<Vec<ListOrgProjects200ResponseDataInner>>,
+    #[serde(rename = "jsonapi")]
+    pub jsonapi: Box<JsonApi>,
+    #[serde(rename = "links")]
+    pub links: Box<Links>,
+    #[serde(rename = "meta", skip_serializing_if = "Option::is_none")]
+    pub meta: Option<Box<ListOrgProjects200ResponseMeta>>,
+}
+
+
+#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
+pub struct ListOrgProjects200ResponseDataInner {
+    // WARN: Had to change this to an option despite the spec definition.
+    #[serde(rename = "attributes", skip_serializing_if = "Option::is_none")]
+    pub attributes: Option<Box<ProjectAttributes>>,
+    /// Resource ID.
+    #[serde(rename = "id")]
+    pub id: uuid::Uuid,
+    #[serde(rename = "meta", skip_serializing_if = "Option::is_none")]
+    pub meta: Option<Box<ListOrgProjects200ResponseDataInnerMeta>>,
+    #[serde(rename = "relationships", skip_serializing_if = "Option::is_none")]
+    pub relationships: Option<Box<ProjectRelationships>>,
+    /// The Resource type.
+    #[serde(rename = "type")]
+    pub r#type: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
+pub struct ListOrgProjects200ResponseDataInnerMeta {
+    /// The date that the project was last uploaded and monitored using cli.
+    #[serde(rename = "cli_monitored_at", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
+    pub cli_monitored_at: Option<Option<String>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
+pub struct ListOrgProjects200ResponseMeta {
+    #[serde(rename = "count", skip_serializing_if = "Option::is_none")]
+    pub count: Option<f32>,
+}
+
+#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct CommonIssueModel {
-    #[serde(rename = "attributes")]
+    #[serde(rename = "attributes", skip_serializing_if = "Option::is_none")]
     pub attributes: Option<Box<CommonIssueModelAttributes>>,
     /// The Snyk ID of the vulnerability.
     #[serde(rename = "id")]
@@ -37,6 +81,39 @@ pub struct CommonIssueModel {
     /// The type of the REST resource. Always ‘issue’.
     #[serde(rename = "type")]
     pub r#type: Option<String>,
+}
+
+// #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
+// pub struct Links {
+//     #[serde(rename = "first", skip_serializing_if = "Option::is_none")]
+//     pub first: Option<Box<LinkProperty>>,
+//     #[serde(rename = "last", skip_serializing_if = "Option::is_none")]
+//     pub last: Option<Box<LinkProperty>>,
+//     #[serde(rename = "next", skip_serializing_if = "Option::is_none")]
+//     pub next: Option<Box<LinkProperty>>,
+//     #[serde(rename = "prev", skip_serializing_if = "Option::is_none")]
+//     pub prev: Option<Box<LinkProperty>>,
+//     #[serde(rename = "related", skip_serializing_if = "Option::is_none")]
+//     pub related: Option<Box<LinkProperty>>,
+//     #[serde(rename = "self", skip_serializing_if = "Option::is_none")]
+//     pub param_self: Option<Box<LinkProperty>>,
+// }
+
+// WARN: I had to change from the generated code above to Option<String> despite the spec.
+#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
+pub struct Links {
+    #[serde(rename = "first", skip_serializing_if = "Option::is_none")]
+    pub first: Option<String>,
+    #[serde(rename = "last", skip_serializing_if = "Option::is_none")]
+    pub last: Option<String>,
+    #[serde(rename = "next", skip_serializing_if = "Option::is_none")]
+    pub next: Option<String>,
+    #[serde(rename = "prev", skip_serializing_if = "Option::is_none")]
+    pub prev: Option<String>,
+    #[serde(rename = "related", skip_serializing_if = "Option::is_none")]
+    pub related: Option<String>,
+    #[serde(rename = "self", skip_serializing_if = "Option::is_none")]
+    pub param_self: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
@@ -116,7 +193,7 @@ pub struct IssuesResponse {
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct Org {
-    #[serde(rename = "attributes")]
+    #[serde(rename = "attributes", skip_serializing_if = "Option::is_none")]
     pub attributes: Option<Box<OrgAttributes>>,
     /// The Snyk ID corresponding to this org
     #[serde(rename = "id")]
@@ -309,19 +386,28 @@ pub struct ProjectRelationshipsTarget {
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct RelatedLink {
-    #[serde(rename = "related")]
-    pub related: Option<Box<LinkProperty>>,
+    #[serde(rename = "related", skip_serializing_if = "Option::is_none")]
+    pub related: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct Relationship {
     #[serde(rename = "data")]
-    pub data: Box<DeprecatedRelationshipData>,
+    pub data: Box<RelationshipData>,
     #[serde(rename = "links")]
     pub links: Box<RelatedLink>,
     /// Free-form object that may contain non-standard information.
-    #[serde(rename = "meta")]
+    #[serde(rename = "meta", skip_serializing_if = "Option::is_none")]
     pub meta: Option<::std::collections::HashMap<String, serde_json::Value>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
+pub struct RelationshipData {
+    #[serde(rename = "id")]
+    pub id: uuid::Uuid,
+    /// Type of the related resource
+    #[serde(rename = "type")]
+    pub r#type: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
@@ -497,8 +583,9 @@ pub struct PaginatedLinks {
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct TargetData {
+    // WARN: Had to change this to an option despite the spec definition.
     #[serde(rename = "attributes")]
-    pub attributes: Box<TargetDataAttributes>,
+    pub attributes: Option<Box<TargetDataAttributes>>,
     /// The Resource ID.
     #[serde(rename = "id")]
     pub id: uuid::Uuid,
@@ -525,13 +612,4 @@ pub struct LinkProperty {
     /// Free-form object that may contain non-standard information.
     #[serde(rename = "meta", skip_serializing_if = "Option::is_none")]
     pub meta: Option<::std::collections::HashMap<String, serde_json::Value>>,
-}
-
-#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
-pub struct DeprecatedRelationshipData {
-    #[serde(rename = "id")]
-    pub id: uuid::Uuid,
-    /// Type of the related resource
-    #[serde(rename = "type")]
-    pub r#type: String,
 }

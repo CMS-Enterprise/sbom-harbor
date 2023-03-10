@@ -38,12 +38,8 @@ mod tests {
             .map_err(|e| Error::Config(e.to_string()))
             .unwrap();
 
-        println!("token: {}", token);
-
         let client = Client::new(token);
-
         let orgs = client.orgs().await?;
-
         assert!(orgs.is_some());
 
         let orgs = orgs.unwrap();
@@ -51,6 +47,27 @@ mod tests {
 
         let groups = org_groups(orgs);
         assert!(groups.len() > 0);
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn can_list_projects() -> Result<(), Error> {
+        let token = std::env::var("SNYK_API_TOKEN")
+            .map_err(|e| Error::Config(e.to_string()))
+            .unwrap();
+
+        let client = Client::new(token);
+        let orgs = client.orgs().await?;
+
+        let org = orgs.unwrap()[0].clone();
+        let org_id = org.id.unwrap();
+
+        let projects = client.projects(&org_id).await?;
+        assert!(projects.is_some());
+
+        let projects = projects.unwrap();
+        assert!(projects.len() > 0);
 
         Ok(())
     }

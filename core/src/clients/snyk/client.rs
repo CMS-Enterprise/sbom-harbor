@@ -1,7 +1,7 @@
 use crate::Error;
 use platform::hyper;
 use platform::hyper::ContentType;
-use crate::clients::snyk::models::{CommonIssueModel, Group, IssuesResponse, Org, OrgsResponse, OrgV1, SbomResource, SbomResponse};
+use crate::clients::snyk::models::{CommonIssueModel, Group, IssuesResponse, ListOrgProjects200Response, ListOrgProjects200ResponseDataInner, Org, OrgsResponse, OrgV1, SbomResource, SbomResponse};
 
 const V1_URL:&str = "https://snyk.io/api/v1";
 const V3_URL:&str = "https://api.snyk.io/rest";
@@ -14,6 +14,10 @@ fn orgs_url() -> String {
 
 fn issues_url(org_id: &str, purl: &str) -> String {
     format!("{}{}", V3_URL, format!("/orgs/{}/packages/{}/issues", org_id, purl))
+}
+
+fn projects_url(org_id: &str) -> String {
+    format!("{}{}", V3_URL, format!("/orgs/{}/projects?version=2023-03-08~beta", org_id))
 }
 
 fn sbom_url(org_id: &str, project_id: &str) -> String {
@@ -66,6 +70,19 @@ impl Client {
             Some(r) => Ok(r.orgs),
         }
 
+    }
+
+    pub async fn projects(&self, org_id: &str) -> Result<Option<Vec<ListOrgProjects200ResponseDataInner>>, Error> {
+        let response:Option<ListOrgProjects200Response> = hyper::get(
+            &projects_url(org_id),
+            ContentType::Json,
+            &self.token(),
+            None::<ListOrgProjects200Response>).await?;
+
+        match response {
+            None => Err(Error::Runtime("snyk failed to list projects".to_string())),
+            Some(r) => Ok(r.data),
+        }
     }
 
     pub async fn sbom(&self, org_id: &str, project_id: &str) -> Result<SbomResource, Error> {
