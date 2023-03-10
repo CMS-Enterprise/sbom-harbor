@@ -21,9 +21,12 @@ pub fn new_service<'a>(store: Arc<Store>) -> Arc<TeamService> {
 #[debug_handler]
 pub async fn get(
     _claims: Claims,
-    // Query(query): Query<HashMap<String, String>>,
     Path(id): Path<String>,
     State(service): State<DynTeamService>) -> Result<Json<Team>, Error> {
+
+    if id.is_empty() {
+        return Err(Error::InvalidParameters("id invalid".to_string()));
+    }
 
     let team = service
         .find(id.as_str())
@@ -32,7 +35,7 @@ pub async fn get(
 
     match team {
         None => Err(Error::DoesNotExist(format!("team not found: {}", id))),
-        Some(t) => Ok(t.into()),
+        Some(t) => Ok(Json(t)),
     }
 }
 
@@ -40,18 +43,74 @@ pub async fn get(
 #[debug_handler]
 pub async fn list(
     _claims: Claims,
-    // Query(children): Query<HashMap<String, String>>,
     State(service): State<DynTeamService>) -> Result<Json<Vec<Team>>, Error> {
-
-    // TODO: Does a children flag still hold?
-    // let ctx = ListTeamsContext {
-    //     children: resolve_children(query)
-    // };
 
     let teams = service
         .list()
         .await
         .map_err(|e| Error::InternalServerError(e.to_string()))?;
 
-    Ok(teams.into())
+    Ok(Json(teams))
+}
+
+#[instrument]
+#[debug_handler]
+pub async fn post(
+    _claims: Claims,
+    State(service): State<DynTeamService>,
+    Json(team): Json<Team>) -> Result<Json<Team>, Error> {
+
+    if !team.id.is_empty() {
+        return Err(Error::InvalidParameters("client generated id invalid".to_string()));
+    }
+
+    let mut team = team;
+
+    service
+        .insert(&mut team)
+        .await
+        .map_err(|e| Error::InternalServerError(e.to_string()))?;
+
+    Ok(Json(team))
+}
+
+#[instrument]
+#[debug_handler]
+pub async fn put(
+    _claims: Claims,
+    Path(id): Path<String>,
+    State(service): State<DynTeamService>,
+    Json(team): Json<Team>) -> Result<Json<Team>, Error> {
+
+    if id != team.id {
+        return Err(Error::InvalidParameters("id mismatch".to_string()));
+    }
+
+    let mut team = team;
+
+    service
+        .update(&mut team)
+        .await
+        .map_err(|e| Error::InternalServerError(e.to_string()))?;
+
+    Ok(Json(team))
+}
+
+#[instrument]
+#[debug_handler]
+pub async fn delete(
+    _claims: Claims,
+    Path(id): Path<String>,
+    State(service): State<DynTeamService>) -> Result<Json<()>, Error> {
+
+    if id.is_empty() {
+        return Err(Error::InvalidParameters("id invalid".to_string()));
+    }
+
+    service
+        .delete(id.as_str())
+        .await
+        .map_err(|e| Error::InternalServerError(e.to_string()))?;
+
+    Ok(Json(()))
 }
