@@ -19,6 +19,9 @@ pub enum Error {
     /// Error with entity specification.
     #[error("error with entity specification: {0}")]
     Entity(String),
+    /// Error making HTTP Request.
+    #[error("error in HTTP request: {0}")]
+    Http(String),
     /// Error executing insert.
     #[error("error executing insert: {0}")]
     Insert(String),
@@ -54,5 +57,11 @@ impl From<mongodb::bson::oid::Error> for Error {
 impl From<serde_json::Error> for Error {
     fn from(value: serde_json::Error) -> Self {
         Error::Serde(format!("{:?}", value))
+    }
+}
+
+impl From<crate::hyper::Error> for Error {
+    fn from(value: crate::hyper::Error) -> Self {
+        Error::Http(format!("{:?}", value))
     }
 }

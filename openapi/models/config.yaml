@@ -1,0 +1,7 @@
+generatorName: rust
+gitUserId: CMS-Enterprise
+gitRepoId: sbom-harbor/openapi/client
+inputSpec: /local/models/temp/spec.json
+outputDir: /local/models/gen
+packageName: models
+packageVersion: 0.1.0

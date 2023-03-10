@@ -23,3 +23,11 @@ impl From<platform::Error> for Error {
         Error::Runtime(format!("{:?}", value))
     }
 }
+
+impl From<platform::hyper::Error> for Error {
+    fn from(value: platform::hyper::Error) -> Self {
+        Error::Runtime(format!("{:?}", value))
+    }
+}
+
+

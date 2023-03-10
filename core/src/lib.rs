@@ -65,11 +65,15 @@ pub mod errors;
 /// The Error type for this crate.
 pub use errors::Error;
 
-/// Authorization logic and types for this crate.
-pub mod auth;
-
-/// DB Migrations for the Harbor database.
-mod migrations;
-
 /// Runtime configuration helpers.
 pub mod config;
+
+/// The Auth module contains all domain specific authorization types and logic (e.g. ResourceKind)
+pub mod auth;
+
+/// The Migrations module contains all database migrations for the Harbor application.
+mod migrations;
+
+/// The Clients module contains all client abstractions used to call external services.
+mod clients;
+

@@ -11,3 +11,4 @@ packageVersion: 0.1.0
 #  client.mustache:
 #    templateType: SupportingFiles
 #    destinationFilename: README.md
+# File is used by the openapi-generator cli to generate a rust client.

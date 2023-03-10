@@ -49,7 +49,8 @@ cargo-generate/output.json
 **/tests/gen
 **/client/gen
 **/server/gen
+**/models/gen
+<<<<<<< HEAD
 
 # devenv
 devenv/mongodb/
-**/server/gen
