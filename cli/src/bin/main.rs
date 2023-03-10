@@ -1,14 +1,16 @@
+use std::any::type_name;
 use std::env;
 use std::format;
 use std::process::{Command as SysCommand, Output};
 
-use anyhow::{anyhow, Result as AnyhowResult};
 use clap::{Arg, ArgAction, ArgMatches, Command};
-use harbor_cli::commands::{OutputFormat, PilotCommand, PilotFactory, PilotKind, PilotOpts};
-use harbor_cli::http::{get, ContentType};
-use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use std::any::type_name;
+use serde::de::DeserializeOwned;
+
+use anyhow::{anyhow, Result as AnyhowResult};
+use harbor_cli::commands::OutputFormat;
+use harbor_cli::commands::pilot::{PilotCommand, PilotKind, PilotOpts};
+use harbor_cli::http::{ContentType, get};
 
 fn get_matches() -> ArgMatches {
     return Command::new("harbor-cli")
