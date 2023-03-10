@@ -114,10 +114,18 @@ impl Opts for PilotOpts {
     }
 }
 
+// TODO Should this be a trait?
 pub struct PilotCommand {}
 
 impl PilotCommand {
-    pub fn execute(_opts: PilotOpts) -> Result<(), Error> {
+    pub async fn execute(_opts: PilotOpts) -> Result<(), Error> {
+
+        let provider = PilotFactory::new(
+            _opts
+        );
+
+        provider.scan().await;
+
         Ok(())
     }
 }
