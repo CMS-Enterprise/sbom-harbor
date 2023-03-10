@@ -41,6 +41,7 @@ pub trait Provider {
 pub struct GitHubProvider {}
 
 impl GitHubProvider {
+
     async fn get_repos() -> AnyhowResult<Vec<Repo>> {
         // TODO We must go through all the pages to get all the repos!
 
@@ -67,11 +68,14 @@ impl GitHubProvider {
     }
 }
 
+#[async_trait]
 impl Provider for GitHubProvider {
-    #[async_trait]
+
     async fn scan(&self) {
-        println!("Start matched, lets get it on");
-        let repos_result = self.get_repos().await;
+
+        println!("Scanning GitHub...");
+
+        let repos_result = GitHubProvider::get_repos().await;
 
         let repos = match repos_result {
             Ok(value) => value,
@@ -92,9 +96,12 @@ pub enum PilotKind {
     SNYK,
 }
 
-#[derive(Clone)]
+// #[derive(Clone)]
 pub struct PilotOpts {
     pub provider: PilotKind,
+    pub output_format: Option<OutputFormat>,
+    // Organization name for the source control provider (e.g. github organization).
+    pub org: Option<String>,
 }
 
 impl Opts for PilotOpts {
