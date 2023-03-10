@@ -2,25 +2,16 @@ use std::env;
 
 use serde::{Deserialize, Serialize};
 
-use anyhow::Result as AnyhowResult;
-
-use crate::commands::{Opts, OutputFormat};
-use crate::http::{get, ContentType};
-use crate::Error;
-
+use anyhow::{anyhow, Result as AnyhowResult};
 use async_trait::async_trait;
+use crate::commands::Provider;
+
+use crate::http::{ContentType, get};
 
 fn get_gh_token() -> String {
     return match env::var("GH_FETCH_TOKEN") {
         Ok(v) => v,
         Err(e) => panic!("$GH_FETCH_TOKEN is not set ({})", e),
-    };
-}
-
-fn get_cf_domain() -> String {
-    return match env::var("CF_DOMAIN") {
-        Ok(v) => v,
-        Err(e) => panic!("$CF_DOMAIN is not set ({})", e),
     };
 }
 
@@ -31,11 +22,6 @@ struct Repo {
     language: Option<String>,
     archived: Option<bool>,
     disabled: Option<bool>,
-}
-
-#[async_trait]
-pub trait Provider {
-    async fn scan(&self);
 }
 
 pub struct GitHubProvider {}
@@ -55,8 +41,7 @@ impl GitHubProvider {
             ContentType::Json,
             token.as_str(),
             None::<String>,
-        )
-        .await;
+        ).await;
 
         match response {
             Ok(option) => match option {
@@ -88,55 +73,5 @@ impl Provider for GitHubProvider {
                 None => panic!("No URL for this one I guess"),
             }
         }
-    }
-}
-
-pub enum PilotKind {
-    GITHUB,
-    SNYK,
-}
-
-// #[derive(Clone)]
-pub struct PilotOpts {
-    pub provider: PilotKind,
-    pub output_format: Option<OutputFormat>,
-    // Organization name for the source control provider (e.g. github organization).
-    pub org: Option<String>,
-}
-
-impl Opts for PilotOpts {
-    fn format(&self) -> OutputFormat {
-        let format = self.output_format.clone();
-        match format {
-            None => OutputFormat::Text,
-            Some(format) => format,
-        }
-    }
-}
-
-// TODO Should this be a trait?
-pub struct PilotCommand {}
-
-impl PilotCommand {
-    pub async fn execute(_opts: PilotOpts) -> Result<(), Error> {
-
-        let provider = PilotFactory::new(
-            _opts
-        );
-
-        provider.scan().await;
-
-        Ok(())
-    }
-}
-
-pub struct PilotFactory {}
-
-impl PilotFactory {
-    pub fn new(pilot_ops: PilotOpts) -> Box<dyn Provider> {
-        return match pilot_ops.provider {
-            PilotKind::GITHUB => Box::new(GitHubProvider {}),
-            PilotKind::SNYK => panic!("Jon, return SnykProvider implementation"),
-        };
     }
 }

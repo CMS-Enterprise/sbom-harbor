@@ -1,4 +1,4 @@
-mod pilot;
+pub mod pilot;
 
 pub use pilot::*;
 
