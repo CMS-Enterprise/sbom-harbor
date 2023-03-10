@@ -15,37 +15,27 @@ title: Justification of Rust
 
 ## Context and Problem Statement
 
-We needed to select the server side language for our next generation of the Harbor platform. Python
-was not scaling or sitting well with a larger team. A non-exhaustive list of reasons include:
+We decided to select a new server side language for our next generation of the Harbor platform because of the following issues we ran
+into using Python and Lambda.  
 
-* Getting a consistent developer experience across 3 different operating systems with variable organization security policies
-  was difficult enough that it was never achieved.
+* We ran into issues related to large SBOM upload size. API Gateway has a hard limit and we were hitting it on occasion. The team
+  began investigating a Fargate based approach for the single SBOM upload endpoint. 
 * We started to hit zip artifact size limits on every Lambda due to vendoring in large amounts of non-compiled Python libraries.
-* The team has a strong preference for the compile-time safety guarantees strongly-typed languages provide.
-* The team has a strong preference for languages that encourage code reuse.
-* The team has a strong preference for languages with first-class generics support.
-* Python was not the desired language of the first engineer on the project, Java was. However, after some initial work the 
-  slow start times of Java-based Lambdas became a show-stopper. 
-* Python was selected out of a desire to move fast on demonstrating value with the POC, but none of the engineers on the team
-  are actually native Python engineers.
-* The Python ecosystem has a bad security reputation. No study 100% unbiased, but there is [some support](https://www.mend.io/most-secure-programming-languages/)
-  for that notion. Given that we'd need to rely on OSS dependencies from that ecosystem, this bubbled up as a concern.
-* Because of the zip file issue listed above, as well as issues related to large SBOM upload size, the team began investigating
-  a Fargate based approach. Lambdas + API Gateway result in unique runtime that is not native HTTP. 
-* Given that, a significant amount of the existing code was concerned with handling these programming paradigms. The code 
+* Because we hit that limit, and we were already planning on having a Fargate container, we began the discussion moving off of Lambdas entirely.
+* Moving away from Lambdas would mean a significant amount of code rewrite. Lambdas + API Gateway result in unique runtime that is not
+  native HTTP. Because of that, a significant amount of the existing code was concerned with handling these programming paradigms. The code 
   could not simply be lifted and shifted to a different project structure. It would have to be largely rewritten no matter
-  what in order to move away from the Lambda/API Gateway model.
+  what in order to move away from the Lambda/API Gateway approach.
+* This led to the conversation about whether selecting a different language was an option.
 
 ## Decision Drivers
 
-* The [SolarWinds Supply-Chain Attack](https://www.sans.org/blog/what-you-need-to-know-about-the-solarwinds-supply-chain-attack/)
-  was the genesis of the [Executive Order](https://www.whitehouse.gov/briefing-room/presidential-actions/2021/05/12/executive-order-on-improving-the-nations-cybersecurity/)
-  that resulted in this initiative.
-* This attack confirms that supply-chain software systems face at least one active, state-sponsored threat actor.
-* The presence of such a threat actor requires prioritizing security during tool selection.
-* Late last year the NSA published [guidance](https://www.nsa.gov/Press-Room/News-Highlights/Article/Article/3215760/nsa-releases-guidance-on-how-to-protect-against-software-memory-safety-issues/)
-  regarding protection against software memory safety issues. Specifically, they encouraged organizations to consider
-  using memory safe languages. We considered 4 of the options they suggested.
+* The team has a strong preference for the compile-time safety guarantees strongly-typed languages provide.
+* The team has a strong preference for languages that encourage code reuse.
+* The team has a strong preference for languages with first-class generics support.
+* Because of the nature of the problem domain, the team has a strong preference for a language with striong memory safety guarantees.
+* The Python ecosystem has a bad security reputation. No study 100% unbiased, but there is [some support](https://www.mend.io/most-secure-programming-languages/)
+  for that notion. Given that we'd need to rely on OSS dependencies from that ecosystem, this bubbled up as a concern.
 
 ## Considered Options
 
@@ -63,7 +53,6 @@ Chosen option: "Rust", because it:
 * Provides the highest level of thread safety.
 * Emphasizes correctness of implementation at compile time rather than simply enforcing runtime error handling.
 * Is an active, evolving language and ecosystem with best of breed native tooling.
-* 
 
 ### Positive Consequences
 
@@ -98,8 +87,16 @@ Chosen option: "Rust", because it:
 ### Python
 
 * Good, because it would raise less concern with non-technical team members.
-* Bad, because of all the reason's we listed in the context section.
+* Bad, because it is not strongly-typed. The team were disatisfied that they already found themselves spending too much time
+  working on defects that a strongly-typed language would have helped to prevent.
+* Bad, because it has no native generics capability.
 * Bad, because it was not on the list of memory safe languages.
+* Bad, because getting a consistent developer experience across 3 different operating systems with variable organization security policies
+  was difficult enough that it was never achieved.
+* Bad, because Python was not the desired language of the first engineer on the project, Java was. However, after some initial work the 
+  slow start times of Java-based Lambdas became a show-stopper. 
+* Bad, because Python was selected out of a desire to move fast on demonstrating value with the POC, but none of the engineers on the team
+  are actually native Python engineers.
 
 ### Java
 
@@ -133,8 +130,8 @@ Chosen option: "Rust", because it:
 * Good, because it was on the list of memory safe languages.
 * Good, because the initial learning curve is not too bad.
 * Good, because it is strongly-typed.
-* Neutral, because we have two core team members that have experience in Go, but only one of them is primarily writing code.
-* Neutral, because, while it still requires a runtime, that is compiled and packaged with the binary, leading to less
+* Good, because we have two core team members that have experience in Go. Caveat: only one of them is primarily writing code.
+* Good, because, while it still requires a runtime, that is compiled and packaged with the binary, leading to less
   portability issues.
 * Bad, because generics have only recently been introduced, the implementation is incomplete, and there is not yet a lot
   of high quality examples to reference.
