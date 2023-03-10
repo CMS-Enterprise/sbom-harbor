@@ -4,7 +4,7 @@ use std::process::{Command as SysCommand, Output};
 
 use anyhow::{anyhow, Result as AnyhowResult};
 use clap::{Arg, ArgAction, ArgMatches, Command};
-use harbor_cli::commands::{OutputFormat, PilotFactory, PilotKind, PilotOpts};
+use harbor_cli::commands::{OutputFormat, PilotCommand, PilotFactory, PilotKind, PilotOpts};
 use harbor_cli::http::{get, ContentType};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -55,15 +55,13 @@ async fn main() {
 
                     println!("Start matched, lets get it on");
 
-                    let provider = PilotFactory::new(
+                    PilotCommand::execute(
                         PilotOpts {
                             provider: PilotKind::GITHUB,
                             output_format: Some(OutputFormat::Text),
                             org: Some(String::from("cmsgov"))
                         }
-                    );
-
-                    provider.scan().await;
+                    ).await.unwrap();
                 }
                 None => println!("Nothing"),
                 Some((&_, _)) => todo!(),
