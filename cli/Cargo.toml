@@ -21,6 +21,7 @@ hyper = { version = "0.14", features = ["full"] }
 hyper-rustls = { version = "0.23.1", features =["http2"] }
 anyhow = "1.0.68"
 async-trait = "0.1.66"
+async-std = "1.12.0"
 
 [dependencies.harbcore]
 path = "../core"
