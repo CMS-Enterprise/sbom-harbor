@@ -21,7 +21,13 @@ hyper = { version = "0.14", features = ["full"] }
 hyper-rustls = { version = "0.23.1", features =["http2"] }
 anyhow = "1.0.68"
 async-trait = "0.1.66"
+mongodb = { version = "2.3.1", features = ["aws-auth", "tokio-runtime"] }
+futures = "0.3.27"
 
 [dependencies.harbcore]
 path = "../core"
+version = "0.1.0"
+
+[dependencies.platform]
+path = "../platform"
 version = "0.1.0"

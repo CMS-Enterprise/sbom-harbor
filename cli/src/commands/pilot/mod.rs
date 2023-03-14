@@ -27,8 +27,9 @@ pub enum PilotKind {
 pub struct PilotOpts {
     pub provider: PilotKind,
     pub output_format: Option<OutputFormat>,
-    // Organization name for the source control provider (e.g. github organization).
     pub org: Option<String>,
+    pub env : Option<String>,
+    pub account_num: Option<String>,
 }
 
 impl Opts for PilotOpts {

@@ -61,7 +61,9 @@ async fn main() {
                         PilotOpts {
                             provider: PilotKind::GITHUB,
                             output_format: Some(OutputFormat::Text),
-                            org: Some(String::from("cmsgov"))
+                            org: Some(String::from("cmsgov")),
+                            account_num: Some(aws_account.to_string()),
+                            env: Some(env.to_string()),
                         }
                     ).await.unwrap();
                 }

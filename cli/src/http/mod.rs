@@ -147,6 +147,8 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
         return Ok(None);
     }
 
+    println!("RESPONSE BODY: {:#?}", resp_body);
+
     let result = match serde_json::from_slice(resp_body.as_ref()) {
         Ok(r) => r,
         Err(err) => {
