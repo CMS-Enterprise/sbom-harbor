@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 use crate::Error;
-use crate::models::{Codebase, Member, Project, Team, Token};
+use crate::models::teams::{Codebase, Member, Project, Team, Token};
 
 impl Team {
     /// Constructor function for creating new [Team] instances.

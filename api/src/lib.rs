@@ -16,3 +16,6 @@ mod errors;
 /// Error type for the crate.
 pub use errors::Error;
 
+// Re-export models so that clients can bind.
+pub use harbcore::teams::*;
+
