@@ -11,12 +11,13 @@ use mongodb::options::FindOptions;
 use serde::{Deserialize, Serialize};
 use futures::stream::StreamExt;
 use futures::TryStreamExt;
+use hyper::StatusCode;
 
 use platform::mongodb::{Context as MongoContext, mongo_doc, MongoDocument};
 use platform::mongodb::service::Service;
 
 use crate::commands::{get_env_var, Provider};
-use crate::http::{ContentType, get};
+use platform::hyper::{get, Error, ContentType};
 
 pub const DB_IDENTIFIER: &str = "harbor";
 pub const KEY_NAME: &str = "id";
@@ -73,6 +74,9 @@ struct Repo {
     archived: Option<bool>,
     disabled: Option<bool>,
 
+    #[serde(default = "default_bool")]
+    empty: bool,
+
     #[serde(default = "empty_string")]
     last_hash: String,
 }
@@ -81,10 +85,18 @@ impl Repo {
     fn add_last_hash(&mut self, last_hash: String) {
         self.last_hash = last_hash.to_string();
     }
+
+    fn mark_repo_empty(&mut self) {
+        self.empty = true;
+    }
 }
 
 fn empty_string() -> String {
     "".to_string()
+}
+
+fn default_bool() -> bool {
+    true
 }
 
 /// Extracts teh GitHub token from the environment
@@ -134,7 +146,7 @@ async fn get_num_pub_repos(org: String) -> AnyhowResult<Option<u32>> {
     let token: String = String::from("Bearer ") + &get_env_var("GH_FETCH_TOKEN");
     let org_url: String = format!("https://api.github.com/orgs/{org}");
 
-    let response: AnyhowResult<Option<Org>> = get(
+    let response: Result<Option<Org>, Error> = get(
         org_url.as_str(),
         ContentType::Json,
         token.as_str(),
@@ -178,7 +190,7 @@ async fn get_page_of_repos(org: &String, page: &u32, token: &String) -> Vec<Repo
 
     let github_org_url = format!("{GH_URL}/orgs/{org}/repos?type=sources&per_page={page}");
 
-    let response: AnyhowResult<Option<Vec<Repo>>> = get(
+    let response: Result<Option<Vec<Repo>>, Error> = get(
         github_org_url.as_str(),
         ContentType::Json,
         token.as_str(),
@@ -219,7 +231,7 @@ impl GitHubProvider {
 
                 println!("Making call to {}", github_last_commit_url);
 
-                let response: AnyhowResult<Option<Commit>> = get(
+                let response: Result<Option<Commit>, Error> = get(
                     github_last_commit_url.as_str(),
                     ContentType::Json,
                     token.as_str(),
@@ -232,9 +244,24 @@ impl GitHubProvider {
                         None => panic!("Nothing in here!"),
                     },
                     Err(err) => {
+
                         // This error response means that there was some issue making the call
                         // If it is a "409 Conflict", then the repo was empty
-                        panic!("Error in the response(Empty Repo): {}", err);
+
+                        if let Error::Remote(status, _msg) = err {
+                            if status == 409 {
+                                Repo {
+                                    full_name: None,
+                                    ssh_url: None,
+                                    default_branch: None,
+                                    language: None,
+                                    archived: None,
+                                    disabled: None,
+                                    empty: true,
+                                    last_hash: String::from(""),
+                                }
+                            }
+                        }
                     },
                 };
 

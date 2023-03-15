@@ -10,7 +10,6 @@ use serde::de::DeserializeOwned;
 use anyhow::{anyhow, Result as AnyhowResult};
 use harbor_cli::commands::OutputFormat;
 use harbor_cli::commands::pilot::{PilotCommand, PilotKind, PilotOpts};
-use harbor_cli::http::{ContentType, get};
 
 fn get_matches() -> ArgMatches {
     return Command::new("harbor-cli")
