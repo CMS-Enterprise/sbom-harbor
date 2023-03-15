@@ -79,7 +79,7 @@ struct Repo {
 
 impl Repo {
     fn add_last_hash(&mut self, last_hash: String) {
-        self.last_hash = last_hash;
+        self.last_hash = last_hash.to_string();
     }
 }
 
@@ -101,32 +101,33 @@ fn get_gh_token() -> String {
 ///
 fn should_skip(repo: &Repo, repo_name: &String, url: &String) -> bool {
 
+    let mut skip: bool = false;
+
     match &repo.archived {
         Some(archived) => {
             if *archived {
                 println!("{} at {} is archived, skipping", repo_name, url);
-                return true;
-            }
-            match &repo.disabled {
-                Some(disabled) => {
-                    if *disabled {
-                        println!("{} at {} is disabled, skipping", repo_name, url);
-                        return true;
-                    }
-                },
-                None => {
-                    println!("No value to determine if the repo is disabled, processing");
-                    return false;
-                }
+                skip = true;
             }
         },
         None => {
             println!("No value to determine if the repo is archived");
-            return false;
         }
     }
 
-    return false;
+    match &repo.disabled {
+        Some(disabled) => {
+            if *disabled {
+                println!("{} at {} is disabled, skipping", repo_name, url);
+                skip = true;
+            }
+        },
+        None => {
+            println!("No value to determine if the repo is disabled, processing");
+        }
+    }
+
+    return skip;
 }
 
 async fn get_num_pub_repos(org: String) -> AnyhowResult<Option<u32>> {
@@ -145,11 +146,10 @@ async fn get_num_pub_repos(org: String) -> AnyhowResult<Option<u32>> {
             Some(value) => return Ok(value.public_repos),
             None => panic!("Nothing in here!"),
         },
-        Err(err) => panic!("Error in the response: {}", err),
+        Err(err) => panic!("Error in the response(1): {}", err),
     }
 }
 
-pub struct GitHubProvider {}
 
 async fn get_pages(org: &String) -> Vec<u32> {
 
@@ -190,25 +190,25 @@ async fn get_page_of_repos(org: &String, page: &u32, token: &String) -> Vec<Repo
             Some(value) => value,
             None => panic!("Nothing in here!"),
         },
-        Err(err) => panic!("Error in the response: {}", err),
+        Err(err) => panic!("Error in the response(0): {}", err),
     }
 }
+
+pub struct GitHubProvider {}
 
 impl GitHubProvider {
 
     async fn get_repos(org: String) -> AnyhowResult<Vec<Repo>> {
 
-        let pages = get_pages(&org).await;
+        let mut pages = get_pages(&org).await;
         let token: String = String::from("Bearer ") + &get_gh_token();
         let mut repo_vec: Vec<Repo> = Vec::new();
 
-        for page in pages.iter() {
+        for page in pages.iter_mut() {
 
-            let gh_org_rsp = get_page_of_repos(&org, page, &token).await;
+            let mut gh_org_rsp = get_page_of_repos(&org, page, &token).await;
 
-            for repo in gh_org_rsp.iter() {
-
-                println!("Repo: {:#?}", repo);
+            for repo in gh_org_rsp.iter_mut() {
 
                 let repo_name = repo.full_name.as_ref().unwrap();
                 let default_branch = repo.default_branch.as_ref().unwrap();
@@ -231,13 +231,18 @@ impl GitHubProvider {
                         Some(value) => value,
                         None => panic!("Nothing in here!"),
                     },
-                    Err(err) => panic!("Error in the response: {}", err),
+                    Err(err) => {
+                        // This error response means that there was some issue making the call
+                        // If it is a "409 Conflict", then the repo was empty
+                        panic!("Error in the response(Empty Repo): {}", err);
+                    },
                 };
 
-
-
+                match gh_commits_rsp.sha {
+                    Some(val) => repo.add_last_hash(val),
+                    None => panic!("No value for commit found!")
+                }
             }
-
             repo_vec.extend(gh_org_rsp);
         }
 
