@@ -81,6 +81,14 @@ struct Repo {
     last_hash: String,
 }
 
+fn default_bool() -> bool {
+    false
+}
+
+fn empty_string() -> String {
+    "".to_string()
+}
+
 impl Repo {
     fn add_last_hash(&mut self, last_hash: String) {
         self.last_hash = last_hash.to_string();
@@ -89,14 +97,6 @@ impl Repo {
     fn mark_repo_empty(&mut self) {
         self.empty = true;
     }
-}
-
-fn empty_string() -> String {
-    "".to_string()
-}
-
-fn default_bool() -> bool {
-    true
 }
 
 /// Extracts teh GitHub token from the environment
@@ -137,6 +137,10 @@ fn should_skip(repo: &Repo, repo_name: &String, url: &String) -> bool {
         None => {
             println!("No value to determine if the repo is disabled, processing");
         }
+    }
+
+    if repo.empty {
+        skip = true
     }
 
     return skip;
@@ -244,23 +248,15 @@ impl GitHubProvider {
                         None => panic!("Nothing in here!"),
                     },
                     Err(err) => {
-
-                        // This error response means that there was some issue making the call
-                        // If it is a "409 Conflict", then the repo was empty
-
                         if let Error::Remote(status, _msg) = err {
+
                             if status == 409 {
-                                Repo {
-                                    full_name: None,
-                                    ssh_url: None,
-                                    default_branch: None,
-                                    language: None,
-                                    archived: None,
-                                    disabled: None,
-                                    empty: true,
-                                    last_hash: String::from(""),
-                                }
+                               repo.mark_repo_empty();
                             }
+
+                            Commit { sha: Some(String::from("<empty repo>")) }
+                        } else {
+                            panic!("No matching Error Type: {}", err)
                         }
                     },
                 };
