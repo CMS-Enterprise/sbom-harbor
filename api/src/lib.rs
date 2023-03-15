@@ -17,5 +17,5 @@ mod errors;
 pub use errors::Error;
 
 // Re-export models so that clients can bind.
-pub use harbcore::teams::*;
-
+pub use harbcore::models::sboms::*;
+pub use harbcore::models::teams::*;

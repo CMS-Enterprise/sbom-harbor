@@ -34,6 +34,18 @@ Expects a JSON document with the following schema:
 }
 ```
 
+## System Requirements
+
+- [Rust toolchain](https://www.rust-lang.org/tools/install)
+- [Protobuf](https://grpc.io/docs/protoc-installation/)
+
+## Environment
+
+### Variables
+
+- `DB_CONNECTION`
+- `OTEL_COLLECTOR`
+
 ## Crate Documentation
 
 The documentation for each crate can be generated from source using `cargo` or `rustdoc`.

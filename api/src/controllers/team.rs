@@ -3,7 +3,7 @@ use axum::{debug_handler, Json};
 use axum::extract::{Path, State};
 use tracing::instrument;
 
-use harbcore::teams::Team;
+use harbcore::models::teams::Team;
 use harbcore::services::TeamService;
 use platform::mongodb::{Service, Store};
 

@@ -98,7 +98,7 @@ async fn main() {
         .layer(cors)
         .layer(tracer);
 
-    let addr = SocketAddr::from(([127,0,0,1],3000));
+    let addr = SocketAddr::from(([127,0,0,1],6000));
     info!("harbor listening on {}", addr);
 
     axum::Server::bind(&addr)
