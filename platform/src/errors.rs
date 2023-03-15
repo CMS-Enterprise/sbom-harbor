@@ -31,6 +31,9 @@ pub enum Error {
     /// Error in Mongo provider.
     #[error("error in mongo provider: {0}")]
     Mongo(String),
+    /// Error in OpenTelemetry provider.
+    #[error("error in opentelemetry provider: {0}")]
+    OpenTelemetry(String),
     /// Error executing query.
     #[error("error executing query: {0}")]
     Query(String),

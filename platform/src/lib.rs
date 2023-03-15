@@ -26,5 +26,8 @@ pub mod hyper;
 /// against a MongoDB or DocumentDB back end.
 pub mod mongodb;
 
+/// The `opentelemetry` module provides abstractions of the common `OpenTelemetry` metrics and tracing operations.
+pub mod opentelemetry;
+
 /// Implementation of the `thiserror` enum.
 pub use errors::Error;
