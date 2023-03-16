@@ -40,10 +40,6 @@ fn get_matches() -> ArgMatches {
         .get_matches();
 }
 
-fn type_of<T>(_: T) -> &'static str {
-    type_name::<T>()
-}
-
 #[tokio::main]
 async fn main() {
     let matches = get_matches();

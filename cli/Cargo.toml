@@ -23,6 +23,7 @@ anyhow = "1.0.68"
 async-trait = "0.1.66"
 mongodb = { version = "2.3.1", features = ["aws-auth", "tokio-runtime"] }
 futures = "0.3.27"
+uuid = { version = "1.2.2", features = ["serde", "v4"] }
 
 [dependencies.harbcore]
 path = "../core"
