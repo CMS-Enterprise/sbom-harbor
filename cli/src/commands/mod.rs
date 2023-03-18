@@ -25,9 +25,9 @@ where
 
 /// Extracts the value of an environment variable
 ///
-fn get_env_var(variable_name: &str) -> String {
+fn get_env_var(variable_name: &str) -> Option<String> {
     return match env::var(variable_name) {
-        Ok(v) => v,
-        Err(e) => panic!("{} is not set ({})", variable_name, e),
+        Ok(v) => Some(v),
+        Err(e) => None,
     };
 }

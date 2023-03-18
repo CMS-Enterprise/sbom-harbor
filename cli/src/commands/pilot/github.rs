@@ -19,7 +19,6 @@ use platform::hyper::{ContentType, Error as HyperError, get};
 use platform::mongodb::{Context as MongoContext, mongo_doc, MongoDocument};
 use platform::mongodb::service::Service;
 use uuid::Uuid;
-
 use crate::commands::{get_env_var, Provider};
 
 pub const DB_IDENTIFIER: &str = "harbor";
@@ -126,15 +125,6 @@ impl Repo {
     }
 }
 
-/// Extracts teh GitHub token from the environment
-///
-fn get_gh_token() -> String {
-    return match env::var("GH_FETCH_TOKEN") {
-        Ok(v) => v,
-        Err(e) => panic!("$GH_FETCH_TOKEN is not set ({})", e),
-    };
-}
-
 /// Should skip determines if the repository is disabled or archived.
 /// and if so, skips processing them.
 ///
@@ -175,7 +165,12 @@ fn should_skip(repo: &Repo, repo_name: &String, url: &String) -> bool {
 
 async fn get_num_pub_repos(org: String) -> AnyhowResult<Option<u32>> {
 
-    let token: String = String::from("Bearer ") + &get_env_var("GH_FETCH_TOKEN");
+    let token = match get_env_var("GH_FETCH_TOKEN") {
+        Some(value) => value,
+        None => panic!("GitHub token not in environment. Variable name: GH_FETCH_TOKEN")
+    };
+
+    let token: String = format!("Bearer {}", &token);
     let org_url: String = format!("{GH_URL}/orgs/{org}");
 
     let response: Result<Option<Org>, HyperError> = get(
@@ -327,11 +322,21 @@ async fn create_harbor_entities() -> Result<HashMap<String, String>, GhCrawlerEr
     // TODO - STUB!! Please Implement...
     // TODO Error for this method: GhCrawlerError::EntityCreation
 
+    let cms_team_id = match get_env_var("V1_CMS_TEAM_ID") {
+        Some(value) => value,
+        None => panic!("Missing Team Id of V1 Team")
+    };
+
+    let cms_team_token = match get_env_var("V1_CMS_TEAM_TOKEN") {
+        Some(value) => value,
+        None => panic!("Missing Team token of V1 Team")
+    };
+
     let mut test_map = HashMap::new();
 
     test_map.insert(
         String::from(TEAM_ID_KEY),
-        Uuid::new_v4().to_string()
+        cms_team_id,
     );
 
     test_map.insert(

@@ -3,7 +3,8 @@ use std::fmt::Result as StdResult;
 use std::fmt::{Display, Formatter};
 
 use anyhow::{anyhow, bail, Result};
-use platform::hyper::*;
+use harbor_api::Team;
+use platform::hyper::{delete, post};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tracing::info;

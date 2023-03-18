@@ -20,6 +20,9 @@ thiserror = "1.0"
 tower-http = { version = "0.3.5", features = ["cors"]}
 url = "2.3.1"
 uuid = "1.3.0"
+anyhow = "1.0.68"
+hyper = { version = "0.14", features = ["full"] }
+hyper-rustls = { version = "0.23.1", features =["http2"] }
 
 [dev-dependencies]
 async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
