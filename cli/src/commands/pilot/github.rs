@@ -28,6 +28,9 @@ pub const COLLECTION: &str = "pilot";
 pub const TEAM_ID_KEY: &str = "team_id";
 pub const PROJECT_ID_KEY: &str = "project_id";
 pub const CODEBASE_ID_KEY: &str = "codebase_id";
+pub const GH_FT_KEY: &str = "GH_FETCH_TOKEN";
+pub const V1_TEAM_ID_KEY: &str = "V1_CMS_TEAM_ID";
+pub const V1_TEAM_TOKEN_KEY: &str = "V1_CMS_TEAM_ID";
 
 const GH_URL: &str = "https://api.github.com";
 
@@ -165,7 +168,7 @@ fn should_skip(repo: &Repo, repo_name: &String, url: &String) -> bool {
 
 async fn get_num_pub_repos(org: String) -> AnyhowResult<Option<u32>> {
 
-    let token = match get_env_var("GH_FETCH_TOKEN") {
+    let token = match get_env_var(GH_FT_KEY) {
         Some(value) => value,
         None => panic!("GitHub token not in environment. Variable name: GH_FETCH_TOKEN")
     };
@@ -322,12 +325,12 @@ async fn create_harbor_entities() -> Result<HashMap<String, String>, GhCrawlerEr
     // TODO - STUB!! Please Implement...
     // TODO Error for this method: GhCrawlerError::EntityCreation
 
-    let cms_team_id = match get_env_var("V1_CMS_TEAM_ID") {
+    let cms_team_id = match get_env_var(V1_TEAM_ID_KEY) {
         Some(value) => value,
         None => panic!("Missing Team Id of V1 Team")
     };
 
-    let cms_team_token = match get_env_var("V1_CMS_TEAM_TOKEN") {
+    let cms_team_token = match get_env_var(V1_TEAM_TOKEN_KEY) {
         Some(value) => value,
         None => panic!("Missing Team token of V1 Team")
     };
