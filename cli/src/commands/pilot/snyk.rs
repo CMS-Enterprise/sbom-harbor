@@ -7,6 +7,7 @@ use crate::http::{ContentType, get as httpGet, post as httpPost};
 use anyhow::{anyhow, Result as AnyhowResult};
 use async_trait::async_trait;
 use crate::commands::Provider;
+use std::env::var;
 //DONE: Add method call
 //DONE: See if it runs
 //DONE: Pull in HTTP library
@@ -64,15 +65,20 @@ pub struct SnykProvider {}
 
 //const VALID_ORIGINS: &'static [&'static str] = &["cli", "World", "!"];
 const VALID_ORIGINS: &'static [&'static str] = &["cli", "github", "github-enterprise", "gitlab"];
+const VALID_TYPES: &'static [&'static str] = &["npm", "nuget", "gradle", "hex", "pip", "poetry", "rubygems", 
+"maven", "yarn", "yarn-workspace", "composer", "gomodules", "govendor", "golang", "golangdep", "gradle", "paket", "cocoapods", "cpp", "sbt"];
+const API_V1_URL: &'static str = "https://snyk.io/api/v1";
+const API_V3_URL: &'static str = "https://api.snyk.io/rest";
+const API_V3_VERSION: &'static str = "2023-02-15~beta";
+const SBOM_FORMAT: &'static str = "cyclonedx%2Bjson";
 
 impl SnykProvider {
     async fn get_orgs() -> SnykData{
         println!("Getting list of Orgs from Snyk...");
-        let snyk_url: String = String::from("https://snyk.io/api/v1/orgs");
-        let token: String = String::from("");
+        let token: String = Self::get_snyk_access_token();
 
         let response: AnyhowResult<Option<SnykData>> = httpGet(
-            snyk_url.as_str(),
+            &format!("{}/orgs", API_V1_URL),
             ContentType::Json,
             token.as_str(),
             None::<String>,
@@ -111,7 +117,7 @@ impl SnykProvider {
         println!("Retrieving project info for Org: {}, with ID: {}", org_name, org_id);
         let snyk_url: String = String::from("https://snyk.io/api/v1");
         let url = format!("{}/org/{}/projects", snyk_url, org_id);
-        let token: String = String::from("");
+        let token: String = Self::get_snyk_access_token();
 
         println!("Using URL: {}", url);
         
@@ -131,32 +137,6 @@ impl SnykProvider {
     fn remove_invalid_projects(mut project_list: Option<ProjectList>, org_id: String) -> Option<ProjectList>{
 
         let mut valid_projects: Vec<Option<ProjectDetails>> = Vec::new();
-        //let VALID_ORIGINS = vec!["cli".to_string(), "github".to_string(), "github-enterprise".to_string(), "gitlab".to_string()];
-        let valid_types = vec![
-            "npm".to_string(),
-            "nuget".to_string(),
-            "gradle".to_string(),
-            "hex".to_string(),
-            "pip".to_string(),
-            "poetry".to_string(),
-            "rubygems".to_string(),
-            "maven".to_string(),
-            "yarn".to_string(),
-            "yarn-workspace".to_string(),
-            "composer".to_string(),
-            "gomodules".to_string(),
-            "govendor".to_string(),
-            "golang".to_string(),
-            "golangdep".to_string(),
-            "gradle".to_string(),
-            "paket".to_string(),
-            "cocoapods".to_string(),
-            "cpp".to_string(),
-            "sbt".to_string(),
-        ];
-        let apiV3Url="https://api.snyk.io/rest";
-        let apiV3Ver="2023-02-15~beta";
-        let sbomFormat="cyclonedx%2Bjson";
 
         match project_list {
             Some(list) => {
@@ -170,10 +150,9 @@ impl SnykProvider {
                             let proj_type = project_details.r#type.clone().unwrap_or_else(||"".to_string());
                             
                             if(!proj_id.is_empty()  && !proj_origin.is_empty() && !proj_type.is_empty()) {
-                                if  (VALID_ORIGINS.contains(&proj_origin.as_str()) &&  valid_types.contains(&proj_type)){
+                                if  (VALID_ORIGINS.contains(&proj_origin.as_str()) &&  VALID_TYPES.contains(&proj_type.as_str())){
                                     //TODO: create new project detail and add to valid project list
-                                    //${apiV3Url}/orgs/${orgId}/projects/${projId}/sbom?version=${apiV3Ver}&format=${sbomFormat}
-                                    let sbom_url = format!("{}/orgs/{}/projects/{}/sbom?version={}&format={}", apiV3Url, org_id, proj_id, apiV3Ver, sbomFormat);
+                                    let sbom_url = format!("{}/orgs/{}/projects/{}/sbom?version={}&format={}", API_V3_URL, org_id, proj_id, API_V3_VERSION, SBOM_FORMAT);
 
                                     let valid_project = ProjectDetails{
                                         id: Some(proj_id),
@@ -202,7 +181,7 @@ impl SnykProvider {
     async fn publish_sboms(snyk_data: &SnykData) {
         //TODO: send sboms somewhere
         println!("Publishing SBOMS...");
-        let token: String = String::from("");
+        let token: String = Self::get_snyk_access_token();
 
         for org in snyk_data.orgs.iter() {
             let current_org = org.as_ref().unwrap();
@@ -213,7 +192,6 @@ impl SnykProvider {
                         let sbom_url = project_details.sbom_url.clone().unwrap();
                         let proj_name = project_details.name.clone().unwrap().replace("/", "-");
                         println!("Building Sbom for project: {}",proj_name.as_str());
-                        break;
                         let response: AnyhowResult<Option<Sbom>> = httpGet(
                             sbom_url.as_str(),
                             ContentType::Json,
@@ -244,6 +222,15 @@ impl SnykProvider {
         }
     }
 
+    fn get_snyk_access_token() -> String {
+        let snyk_token = "SnykToken";
+        
+        match var(snyk_token) {
+            Ok(token) => return token,
+            Err(_) => panic!("Environment variable {} is not set", snyk_token),
+        }
+    }
+
 }
 
 #[async_trait]
@@ -252,6 +239,7 @@ impl Provider for SnykProvider {
     async fn scan(&self) {
         println!("Scanning Snyk for SBOMS...");
 
+        //TODO read token from somewhere else!
         let snyk_data = SnykProvider::get_orgs().await;
 
         let snyk_data = SnykProvider::add_projects_to_orgs(snyk_data).await;
@@ -265,6 +253,7 @@ impl Provider for SnykProvider {
 
 #[tokio::test]
 async fn test_get_snyk_data() {
+
     let provider = SnykProvider{};
     provider.scan().await;
 }
