@@ -36,7 +36,7 @@ pub struct BatchExportConfig {
     resource_attrs: HashMap<String, String>,
     collector_metadata: Option<HashMap<String, String>>,
     metric_name_validator: fn(&str) -> Result<(), Error>,
-    metrics: Vec<Metric>,
+    metrics: Vec<Box<dyn Metric>>,
 }
 
 /// [BatchExporter] provides a high-level abstraction over the complexities of constructing the metrics pipeline
