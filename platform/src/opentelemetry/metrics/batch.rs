@@ -258,6 +258,7 @@ mod tests {
             resource_attrs: HashMap::from([("service.name".to_string(), test_name)]),
             collector_metadata: None,
             metric_name_validator: validate_metric_name,
+            metrics: vec![],
         }
     }
 
