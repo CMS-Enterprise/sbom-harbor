@@ -23,8 +23,8 @@ const Copyright = ({
       {...typograpyProps}
     >
       {'Copyright © '}
-      <Link color="inherit" href="https://aquia.us/">
-        Aquia, Inc.
+      <Link color="inherit" href="https://cms.gov/">
+        Centers for Medicare & Medicaid Services
       </Link>
       {` ${new Date().getFullYear()}.`}
     </Typography>

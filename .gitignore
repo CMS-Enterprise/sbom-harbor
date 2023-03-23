@@ -3,17 +3,6 @@
 .vscode/*
 .coverage
 
-# outputs
-**/build/
-**/dist/
-**/.coverage/
-cdk.out/
-cdk.context.json
-cdk-outputs*.json
-
-# python
-__pycache__/
-
 # node
 **/node_modules/
 
@@ -26,12 +15,12 @@ tmp/
 **/.cache/
 **/.temp/
 
+# generated files and folders
+**/generated/
+**/generated.rs
+
 # macos
 **/.DS_Store
-
-# dotenv
-.env
-.env.*
 
 ui/.yarn/*
 !ui/.yarn/patches
@@ -40,10 +29,6 @@ ui/.yarn/*
 !ui/.yarn/sdks
 !ui/.yarn/versions
 
-# Go generator
-harbor-sbom-generator/main
-harbor-sbom-generator/*.zip
-
 # api documentation
 harbor-documentation/openapi.json
 
@@ -51,20 +36,15 @@ harbor-documentation/openapi.json
 **/target/
 **/.cargo/
 **/Cargo.lock
-
-# harbor-rs
-harbor-rs/tests/fixtures/debug.log
-harbor-rs/tests/fixtures/pilot-request.json
-harbor-rs/tests/fixtures/HARBOR_PILOT_REQUEST
-
+tests/fixtures/debug.log
+tests/fixtures/pilot-request.json
+tests/fixtures/HARBOR_PILOT_REQUEST
+tests/fixtures/GET_TEAM_REQUEST
+cargo-generate/bundle.json
+cargo-generate/output.json
 
 # OpenAPI generator
 **/.openapi-generator/
 **/tests/gen
 **/client/gen
 **/server/gen
-
-**/.terraform/providers/*
-**/terraform.tfstate
-**/terraform.tfstate.backup
-
