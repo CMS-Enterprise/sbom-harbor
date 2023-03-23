@@ -1,13 +1,10 @@
-use std::{fs, collections::HashMap};
-
-use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value, Number};
-
-use crate::http::{ContentType, get as httpGet, post as httpPost};
-use anyhow::{anyhow, Result as AnyhowResult};
+use std::{fs};
+use anyhow::{Result as AnyhowResult};
 use async_trait::async_trait;
 use crate::commands::Provider;
-use std::env::var;
+use crate::commands::pilot::snyk::snyk_data_model::{SnykData, ProjectList, ProjectDetails, Sbom};
+use crate::commands::pilot::snyk::snyk_http_helper;
+
 //DONE: Add method call
 //DONE: See if it runs
 //DONE: Pull in HTTP library
@@ -15,75 +12,36 @@ use std::env::var;
 //DONE: Get projects for each org
 //DONE: Get SBOMS for each project
 //DONE: Save SBOMS to temp location
-//TODO: Restructure and cleanup pass 1
+//TODO: Restructure and cleanup pass
 //TODO: Event logging
 //TODO: Import Quinns updates
 //TODO: Send SBOM somewhere?
 //TODO: Restructure and cleanup pass 2
 
-
-
-#[derive(Debug, Serialize, Deserialize)]
-struct SnykData {
-    orgs: Vec<Option<Org>>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Default)]
-struct Org {
-    id: Option<String>,
-    name: Option<String>,
-    projects: Option<ProjectList>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Default)]
-struct ProjectList {
-    projects: Vec<Option<ProjectDetails>>
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct ProjectDetails {
-    id: Option<String>,
-    name: Option<String>,
-    origin: Option<String>,
-    r#type: Option<String>,
-    sbom_url: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Sbom {
-    #[serde(flatten)]
-    inner: HashMap<String, Value>,
-}
-
-impl Org {
-    fn add_project(&mut self, projects: Option<ProjectList>) {
-        self.projects = projects;
-    }
-}
-
 pub struct SnykProvider {}
 
-//const VALID_ORIGINS: &'static [&'static str] = &["cli", "World", "!"];
-const VALID_ORIGINS: &'static [&'static str] = &["cli", "github", "github-enterprise", "gitlab"];
-const VALID_TYPES: &'static [&'static str] = &["npm", "nuget", "gradle", "hex", "pip", "poetry", "rubygems", 
-"maven", "yarn", "yarn-workspace", "composer", "gomodules", "govendor", "golang", "golangdep", "gradle", "paket", "cocoapods", "cpp", "sbt"];
-const API_V1_URL: &'static str = "https://snyk.io/api/v1";
-const API_V3_URL: &'static str = "https://api.snyk.io/rest";
-const API_V3_VERSION: &'static str = "2023-02-15~beta";
-const SBOM_FORMAT: &'static str = "cyclonedx%2Bjson";
-
 impl SnykProvider {
+
+    const VALID_ORIGINS: &'static [&'static str] = &["cli", "github", "github-enterprise", "gitlab"];
+    const VALID_TYPES: &'static [&'static str] = &["npm", "nuget", "gradle", "hex", "pip", "poetry", "rubygems", 
+    "maven", "yarn", "yarn-workspace", "composer", "gomodules", "govendor", "golang", "golangdep", "gradle", "paket", "cocoapods", "cpp", "sbt"];
+    const API_V1_URL: &'static str = "https://snyk.io/api/v1";
+    const API_V3_URL: &'static str = "https://api.snyk.io/rest";
+    const API_V3_VERSION: &'static str = "2023-02-15~beta";
+    const SBOM_FORMAT: &'static str = "cyclonedx%2Bjson";
+
     async fn get_orgs() -> SnykData{
         println!("Getting list of Orgs from Snyk...");
-        let token: String = Self::get_snyk_access_token();
 
-        let response: AnyhowResult<Option<SnykData>> = httpGet(
-            &format!("{}/orgs", API_V1_URL),
-            ContentType::Json,
-            token.as_str(),
-            None::<String>,
-        ).await;
+        let response = snyk_http_helper(format!("{}/orgs", Self::API_V1_URL), "GET".to_string()).await;
 
+        //TODO: remove below whenever I can test and verify generics work
+        // let response: AnyhowResult<Option<SnykData>> = httpGet(
+        //     &format!("{}/orgs", API_V1_URL),
+        //     ContentType::Json,
+        //     token.as_str(),
+        //     None::<String>,
+        // ).await;
     
         match response {
             Ok(option) => 
@@ -115,18 +73,15 @@ impl SnykProvider {
 
     async fn get_project_list_from_snyk(org_id: String, org_name: String) -> Option<ProjectList>{
         println!("Retrieving project info for Org: {}, with ID: {}", org_name, org_id);
-        let snyk_url: String = String::from("https://snyk.io/api/v1");
-        let url = format!("{}/org/{}/projects", snyk_url, org_id);
-        let token: String = Self::get_snyk_access_token();
 
-        println!("Using URL: {}", url);
-        
-        let response: AnyhowResult<Option<ProjectList>> = httpPost(
-            url.as_str(),
-            ContentType::Json,
-            token.as_str(),
-            None::<String>,
-        ).await;
+        let response = snyk_http_helper(format!("{}/org/{}/projects", Self::API_V1_URL, org_id), "POST".to_string()).await;
+        //TODO: remove below whenever I can test and verify generics work
+        // let response: AnyhowResult<Option<ProjectList>> = httpPost(
+        //     url.as_str(),
+        //     ContentType::Json,
+        //     token.as_str(),
+        //     None::<String>,
+        // ).await;
 
         match response {
             Ok(option) =>  return Self::remove_invalid_projects(option, org_id),
@@ -134,7 +89,7 @@ impl SnykProvider {
         }
     }
 
-    fn remove_invalid_projects(mut project_list: Option<ProjectList>, org_id: String) -> Option<ProjectList>{
+    fn remove_invalid_projects(project_list: Option<ProjectList>, org_id: String) -> Option<ProjectList>{
 
         let mut valid_projects: Vec<Option<ProjectDetails>> = Vec::new();
 
@@ -150,9 +105,8 @@ impl SnykProvider {
                             let proj_type = project_details.r#type.clone().unwrap_or_else(||"".to_string());
                             
                             if(!proj_id.is_empty()  && !proj_origin.is_empty() && !proj_type.is_empty()) {
-                                if  (VALID_ORIGINS.contains(&proj_origin.as_str()) &&  VALID_TYPES.contains(&proj_type.as_str())){
-                                    //TODO: create new project detail and add to valid project list
-                                    let sbom_url = format!("{}/orgs/{}/projects/{}/sbom?version={}&format={}", API_V3_URL, org_id, proj_id, API_V3_VERSION, SBOM_FORMAT);
+                                if  (Self::VALID_ORIGINS.contains(&proj_origin.as_str()) &&  Self::VALID_TYPES.contains(&proj_type.as_str())){
+                                    let sbom_url = format!("{}/orgs/{}/projects/{}/sbom?version={}&format={}", Self::API_V3_URL, org_id, proj_id, Self::API_V3_VERSION, Self::SBOM_FORMAT);
 
                                     let valid_project = ProjectDetails{
                                         id: Some(proj_id),
@@ -181,7 +135,6 @@ impl SnykProvider {
     async fn publish_sboms(snyk_data: &SnykData) {
         //TODO: send sboms somewhere
         println!("Publishing SBOMS...");
-        let token: String = Self::get_snyk_access_token();
 
         for org in snyk_data.orgs.iter() {
             let current_org = org.as_ref().unwrap();
@@ -189,15 +142,17 @@ impl SnykProvider {
             for project in current_org.projects.as_ref().unwrap().projects.iter() {
                 match project {
                     Some(project_details) => {
-                        let sbom_url = project_details.sbom_url.clone().unwrap();
                         let proj_name = project_details.name.clone().unwrap().replace("/", "-");
                         println!("Building Sbom for project: {}",proj_name.as_str());
-                        let response: AnyhowResult<Option<Sbom>> = httpGet(
-                            sbom_url.as_str(),
-                            ContentType::Json,
-                            token.as_str(),
-                            None::<String>,
-                        ).await;
+
+                        let response: AnyhowResult<Option<Sbom>> = snyk_http_helper(project_details.sbom_url.clone().unwrap(), "GET".to_string()).await;
+                        //TODO: remove below whenever I can test and verify generics work
+                        // let response: AnyhowResult<Option<Sbom>> = httpGet(
+                        //     sbom_url.as_str(),
+                        //     ContentType::Json,
+                        //     token.as_str(),
+                        //     None::<String>,
+                        // ).await;
                 
                         match response {
                             Ok(option) =>  {
@@ -222,15 +177,6 @@ impl SnykProvider {
         }
     }
 
-    fn get_snyk_access_token() -> String {
-        let snyk_token = "SnykToken";
-        
-        match var(snyk_token) {
-            Ok(token) => return token,
-            Err(_) => panic!("Environment variable {} is not set", snyk_token),
-        }
-    }
-
 }
 
 #[async_trait]
@@ -239,7 +185,6 @@ impl Provider for SnykProvider {
     async fn scan(&self) {
         println!("Scanning Snyk for SBOMS...");
 
-        //TODO read token from somewhere else!
         let snyk_data = SnykProvider::get_orgs().await;
 
         let snyk_data = SnykProvider::add_projects_to_orgs(snyk_data).await;

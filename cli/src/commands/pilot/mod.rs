@@ -3,6 +3,8 @@ use crate::commands::{Opts, OutputFormat};
 use crate::commands::pilot::github::GitHubProvider;
 use crate::Error;
 use async_trait::async_trait;
+
+use crate::commands::pilot::snyk::SnykProvider;
 mod github;
 mod snyk;
 
@@ -63,7 +65,7 @@ impl PilotFactory {
     pub fn new(pilot_ops: PilotOpts) -> Box<dyn Provider> {
         return match pilot_ops.provider {
             PilotKind::GITHUB => Box::new(GitHubProvider {}),
-            PilotKind::SNYK => panic!("Jon, return SnykProvider implementation"),
+            PilotKind::SNYK => Box::new(SnykProvider {}),
         };
     }
 }
