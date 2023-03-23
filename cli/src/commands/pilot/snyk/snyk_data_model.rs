@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use serde_json::Value;
 
+//NOTE: Is this the correct way to set up these structs? Feels bad having all of the structs being public
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SnykData {
     pub orgs: Vec<Option<Org>>,
