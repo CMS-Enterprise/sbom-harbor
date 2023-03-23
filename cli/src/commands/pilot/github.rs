@@ -242,7 +242,14 @@ impl GitHubProvider {
     async fn get_repos(org: String) -> AnyhowResult<Vec<Repo>> {
 
         let mut pages = get_pages(&org).await;
-        let token: String = String::from("Bearer ") + &get_gh_token();
+
+        let gh_fetch_token = match get_env_var("GH_FETCH_TOKEN") {
+            Some(value) => value,
+            None => panic!("Missing GitHub Token. export GH_FETCH_TOKEN=<token>")
+        };
+
+        let token: String = String::from("Bearer ") + &gh_fetch_token;
+
         let mut repo_vec: Vec<Repo> = Vec::new();
 
         for page in pages.iter_mut() {
@@ -320,6 +327,19 @@ async fn get_mongo_db() -> Result<Database, GhCrawlerError> {
     Ok(client.database(&ctx.db_name))
 }
 
+
+async fn check_entities_exist() {
+    let cognito_username = match get_env_var("V1_HARBOR_USERNAME") {
+        Some(value) => value,
+        None => panic!("Missing Cognito Username")
+    };
+
+    let cognito_password = match get_env_var("V1_HARBOR_PASSWORD") {
+        Some(value) => value,
+        None => panic!("Missing Cognito Password")
+    };
+}
+
 async fn create_harbor_entities() -> Result<HashMap<String, String>, GhCrawlerError> {
 
     // TODO - STUB!! Please Implement...
@@ -379,7 +399,11 @@ async fn process_repo(url: &String, repo_name: &String, last_hash: &String) {
 
     match cursor.next().await {
         Some(mongo_result) => match mongo_result {
+
             Ok(document) => {
+
+                /// This arm is executed when something is in the database
+                /// with the specified repo_url.
 
                 if last_hash.to_string() != document.last_hash {
 
@@ -415,6 +439,10 @@ async fn process_repo(url: &String, repo_name: &String, last_hash: &String) {
             Err(err) => panic!("Mongo Result Error. Result exists, but data is missing: {}", err)
         },
         None => {
+
+            /// This arm executes when nothing is found in the database associated
+            /// to the given repo_url.  This means we need to create the project and codebase
+            /// in Harbor before we can send SBOMs to that target.
 
             let entities: HashMap<String, String> = match create_harbor_entities().await {
                 Ok(entities) => entities,
