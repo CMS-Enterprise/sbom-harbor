@@ -12,10 +12,11 @@ use crate::commands::pilot::snyk::snyk_http_helper;
 //DONE: Get projects for each org
 //DONE: Get SBOMS for each project
 //DONE: Save SBOMS to temp location
-//TODO: Restructure and cleanup pass
+//DONE: Restructure and cleanup pass 1
+//TODO: Merge Quinns code
 //TODO: Event logging
-//TODO: Import Quinns updates
 //TODO: Send SBOM somewhere?
+//TODO: Documentation
 //TODO: Restructure and cleanup pass 2
 
 pub struct SnykProvider {}
