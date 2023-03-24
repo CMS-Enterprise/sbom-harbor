@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use harbcore::config::db_connection;
 use platform::mongodb::{Context, Service, Store};
 use harbcore::models::*;
 use harbcore::services::*;
@@ -7,7 +8,7 @@ use harbcore::Error;
 
 fn test_context() -> Context {
     Context{
-        connection_uri: "mongodb://localhost:27017".to_string(),
+        connection_uri: db_connection().unwrap(),
         db_name: "harbor".to_string(),
         key_name: "id".to_string(),
     }

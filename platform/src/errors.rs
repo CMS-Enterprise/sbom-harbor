@@ -1,5 +1,3 @@
-use aws_sdk_docdb::error::{CreateDBClusterError, DeleteDBClusterError, DescribeDBClustersError};
-use aws_sdk_docdb::types::SdkError;
 use serde_derive::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -39,24 +37,6 @@ impl From<mongodb::error::Error> for Error {
 
 impl From<mongodb::bson::oid::Error> for Error {
     fn from(value: mongodb::bson::oid::Error) -> Self {
-        Error::Mongo(format!("{:?}", value))
-    }
-}
-
-impl From<SdkError<DescribeDBClustersError>> for Error {
-    fn from(value: SdkError<DescribeDBClustersError>) -> Self {
-        Error::Mongo(format!("{:?}", value))
-    }
-}
-
-impl From<SdkError<CreateDBClusterError>> for Error {
-    fn from(value: SdkError<CreateDBClusterError>) -> Self {
-        Error::Mongo(format!("{:?}", value))
-    }
-}
-
-impl From<SdkError<DeleteDBClusterError>> for Error {
-    fn from(value: SdkError<DeleteDBClusterError>) -> Self {
         Error::Mongo(format!("{:?}", value))
     }
 }
