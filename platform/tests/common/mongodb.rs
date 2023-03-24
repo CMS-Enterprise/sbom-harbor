@@ -1,52 +1,26 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Duration;
-use aws_sdk_docdb::Client;
 use mongodb::Client as MongoClient;
 use uuid::Uuid;
 
 use platform::Error;
 use platform::mongodb::{Context, MongoDocument, Store};
 use platform::auth::*;
+use platform::config::from_env;
 use platform::mongodb::auth::DefaultAuthorizer;
 
-use crate::common::config_from_env;
-
-const USERNAME: &str = "harbor-test-admin";
-const PASSWORD: &str = "harbor-test-password";
 pub const DB_IDENTIFIER: &str = "harbor";
 pub const KEY_NAME: &str = "id";
 pub const COLLECTION: &str = "Group";
 
-pub struct ClusterContext {
-    endpoint: String,
-}
-
-impl ClusterContext {
-    #[allow(dead_code)]
-    pub fn connection_string(&self) -> String {
-        format!("mongodb://{}:{}@{}", USERNAME, PASSWORD, self.endpoint)
-    }
-}
-
-pub struct LocalContext;
-
-impl LocalContext {
-    #[allow(dead_code)]
-    pub fn connection_string() -> String {
-        "mongodb://localhost:27017".to_string()
-    }
-}
-
 #[allow(dead_code)]
 pub async fn local_context() -> Result<Context, Error> {
-    let ctx = Context{
-        connection_uri: LocalContext::connection_string(),
-        db_name: DB_IDENTIFIER.to_string(),
-        key_name: KEY_NAME.to_string(),
-    };
+    let mut cx: Context = from_env("DB_CONNECTION")?;
 
-    let client = MongoClient::with_uri_str(ctx.connection_uri.clone()).await?;
+    cx.db_name = "harbor".to_string();
+    cx.key_name = "id".to_string();
+
+    let client = MongoClient::with_uri_str(cx.connection_uri()).await?;
     let dbs = client.list_database_names(None, None).await?;
 
     if !dbs.contains(&DB_IDENTIFIER.to_string()) {
@@ -60,105 +34,7 @@ pub async fn local_context() -> Result<Context, Error> {
         return Err(Error::Mongo(format!("{} collection does not exist", COLLECTION.to_string())));
     }
 
-    Ok(ctx)
-}
-
-#[allow(dead_code)]
-pub async fn cluster_context() -> Result<ClusterContext, Error> {
-    let config = config_from_env().await?;
-    let client = Client::new(&config);
-
-    let output = client
-        .describe_db_clusters()
-        .db_cluster_identifier(DB_IDENTIFIER)
-        .send()
-        .await;
-
-    if output.is_ok() {
-        let db_clusters = output.unwrap();
-        let db_clusters = db_clusters.db_clusters().unwrap();
-
-        let endpoint = db_clusters
-            .first()
-            .unwrap()
-            .endpoint()
-            .unwrap();
-
-        return Ok(ClusterContext { endpoint: endpoint.to_string() });
-    }
-
-    create_db_cluster(&client).await?;
-    let ctx = wait_for_ready_cluster(&client).await?;
-
-    Ok(ctx)
-}
-
-#[allow(dead_code)]
-async fn create_db_cluster(client: &Client) -> Result<(), Error> {
-    let output = client.create_db_cluster()
-        .db_cluster_identifier(DB_IDENTIFIER)
-        .engine("docdb")
-        .engine_version("4.0.0")
-        .master_username(USERNAME)
-        .master_user_password(PASSWORD)
-        .send()
-        .await?;
-
-    let cluster = output.db_cluster().unwrap();
-    let endpoint = cluster.endpoint().unwrap();
-
-    println!("{}", endpoint);
-    println!("{}", cluster.status().unwrap());
-
-    Ok(())
-}
-
-#[allow(dead_code)]
-async fn wait_for_ready_cluster(client: &Client) -> Result<ClusterContext, Error> {
-    let mut ctx = ClusterContext {
-        endpoint: "".to_string(),
-    };
-
-    loop {
-        if let Some(db_clusters) = client
-            .describe_db_clusters()
-            .db_cluster_identifier(DB_IDENTIFIER)
-            .send()
-            .await
-            .ok() {
-            if db_clusters.db_clusters().is_some() {
-                let endpoint = db_clusters
-                    .db_clusters()
-                    .unwrap()
-                    .first()
-                    .unwrap()
-                    .endpoint()
-                    .unwrap();
-
-                ctx.endpoint = endpoint.to_string();
-                break;
-            }
-        }
-
-        tokio::time::sleep(Duration::from_secs(1)).await;
-    }
-
-    Ok(ctx)
-}
-
-#[allow(dead_code)]
-pub async fn teardown_cluster() -> Result<String, Error> {
-    let config = config_from_env().await?;
-    let client = Client::new(&config);
-
-    client.delete_db_cluster()
-        .db_cluster_identifier(DB_IDENTIFIER)
-        .send()
-        .await.map(|o| Ok(o.db_cluster()
-            .unwrap()
-            .status()
-            .unwrap()
-            .to_string()))?
+    Ok(cx)
 }
 
 pub struct AuthScenario {

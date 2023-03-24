@@ -15,9 +15,32 @@ pub mod auth;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Context {
-    pub connection_uri: String,
+    pub host: String,
+    pub username: String,
+    pub password: String,
+    pub port: u32,
     pub db_name: String,
     pub key_name: String,
+}
+
+// Used by tests. Assumes devenv is running when environment variable is not set.
+impl Default for Context {
+    fn default() -> Self {
+        Self {
+            host: "localhost".to_string(),
+            username: "root".to_string(),
+            password: "harbor".to_string(),
+            port: 27017,
+            db_name: "".to_string(),
+            key_name: "".to_string(),
+        }
+    }
+}
+
+impl Context {
+    pub fn connection_uri(&self) -> String {
+        format!("mongodb://{}:{}@{}:{}", self.username, self.password, self.host, self.port)
+    }
 }
 
 /// Opinionated interface for Mongo Documents. Allows callers to avoid a direct dependency on the Mongo Driver.

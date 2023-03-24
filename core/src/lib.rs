@@ -54,7 +54,7 @@ pub mod models;
 /// ```
 pub mod entities;
 
-/// The Services module is responsible for
+/// The [Services] module is responsible for exposing domain logic to consumers of this crate.
 pub mod services;
 
 
@@ -65,3 +65,7 @@ pub use errors::Error;
 pub mod auth;
 
 mod migrations;
+
+/// The [Config] module exposes expected runtime configuration and provides sensible defaults based
+/// on the local development environment.
+pub mod config;

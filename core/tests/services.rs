@@ -1,17 +1,9 @@
 use std::sync::Arc;
+use harbcore::config::db_connection;
 use platform::mongodb::{Context, Service, Store};
 use harbcore::models::*;
 use harbcore::services::*;
 use harbcore::Error;
-
-
-fn test_context() -> Context {
-    Context{
-        connection_uri: "mongodb://localhost:27017".to_string(),
-        db_name: "harbor".to_string(),
-        key_name: "id".to_string(),
-    }
-}
 
 fn test_team_model(test_name: &str) -> harbcore::models::Team {
     Team{
@@ -25,12 +17,8 @@ fn test_team_model(test_name: &str) -> harbcore::models::Team {
 
 #[async_std::test]
 async fn can_crud_team() -> Result<(), Error> {
-    let ctx = test_context();
-        // sdk_config_from_env()
-        // .await
-        // .expect("failed to load config from environment");
-
-    let store = Store::new(&ctx).await;
+    let cx = db_connection()?;
+    let store = Store::new(&cx).await;
     let store = store.unwrap();
     let service = TeamService::new(Arc::new(store));
 

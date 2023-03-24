@@ -9,8 +9,8 @@ use crate::Error;
 use crate::mongodb::{Context, MongoDocument};
 
 /// Default client factory method. Allows callers to avoid a direct dependency on the Mongo Driver.
-pub async fn client_from_context(ctx: &Context) -> Result<Client, Error> {
-    Ok(Client::with_uri_str(ctx.connection_uri.clone()).await?)
+pub async fn client_from_context(cx: &Context) -> Result<Client, Error> {
+    Ok(Client::with_uri_str(cx.connection_uri()).await?)
 }
 
 #[derive(Clone, Debug)]
