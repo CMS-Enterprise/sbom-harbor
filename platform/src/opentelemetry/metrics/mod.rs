@@ -12,3 +12,4 @@ pub use batch::*;
 /// The `Prometheus` module encapsulates metrics conventions and functionality
 /// specific to using `Prometheus` as the backend for an OpenTelemetry collector.
 pub mod prometheus;
+mod facade;
