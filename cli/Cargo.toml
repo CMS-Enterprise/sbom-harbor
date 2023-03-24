@@ -33,3 +33,7 @@ version = "0.1.0"
 [dependencies.platform]
 path = "../platform"
 version = "0.1.0"
+
+[dependencies.harborclient]
+path = "../client"
+version = "0.1.0"

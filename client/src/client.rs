@@ -1,16 +1,16 @@
 use std::collections::HashMap;
-use std::fmt::Result as StdResult;
+use std::env;
 use std::fmt::{Display, Formatter};
+use std::fmt::Result as StdResult;
 
 use anyhow::{anyhow, bail, Result};
-use std::env;
-
-use platform::hyper::{get, post, delete, ContentType};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tracing::info;
 
-use harbcore::models::{Team, Project, Codebase};
+use harbcore::models::{Codebase, Project, Team};
+use platform::hyper::{ContentType, delete, get, post};
+use uuid::Uuid;
 
 /// Extracts the value of an environment variable
 ///
@@ -173,7 +173,41 @@ impl Client {
         Ok(team)
     }
 
-    fn create_project_url(&self, team_id: String) -> String {
+    pub async fn create_project(
+        &self,
+        team_id: String,
+        gh_url: String
+    ) -> Result<Project> {
+
+        let create_project_url = self.create_project_url(team_id);
+
+        println!("Attempting to creat ea project at {}", create_project_url);
+
+        let mut project = Project::new(gh_url.clone(), None);
+
+        project.codebases(
+            Codebase {
+                id: Uuid::new_v4().to_string(),
+                name: gh_url.clone(),
+                build_tool: String::from("UNKNOWN"),
+                language: String::from("UNKNOWN"),
+                clone_url: gh_url,
+            }
+        );
+
+        let project: Option<Project> = post(
+            create_project_url.as_str(),
+            ContentType::Json,
+            &self.token,
+            Some(project)
+        ).await?;
+
+        let project = project.unwrap();
+
+        Ok(project)
+    }
+
+    pub fn create_project_url(&self, team_id: String) -> String {
         join_url(
             &self.base_url,
             &format!("/project?teamId={}&children=true", team_id),

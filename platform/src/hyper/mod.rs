@@ -86,12 +86,15 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
         None => Body::empty(),
     };
 
+    println!("Making request with body: {:#?}", &req_body);
+
     let mut req: Request<Body> = Request::builder()
         .method(method)
         .uri(uri)
         .header(CONTENT_TYPE, content_type.to_string())
         .header(USER_AGENT, String::from("SBOM Harbor CLI"))
         .body(req_body)?;
+
 
     if !token.is_empty() {
         req.headers_mut().append("Authorization", token.parse()?);

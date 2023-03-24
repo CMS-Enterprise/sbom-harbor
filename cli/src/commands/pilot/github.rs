@@ -14,11 +14,14 @@ use mongodb::bson::doc;
 use mongodb::options::FindOptions;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use uuid::Uuid;
 
 use platform::hyper::{ContentType, Error as HyperError, get};
 use platform::mongodb::{Context as MongoContext, mongo_doc, MongoDocument};
 use platform::mongodb::service::Service;
-use uuid::Uuid;
+
+use harborclient::client::{Client as V1HarborClient};
+
 use crate::commands::{get_env_var, Provider};
 
 pub const DB_IDENTIFIER: &str = "harbor";
@@ -26,11 +29,30 @@ pub const KEY_NAME: &str = "id";
 pub const COLLECTION: &str = "pilot";
 
 pub const TEAM_ID_KEY: &str = "team_id";
+pub const CF_DOMAIN_KEY: &str = "CF_DOMAIN";
 pub const PROJECT_ID_KEY: &str = "project_id";
 pub const CODEBASE_ID_KEY: &str = "codebase_id";
 pub const GH_FT_KEY: &str = "GH_FETCH_TOKEN";
 pub const V1_TEAM_ID_KEY: &str = "V1_CMS_TEAM_ID";
 pub const V1_TEAM_TOKEN_KEY: &str = "V1_CMS_TEAM_ID";
+pub const V1_HARBOR_USERNAME_KEY: &str = "V1_HARBOR_USERNAME";
+pub const V1_HARBOR_PASSWORD_KEY: &str = "V1_HARBOR_PASSWORD";
+
+/// Configuration from the environment for V1 Harbor
+///
+struct HarborConfig {
+    /// This is the GUID that is in DynamoDB that
+    /// belongs to the team we are using.
+    cms_team_id: String,
+    /// This is the token from that team
+    cms_team_token: String,
+    /// This is the Cloudfront Domain of the API endpoints
+    cf_domain: String,
+    /// The username we use to get the JWT and make API calls
+    cognito_username: String,
+    /// The password we use to get the JWT and make API calls
+    cognito_password: String,
+}
 
 const GH_URL: &str = "https://api.github.com";
 
@@ -131,7 +153,7 @@ impl Repo {
 /// Should skip determines if the repository is disabled or archived.
 /// and if so, skips processing them.
 ///
-fn should_skip(repo: &Repo, repo_name: &String, url: &String) -> bool {
+fn should_skip(repo: &Repo, repo_name: String, url: String) -> bool {
 
     let mut skip: bool = false;
 
@@ -188,7 +210,7 @@ async fn get_num_pub_repos(org: String) -> AnyhowResult<Option<u32>> {
             Some(value) => return Ok(value.public_repos),
             None => panic!("Nothing in here!"),
         },
-        Err(err) => panic!("Error in the response(1): {}", err),
+        Err(err) => panic!("Error in the response: {}", err),
     }
 }
 
@@ -305,7 +327,7 @@ impl GitHubProvider {
     }
 }
 
-async fn get_mongo_db() -> Result<Database, GhCrawlerError> {
+async fn get_mongo_db() -> Result<Database, GhProviderError> {
 
     let ctx = MongoContext {
         connection_uri: LocalContext::connection_string(),
@@ -317,7 +339,7 @@ async fn get_mongo_db() -> Result<Database, GhCrawlerError> {
     let client = match result {
         Ok(client) => client,
         Err(err) => return Err(
-            GhCrawlerError::MongoDb(
+            GhProviderError::MongoDb(
                 format!("Unable to get the Mongo Client: {}", err)
             )
         )
@@ -327,49 +349,67 @@ async fn get_mongo_db() -> Result<Database, GhCrawlerError> {
     Ok(client.database(&ctx.db_name))
 }
 
+async fn get_entities(harbor_config: HarborConfig) -> bool {
 
-async fn check_entities_exist() {
-    let cognito_username = match get_env_var("V1_HARBOR_USERNAME") {
-        Some(value) => value,
-        None => panic!("Missing Cognito Username")
+    let result = V1HarborClient::new(
+        harbor_config.cf_domain,
+        harbor_config.cognito_username,
+        harbor_config.cognito_password
+    ).await;
+
+    let client = match result {
+      Ok(client) => client,
+      Err(err) => panic!("Unable to get the client: {}", err)
     };
 
-    let cognito_password = match get_env_var("V1_HARBOR_PASSWORD") {
-        Some(value) => value,
-        None => panic!("Missing Cognito Password")
-    };
+    match client.get_team(harbor_config.cms_team_id).await {
+        Ok(_team) => true,
+        Err(_err) => false,
+    }
 }
 
-async fn create_harbor_entities() -> Result<HashMap<String, String>, GhCrawlerError> {
+async fn create_harbor_entities(
+    github_url: String,
+    harbor_config: &HarborConfig,
+) -> Result<HashMap<String, String>, GhProviderError> {
 
-    // TODO - STUB!! Please Implement...
-    // TODO Error for this method: GhCrawlerError::EntityCreation
+    let client = V1HarborClient::new(
+        harbor_config.cf_domain.clone(),
+        harbor_config.cognito_username.clone(),
+        harbor_config.cognito_password.clone(),
+    ).await.unwrap();
 
-    let cms_team_id = match get_env_var(V1_TEAM_ID_KEY) {
-        Some(value) => value,
-        None => panic!("Missing Team Id of V1 Team")
+    let result = client.create_project(
+        harbor_config.cms_team_id.clone(),
+        github_url
+    ).await;
+
+    let project = match result {
+        Ok(project) => project,
+        Err(err) => {
+            let err_msg = format!("Error trying to create a project: {}", err);
+            return Err(GhProviderError::EntityCreation(err_msg))
+        }
     };
 
-    let cms_team_token = match get_env_var(V1_TEAM_TOKEN_KEY) {
-        Some(value) => value,
-        None => panic!("Missing Team token of V1 Team")
-    };
+    // Each project will have only one codebase in this implementation
+    let codebase = project.codebases.into_iter().nth(0);
 
     let mut test_map = HashMap::new();
 
     test_map.insert(
         String::from(TEAM_ID_KEY),
-        cms_team_id,
+        harbor_config.cms_team_id.to_string(),
     );
 
     test_map.insert(
         String::from(PROJECT_ID_KEY),
-        Uuid::new_v4().to_string()
+        project.id
     );
 
     test_map.insert(
         String::from(CODEBASE_ID_KEY),
-        Uuid::new_v4().to_string()
+        codebase.unwrap().id
     );
 
     Ok(test_map)
@@ -380,7 +420,79 @@ async fn send_to_pilot(document: &GitHubCrawlerMongoDocument) {
     println!("Using this document to construct a request to Pilot: {:#?}", document)
 }
 
-async fn process_repo(url: &String, repo_name: &String, last_hash: &String) {
+fn get_harbor_config() -> Result<HarborConfig, GhProviderError> {
+
+    let cms_team_id = match get_env_var(V1_TEAM_ID_KEY) {
+        Some(value) => value,
+        None => return Err(
+            GhProviderError::Configuration(
+                String::from("Missing Team Id of V1 Team")
+            )
+        )
+    };
+
+    let cms_team_token = match get_env_var(V1_TEAM_TOKEN_KEY) {
+        Some(value) => value,
+        None => return Err(
+            GhProviderError::Configuration(
+                String::from("Missing Team token of V1 Team")
+            )
+        )
+    };
+
+    let cf_domain = match get_env_var(CF_DOMAIN_KEY) {
+        Some(value) => value,
+        None => return Err(
+            GhProviderError::Configuration(
+                String::from("Missing Cognito Username")
+            )
+        )
+    };
+
+    let cognito_username = match get_env_var(V1_HARBOR_USERNAME_KEY) {
+        Some(value) => value,
+        None => return Err(
+            GhProviderError::Configuration(
+                String::from("Missing Cognito Username")
+            )
+        )
+    };
+
+    let cognito_password = match get_env_var(V1_HARBOR_PASSWORD_KEY) {
+        Some(value) => value,
+        None => return Err(
+            GhProviderError::Configuration(
+                String::from("Missing Cognito Password")
+            )
+        )
+    };
+
+    Ok(
+        HarborConfig {
+            cms_team_id,
+            cms_team_token,
+            cf_domain,
+            cognito_username,
+            cognito_password,
+        }
+    )
+}
+
+
+
+async fn process_repo(repo: &Repo, harbor_config: &HarborConfig) {
+
+    let url: &String = match &repo.ssh_url {
+        Some(url) => url,
+        None => panic!("No URL for Repository"),
+    };
+
+    let repo_name: &String = match &repo.full_name {
+        Some(name) => name,
+        None => panic!("No Full Name for Repository"),
+    };
+
+    let last_hash: &String = &repo.last_hash;
 
     println!("Will be processing {}@{}", repo_name, url);
 
@@ -402,8 +514,8 @@ async fn process_repo(url: &String, repo_name: &String, last_hash: &String) {
 
             Ok(document) => {
 
-                /// This arm is executed when something is in the database
-                /// with the specified repo_url.
+                // This arm is executed when something is in the database
+                // with the specified repo_url.
 
                 if last_hash.to_string() != document.last_hash {
 
@@ -438,15 +550,22 @@ async fn process_repo(url: &String, repo_name: &String, last_hash: &String) {
             }
             Err(err) => panic!("Mongo Result Error. Result exists, but data is missing: {}", err)
         },
-        None => {
+        None => { // Nothing is in Mongo
 
-            /// This arm executes when nothing is found in the database associated
-            /// to the given repo_url.  This means we need to create the project and codebase
-            /// in Harbor before we can send SBOMs to that target.
+            // This arm executes when nothing is found in the database associated
+            // to the given repo_url.  This means we need to create the project and codebase
+            // in Harbor before we can send SBOMs to that target.
 
-            let entities: HashMap<String, String> = match create_harbor_entities().await {
+            // TODO create entities in Harbor
+
+            let result = create_harbor_entities(
+                url.clone(),
+                harbor_config
+            ).await;
+
+            let entities: HashMap<String, String> = match result {
                 Ok(entities) => entities,
-                Err(err) => panic!("Unable to create Harbor entities: {}", err),
+                Err(err) => panic!("Unable to create Harbor entities, {}", err),
             };
 
             let document = GitHubCrawlerMongoDocument {
@@ -474,6 +593,8 @@ impl Provider for GitHubProvider {
 
     async fn scan(&self) {
 
+        let harbor_config = get_harbor_config().unwrap();
+
         println!("Scanning GitHub...");
         let org_name: String = String::from("cmsgov");
         let repos_result = GitHubProvider::get_repos(org_name).await;
@@ -484,18 +605,11 @@ impl Provider for GitHubProvider {
 
         for repo in repos.iter() {
 
-            let url: &String = match &repo.ssh_url {
-                Some(url) => url,
-                None => panic!("No URL for Repository"),
-            };
+            let name = repo.full_name.clone().unwrap();
+            let url = repo.ssh_url.clone().unwrap();
 
-            let repo_name: &String = match &repo.full_name {
-                Some(name) => name,
-                None => panic!("No Full Name for Repository"),
-            };
-
-            if !should_skip(repo, url, repo_name) {
-                process_repo(url, repo_name, &repo.last_hash).await;
+            if !should_skip(repo, name, url) {
+                process_repo(repo, &harbor_config).await;
             }
         }
     }
@@ -504,7 +618,7 @@ impl Provider for GitHubProvider {
 /// Represents all handled Errors for the GitHub Crawler.
 ///
 #[derive(Error, Debug)]
-enum GhCrawlerError {
+enum GhProviderError {
 
     #[error("error getting database: {0}")]
     MongoDb(String),
@@ -514,4 +628,7 @@ enum GhCrawlerError {
 
     #[error("error creating Harbor v1 entities: {0}")]
     EntityCreation(String),
+
+    #[error("error creating Harbor v1 entities: {0}")]
+    Configuration(String),
 }
