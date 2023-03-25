@@ -176,7 +176,8 @@ impl Client {
     pub async fn create_project(
         &self,
         team_id: String,
-        gh_url: String
+        gh_url: String,
+        language: String,
     ) -> Result<Project> {
 
         let create_project_url = self.create_project_url(team_id);
@@ -187,10 +188,10 @@ impl Client {
 
         project.codebases(
             Codebase {
-                id: Uuid::new_v4().to_string(),
+                id: String::from(""),
                 name: gh_url.clone(),
                 build_tool: String::from("UNKNOWN"),
-                language: String::from("UNKNOWN"),
+                language,
                 clone_url: gh_url,
             }
         );

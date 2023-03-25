@@ -263,7 +263,9 @@ impl GitHubProvider {
 
     async fn get_repos(org: String) -> AnyhowResult<Vec<Repo>> {
 
-        let mut pages = get_pages(&org).await;
+        // let mut pages = get_pages(&org).await;
+        // TODO For development only, correct code above
+        let mut pages = vec![5];
 
         let gh_fetch_token = match get_env_var("GH_FETCH_TOKEN") {
             Some(value) => value,
@@ -371,6 +373,7 @@ async fn get_entities(harbor_config: HarborConfig) -> bool {
 async fn create_harbor_entities(
     github_url: String,
     harbor_config: &HarborConfig,
+    language: String,
 ) -> Result<HashMap<String, String>, GhProviderError> {
 
     let client = V1HarborClient::new(
@@ -381,7 +384,8 @@ async fn create_harbor_entities(
 
     let result = client.create_project(
         harbor_config.cms_team_id.clone(),
-        github_url
+        github_url,
+        language,
     ).await;
 
     let project = match result {
@@ -478,8 +482,6 @@ fn get_harbor_config() -> Result<HarborConfig, GhProviderError> {
     )
 }
 
-
-
 async fn process_repo(repo: &Repo, harbor_config: &HarborConfig) {
 
     let url: &String = match &repo.ssh_url {
@@ -502,65 +504,72 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig) {
     };
 
     let collection = db.collection::<GitHubCrawlerMongoDocument>(COLLECTION);
-
-    let filter = doc! { "repo_url": url.to_string() };
-    let mut cursor = match collection.find(filter, None).await {
+    let filter = doc! { "repo_url":  url.as_str() };
+    let mut doc_option: Option<GitHubCrawlerMongoDocument> = match collection.find_one(filter, None).await {
         Ok(cursor) => cursor,
         Err(cursor_err) => panic!("Cursor - Error: {}", cursor_err)
     };
 
-    match cursor.next().await {
-        Some(mongo_result) => match mongo_result {
+    match doc_option {
+        Some(document) => {
 
-            Ok(document) => {
+            println!("Found document in mongo, comparing hashes");
 
-                // This arm is executed when something is in the database
-                // with the specified repo_url.
+            // This arm is executed when something is in the database
+            // with the specified repo_url.
 
-                if last_hash.to_string() != document.last_hash {
+            if last_hash.to_string() != document.last_hash {
 
-                    // Use the document to construct a request to Pilot
-                    send_to_pilot(&document);
+                println!("Hashes are not equal, sending to pilot");
 
-                    // Create a filter to find the document we are looking for
-                    // by id.  Probably supposed to be using _id, but whatever for now.
-                    let filter = doc! {
-                        "id": document.id.to_string()
-                    };
+                // Use the document to construct a request to Pilot
+                send_to_pilot(&document);
 
-                    // This document is used by MongoDB to actually
-                    // set the new sha hash value on the record
-                    let update_document = doc!{
-                        "$set": {
-                            "last_hash": last_hash.to_string()
-                        }
-                    };
+                // Create a filter to find the document we are looking for
+                // by id.  Probably supposed to be using _id, but whatever for now.
+                let filter = doc! {
+                    "id": document.id.to_string()
+                };
 
-                    // Update the last hash in MongoDB
-                    match collection.update_one(filter, update_document, None).await {
-                        Ok(result) => result,
-                        Err(err) => panic!("Error attempting to insert a document: {}", err)
-                    };
+                // This document is used by MongoDB to actually
+                // set the new sha hash value on the record
+                let update_document = doc!{
+                    "$set": {
+                        "last_hash": last_hash.to_string()
+                    }
+                };
 
-                    println!(
-                        "Updated EXISTING Document in MongoDB: {:#?}, with hash: {}",
-                        &document.id, last_hash
-                    );
-                }
+                // Update the last hash in MongoDB
+                match collection.update_one(filter, update_document, None).await {
+                    Ok(result) => result,
+                    Err(err) => panic!("Error attempting to insert a document: {}", err)
+                };
+
+                println!(
+                    "Updated EXISTING Document in MongoDB: {:#?}, with hash: {}",
+                    &document.id, last_hash
+                );
+            } else {
+                println!("Hashes are equal, skipping pilot");
             }
-            Err(err) => panic!("Mongo Result Error. Result exists, but data is missing: {}", err)
         },
         None => { // Nothing is in Mongo
+
+            println!("No Document found document in mongo. Creating entities in harbor");
 
             // This arm executes when nothing is found in the database associated
             // to the given repo_url.  This means we need to create the project and codebase
             // in Harbor before we can send SBOMs to that target.
 
-            // TODO create entities in Harbor
+            let language = match &repo.language {
+                Some(language) => language.to_string(),
+                None => String::from("None"),
+            };
 
             let result = create_harbor_entities(
                 url.clone(),
-                harbor_config
+                harbor_config,
+                language,
             ).await;
 
             let entities: HashMap<String, String> = match result {
@@ -583,6 +592,9 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig) {
             };
 
             println!("Added NEW Document to MongoDB: {:#?}", document);
+
+            // Use the document to construct a request to Pilot
+            send_to_pilot(&document);
         }
     };
 }
