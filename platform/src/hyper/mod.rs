@@ -86,8 +86,6 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
         None => Body::empty(),
     };
 
-    println!("Making request with body: {:#?}", &req_body);
-
     let mut req: Request<Body> = Request::builder()
         .method(method)
         .uri(uri)

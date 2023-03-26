@@ -182,7 +182,7 @@ impl Client {
 
         let create_project_url = self.create_project_url(team_id);
 
-        println!("Attempting to creat ea project at {}", create_project_url);
+        println!("Attempting to create a project at {}", create_project_url);
 
         let mut project = Project::new(gh_url.clone(), None);
 
@@ -291,11 +291,13 @@ impl Client {
     ) -> Result<SBOMUploadResponse> {
         let url = Client::create_upload_url(cloud_front_domain, team_id, project_id, codebase_id);
 
+        println!("Using token {}, Uploading SBOM to: {}", sbom_token, url);
+
         let response: Option<SBOMUploadResponse> = post(
-          url.as_str(), 
-          ContentType::Json,
-          sbom_token, 
-          Some(sbom)
+            url.as_str(),
+            ContentType::Json,
+            sbom_token,
+            Some(sbom)
         ).await?;
 
         Ok(response.unwrap())

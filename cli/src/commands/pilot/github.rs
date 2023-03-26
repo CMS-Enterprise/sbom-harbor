@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::env;
+use std::fmt::Error;
 use std::ops::Deref;
 use std::pin::Pin;
 
@@ -9,18 +10,20 @@ use async_trait::async_trait;
 use futures::stream::StreamExt;
 use futures::TryStreamExt;
 use hyper::StatusCode;
-use mongodb::{Client as MongoClient, Cursor, Database};
+use mongodb::{Client as MongoClient, Collection, Cursor, Database};
 use mongodb::bson::doc;
 use mongodb::options::FindOptions;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
+use harbcore::services::{clone_repo, clone_path, remove_clone, syft};
+
 use platform::hyper::{ContentType, Error as HyperError, get};
 use platform::mongodb::{Context as MongoContext, mongo_doc, MongoDocument};
 use platform::mongodb::service::Service;
 
-use harborclient::client::{Client as V1HarborClient};
+use harborclient::client::{Client as V1HarborClient, SBOMUploadResponse};
 
 use crate::commands::{get_env_var, Provider};
 
@@ -34,7 +37,7 @@ pub const PROJECT_ID_KEY: &str = "project_id";
 pub const CODEBASE_ID_KEY: &str = "codebase_id";
 pub const GH_FT_KEY: &str = "GH_FETCH_TOKEN";
 pub const V1_TEAM_ID_KEY: &str = "V1_CMS_TEAM_ID";
-pub const V1_TEAM_TOKEN_KEY: &str = "V1_CMS_TEAM_ID";
+pub const V1_TEAM_TOKEN_KEY: &str = "V1_CMS_TEAM_TOKEN";
 pub const V1_HARBOR_USERNAME_KEY: &str = "V1_HARBOR_USERNAME";
 pub const V1_HARBOR_PASSWORD_KEY: &str = "V1_HARBOR_PASSWORD";
 
@@ -419,9 +422,60 @@ async fn create_harbor_entities(
     Ok(test_map)
 }
 
-async fn send_to_pilot(document: &GitHubCrawlerMongoDocument) {
-    // TODO - STUB!! -> NOOP
-    println!("Using this document to construct a request to Pilot: {:#?}", document)
+fn authize(ssh_url: &String) -> Result<String, Error> {
+    let token = match get_env_var(GH_FT_KEY) {
+        Some(value) => value,
+        None => panic!("GitHub token not in environment. Variable name: GH_FETCH_TOKEN")
+    };
+
+    let ssh_url_no_colon = ssh_url.replace(":", "/");
+    let parts: Vec<&str> = ssh_url_no_colon.as_str().split("@").collect();
+    Ok(format!("https://qtpeters:{}@{}", token, parts[1]))
+}
+
+async fn send_to_pilot(
+    document: &GitHubCrawlerMongoDocument,
+    harbor_config: &HarborConfig,
+) -> Result<SBOMUploadResponse, GhProviderError> {
+
+    /// Clones a repo, generates an SBOM, and then uploads to the Enrichment Engine.
+
+    let clone_path = clone_path(&document.repo_url);
+    let authed_url = match authize(&document.repo_url) {
+        Ok(authed_url) => authed_url,
+        Err(err) => panic!("Unable to fix the URL: {}", err)
+    };
+
+    match clone_repo(&clone_path, authed_url.as_str()) {
+        Ok(()) => println!("{} Cloned Successfully", document.repo_url),
+        Err(err) => panic!("Unable to clone Repo {}, {}", document.repo_url, err)
+    }
+
+    let syft_result = match syft(&clone_path) {
+      Ok(map) => map,
+      Err(err) => panic!("Unable to Syft the Repo we cloned [{}]??", err)
+    };
+
+    match remove_clone(&clone_path) {
+        Ok(()) => println!("Clone removed successfully"),
+        Err(err) => panic!("Unable to blow away the clone [{}]??", err)
+    };
+
+    match V1HarborClient::upload_sbom(
+        harbor_config.cf_domain.as_str(),
+        harbor_config.cms_team_token.as_str(),
+        harbor_config.cms_team_id.clone(),
+        document.project_id.clone(),
+        document.codebase_id.clone(),
+        syft_result,
+    ).await {
+        Ok(response) => Ok(response),
+        Err(err) => return Err(
+            GhProviderError::Pilot(
+                String::from(format!("Pilot Error: {}", err))
+            )
+        )
+    }
 }
 
 fn get_harbor_config() -> Result<HarborConfig, GhProviderError> {
@@ -482,6 +536,40 @@ fn get_harbor_config() -> Result<HarborConfig, GhProviderError> {
     )
 }
 
+async fn update_last_hash_in_mongo(
+    document: GitHubCrawlerMongoDocument,
+    collection: Collection<GitHubCrawlerMongoDocument>,
+    last_hash: String,
+) {
+
+    println!("Updating the last hash in Mongo!");
+
+    // Create a filter to find the document we are looking for
+    // by id.  Probably supposed to be using _id, but whatever for now.
+    let filter = doc! {
+        "id": document.id.to_string()
+    };
+
+    // This document is used by MongoDB to actually
+    // set the new sha hash value on the record
+    let update_document = doc!{
+        "$set": {
+            "last_hash": last_hash.clone()
+        }
+    };
+
+    // Update the last hash in MongoDB
+    match collection.update_one(filter, update_document, None).await {
+        Ok(result) => result,
+        Err(err) => panic!("Error attempting to insert a document: {}", err)
+    };
+
+    println!(
+        "Updated EXISTING Document in MongoDB: {:#?}, with hash: {}",
+        &document.id, last_hash
+    );
+}
+
 async fn process_repo(repo: &Repo, harbor_config: &HarborConfig) {
 
     let url: &String = match &repo.ssh_url {
@@ -523,32 +611,16 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig) {
                 println!("Hashes are not equal, sending to pilot");
 
                 // Use the document to construct a request to Pilot
-                send_to_pilot(&document);
+                match send_to_pilot(&document, &harbor_config).await {
+                    Ok(upload_resp) => {
 
-                // Create a filter to find the document we are looking for
-                // by id.  Probably supposed to be using _id, but whatever for now.
-                let filter = doc! {
-                    "id": document.id.to_string()
-                };
+                        // Upload is OK, update Mongo
 
-                // This document is used by MongoDB to actually
-                // set the new sha hash value on the record
-                let update_document = doc!{
-                    "$set": {
-                        "last_hash": last_hash.to_string()
-                    }
-                };
-
-                // Update the last hash in MongoDB
-                match collection.update_one(filter, update_document, None).await {
-                    Ok(result) => result,
-                    Err(err) => panic!("Error attempting to insert a document: {}", err)
-                };
-
-                println!(
-                    "Updated EXISTING Document in MongoDB: {:#?}, with hash: {}",
-                    &document.id, last_hash
-                );
+                        println!("One SBOM Down! {:#?}", upload_resp);
+                        update_last_hash_in_mongo(document, collection, last_hash.clone());
+                    },
+                    Err(err) => println!("Error Uploading SBOM!! {}", err)
+                }
             } else {
                 println!("Hashes are equal, skipping pilot");
             }
@@ -594,7 +666,10 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig) {
             println!("Added NEW Document to MongoDB: {:#?}", document);
 
             // Use the document to construct a request to Pilot
-            send_to_pilot(&document);
+            match send_to_pilot(&document, &harbor_config).await {
+                Ok(upload_resp) => println!("One SBOM Down! {:#?}", upload_resp),
+                Err(err) => println!("Error Uploading SBOM!! {}", err)
+            }
         }
     };
 }
@@ -643,4 +718,7 @@ enum GhProviderError {
 
     #[error("error creating Harbor v1 entities: {0}")]
     Configuration(String),
+
+    #[error("error running pilot: {0}")]
+    Pilot(String),
 }
