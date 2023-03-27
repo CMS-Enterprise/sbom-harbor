@@ -358,6 +358,7 @@ async fn get_mongo_db() -> Result<Database, GhProviderError> {
     Ok(client.database(&ctx.db_name))
 }
 
+// TODO remove because I'm probably not going to use it
 async fn get_entities(harbor_config: HarborConfig) -> bool {
 
     let result = V1HarborClient::new(
