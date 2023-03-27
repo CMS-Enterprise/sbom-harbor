@@ -156,7 +156,7 @@ impl Repo {
 /// Should skip determines if the repository is disabled or archived.
 /// and if so, skips processing them.
 ///
-fn should_skip(repo: &Repo, repo_name: String, url: String) -> bool {
+fn should_skip(repo: &Repo, repo_name: String, url: String, counter: &mut Counter) -> bool {
 
     let mut skip: bool = false;
 
@@ -164,6 +164,7 @@ fn should_skip(repo: &Repo, repo_name: String, url: String) -> bool {
         Some(archived) => {
             if *archived {
                 println!("{} at {} is archived, skipping", repo_name, url);
+                counter.archived += 1;
                 skip = true;
             }
         },
@@ -176,6 +177,7 @@ fn should_skip(repo: &Repo, repo_name: String, url: String) -> bool {
         Some(disabled) => {
             if *disabled {
                 println!("{} at {} is disabled, skipping", repo_name, url);
+                counter.disabled += 1;
                 skip = true;
             }
         },
@@ -185,7 +187,8 @@ fn should_skip(repo: &Repo, repo_name: String, url: String) -> bool {
     }
 
     if repo.empty {
-        skip = true
+        skip = true;
+        counter.empty += 1;
     }
 
     return skip;
@@ -240,9 +243,11 @@ async fn get_pages(org: &String) -> Vec<u32> {
     vector
 }
 
-async fn get_page_of_repos(org: &String, page: &u32, token: &String) -> Vec<Repo> {
+async fn get_page_of_repos(org: &String, page: usize, per_page: &u32, token: &String) -> Vec<Repo> {
 
-    let github_org_url = format!("{GH_URL}/orgs/{org}/repos?type=sources&per_page={page}");
+    let github_org_url = format!("{GH_URL}/orgs/{org}/repos?type=sources&page={page}&per_page={per_page}");
+
+    println!("Calling({})", github_org_url);
 
     let response: Result<Option<Vec<Repo>>, HyperError> = get(
         github_org_url.as_str(),
@@ -266,9 +271,8 @@ impl GitHubProvider {
 
     async fn get_repos(org: String) -> AnyhowResult<Vec<Repo>> {
 
-        // let mut pages = get_pages(&org).await;
-        // TODO For development only, correct code above
-        let mut pages = vec![5];
+        let mut pages = get_pages(&org).await;
+        // let mut pages = vec![5];
 
         let gh_fetch_token = match get_env_var("GH_FETCH_TOKEN") {
             Some(value) => value,
@@ -279,11 +283,11 @@ impl GitHubProvider {
 
         let mut repo_vec: Vec<Repo> = Vec::new();
 
-        for page in pages.iter_mut() {
+        for (page, per_page) in pages.iter_mut().enumerate() {
 
-            let mut gh_org_rsp = get_page_of_repos(&org, page, &token).await;
+            let mut gh_org_rsp = get_page_of_repos(&org, (page+1), per_page, &token).await;
 
-            for repo in gh_org_rsp.iter_mut() {
+            for (repo_num, repo) in gh_org_rsp.iter_mut().enumerate() {
 
                 let repo_name = repo.full_name.as_ref().unwrap();
                 let default_branch = repo.default_branch.as_ref().unwrap();
@@ -292,7 +296,7 @@ impl GitHubProvider {
                     "{GH_URL}/repos/{repo_name}/commits/{default_branch}",
                 );
 
-                println!("Making call to {}", github_last_commit_url);
+                println!("({}) Making call to {}", repo_num, github_last_commit_url);
 
                 let response: Result<Option<Commit>, HyperError> = get(
                     github_last_commit_url.as_str(),
@@ -570,7 +574,7 @@ async fn update_last_hash_in_mongo(
     );
 }
 
-async fn process_repo(repo: &Repo, harbor_config: &HarborConfig) {
+async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut Counter) {
 
     let url: &String = match &repo.ssh_url {
         Some(url) => url,
@@ -618,10 +622,12 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig) {
 
                         println!("One SBOM Down! {:#?}", upload_resp);
                         update_last_hash_in_mongo(document, collection, last_hash.clone());
+                        counter.processed += 1;
                     },
                     Err(err) => println!("Error Uploading SBOM!! {}", err)
                 }
             } else {
+                counter.hash_matched += 1;
                 println!("Hashes are equal, skipping pilot");
             }
         },
@@ -667,13 +673,24 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig) {
 
             // Use the document to construct a request to Pilot
             match send_to_pilot(&document, &harbor_config).await {
-                Ok(upload_resp) => println!("One SBOM Down! {:#?}", upload_resp),
+                Ok(upload_resp) => {
+                    println!("One SBOM Down! {:#?}", upload_resp);
+                    counter.processed += 1;
+                },
                 Err(err) => println!("Error Uploading SBOM!! {}", err)
             }
         }
     };
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct Counter {
+    archived: i32,
+    disabled: i32,
+    empty: i32,
+    processed: i32,
+    hash_matched: i32,
+}
 
 #[async_trait]
 impl Provider for GitHubProvider {
@@ -681,6 +698,14 @@ impl Provider for GitHubProvider {
     async fn scan(&self) {
 
         let harbor_config = get_harbor_config().unwrap();
+
+        let mut counter = Counter {
+            archived: 0,
+            disabled: 0,
+            empty: 0,
+            processed: 0,
+            hash_matched: 0,
+        };
 
         println!("Scanning GitHub...");
         let org_name: String = String::from("cmsgov");
@@ -695,10 +720,12 @@ impl Provider for GitHubProvider {
             let name = repo.full_name.clone().unwrap();
             let url = repo.ssh_url.clone().unwrap();
 
-            if !should_skip(repo, name, url) {
-                process_repo(repo, &harbor_config).await;
+            if !should_skip(repo, name, url, &mut counter) {
+                process_repo(repo, &harbor_config, &mut counter).await;
             }
         }
+
+        println!("Collection Run Complete: {:#?}", counter);
     }
 }
 

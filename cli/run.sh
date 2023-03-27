@@ -1,7 +1,5 @@
 #!/bin/bash
 
-CLEAR_MONGO="cm"
-
 DI_NAME=test-mongo
 docker stop $DI_NAME
 docker rm $DI_NAME
