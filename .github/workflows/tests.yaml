@@ -35,7 +35,7 @@ jobs:
         run: cargo fetch
 
       - name: LINT
-        run: cargo clippy -D warnings
+        run: cargo clippy -- -Dwarnings
 
       - name: TEST - unit & integration
         run: cargo test
