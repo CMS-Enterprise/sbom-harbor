@@ -32,10 +32,10 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: INSTALL - dependencies
-        run: cargo update
+        run: cargo fetch
 
       - name: LINT
-        run: cargo clippy
+        run: cargo clippy -D warnings
 
       - name: TEST - unit & integration
         run: cargo test
