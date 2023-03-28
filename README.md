@@ -1,3 +1,5 @@
+[![TESTS - Lint, Unit, Integration](https://github.com/CMS-Enterprise/sbom-harbor/actions/workflows/tests.yaml/badge.svg)](https://github.com/CMS-Enterprise/sbom-harbor/actions/workflows/tests.yaml)
+
 # Overview
 
 This project contains the Harbor application and enrichment providers that support it.
