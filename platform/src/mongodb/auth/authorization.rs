@@ -12,8 +12,11 @@ use crate::mongodb::Store;
 /// Allows quick categorization of an assertion effect. Useful for exiting early when explicit
 /// deny-all or allow-all policies apply.
 pub enum Profile {
+    /// Profile is denied access to all resources.
     DenyAll,
+    /// Profile is allowed access to any resource.
     AllowAny,
+    /// Profile requires policy evaluation for the given resource.
     Default,
 }
 
@@ -78,8 +81,8 @@ impl DefaultAuthorizer {
 
 // TODO: Implement short circuit for users that are disabled or are super users
 /// Categorize the profile of the assertion based on a set of [Roles] and [Policies].
-pub fn profile(_roles: &Vec<Role>, _policies: &Vec<Policy>) -> Profile {
-    let profile = Profile::Default;
+pub fn profile(_roles: &[Role], _policies: &[Policy]) -> Profile {
+    // let profile = Profile::Default;
 
     // TODO: This might require a stateful struct do avoid an inflexible convention around deny/allow all.
     // roles
@@ -88,7 +91,7 @@ pub fn profile(_roles: &Vec<Role>, _policies: &Vec<Policy>) -> Profile {
     //         if role.policies
     //     });
 
-    profile
+    Profile::Default
 }
 
 /// Calculates the authorization [Effect] for an [Action].
@@ -112,9 +115,9 @@ pub fn assert_role_policy(roles: Vec<Role>, policies: Vec<Policy>, action: Actio
 
 // TODO: Refactor these filters to finds.
 /// Asserts whether a pre-filtered set of [Policies] includes an explicit deny.
-pub fn explicitly_denied(policies: &Vec<Policy>) -> bool {
+pub fn explicitly_denied(policies: &[Policy]) -> bool {
     !policies
-        .into_iter()
+        .iter()
         .filter(|policy| {
             policy.effect == Effect::Deny
         })
@@ -123,9 +126,9 @@ pub fn explicitly_denied(policies: &Vec<Policy>) -> bool {
 }
 
 /// Asserts whether a pre-filtered set of [Policies] includes an explicit allow.
-pub fn explicitly_allowed(policies: &Vec<Policy>, action: Action) -> bool {
+pub fn explicitly_allowed(policies: &[Policy], action: Action) -> bool {
     !policies
-        .into_iter()
+        .iter()
         .filter(|policy| policy.effect == Effect::Allow && policy.action == action)
         .collect::<Vec<&Policy>>()
         .is_empty()
@@ -139,8 +142,7 @@ pub fn policies_for_roles(policies: Vec<Policy>, roles: Vec<Role>) -> Vec<Policy
             // this filter determines whether this role pertains to this policy.
             roles
                 .iter()
-                .find(|role| role.policies.contains(&policy.id))
-                .is_some()
+                .any(|role| role.policies.contains(&policy.id))
         })
         .collect()
 }

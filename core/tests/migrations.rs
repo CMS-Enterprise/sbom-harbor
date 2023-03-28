@@ -1,25 +1,15 @@
+use harbcore::config::db_connection;
 use platform::Error;
 use platform::mongodb::auth::init_default_auth::apply_all;
-use platform::mongodb::Context;
 use platform::mongodb::migrations::{Effect, MigrationService};
-
-
-// TODO: Dynamic test config.  Currently requires you to run docker instance before running tests.
-fn test_context() -> Context {
-    Context{
-        connection_uri: "mongodb://localhost:27017".to_string(),
-        db_name: "harbor".to_string(),
-        key_name: "id".to_string(),
-    }
-}
 
 #[async_std::test]
 async fn can_init_auth() -> Result<(), Error> {
-    // TODO: Idempotent teardown.
-    let ctx = test_context();
+    let cx = db_connection()
+        .map_err(|e| Error::Config(e.to_string()))?;
 
     // TODO: Assert clean DB.
-    let service = MigrationService::new(&ctx).await?;
+    let service = MigrationService::new(&cx).await?;
 
     // Initialize the db.
     let log_entry = apply_all(&service).await?;
@@ -29,7 +19,6 @@ async fn can_init_auth() -> Result<(), Error> {
     assert_eq!(log_entry.effect, Effect::Commit);
 
     // TODO: Assert single log entry and populated db.
-
     // TODO: Rerun and assert same ids, with 2 log entries.
 
     Ok(())

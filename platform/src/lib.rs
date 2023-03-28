@@ -1,4 +1,7 @@
+#![feature(async_fn_in_trait)]
+#![allow(incomplete_features)]
 #![warn(missing_docs)]
+
 //! The Platform crate encapsulates all functionality related to underlying platform services (e.g. databases,
 //! AWS Managed services). It also includes a generic authorization module based on AWS IAM.
 

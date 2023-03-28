@@ -1,11 +1,8 @@
-use std::io;
 use clap::{Arg, ArgAction, Command, ArgMatches};
-use std::process::{Command as SysCommand, Output};
 use std::env;
-use platform::hyper::{ContentType, get, post};
 
 fn get_matches() -> ArgMatches {
-    return Command::new("harbor-cli")
+    Command::new("harbor-cli")
     .about("SBOM Harbor Runtime CLI")
     .version("0.0.1")
     .subcommand_required(false)
@@ -33,18 +30,19 @@ fn get_matches() -> ArgMatches {
         Command::new("start")
             .about("Start a Pilot Execution")
     )
-    .get_matches();
+    .get_matches()
 }
 
 fn get_gh_token() -> String {
-    return match env::var("GH_FETCH_TOKEN") {
+    match env::var("GH_FETCH_TOKEN") {
         Ok(v) => v,
         Err(e) => panic!("$GH_FETCH_TOKEN is not set ({})", e)
     }
 }
 
+#[allow(dead_code)]
 fn get_cf_domain() -> String {
-    return match env::var("CF_DOMAIN") {
+    match env::var("CF_DOMAIN") {
         Ok(v) => v,
         Err(e) => panic!("$CF_DOMAIN is not set ({})", e)
     }
@@ -52,7 +50,7 @@ fn get_cf_domain() -> String {
 
 async fn list_repos() {
 
-    let token = get_gh_token();
+    let _token = get_gh_token();
 
 
     // curl -X GET -u <UserName>:<Generated-Token>https://api.github.com/orgs/<Org-Name>/repos | grep -w clone_url

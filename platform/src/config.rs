@@ -1,27 +1,45 @@
 use std::collections::HashMap;
 use std::env::VarError;
-use std::iter::Iterator;
 use aws_config as sdk;
-use lazy_static::lazy_static;
 use sdk::environment::region::EnvironmentVariableRegionProvider;
 use sdk::meta::region::RegionProviderChain;
 use sdk::SdkConfig;
+use serde::Deserialize;
 
 use crate::Error;
 
-lazy_static! {
-    static ref REGION_SHORT_CODES: HashMap<&'static str, &'static str> = [
+fn region_short_codes() -> HashMap<&'static str, &'static str> {
+    HashMap::from([
         ("us-east-1","use1"),
         ("us-east-2]", "use2"),
         ("us-west-1]", "usw1"),
         ("us-west-2]", "usw2")
-    ].iter().cloned().collect();
+    ])
 }
 
+/// Retrieve an arbitrary value from the environment and cast it to a type.
+pub fn from_env<T>(key: &str) -> Result<T, Error>
+    where for<'a> T: Default + Deserialize<'a> {
+    let raw = std::env::vars()
+        .find(|(k, _)| k == key);
+
+    match raw {
+        None => Ok(T::default()),
+        Some(v) => {
+            let result = serde_json::from_str(v.1.as_str())
+                .map_err(|e| Error::Config(e.to_string()))?;
+
+            Ok(result)
+        }
+    }
+}
+
+/// Creates convention-based resource names.
 pub fn environize(resource: &str) -> Result<String, Error> {
-    let environment = std::env::var("ENVIRONMENT".to_string())?;
-    let region = std::env::var("AWS_REGION".to_string())?;
-    let short_code = REGION_SHORT_CODES.get(region.as_str());
+    let environment = std::env::var("ENVIRONMENT")?;
+    let region = std::env::var("AWS_REGION")?;
+    let short_codes = region_short_codes();
+    let short_code = short_codes.get(region.as_str());
 
     match short_code {
         None => Err(Error::Config(format!("unsupported region: {}", region))),
@@ -29,6 +47,7 @@ pub fn environize(resource: &str) -> Result<String, Error> {
     }
 }
 
+/// Retrieves the AWS SDK config using the default [RegionProviderChain].
 pub async fn sdk_config_from_env() -> Result<SdkConfig, Error> {
     let region_provider = RegionProviderChain::default_provider()
         .or_else(EnvironmentVariableRegionProvider::new());

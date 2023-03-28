@@ -10,6 +10,7 @@ members = [
 
 [workspace.package]
 version = "0.1.0"
+rust-version = "1.68.0"
 edition = "2021"
 authors = ["CMS SBOM Harbor Team"]
 documentation = "https://github.com/cms-enterprise/sbom-harbor"

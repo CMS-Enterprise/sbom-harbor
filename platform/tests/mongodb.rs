@@ -6,10 +6,10 @@ use crate::common::mongodb::{local_context, AuthScenario};
 
 #[async_std::test]
 async fn can_create_local_cluster() -> Result<(), Error> {
-    let ctx = local_context().await?;
+    let cx = local_context().await?;
 
-    assert!(!ctx.connection_uri.is_empty());
-    println!("{}", ctx.connection_uri);
+    let uri = cx.connection_uri();
+    assert!(!uri.is_empty());
 
     Ok(())
 }

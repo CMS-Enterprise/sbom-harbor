@@ -13,13 +13,14 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
 use tracing::Span;
+use harbcore::config::db_connection;
 
-use platform::mongodb::{Context, Store};
+use platform::mongodb::Store;
 use harbor_api::controllers;
 // use harbcore::config::sdk_config_from_env;
 
-const X_API_KEY: &'static str = "x-api-key";
-const X_AMZ_DATE: &'static str = "x-amz-date";
+const X_API_KEY: &str = "x-api-key";
+const X_AMZ_DATE: &str = "x-amz-date";
 
 #[tokio::main]
 async fn main() {
@@ -75,12 +76,14 @@ async fn main() {
     // Load injectable types.
     // let config = sdk_config_from_env().await.expect("failed to load config from environment");
     // let authorizer = Authorizer::new(&config).unwrap().expect("failed to load authorizer");
-    let store = Store::new(&Context{
-        connection_uri: "mongodb://localhost:27017".to_string(),
-        db_name: "harbor".to_string(),
-        key_name: "id".to_string(),
+    let cx = db_connection();
 
-    }).await.unwrap();
+    if cx.is_err() {
+        trace!("unable to retrieve connection config: {}", cx.err().unwrap());
+        return;
+    }
+
+    let store = Store::new(&cx.unwrap()).await.unwrap();
 
     let team_service = controllers::team::new_service(Arc::new(store));
 

@@ -1,14 +1,19 @@
 use thiserror::Error;
 
+/// Represents all exposed Errors for this crate.
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("config error")]
+    /// Configuration error.
+    #[error("config error: {0}")]
     Config(String),
-    #[error("invalid format")]
-    Format(String),
-    #[error("migrations error")]
+    /// Invalid format.
+    #[error("invalid format: {0}")]
+    InvalidFormat(String),
+    /// Error during db migrations.
+    #[error("migrations error: {0}")]
     Migrations(String),
-    #[error("runtime error")]
+    /// Runtime error.
+    #[error("runtime error: {0}")]
     Runtime(String),
 }
 

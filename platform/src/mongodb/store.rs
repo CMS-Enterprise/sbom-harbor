@@ -9,10 +9,11 @@ use crate::Error;
 use crate::mongodb::{Context, MongoDocument};
 
 /// Default client factory method. Allows callers to avoid a direct dependency on the Mongo Driver.
-pub async fn client_from_context(ctx: &Context) -> Result<Client, Error> {
-    Ok(Client::with_uri_str(ctx.connection_uri.clone()).await?)
+pub async fn client_from_context(cx: &Context) -> Result<Client, Error> {
+    Ok(Client::with_uri_str(cx.connection_uri()).await?)
 }
 
+/// Facade that provides access to a MongoDB compliant data store.
 #[derive(Clone, Debug)]
 pub struct Store {
     client: Client,
@@ -21,6 +22,7 @@ pub struct Store {
 }
 
 impl Store {
+    /// Factory method for creating a new [Store] instance.
     pub async fn new(ctx: &Context) -> Result<Store, Error> {
         let client = client_from_context(ctx).await?;
 
@@ -40,7 +42,7 @@ impl Store {
     }
 
     fn db_name(&self) -> &str {
-        &self.db_name.as_str()
+        self.db_name.as_str()
     }
 
     fn database(&self) -> Database {
@@ -118,7 +120,7 @@ impl Store {
             .build();
 
         let doc = bson::to_document_with_options(&doc, opts)
-            .map_err(|e| Error::Mongo(format!("error generating document for update: {}", e.to_string())))
+            .map_err(|e| Error::Mongo(format!("error generating document for update: {}", e)))
             .unwrap();
 
         collection.update_one(doc! {self.key_name.clone(): id }, doc! { "$set": doc }, None).await?;

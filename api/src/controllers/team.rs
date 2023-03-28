@@ -10,13 +10,16 @@ use platform::mongodb::{Service, Store};
 use crate::auth::Claims;
 use crate::Error;
 
+/// Type alias for the [TeamService] instance.
 pub type DynTeamService = Arc<TeamService>;
 
-pub fn new_service<'a>(store: Arc<Store>) -> Arc<TeamService> {
+/// Factory method for a new instance of a TeamService.
+pub fn new_service(store: Arc<Store>) -> Arc<TeamService> {
     Arc::new(TeamService::new(store))
 }
 
 // WATCH: Trying to get by without a custom extractor.
+/// Get a [Team] by id.
 #[instrument]
 #[debug_handler]
 pub async fn get(
@@ -39,6 +42,7 @@ pub async fn get(
     }
 }
 
+/// List all [Teams].
 #[instrument]
 #[debug_handler]
 pub async fn list(
@@ -53,6 +57,7 @@ pub async fn list(
     Ok(Json(teams))
 }
 
+/// Post a new [Team].
 #[instrument]
 #[debug_handler]
 pub async fn post(
@@ -74,6 +79,7 @@ pub async fn post(
     Ok(Json(team))
 }
 
+/// Put an updated [Team].
 #[instrument]
 #[debug_handler]
 pub async fn put(
@@ -86,16 +92,17 @@ pub async fn put(
         return Err(Error::InvalidParameters("id mismatch".to_string()));
     }
 
-    let mut team = team;
+    let team = team;
 
     service
-        .update(&mut team)
+        .update(&team)
         .await
         .map_err(|e| Error::InternalServerError(e.to_string()))?;
 
     Ok(Json(team))
 }
 
+/// Delete and existing [Team].
 #[instrument]
 #[debug_handler]
 pub async fn delete(
