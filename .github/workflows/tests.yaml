@@ -1,4 +1,4 @@
-name: TESTS - Lint and Unit
+name: TESTS - Lint, Unit, Integration
 
 on:
   push:
@@ -26,55 +26,53 @@ env:
 
 jobs:
   backend:
-    runs-on: [self-hosted,dev]
+    runs-on: [self-hosted]
     steps:
 
       - uses: actions/checkout@v3
 
-        # disable virtual environment to reuse cache between workflow runs
-      - name: CONFIG - virtual environment
-        run: poetry config virtualenvs.create false
+      - name: INSTALL - dependencies
+        run: cargo fetch
 
-      - name: INSTALL - project
-        run: poetry install --no-interaction
+      - name: LINT
+        run: cargo clippy -- -Dwarnings
 
-      - name: TEST - lint
-        run: pylint --rcfile ./.pylintrc cyclonedx/ || pylint-exit $?
-
-      - name: TEST - unit
-        run: python -m pytest -v --cov=cyclonedx/ tests/
+      - name: TEST - unit & integration
+        run: cargo test
 
   frontend:
-    runs-on: [self-hosted,dev]
+    runs-on: [self-hosted]
     defaults:
       run:
         working-directory: ui
     steps:
       - uses: actions/checkout@v3
 
-      - name: Debug
+      - name: DEBUG - node, npm, yarn versions
         run: |
           echo "node --version: $(node --version)"
           echo "npm --version: $(npm --version)"
           echo "yarn --version: $(yarn --version)"
 
-      - name: cache .yarn/
-        id: cache-yarn-cache
+      - name: CACHE - get ui cache path
+        id: yarn-cache-dir-path
+        run: echo "dir=$(yarn --cwd ui config get cacheFolder)" >> $GITHUB_OUTPUT
+
+      - name: CACHE - ui dependencies
+        id: yarn-cache
         uses: actions/cache@v3
         with:
-          path: .yarn/
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: yarn-cache-folder-${{ hashFiles('ui/**/yarn.lock', 'ui/.yarnrc.yml') }}
+          restore-keys: |
+            yarn-cache-folder-
 
-      - name: cache node_modules/
-        uses: actions/cache@v3
-        id: cache-node-modules
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/yarn.lock') }}
-
-      - name: Run yarn install
+      - name: INSTALL - ui dependencies
+        working-directory: ui
         run: CI=true yarn install
 
-      - run: yarn lint
+      - name: LINT
+        run: yarn lint
 
-      - run: yarn test
+      - name: TEST - unit
+        run: yarn test
