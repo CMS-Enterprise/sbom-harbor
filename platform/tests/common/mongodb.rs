@@ -6,6 +6,7 @@ use uuid::Uuid;
 use platform::Error;
 use platform::mongodb::{Context, MongoDocument, Store};
 use platform::auth::*;
+use platform::config::from_env;
 use platform::mongodb::auth::DefaultAuthorizer;
 
 pub const DB_IDENTIFIER: &str = "harbor";
@@ -14,13 +15,12 @@ pub const COLLECTION: &str = "Group";
 
 #[allow(dead_code)]
 pub async fn local_context() -> Result<Context, Error> {
-    let ctx = Context{
-        connection_uri: std::env::var("DB_CONNECTION").unwrap(),
-        db_name: DB_IDENTIFIER.to_string(),
-        key_name: KEY_NAME.to_string(),
-    };
+    let mut cx: Context = from_env("DB_CONNECTION")?;
 
-    let client = MongoClient::with_uri_str(ctx.connection_uri.clone()).await?;
+    cx.db_name = "harbor".to_string();
+    cx.key_name = "id".to_string();
+
+    let client = MongoClient::with_uri_str(cx.connection_uri()).await?;
     let dbs = client.list_database_names(None, None).await?;
 
     if !dbs.contains(&DB_IDENTIFIER.to_string()) {
@@ -34,7 +34,7 @@ pub async fn local_context() -> Result<Context, Error> {
         return Err(Error::Mongo(format!("{} collection does not exist", COLLECTION.to_string())));
     }
 
-    Ok(ctx)
+    Ok(cx)
 }
 
 pub struct AuthScenario {

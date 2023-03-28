@@ -7,8 +7,14 @@ volumes:
 services:
   mongo:
     image: mongo:5.0.15
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=harbor
     ports:
       - "27017:27017"
+    command: mongod
+    volumes:
+      - ./mongodb:/data/db
 
   # Jaeger
   jaeger-all-in-one:

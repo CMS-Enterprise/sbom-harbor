@@ -6,6 +6,7 @@ use lazy_static::lazy_static;
 use sdk::environment::region::EnvironmentVariableRegionProvider;
 use sdk::meta::region::RegionProviderChain;
 use sdk::SdkConfig;
+use serde::Deserialize;
 
 use crate::Error;
 
@@ -16,6 +17,22 @@ lazy_static! {
         ("us-west-1]", "usw1"),
         ("us-west-2]", "usw2")
     ].iter().cloned().collect();
+}
+
+pub fn from_env<T>(key: &str) -> Result<T, Error>
+    where for<'a> T: Default + Deserialize<'a> {
+    let raw = std::env::vars()
+        .find(|(k, v)| k == key);
+
+    match raw {
+        None => Ok(T::default()),
+        Some(v) => {
+            let result = serde_json::from_str(v.1.as_str())
+                .map_err(|e| Error::Config(e.to_string()))?;
+
+            Ok(result)
+        }
+    }
 }
 
 pub fn environize(resource: &str) -> Result<String, Error> {

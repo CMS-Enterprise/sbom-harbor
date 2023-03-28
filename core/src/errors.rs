@@ -2,13 +2,13 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("config error")]
+    #[error("config error: {0}")]
     Config(String),
-    #[error("invalid format")]
+    #[error("invalid format: {0}")]
     Format(String),
-    #[error("migrations error")]
+    #[error("migrations error: {0}")]
     Migrations(String),
-    #[error("runtime error")]
+    #[error("runtime error: {0}")]
     Runtime(String),
 }
 

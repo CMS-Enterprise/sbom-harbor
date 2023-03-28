@@ -76,19 +76,14 @@ async fn main() {
     // Load injectable types.
     // let config = sdk_config_from_env().await.expect("failed to load config from environment");
     // let authorizer = Authorizer::new(&config).unwrap().expect("failed to load authorizer");
-    let connection_uri = db_connection();
+    let cx = db_connection();
 
-    if connection_uri.is_err() {
-        trace!("unable to retrieve connection config: {}", connection_uri.err().unwrap());
+    if cx.is_err() {
+        trace!("unable to retrieve connection config: {}", cx.err().unwrap());
         return;
     }
 
-    let store = Store::new(&Context{
-        connection_uri: connection_uri.unwrap(),
-        db_name: "harbor".to_string(),
-        key_name: "id".to_string(),
-
-    }).await.unwrap();
+    let store = Store::new(&cx.unwrap()).await.unwrap();
 
     let team_service = controllers::team::new_service(Arc::new(store));
 
