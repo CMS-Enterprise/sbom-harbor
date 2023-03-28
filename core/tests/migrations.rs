@@ -1,7 +1,6 @@
 use harbcore::config::db_connection;
 use platform::Error;
 use platform::mongodb::auth::init_default_auth::apply_all;
-use platform::mongodb::Context;
 use platform::mongodb::migrations::{Effect, MigrationService};
 
 #[async_std::test]

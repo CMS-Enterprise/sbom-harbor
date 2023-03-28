@@ -2,7 +2,7 @@ use clap::{Arg, ArgAction, Command, ArgMatches};
 use std::env;
 
 fn get_matches() -> ArgMatches {
-    return Command::new("harbor-cli")
+    Command::new("harbor-cli")
     .about("SBOM Harbor Runtime CLI")
     .version("0.0.1")
     .subcommand_required(false)
@@ -30,11 +30,11 @@ fn get_matches() -> ArgMatches {
         Command::new("start")
             .about("Start a Pilot Execution")
     )
-    .get_matches();
+    .get_matches()
 }
 
 fn get_gh_token() -> String {
-    return match env::var("GH_FETCH_TOKEN") {
+    match env::var("GH_FETCH_TOKEN") {
         Ok(v) => v,
         Err(e) => panic!("$GH_FETCH_TOKEN is not set ({})", e)
     }
@@ -42,7 +42,7 @@ fn get_gh_token() -> String {
 
 #[allow(dead_code)]
 fn get_cf_domain() -> String {
-    return match env::var("CF_DOMAIN") {
+    match env::var("CF_DOMAIN") {
         Ok(v) => v,
         Err(e) => panic!("$CF_DOMAIN is not set ({})", e)
     }

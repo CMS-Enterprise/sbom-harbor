@@ -1,4 +1,3 @@
-use platform::config;
 use platform::config::from_env;
 use platform::mongodb::Context;
 use crate::Error;

@@ -15,12 +15,12 @@ use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
 use tracing::Span;
 use harbcore::config::db_connection;
 
-use platform::mongodb::{Context, Store};
+use platform::mongodb::Store;
 use harbor_api::controllers;
 // use harbcore::config::sdk_config_from_env;
 
-const X_API_KEY: &'static str = "x-api-key";
-const X_AMZ_DATE: &'static str = "x-amz-date";
+const X_API_KEY: &str = "x-api-key";
+const X_AMZ_DATE: &str = "x-amz-date";
 
 #[tokio::main]
 async fn main() {

@@ -17,8 +17,8 @@ pub const COLLECTION: &str = "Group";
 pub async fn local_context() -> Result<Context, Error> {
     let mut cx: Context = from_env("DB_CONNECTION")?;
 
-    cx.db_name = "harbor".to_string();
-    cx.key_name = "id".to_string();
+    cx.db_name = DB_IDENTIFIER.to_string();
+    cx.key_name = KEY_NAME.to_string();
 
     let client = MongoClient::with_uri_str(cx.connection_uri()).await?;
     let dbs = client.list_database_names(None, None).await?;

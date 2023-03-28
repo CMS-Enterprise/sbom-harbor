@@ -14,7 +14,7 @@ use crate::Error;
 pub type DynTeamService = Arc<TeamService>;
 
 /// Factory method for a new instance of a TeamService.
-pub fn new_service<'a>(store: Arc<Store>) -> Arc<TeamService> {
+pub fn new_service(store: Arc<Store>) -> Arc<TeamService> {
     Arc::new(TeamService::new(store))
 }
 
@@ -92,10 +92,10 @@ pub async fn put(
         return Err(Error::InvalidParameters("id mismatch".to_string()));
     }
 
-    let mut team = team;
+    let team = team;
 
     service
-        .update(&mut team)
+        .update(&team)
         .await
         .map_err(|e| Error::InternalServerError(e.to_string()))?;
 

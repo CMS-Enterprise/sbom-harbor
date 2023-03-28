@@ -49,6 +49,7 @@ impl Default for Context {
 }
 
 impl Context {
+    /// Returns a formatted MongoDB compliant URI for the MongoDB instance.
     pub fn connection_uri(&self) -> String {
         format!("mongodb://{}:{}@{}:{}", self.username, self.password, self.host, self.port)
     }

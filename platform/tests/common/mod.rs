@@ -6,6 +6,7 @@ pub use platform::mongodb::*;
 
 pub mod mongodb;
 
+#[allow(dead_code)]
 pub async fn config_from_env() -> Result<SdkConfig, Error> {
     let region_provider = RegionProviderChain::default_provider()
         .or_else(EnvironmentVariableRegionProvider::new());

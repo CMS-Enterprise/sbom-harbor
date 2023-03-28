@@ -21,7 +21,7 @@ fn region_short_codes() -> HashMap<&'static str, &'static str> {
 pub fn from_env<T>(key: &str) -> Result<T, Error>
     where for<'a> T: Default + Deserialize<'a> {
     let raw = std::env::vars()
-        .find(|(k, v)| k == key);
+        .find(|(k, _)| k == key);
 
     match raw {
         None => Ok(T::default()),
@@ -36,8 +36,8 @@ pub fn from_env<T>(key: &str) -> Result<T, Error>
 
 /// Creates convention-based resource names.
 pub fn environize(resource: &str) -> Result<String, Error> {
-    let environment = std::env::var("ENVIRONMENT".to_string())?;
-    let region = std::env::var("AWS_REGION".to_string())?;
+    let environment = std::env::var("ENVIRONMENT")?;
+    let region = std::env::var("AWS_REGION")?;
     let short_codes = region_short_codes();
     let short_code = short_codes.get(region.as_str());
 

@@ -42,7 +42,7 @@ impl Store {
     }
 
     fn db_name(&self) -> &str {
-        &self.db_name.as_str()
+        self.db_name.as_str()
     }
 
     fn database(&self) -> Database {
@@ -120,7 +120,7 @@ impl Store {
             .build();
 
         let doc = bson::to_document_with_options(&doc, opts)
-            .map_err(|e| Error::Mongo(format!("error generating document for update: {}", e.to_string())))
+            .map_err(|e| Error::Mongo(format!("error generating document for update: {}", e)))
             .unwrap();
 
         collection.update_one(doc! {self.key_name.clone(): id }, doc! { "$set": doc }, None).await?;
