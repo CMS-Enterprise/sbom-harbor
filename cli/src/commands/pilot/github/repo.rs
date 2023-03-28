@@ -10,6 +10,8 @@ use crate::commands::pilot::github::{Counter, GH_FT_KEY, GhProviderError};
 
 const GH_URL: &str = "https://api.github.com";
 
+/// Creates the URL one must use in an http request for
+/// acquiring the latest commit hash from a given branch
 pub fn get_last_commit_url(repo: &mut Repo) -> String {
     let repo_name = repo.full_name.as_ref().unwrap();
     let default_branch = repo.default_branch.as_ref().unwrap();
@@ -39,18 +41,30 @@ pub struct Org {
 ///
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Repo {
+    /// The name of the repo.  Getting the Full name
+    /// is nice because it has teh "user" in it: <USER>>/<REPO>.git
+    /// Ex: CMSgov/design-system.git
     pub(crate) full_name: Option<String>,
+    /// Url of the repository.
     pub(crate) ssh_url: Option<String>,
+    /// The default branch of the repo, usually master or main
     pub(crate) default_branch: Option<String>,
+    /// The language of the code in the repo.
     pub(crate) language: Option<String>,
+    /// Is this repo archived?
     archived: Option<bool>,
+    /// Is this repo disabled?
     disabled: Option<bool>,
 
+    /// Is this repo empty?
     #[serde(default = "default_bool")]
     empty: bool,
 
+    /// This is the most recent commit
+    /// hash of the default branch
     #[serde(default = "empty_string")]
     pub(crate) last_hash: String,
+
 }
 
 /// Little function to define default booleans
@@ -126,6 +140,9 @@ pub fn should_skip(repo: &Repo, repo_name: String, url: String, counter: &mut Co
     return skip;
 }
 
+/// Function to get the number of public
+/// repos in the associated organization
+///
 async fn get_num_pub_repos(org: String) -> AnyhowResult<Option<u32>> {
 
     let token = match get_env_var(GH_FT_KEY) {
@@ -152,6 +169,8 @@ async fn get_num_pub_repos(org: String) -> AnyhowResult<Option<u32>> {
     }
 }
 
+/// Function to get the number of repos per page
+///
 pub async fn get_pages(org: &String) -> Vec<u32> {
 
     let num_repos = match get_num_pub_repos(org.to_string()).await {
@@ -175,7 +194,14 @@ pub async fn get_pages(org: &String) -> Vec<u32> {
     vector
 }
 
-pub async fn get_page_of_repos(org: &String, page: usize, per_page: &u32, token: &String) -> Vec<Repo> {
+/// Function to get the data for a page of repos
+///
+pub async fn get_page_of_repos(
+    org: &String,
+    page: usize,
+    per_page: &u32,
+    token: &String
+) -> Vec<Repo> {
 
     let github_org_url = format!("{GH_URL}/orgs/{org}/repos?type=sources&page={page}&per_page={per_page}");
 
@@ -197,7 +223,11 @@ pub async fn get_page_of_repos(org: &String, page: usize, per_page: &u32, token:
     }
 }
 
+/// Changes an SSH url into an HTTP url for cloning a GitHub Repo
+/// using HTTP.  We should probably get theis URL from GitHub TODO
+///
 pub fn authize(ssh_url: &String) -> Result<String, GhProviderError> {
+
     let token = match get_env_var(GH_FT_KEY) {
         Some(value) => value,
         None => panic!("GitHub token not in environment. Variable name: GH_FETCH_TOKEN")

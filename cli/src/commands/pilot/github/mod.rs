@@ -54,6 +54,8 @@ struct HarborConfig {
     cognito_password: String,
 }
 
+/// Snag a bunch of environment variables and put them into a struct
+///
 fn get_harbor_config() -> Result<HarborConfig, GhProviderError> {
 
     let cms_team_id = match get_env_var(V1_TEAM_ID_KEY) {
@@ -112,13 +114,39 @@ fn get_harbor_config() -> Result<HarborConfig, GhProviderError> {
     )
 }
 
+/// The Counter struct is used to keep track of
+/// what happened to an attempt to submit an SBOM.
+///
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Counter {
+
+    /// This value is incremented
+    /// if the Repo is archived
     archived: i32,
+
+    /// This value is incremented
+    /// if the Repo is disabled
     disabled: i32,
+
+    /// This value is incremented
+    /// if the Repo is empty
     empty: i32,
+
+    /// This value is incremented
+    /// if the Repo is processed successfully
     processed: i32,
+
+    /// This value is incremented
+    /// if the last commit hash of
+    /// the repo is in the database
+    /// already. This happens when
+    /// there has been no change in
+    /// the repo since last run
     hash_matched: i32,
+
+    /// This value is incremented if there is an
+    /// error when trying to upload the SBOM.
+    upload_errors: i32,
 }
 
 /// Represents all handled Errors for the GitHub Crawler.
@@ -126,18 +154,25 @@ pub struct Counter {
 #[derive(Error, Debug)]
 pub enum GhProviderError {
 
+    /// Raised when we have a generic MongoDB Error
     #[error("error getting database: {0}")]
     MongoDb(String),
 
+    /// This a raised if there is a problem when getting the
+    /// collection from MongoDB
     #[error("error getting collection: {0}")]
     MongoCollection(String),
 
+    /// This is raised when there is an issue creating entities
     #[error("error creating Harbor v1 entities: {0}")]
     EntityCreation(String),
 
+    /// This is raised when there is a problem getting
+    /// configuration from the environment.
     #[error("error creating Harbor v1 entities: {0}")]
     Configuration(String),
 
+    /// This is Raised when the Pilot has issues doing its job
     #[error("error running pilot: {0}")]
     Pilot(String),
 }

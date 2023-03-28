@@ -3,6 +3,8 @@ use async_trait::async_trait;
 use mongodb::bson::doc;
 use uuid::Uuid;
 use anyhow::{Result as AnyhowResult};
+use mongodb::Collection;
+use tokio::count;
 use harbcore::services::{clone_path, clone_repo, remove_clone, syft};
 use harborclient::client::{Client as V1HarborClient, SBOMUploadResponse};
 use platform::hyper::{Error as HyperError, ContentType, get};
@@ -21,8 +23,12 @@ use crate::commands::pilot::github::{
 use crate::commands::pilot::github::mongo::{get_mongo_db, GitHubCrawlerMongoDocument, update_last_hash_in_mongo};
 use crate::commands::pilot::github::repo::{authize, Commit, get_last_commit_url, get_page_of_repos, get_pages, Repo, should_skip};
 
+/// Definition of the GitHubProvider
+///
 pub struct GitHubProvider {}
 
+/// GitHubProvider's own implementation
+///
 impl GitHubProvider {
 
     async fn get_repos(org: String) -> AnyhowResult<Vec<Repo>> {
@@ -84,6 +90,9 @@ impl GitHubProvider {
     }
 }
 
+/// The implementation of Provider for
+/// GitHub Provider
+///
 #[async_trait]
 impl Provider for GitHubProvider {
 
@@ -97,6 +106,7 @@ impl Provider for GitHubProvider {
             empty: 0,
             processed: 0,
             hash_matched: 0,
+            upload_errors: 0,
         };
 
         println!("Scanning GitHub...");
@@ -121,26 +131,9 @@ impl Provider for GitHubProvider {
     }
 }
 
-// TODO remove because I'm probably not going to use it
-async fn get_entities(harbor_config: HarborConfig) -> bool {
-
-    let result = V1HarborClient::new(
-        harbor_config.cf_domain,
-        harbor_config.cognito_username,
-        harbor_config.cognito_password
-    ).await;
-
-    let client = match result {
-        Ok(client) => client,
-        Err(err) => panic!("Unable to get the client: {}", err)
-    };
-
-    match client.get_team(harbor_config.cms_team_id).await {
-        Ok(_team) => true,
-        Err(_err) => false,
-    }
-}
-
+/// Create the entities like project and codebase
+/// in Harbor V1.
+///
 async fn create_harbor_entities(
     github_url: String,
     harbor_config: &HarborConfig,
@@ -190,6 +183,8 @@ async fn create_harbor_entities(
     Ok(test_map)
 }
 
+/// Sends the data in the document to Harbor
+///
 async fn send_to_pilot(
     document: &GitHubCrawlerMongoDocument,
     harbor_config: &HarborConfig,
@@ -233,6 +228,39 @@ async fn send_to_pilot(
             )
         )
     }
+}
+
+/// Given the Mongo Collection we want to put a document into
+/// and the Harbor Entities, put this document in Mongo
+///
+async fn create_document_in_db(
+    entities: HashMap<String, String>,
+    collection: Collection<GitHubCrawlerMongoDocument>,
+    url: String,
+    last_hash: String,
+) -> Result<GitHubCrawlerMongoDocument, GhProviderError> {
+
+    let document = GitHubCrawlerMongoDocument {
+        id: Uuid::new_v4().to_string(),
+        repo_url: url.to_string(),
+        last_hash: last_hash.to_string(),
+        team_id: entities.get(TEAM_ID_KEY).unwrap().to_string(),
+        project_id: entities.get(PROJECT_ID_KEY).unwrap().to_string(),
+        codebase_id: entities.get(CODEBASE_ID_KEY).unwrap().to_string(),
+    };
+
+    match collection.insert_one(document.clone(), None).await {
+        Ok(result) => result,
+        Err(err) => return Err(
+            GhProviderError::MongoDb(
+                format!("Error inserting into mongo: {}", err)
+            )
+        ),
+    };
+
+    println!("PROCESSING> Added NEW Document to MongoDB: {:#?}", document);
+
+    Ok(document)
 }
 
 async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut Counter) {
@@ -288,7 +316,10 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut C
                         update_last_hash_in_mongo(document, collection, last_hash.clone());
                         counter.processed += 1;
                     },
-                    Err(err) => println!("Error Uploading SBOM!! {}", err)
+                    Err(err) => {
+                        counter.upload_errors += 1;
+                        println!("Error Uploading SBOM!! {}", err)
+                    }
                 }
             } else {
                 counter.hash_matched += 1;
@@ -303,37 +334,28 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut C
             // to the given repo_url.  This means we need to create the project and codebase
             // in Harbor before we can send SBOMs to that target.
 
-            let language = match &repo.language {
-                Some(language) => language.to_string(),
-                None => String::from("None"),
-            };
-
-            let result = create_harbor_entities(
+            let entities: HashMap<String, String> = match create_harbor_entities(
                 url.clone(),
                 harbor_config,
-                language,
-            ).await;
-
-            let entities: HashMap<String, String> = match result {
+                match &repo.language {
+                    Some(language) => language.to_string(),
+                    None => String::from("None"),
+                },
+            ).await {
                 Ok(entities) => entities,
                 Err(err) => panic!("Unable to create Harbor entities, {}", err),
             };
 
-            let document = GitHubCrawlerMongoDocument {
-                id: Uuid::new_v4().to_string(),
-                repo_url: url.to_string(),
-                last_hash: last_hash.to_string(),
-                team_id: entities.get(TEAM_ID_KEY).unwrap().to_string(),
-                project_id: entities.get(PROJECT_ID_KEY).unwrap().to_string(),
-                codebase_id: entities.get(CODEBASE_ID_KEY).unwrap().to_string(),
+            let document: GitHubCrawlerMongoDocument
+                = match create_document_in_db(
+                entities,
+                collection,
+                url.clone(),
+                last_hash.clone()
+            ).await {
+                Ok(document) => document,
+                Err(err) => panic!("Mongo Error: {}", err)
             };
-
-            match collection.insert_one(document.clone(), None).await {
-                Ok(result) => result,
-                Err(err) => panic!("Error attempting to insert a document: {}", err)
-            };
-
-            println!("PROCESSING> Added NEW Document to MongoDB: {:#?}", document);
 
             // Use the document to construct a request to Pilot
             match send_to_pilot(&document, &harbor_config).await {
