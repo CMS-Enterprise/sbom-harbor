@@ -6,7 +6,7 @@ use crate::Error;
 use crate::models::{Codebase, Member, Project, Team, Token};
 
 impl Team {
-    /// Constructor function for creating new team instances.
+    /// Constructor function for creating new [Team] instances.
     pub fn new(name: String) -> Self {
         Self {
             id: "".to_string(),
@@ -17,16 +17,19 @@ impl Team {
         }
     }
 
+    /// Add a member to the members Vector.
     pub fn members(&mut self, member: Member) -> &Self {
         self.members.push(member);
         self
     }
 
+    /// Add a project to the projects Vector.
     pub fn projects(&mut self, project: Project) -> &Self {
         self.projects.push(project);
         self
     }
 
+    /// Add a token to the tokens Vector.
     pub fn tokens(&mut self, token: Token) -> &Self {
         self.tokens.push(token);
         self
@@ -55,6 +58,7 @@ impl Team {
 }
 
 impl Project {
+    /// Constructor function for creating new [Project] instances.
     pub fn new(name: String, fisma: Option<String>) -> Self {
         Self {
             id: "".to_string(),
@@ -64,6 +68,7 @@ impl Project {
         }
     }
 
+    /// Add a [Codebase] to the codebases Vector.
     pub fn codebases(&mut self, codebase: Codebase) -> &Self {
         self.codebases.push(codebase);
         self
@@ -71,6 +76,7 @@ impl Project {
 }
 
 impl Token {
+    /// Constructor function for creating new [Token] instances.
     pub fn new(name: String, expires: String, enabled: Option<bool>) -> Self {
         Self {
             id: "".to_string(),
@@ -81,6 +87,7 @@ impl Token {
         }
     }
 
+    /// Determines whether a token is expired.
     #[allow(dead_code)]
     pub(crate) fn expired(&self) -> Result<bool, Error> {
         if self.expires.is_empty() {
@@ -89,7 +96,7 @@ impl Token {
 
         match DateTime::parse_from_rfc3339(&self.expires) {
             Ok(expiry) => Ok(Utc::now() >= expiry),
-            Err(err) => Err(Error::Format(format!("error parsing token expires: {}", err.to_string()))),
+            Err(err) => Err(Error::InvalidFormat(format!("error parsing token expires: {}", err.to_string()))),
         }
     }
 }

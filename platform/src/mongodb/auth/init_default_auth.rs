@@ -7,6 +7,7 @@ use crate::mongodb::Store;
 use crate::auth::{Action, ANY_RESOURCE_KIND, Effect, Group, Policy, Resource, Role};
 use crate::mongodb::migrations::{Effect as MigrationEffect, LogEntry, Migration, MigrationService};
 
+/// Applies the default set of migrations.
 pub async fn apply_all(service: &MigrationService) -> Result<LogEntry, Error> {
     let migration = InitDefaultAuth {};
     service.apply(&migration, MigrationEffect::Commit)
@@ -14,6 +15,7 @@ pub async fn apply_all(service: &MigrationService) -> Result<LogEntry, Error> {
         .map_err(|e| Error::Migration(e.to_string()))
 }
 
+/// Initializes a store by applying the default authorization migration.
 pub struct InitDefaultAuth {}
 
 #[async_trait]

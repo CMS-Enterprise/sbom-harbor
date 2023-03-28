@@ -11,7 +11,9 @@ const CONTENT_TYPE: &str = "content-type";
 
 /// HTTP Content Types.
 pub enum ContentType {
+    /// Form data is sent in a single block in the HTTP message body.
     FormUrlEncoded,
+    /// Content sent in JSON format encoded in the UTF-8 character encoding.
     Json,
 }
 
@@ -106,7 +108,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
     let resp = match client.request(req).await {
         Ok(r) => r,
         Err(err) => {
-            return Err(Error::Client(err.to_string()));
+            return Err(Error::Remote(err.to_string()));
         }
     };
 
@@ -141,20 +143,24 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
 /// Represents all handled Errors for this module.
 #[derive(Error, Debug)]
 pub enum Error {
+    /// Error parsing [Body].
     #[error("error parsing body: {0}")]
     Body(String),
-    #[error("error making request: {0}")]
-    Client(String),
+    /// Invalid [Header].
     #[error("invalid header: {0}")]
     InvalidHeader(String),
+    /// Invalid [URI].
+    #[error("invalid uri: {0}")]
+    InvalidUri(String),
+    /// Error in [Hyper] runtime.
     #[error("error in hyper runtime: {0}")]
     Hyper(String),
+    /// Error calling remote resource.
     #[error("error from remote resource: {0}")]
     Remote(String),
+    /// Error serializing types.
     #[error("error serializing types: {0}")]
     Serde(String),
-    #[error("invalid uri: {0}")]
-    Uri(String),
 }
 
 impl From<hyper::Error> for Error {
@@ -189,6 +195,6 @@ impl From<InvalidHeaderValue> for Error {
 
 impl From<InvalidUri> for Error {
     fn from(err: InvalidUri) -> Self {
-        Error::Uri(err.to_string())
+        Error::InvalidUri(err.to_string())
     }
 }

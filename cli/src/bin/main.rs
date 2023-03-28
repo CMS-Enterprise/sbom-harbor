@@ -1,8 +1,5 @@
-use std::io;
 use clap::{Arg, ArgAction, Command, ArgMatches};
-use std::process::{Command as SysCommand, Output};
 use std::env;
-use platform::hyper::{ContentType, get, post};
 
 fn get_matches() -> ArgMatches {
     return Command::new("harbor-cli")
@@ -43,6 +40,7 @@ fn get_gh_token() -> String {
     }
 }
 
+#[allow(dead_code)]
 fn get_cf_domain() -> String {
     return match env::var("CF_DOMAIN") {
         Ok(v) => v,
@@ -52,7 +50,7 @@ fn get_cf_domain() -> String {
 
 async fn list_repos() {
 
-    let token = get_gh_token();
+    let _token = get_gh_token();
 
 
     // curl -X GET -u <UserName>:<Generated-Token>https://api.github.com/orgs/<Org-Name>/repos | grep -w clone_url

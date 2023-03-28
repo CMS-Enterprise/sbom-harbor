@@ -3,6 +3,7 @@ use platform::config::from_env;
 use platform::mongodb::Context;
 use crate::Error;
 
+/// Returns the Mongo Connection URI as an environment variable. Defaults to local dev environment if not set.
 pub fn db_connection() -> Result<Context, Error> {
     let mut cx: Context = from_env("DB_CONNECTION")?;
 

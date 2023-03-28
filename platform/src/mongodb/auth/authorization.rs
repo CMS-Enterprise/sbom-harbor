@@ -12,8 +12,11 @@ use crate::mongodb::Store;
 /// Allows quick categorization of an assertion effect. Useful for exiting early when explicit
 /// deny-all or allow-all policies apply.
 pub enum Profile {
+    /// Profile is denied access to all resources.
     DenyAll,
+    /// Profile is allowed access to any resource.
     AllowAny,
+    /// Profile requires policy evaluation for the given resource.
     Default,
 }
 

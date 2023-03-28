@@ -35,7 +35,9 @@ impl LogEntry {
 /// Effect indicates whether to commit a Migration or whether to roll it back.
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub enum Effect {
+    /// Indicates a migration should be committed.
     Commit,
+    /// Indicates a migration should be rolled back.
     Rollback,
 }
 
@@ -63,6 +65,7 @@ pub trait Migration {
 
 /// The `MigrationService` applies migrations against a MongoDB or DocumentDB instance.
 pub struct MigrationService {
+    /// The [Store] context.
     pub ctx: Context,
 }
 

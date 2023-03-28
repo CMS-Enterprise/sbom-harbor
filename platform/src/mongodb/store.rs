@@ -13,6 +13,7 @@ pub async fn client_from_context(cx: &Context) -> Result<Client, Error> {
     Ok(Client::with_uri_str(cx.connection_uri()).await?)
 }
 
+/// Facade that provides access to a MongoDB compliant data store.
 #[derive(Clone, Debug)]
 pub struct Store {
     client: Client,
@@ -21,6 +22,7 @@ pub struct Store {
 }
 
 impl Store {
+    /// Factory method for creating a new [Store] instance.
     pub async fn new(ctx: &Context) -> Result<Store, Error> {
         let client = client_from_context(ctx).await?;
 
