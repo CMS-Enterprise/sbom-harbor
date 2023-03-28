@@ -1,6 +1,6 @@
 use std::env;
 use crate::commands::{Opts, OutputFormat};
-use crate::commands::pilot::github::GitHubProvider;
+use crate::commands::pilot::github::provider::GitHubProvider;
 use crate::Error;
 use async_trait::async_trait;
 mod github;

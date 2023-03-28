@@ -1,0 +1,143 @@
+use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::env;
+use std::fmt::Error;
+use std::ops::Deref;
+use std::pin::Pin;
+
+use anyhow::{Result as AnyhowResult};
+use async_trait::async_trait;
+use futures::TryStreamExt;
+use hyper::StatusCode;
+use mongodb::bson::doc;
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
+use uuid::Uuid;
+
+use harbcore::services::{clone_path, clone_repo, remove_clone, syft};
+use harborclient::client::{Client as V1HarborClient, SBOMUploadResponse};
+use platform::hyper::{ContentType, Error as HyperError, get};
+
+use crate::commands::{get_env_var, Provider};
+
+mod mongo;
+mod repo;
+pub mod provider;
+
+pub const DB_IDENTIFIER: &str = "harbor";
+pub const KEY_NAME: &str = "id";
+pub const COLLECTION: &str = "pilot";
+
+pub const TEAM_ID_KEY: &str = "team_id";
+pub const CF_DOMAIN_KEY: &str = "CF_DOMAIN";
+pub const PROJECT_ID_KEY: &str = "project_id";
+pub const CODEBASE_ID_KEY: &str = "codebase_id";
+pub const GH_FT_KEY: &str = "GH_FETCH_TOKEN";
+pub const V1_TEAM_ID_KEY: &str = "V1_CMS_TEAM_ID";
+pub const V1_TEAM_TOKEN_KEY: &str = "V1_CMS_TEAM_TOKEN";
+pub const V1_HARBOR_USERNAME_KEY: &str = "V1_HARBOR_USERNAME";
+pub const V1_HARBOR_PASSWORD_KEY: &str = "V1_HARBOR_PASSWORD";
+
+/// Configuration from the environment for V1 Harbor
+///
+struct HarborConfig {
+    /// This is the GUID that is in DynamoDB that
+    /// belongs to the team we are using.
+    cms_team_id: String,
+    /// This is the token from that team
+    cms_team_token: String,
+    /// This is the Cloudfront Domain of the API endpoints
+    cf_domain: String,
+    /// The username we use to get the JWT and make API calls
+    cognito_username: String,
+    /// The password we use to get the JWT and make API calls
+    cognito_password: String,
+}
+
+fn get_harbor_config() -> Result<HarborConfig, GhProviderError> {
+
+    let cms_team_id = match get_env_var(V1_TEAM_ID_KEY) {
+        Some(value) => value,
+        None => return Err(
+            GhProviderError::Configuration(
+                String::from("Missing Team Id of V1 Team")
+            )
+        )
+    };
+
+    let cms_team_token = match get_env_var(V1_TEAM_TOKEN_KEY) {
+        Some(value) => value,
+        None => return Err(
+            GhProviderError::Configuration(
+                String::from("Missing Team token of V1 Team")
+            )
+        )
+    };
+
+    let cf_domain = match get_env_var(CF_DOMAIN_KEY) {
+        Some(value) => value,
+        None => return Err(
+            GhProviderError::Configuration(
+                String::from("Missing Cognito Username")
+            )
+        )
+    };
+
+    let cognito_username = match get_env_var(V1_HARBOR_USERNAME_KEY) {
+        Some(value) => value,
+        None => return Err(
+            GhProviderError::Configuration(
+                String::from("Missing Cognito Username")
+            )
+        )
+    };
+
+    let cognito_password = match get_env_var(V1_HARBOR_PASSWORD_KEY) {
+        Some(value) => value,
+        None => return Err(
+            GhProviderError::Configuration(
+                String::from("Missing Cognito Password")
+            )
+        )
+    };
+
+    Ok(
+        HarborConfig {
+            cms_team_id,
+            cms_team_token,
+            cf_domain,
+            cognito_username,
+            cognito_password,
+        }
+    )
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Counter {
+    archived: i32,
+    disabled: i32,
+    empty: i32,
+    processed: i32,
+    hash_matched: i32,
+}
+
+/// Represents all handled Errors for the GitHub Crawler.
+///
+#[derive(Error, Debug)]
+pub enum GhProviderError {
+
+    #[error("error getting database: {0}")]
+    MongoDb(String),
+
+    #[error("error getting collection: {0}")]
+    MongoCollection(String),
+
+    #[error("error creating Harbor v1 entities: {0}")]
+    EntityCreation(String),
+
+    #[error("error creating Harbor v1 entities: {0}")]
+    Configuration(String),
+
+    #[error("error running pilot: {0}")]
+    Pilot(String),
+}
