@@ -19,7 +19,8 @@ but at this time all features are not yet operational, and the usage documentati
 The following environment variables are referenced in code. When possible, defaults are provided that
 support the `docker-compose` configuration found in the `devenv` folder.
 
-- `DB_CONNECTION` - Mongo connection string. Defaults to `mongodb://localhost:27017`.
+- `DB_CONNECTION` - Mongo connection string. If not set, tests will default to the configuration that supports the
+  `docker-compose.yaml` environment specified in the `devenv` folder.
 
 ## Crate Documentation
 
