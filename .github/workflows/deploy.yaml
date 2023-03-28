@@ -110,19 +110,18 @@ jobs:
           echo "npm --version: $(npm --version)"
           echo "yarn --version: $(yarn --version)"
 
-      - name: CACHE - .yarn/
-        id: cache-yarn-cache
-        uses: actions/cache@v3
-        with:
-          path: ui/.yarn/
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+      - name: CACHE - get ui cache path
+        id: yarn-cache-dir-path
+        run: echo "dir=$(yarn --cwd ui config get cacheFolder)" >> $GITHUB_OUTPUT
 
-      - name: CACHE - node_modules/
+      - name: CACHE - ui dependencies
+        id: yarn-cache
         uses: actions/cache@v3
-        id: cache-node-modules
         with:
-          path: ui/node_modules
-          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/yarn.lock') }}
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: yarn-cache-folder-${{ hashFiles('ui/**/yarn.lock', 'ui/.yarnrc.yml') }}
+          restore-keys: |
+            yarn-cache-folder-
 
       - name: INSTALL - ui dependencies
         working-directory: ui
