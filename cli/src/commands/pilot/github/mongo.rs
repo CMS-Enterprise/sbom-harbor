@@ -80,7 +80,7 @@ pub async fn update_last_hash_in_mongo(
 }
 
 /// Function to connect and return a MongoDB Database
-/// 
+///
 pub async fn get_mongo_db() -> Result<Database, GhProviderError> {
 
     let ctx = MongoContext {
