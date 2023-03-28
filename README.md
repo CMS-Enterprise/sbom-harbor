@@ -19,8 +19,19 @@ but at this time all features are not yet operational, and the usage documentati
 The following environment variables are referenced in code. When possible, defaults are provided that
 support the `docker-compose` configuration found in the `devenv` folder.
 
-- `DB_CONNECTION` - Mongo connection string. If not set, tests will default to the configuration that supports the
+- `DB_CONNECTION` - Mongo connection configuration. If not set, tests will default to the configuration that supports the
   `docker-compose.yaml` environment specified in the `devenv` folder.
+
+Expects a JSON document with the following schema:
+
+```json
+{
+  "host": "<instance host name/resolvable DNS name>",
+  "username": "<username>",
+  "password": "<password>",
+  "port": "<TCP port number>"
+}
+```
 
 ## Crate Documentation
 
