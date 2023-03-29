@@ -3,7 +3,7 @@ use std::{fs};
 use anyhow::{Result as AnyhowResult};
 use async_trait::async_trait;
 use crate::commands::Provider;
-use crate::commands::pilot::snyk::snyk_data_model::{SnykData, ProjectList, ProjectDetails, Sbom};
+use crate::commands::pilot::snyk::snyk_data_model::{SnykData, ProjectJson, ProjectDetails, Sbom};
 use platform::hyper::{ContentType, Error as HyperError, get, post};
 use platform::auth::get_secret;
 //DONE: Add method call
@@ -64,130 +64,194 @@ impl SnykProvider {
 
     //Iterates over the list of Orgs in a passed SnykData object 
     //Returns the SnykData object with each Org updated with a list of valid projects
-    async fn add_projects_to_orgs(mut snyk_data: SnykData, snyk_token: &str) -> SnykData{
+    async fn add_projects_to_orgs(mut snyk_data: SnykData, snyk_token: &str) -> Vec<ProjectDetails>{
         println!("Adding projects to each Org....");
 
+        let mut valid_projects: Vec<ProjectDetails> = Vec::new();
+        
         for item in snyk_data.orgs.iter_mut(){
             match item {
                 Some(org) => {
                     let org_id = org.id.clone().unwrap_or_else(|| "Missing".to_string());
                     let org_name = org.name.clone().unwrap_or_else(|| "Missing".to_string());
-                    let project = Self::get_project_list_from_snyk(org_id, org_name, snyk_token).await;
-                    org.add_project(project);
+                    //Self::get_project_list_from_snyk(org_id, org_name, snyk_token, &mut valid_projects).await;
+                    println!("Retrieving project info for Org: {}, with ID: {}", org_name, org_id);
+                    let url = format!("{}/org/{}/projects", Self::API_V1_URL, org_id);
+                    let response: Result<Option<ProjectJson>, HyperError> = post(
+                        url.as_str(),
+                        ContentType::Json,
+                        snyk_token,
+                        None::<String>,
+                    ).await;
+            
+                    match response {
+                        Ok(option) =>  {
+                            match option {
+                                Some(project_json) => Self::find_valid_projects(project_json, org_id, &mut valid_projects),
+                                None => todo!(),
+                            }
+                        },
+                        Err(err) => panic!("Error in the response: {}", err),
+                    }
+                    //valid_projects.append(project);
+                    //org.add_project(project);
                 },
                 None => todo!(),
             }
         }
 
-        return snyk_data;
+        return valid_projects;
     }
 
     // Gets a list of projects and their info for a specified org from Snyk
-    async fn get_project_list_from_snyk(org_id: String, org_name: String, snyk_token: &str) -> Option<ProjectList>{
-        println!("Retrieving project info for Org: {}, with ID: {}", org_name, org_id);
-        let url = format!("{}/org/{}/projects", Self::API_V1_URL, org_id);
+    // async fn get_project_list_from_snyk(org_id: String, org_name: String, snyk_token: &str, valid_projects: &mut Vec<ProjectDetails>){
+    //     println!("Retrieving project info for Org: {}, with ID: {}", org_name, org_id);
+    //     let url = format!("{}/org/{}/projects", Self::API_V1_URL, org_id);
 
-        let response: Result<Option<ProjectList>, HyperError> = post(
-            url.as_str(),
-            ContentType::Json,
-            snyk_token,
-            None::<String>,
-        ).await;
+    //     let response: Result<Option<ProjectList>, HyperError> = post(
+    //         url.as_str(),
+    //         ContentType::Json,
+    //         snyk_token,
+    //         None::<String>,
+    //     ).await;
 
-        match response {
-            Ok(option) =>  return Self::remove_invalid_projects(option, org_id),
-            Err(err) => panic!("Error in the response: {}", err),
-        }
-    }
+    //     match response {
+    //         Ok(option) =>  Self::remove_invalid_projects(option, org_id, valid_projects),
+    //         Err(err) => panic!("Error in the response: {}", err),
+    //     }
+    // }
 
     // Iterates over list of projects and creates a new project list that only has projects with a valid Origin and Type
-    fn remove_invalid_projects(project_list: Option<ProjectList>, org_id: String) -> Option<ProjectList>{
+    fn find_valid_projects(project_list: ProjectJson, org_id: String, valid_projects: &mut Vec<ProjectDetails>) {
 
-        let mut valid_projects: Vec<Option<ProjectDetails>> = Vec::new();
+        for project in project_list.projects.iter() {
+            if(!project.id.is_empty()  && !project.origin.is_empty() && !project.r#type.is_empty()) {
+                if  (Self::VALID_ORIGINS.contains(&project.origin.as_str()) &&  Self::VALID_TYPES.contains(&project.r#type.as_str())){
+                    let sbom_url = format!("{}/orgs/{}/projects/{}/sbom?version={}&format={}", Self::API_V3_URL, org_id, project.id, Self::API_V3_VERSION, Self::SBOM_FORMAT);
 
-        match project_list {
-            Some(list) => {
-                list.projects.iter().for_each(|item|{
-                    match item {
-                        Some(project_details) => {
-                            //TODO: there some better way to compare all of these?
-                            let proj_id = project_details.id.clone().unwrap_or_else(||"".to_string());
-                            let proj_name = project_details.name.clone().unwrap_or_else(||"".to_string());
-                            let proj_origin = project_details.origin.clone().unwrap_or_else(||"".to_string());
-                            let proj_type = project_details.r#type.clone().unwrap_or_else(||"".to_string());
-                            
-                            if(!proj_id.is_empty()  && !proj_origin.is_empty() && !proj_type.is_empty()) {
-                                if  (Self::VALID_ORIGINS.contains(&proj_origin.as_str()) &&  Self::VALID_TYPES.contains(&proj_type.as_str())){
-                                    let sbom_url = format!("{}/orgs/{}/projects/{}/sbom?version={}&format={}", Self::API_V3_URL, org_id, proj_id, Self::API_V3_VERSION, Self::SBOM_FORMAT);
+                    let valid_project = ProjectDetails{
+                        id: project.id.clone(),
+                        name: project.name.clone(),
+                        origin: project.origin.clone(),
+                        r#type: project.r#type.clone(),
+                        sbom_url: sbom_url
+                    };
 
-                                    let valid_project = ProjectDetails{
-                                        id: Some(proj_id),
-                                        name: Some(proj_name),
-                                        origin: Some(proj_origin),
-                                        r#type: Some(proj_type),
-                                        sbom_url: Some(sbom_url)
-                                    };
-
-                                    valid_projects.push(Some(valid_project));
-                                }
-                            }
-                        },
-                        None => {},
-                    }
-                })
-            },
-            None => todo!(),
+                    valid_projects.push(valid_project);
+                }
+            }
         }
+        // match project_list {
+        //     Some(list) => {
+        //         list.projects.iter().for_each(|item|{
+        //             match item {
+        //                 Some(project_details) => {
+        //                     //TODO: there some better way to compare all of these?
+        //                     let proj_id = project_details.id.clone();
+        //                     let proj_name = project_details.name.clone();
+        //                     let proj_origin = project_details.origin.clone();
+        //                     let proj_type = project_details.r#type.clone();
+                            
+        //                     if(!proj_id.is_empty()  && !proj_origin.is_empty() && !proj_type.is_empty()) {
+        //                         if  (Self::VALID_ORIGINS.contains(&proj_origin.as_str()) &&  Self::VALID_TYPES.contains(&proj_type.as_str())){
+        //                             let sbom_url = format!("{}/orgs/{}/projects/{}/sbom?version={}&format={}", Self::API_V3_URL, org_id, proj_id, Self::API_V3_VERSION, Self::SBOM_FORMAT);
 
-        let updated_project_list: ProjectList = ProjectList { projects: (valid_projects) };
-        
-        return Some(updated_project_list);
+        //                             let valid_project = ProjectDetails{
+        //                                 id: proj_id,
+        //                                 name: proj_name,
+        //                                 origin: proj_origin,
+        //                                 r#type: proj_type,
+        //                                 sbom_url: sbom_url
+        //                             };
+
+        //                             valid_projects.push(valid_project);
+        //                         }
+        //                     }
+        //                 },
+        //                 None => {},
+        //             }
+        //         })
+        //     },
+        //     None => todo!(),
+        // }
+
     }
 
-    async fn publish_sboms(snyk_data: &SnykData, snyk_token: &str) {
+    async fn publish_sboms(valid_projects: &Vec<ProjectDetails>, snyk_token: &str) {
 
         let tmp_test_dir = Self::TEMP_TEST_DIR;
         
         println!("Publishing SBOMS...");
 
-        for org in snyk_data.orgs.iter() {
-            let current_org = org.as_ref().unwrap();
-            let current_org_id = org.as_ref().unwrap().id.as_ref().unwrap();
-            for project in current_org.projects.as_ref().unwrap().projects.iter() {
-                match project {
-                    Some(project_details) => {
-                        let proj_name = project_details.name.clone().unwrap().replace("/", "-");
-                        println!("Building Sbom for project: {}",proj_name.as_str());
+        for project in valid_projects.iter() {
+            let current_org_id = "".to_string(); //TODO: get this correctly
+            let proj_name = project.name.clone().replace("/", "-");
+            println!("Getting Sbom for project: {}",proj_name.as_str());
 
-                        let response: Result<Option<Sbom>, HyperError> = get(
-                            project_details.sbom_url.clone().unwrap().as_str(),
-                            ContentType::Json,
-                            snyk_token,
-                            None::<String>,
-                        ).await;
-                
-                        match response {
-                            Ok(option) =>  {
-                                match option {
-                                    Some(sbom) => {
-                                        //TODO: send sboms somewhere
-                                        let data = format!("{:#?}", sbom);
-                                        let file_path = format!("{}/sboms/project-{}", tmp_test_dir, proj_name.as_str());
-                                        println!("Writing file to location: {}", file_path.as_str());
-                                        fs::write(file_path, data).expect("Unable to write file");
-                                    },
-                                    None => todo!(),
-                                }
-                            },
-                            Err(err) => {
-                                println!("ERROR -> Failed to find sbom for project: {} in org: {}", proj_name.as_str(), current_org_id.as_str())
-                            },
-                        }
-                    },
-                    None => todo!(),
-                }
+            let response: Result<Option<Sbom>, HyperError> = get(
+                project.sbom_url.clone().as_str(),
+                ContentType::Json,
+                snyk_token,
+                None::<String>,
+            ).await;
+
+            match response {
+                Ok(option) =>  {
+                    match option {
+                        Some(sbom) => {
+                            //TODO: send sboms somewhere
+                            // let data = format!("{:#?}", sbom);
+                            // let file_path = format!("{}/sboms/project-{}", tmp_test_dir, proj_name.as_str());
+                            // println!("Writing file to location: {}", file_path.as_str());
+                            // fs::write(file_path, data).expect("Unable to write file");
+                        },
+                        None => todo!(),
+                    }
+                },
+                Err(err) => {
+                    println!("ERROR -> Failed to find sbom for project: {} in org: {}", proj_name.as_str(), current_org_id.as_str())
+                },
             }
         }
+
+        // for org in snyk_data.orgs.iter() {
+        //     let current_org = org.as_ref().unwrap();
+        //     let current_org_id = org.as_ref().unwrap().id.as_ref().unwrap();
+        //     for project in current_org.projects.as_ref().unwrap().projects.iter() {
+        //         match project {
+        //             Some(project_details) => {
+        //                 let proj_name = project_details.name.clone().replace("/", "-");
+        //                 println!("Building Sbom for project: {}",proj_name.as_str());
+
+        //                 let response: Result<Option<Sbom>, HyperError> = get(
+        //                     project_details.sbom_url.clone().as_str(),
+        //                     ContentType::Json,
+        //                     snyk_token,
+        //                     None::<String>,
+        //                 ).await;
+                
+        //                 match response {
+        //                     Ok(option) =>  {
+        //                         match option {
+        //                             Some(sbom) => {
+        //                                 //TODO: send sboms somewhere
+        //                                 let data = format!("{:#?}", sbom);
+        //                                 let file_path = format!("{}/sboms/project-{}", tmp_test_dir, proj_name.as_str());
+        //                                 println!("Writing file to location: {}", file_path.as_str());
+        //                                 fs::write(file_path, data).expect("Unable to write file");
+        //                             },
+        //                             None => todo!(),
+        //                         }
+        //                     },
+        //                     Err(err) => {
+        //                         println!("ERROR -> Failed to find sbom for project: {} in org: {}", proj_name.as_str(), current_org_id.as_str())
+        //                     },
+        //                 }
+        //             },
+        //             None => todo!(),
+        //         }
+        //     }
+        // }
     }
 
 }
@@ -212,13 +276,13 @@ impl Provider for SnykProvider {
 
         let snyk_data = SnykProvider::get_orgs(snyk_token.as_str()).await;
 
-        let snyk_data = SnykProvider::add_projects_to_orgs(snyk_data, snyk_token.as_str()).await;
+        let valid_projects = SnykProvider::add_projects_to_orgs(snyk_data, snyk_token.as_str()).await;
 
-        let data = format!("{:#?}", snyk_data); //TODO: Remove this when done debugging
+        let data = format!("{:#?}", valid_projects); //TODO: Remove this when done debugging
         let output_path = format!("{}/snyk_data.json", Self::TEMP_TEST_DIR);
         fs::write(output_path, data).expect("Unable to write file"); //TODO: Remove this when done debugging
 
-        SnykProvider::publish_sboms(&snyk_data, snyk_token.as_str()).await;
+        SnykProvider::publish_sboms(&valid_projects, snyk_token.as_str()).await;
     }
 }
 

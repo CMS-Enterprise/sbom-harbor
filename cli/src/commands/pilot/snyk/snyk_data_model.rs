@@ -14,21 +14,23 @@ pub struct SnykData {
 pub struct Org {
     pub id: Option<String>,
     pub name: Option<String>,
-    pub projects: Option<ProjectList>,
+    pub projects: Option<ProjectJson>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
-pub struct ProjectList {
-    pub projects: Vec<Option<ProjectDetails>>
+pub struct ProjectJson {
+    #[serde(default = "project_list_default")]
+    pub projects: Vec<ProjectDetails>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProjectDetails {
-    pub id: Option<String>,
-    pub name: Option<String>,
-    pub origin: Option<String>,
-    pub r#type: Option<String>,
-    pub sbom_url: Option<String>,
+    pub id: String,
+    pub name: String,
+    pub origin: String,
+    pub r#type: String,
+    #[serde(default = "sbom_default")]
+    pub sbom_url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -38,7 +40,25 @@ pub struct Sbom {
 }
 
 impl Org {
-    pub fn add_project(&mut self, projects: Option<ProjectList>) {
+    pub fn add_project(&mut self, projects: Option<ProjectJson>) {
         self.projects = projects;
     }
 }
+
+fn project_list_default() -> Vec<ProjectDetails> {
+    return Vec::new();
+}
+fn sbom_default() -> String {
+    return format!("");
+}
+// impl Default for ProjectDetails {
+//     fn default() -> ProjectDetails {
+//         ProjectDetails { 
+//             id: format!(""), 
+//             name: format!(""), 
+//             origin: format!(""), 
+//             r#type: format!(""), 
+//             sbom_url: format!("")
+//          }
+//     }
+// }
