@@ -2,12 +2,15 @@ name: BACKEND-BUILD
 
 on:
   workflow_run:
-    workflows: [TESTS]
-    branches: [main, "gha-workflow-cargo-build"]
+    workflows: 
+      - "TESTS"
+    branches: 
+      - main
+      - "gha-workflow-cargo-build"
     types: 
       - completed
     paths-ignore:
-      - 'ui/**'
+      - "ui/**"
 
 # Rather counterintuitive, concurrency is used to ensure that a workflow runs *singularly* per pull request.
 # When a PR is updated, cancel any currently running workflows triggered by previous pushes,
@@ -16,10 +19,6 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
-env:
-  AWS_REGION: us-east-1
-  AWS_DEFAULT_REGION: us-east-1
 
 jobs:
   build:
