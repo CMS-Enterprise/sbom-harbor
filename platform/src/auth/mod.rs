@@ -7,8 +7,8 @@ use aws_sdk_secretsmanager::{Client, Error as awsError};
 
 use crate::Error;
 
-pub async fn get_secret(name: &str) -> Result<Option<String>, awsError> {
-    println!("getting secrets from AWS");
+pub async fn get_secret(secret_name: &str) -> Result<Option<String>, awsError> {
+    println!("Getting Secret {} from AWS", secret_name);
 
     let region_provider = RegionProviderChain::default_provider()
         .or_else(EnvironmentVariableRegionProvider::new());
@@ -19,8 +19,7 @@ pub async fn get_secret(name: &str) -> Result<Option<String>, awsError> {
         .await;
     
     let client = Client::new(&shared_config);
-    let result = client.get_secret_value().secret_id(name).send().await?;
-    println!("got result");
+    let result = client.get_secret_value().secret_id(secret_name).send().await?;
     if let Some(secret) = result.secret_string() {
         return Ok(Some(secret.to_string()));
     }

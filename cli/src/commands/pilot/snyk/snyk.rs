@@ -36,26 +36,17 @@ impl SnykProvider {
     const API_V3_VERSION: &'static str = "2023-02-15~beta";
     //Format of SBOMs returned from Snyk
     const SBOM_FORMAT: &'static str = "cyclonedx%2Bjson";
+    const AWS_SECRET_NAME: &'static str = "dev-harbor-snyk-token-use1";
 
-    fn get_snyk_access_token() -> String {
-        let buts = get_secret("dev-harbor-snyk-token-use1");
-        let snyk_token = "SnykToken";
-        
-        match var(snyk_token) {
-            Ok(token) => return token,
-            Err(_) => panic!("Environment variable {} is not set", snyk_token),
-        }
-    }
-    
     // Retrieves a list of all Orgs from Snyk and adds them into a new SnykData object
-    async fn get_orgs() -> SnykData{
+    async fn get_orgs(snyk_token: &str) -> SnykData{
         println!("Getting list of Orgs from Snyk...");
         let url = format!("{}/orgs", Self::API_V1_URL);
 
         let response: Result<Option<SnykData>, HyperError> = get(
             url.as_str(),
             ContentType::Json,
-            Self::get_snyk_access_token().as_str(),
+            snyk_token,
             None::<String>,
         ).await;
     
@@ -71,7 +62,7 @@ impl SnykProvider {
 
     //Iterates over the list of Orgs in a passed SnykData object 
     //Returns the SnykData object with each Org updated with a list of valid projects
-    async fn add_projects_to_orgs(mut snyk_data: SnykData) -> SnykData{
+    async fn add_projects_to_orgs(mut snyk_data: SnykData, snyk_token: &str) -> SnykData{
         println!("Adding projects to each Org....");
 
         for item in snyk_data.orgs.iter_mut(){
@@ -79,7 +70,7 @@ impl SnykProvider {
                 Some(org) => {
                     let org_id = org.id.clone().unwrap_or_else(|| "Missing".to_string());
                     let org_name = org.name.clone().unwrap_or_else(|| "Missing".to_string());
-                    let project = Self::get_project_list_from_snyk(org_id, org_name).await;
+                    let project = Self::get_project_list_from_snyk(org_id, org_name, snyk_token).await;
                     org.add_project(project);
                 },
                 None => todo!(),
@@ -90,14 +81,14 @@ impl SnykProvider {
     }
 
     // Gets a list of projects and their info for a specified org from Snyk
-    async fn get_project_list_from_snyk(org_id: String, org_name: String) -> Option<ProjectList>{
+    async fn get_project_list_from_snyk(org_id: String, org_name: String, snyk_token: &str) -> Option<ProjectList>{
         println!("Retrieving project info for Org: {}, with ID: {}", org_name, org_id);
         let url = format!("{}/org/{}/projects", Self::API_V1_URL, org_id);
 
         let response: Result<Option<ProjectList>, HyperError> = post(
             url.as_str(),
             ContentType::Json,
-            Self::get_snyk_access_token().as_str(),
+            snyk_token,
             None::<String>,
         ).await;
 
@@ -151,7 +142,7 @@ impl SnykProvider {
         return Some(updated_project_list);
     }
 
-    async fn publish_sboms(snyk_data: &SnykData) {
+    async fn publish_sboms(snyk_data: &SnykData, snyk_token: &str) {
         
         println!("Publishing SBOMS...");
 
@@ -167,7 +158,7 @@ impl SnykProvider {
                         let response: Result<Option<Sbom>, HyperError> = get(
                             project_details.sbom_url.clone().unwrap().as_str(),
                             ContentType::Json,
-                            Self::get_snyk_access_token().as_str(),
+                            snyk_token,
                             None::<String>,
                         ).await;
                 
@@ -202,33 +193,32 @@ impl Provider for SnykProvider {
 
     async fn scan(&self) {
         println!("Scanning Snyk for SBOMS...");
+        let response = get_secret(Self::AWS_SECRET_NAME).await;
+        let snyk_token = match response {
+            Ok(secret) => {
+                match secret {
+                    Some(s) => s,
+                    None => panic!("No AWS token retrieved for secret: {}", Self::AWS_SECRET_NAME),
+                }
+            },
+            Err(err) => panic!("Failed to retrieve token for secret: {}, with error: {}", Self::AWS_SECRET_NAME, err),
+        };
 
-        let snyk_data = SnykProvider::get_orgs().await;
+        println!("{}", snyk_token);
 
-        let snyk_data = SnykProvider::add_projects_to_orgs(snyk_data).await;
+        let snyk_data = SnykProvider::get_orgs(snyk_token.as_str()).await;
+
+        let snyk_data = SnykProvider::add_projects_to_orgs(snyk_data, snyk_token.as_str()).await;
 
         let data = format!("{:#?}", snyk_data); //TODO: Remove this when done debugging
         fs::write("/home/jshattjr/tmp_output.json", data).expect("Unable to write file"); //TODO: Remove this when done debugging
 
-        SnykProvider::publish_sboms(&snyk_data).await;
+        SnykProvider::publish_sboms(&snyk_data, snyk_token.as_str()).await;
     }
 }
 
 #[tokio::test]
 async fn test_get_snyk_data() {
-    let response = get_secret("dev-harbor-snyk-token-use1").await;
-    match response {
-        Ok(secret) => {
-            match secret {
-                Some(s) => println!("{}",s),
-                None => panic!("something went wrong?"),
-            }
-        },
-        Err(err) => println!("{}",err),
-    }
-    // match response {
-
-    // }
-    // let provider = SnykProvider{};
-    // provider.scan().await;
+    let provider = SnykProvider{};
+    provider.scan().await;
 }
