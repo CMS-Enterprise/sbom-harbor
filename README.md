@@ -67,3 +67,5 @@ By default, this will produce a debug build in the `target/debug` directory. To 
 ```shell
 cargo build --release
 ```
+
+The release build can be found in the `target/release` directory.
