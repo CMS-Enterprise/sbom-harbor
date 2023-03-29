@@ -61,3 +61,9 @@ To build a single crate run the following from the root directory.
 ```shell
 cargo build --workspace -p <crate-name> # e.g. use harbor-api or harbor-cli as the final argument.
 ```
+
+By default, this will produce a debug build in the `target/debug` directory. To produce a release binary run the following.
+
+```shell
+cargo build --release
+```
