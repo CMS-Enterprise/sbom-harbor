@@ -8,6 +8,7 @@ use serde::Serialize;
 use thiserror::Error;
 
 const CONTENT_TYPE: &str = "content-type";
+const USER_AGENT: &str = "User-Agent";
 
 /// HTTP Content Types.
 pub enum ContentType {
@@ -91,7 +92,9 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
         .method(method)
         .uri(uri)
         .header(CONTENT_TYPE, content_type.to_string())
+        .header(USER_AGENT, String::from("SBOM Harbor CLI"))
         .body(req_body)?;
+
 
     if !token.is_empty() {
         req.headers_mut().append("Authorization", token.parse()?);
@@ -122,7 +125,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
     };
 
     if resp_status != StatusCode::OK {
-        return Err(Error::Remote(resp_body));
+        return Err(Error::Remote(resp_status, resp_body));
     }
 
     // TODO: This a hack around empty JSON.
@@ -157,8 +160,7 @@ pub enum Error {
     Hyper(String),
     /// Error calling remote resource.
     #[error("error from remote resource: {0}")]
-    Remote(String),
-    /// Error serializing types.
+    Remote(StatusCode, String),
     #[error("error serializing types: {0}")]
     Serde(String),
 }

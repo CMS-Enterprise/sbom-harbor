@@ -1,14 +1,25 @@
 use std::collections::HashMap;
-use std::fmt::Result as StdResult;
+use std::env;
 use std::fmt::{Display, Formatter};
+use std::fmt::Result as StdResult;
 
 use anyhow::{anyhow, bail, Result};
-use platform::hyper::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tracing::info;
 
-use crate::entities::{Project, Team};
+use harbcore::models::{Codebase, Project, Team};
+use platform::hyper::{ContentType, delete, get, post};
+use uuid::Uuid;
+
+/// Extracts the value of an environment variable
+///
+fn get_env_var(variable_name: &str) -> Option<String> {
+    return match env::var(variable_name) {
+        Ok(v) => Some(v),
+        Err(_e) => None,
+    };
+}
 
 fn join_url(base: &str, route: &str) -> String {
     let mut url = base.to_owned();
@@ -25,11 +36,21 @@ fn login_url(base: &str) -> String {
     join_url(base, "/login")
 }
 
-async fn login(base: &str, username: String, password: String) -> Result<String> {
+async fn login(
+  base: &str, 
+  username: String, 
+  password: String
+) -> Result<String> {
+    
     let url = login_url(base);
 
     let response: Option<LoginResponse> =
-        post(url.as_str(), "", Some(LoginRequest { username, password })).await?;
+        post(
+          url.as_str(), 
+          ContentType::Json, 
+          "", // Empty Token
+          Some(LoginRequest { username, password })
+        ).await?;
 
     let token = response.unwrap().token;
     Ok(token)
@@ -80,7 +101,12 @@ impl Client {
     pub async fn delete_team(&self, id: String) -> Result<()> {
         let url = self.delete_team_url(id);
 
-        let _: Option<Team> = delete(url.as_str(), &self.token, None::<Team>).await?;
+        let _: Option<Team> = delete(
+          url.as_str(), 
+          ContentType::Json, 
+          &self.token, 
+          None::<Team>
+        ).await?;
 
         Ok(())
     }
@@ -104,7 +130,12 @@ impl Client {
     pub async fn get_team(&self, id: String) -> Result<Team> {
         let url = self.get_team_url(id);
 
-        let team: Option<Team> = get(url.as_str(), &self.token, None::<Team>).await?;
+        let team: Option<Team> = get(
+          url.as_str(), 
+          ContentType::Json,
+          &self.token, 
+          None::<Team>
+        ).await?;
 
         Ok(team.unwrap())
     }
@@ -112,8 +143,12 @@ impl Client {
     async fn get_or_create_team_by_name(&self, name: String) -> Result<Team> {
         let get_teams_url = self.get_teams_url();
 
-        let teams: Option<Vec<Team>> =
-            get(get_teams_url.as_str(), &self.token, None::<Vec<Team>>).await?;
+        let teams: Option<Vec<Team>> = get(
+          get_teams_url.as_str(), 
+          ContentType::Json,
+          &self.token, 
+          None::<Vec<Team>>
+        ).await?;
 
         let team = teams.unwrap().into_iter().find(|t| t.name == name);
 
@@ -123,8 +158,12 @@ impl Client {
 
         let create_team_url = self.create_team_url();
         let team = Team::new(name);
-        let team: Option<Team> =
-            post(create_team_url.as_str(), &self.token, Some(team)).await?;
+        let team: Option<Team> = post(
+          create_team_url.as_str(), 
+          ContentType::Json,
+          &self.token, 
+          Some(team)
+        ).await?;
 
         let team = team.unwrap();
         if team.tokens.is_empty() {
@@ -134,7 +173,42 @@ impl Client {
         Ok(team)
     }
 
-    fn create_project_url(&self, team_id: String) -> String {
+    pub async fn create_project(
+        &self,
+        team_id: String,
+        gh_url: String,
+        language: String,
+    ) -> Result<Project> {
+
+        let create_project_url = self.create_project_url(team_id);
+
+        println!("Attempting to create a project at {}", create_project_url);
+
+        let mut project = Project::new(gh_url.clone(), None);
+
+        project.codebases(
+            Codebase {
+                id: String::from(""),
+                name: gh_url.clone(),
+                build_tool: String::from("UNKNOWN"),
+                language,
+                clone_url: gh_url,
+            }
+        );
+
+        let project: Option<Project> = post(
+            create_project_url.as_str(),
+            ContentType::Json,
+            &self.token,
+            Some(project)
+        ).await?;
+
+        let project = project.unwrap();
+
+        Ok(project)
+    }
+
+    pub fn create_project_url(&self, team_id: String) -> String {
         join_url(
             &self.base_url,
             &format!("/project?teamId={}&children=true", team_id),
@@ -149,7 +223,7 @@ impl Client {
         codebase_name: &str,
     ) -> Result<Project> {
         // TODO: Find a way to get the build tool from the GitHub API.
-        let codebase = crate::api::Codebase {
+        let codebase = Codebase {
             id: "".to_string(),
             name: codebase_name.to_string(),
             language: "".to_string(),
@@ -157,7 +231,7 @@ impl Client {
             clone_url: "".to_string(),
         };
 
-        let project = crate::api::Project{
+        let project = Project{
             id: "".to_string(),
             name: project_name.to_string(),
             fisma: "".to_string(),
@@ -167,8 +241,12 @@ impl Client {
 
         let create_project_url = self.create_project_url(team_id);
 
-        let project: Option<Project> =
-            post(create_project_url.as_str(), &self.token, Some(project)).await?;
+        let project: Option<Project> = post(
+          create_project_url.as_str(), 
+          ContentType::Json,
+          &self.token, 
+          Some(project)
+        ).await?;
 
         let project = project.unwrap();
 
@@ -213,8 +291,14 @@ impl Client {
     ) -> Result<SBOMUploadResponse> {
         let url = Client::create_upload_url(cloud_front_domain, team_id, project_id, codebase_id);
 
-        let response: Option<SBOMUploadResponse> =
-            post(url.as_str(), sbom_token, Some(sbom)).await?;
+        println!("Using token {}, Uploading SBOM to: {}", sbom_token, url);
+
+        let response: Option<SBOMUploadResponse> = post(
+            url.as_str(),
+            ContentType::Json,
+            sbom_token,
+            Some(sbom)
+        ).await?;
 
         Ok(response.unwrap())
     }
