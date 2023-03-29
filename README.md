@@ -47,3 +47,17 @@ cargo doc --no-deps
 ```
 
 Documentation for each crate will be generated and output to the `target/doc` subdirectory.
+
+## Building
+
+To build all workspace targets on the local machine run the following from the root directory.
+
+```shell
+cargo build
+```
+
+To build a single crate run the following from the root directory.
+
+```shell
+cargo build --workspace -p <crate-name> # e.g. use harbor-api or harbor-cli as the final argument.
+```
