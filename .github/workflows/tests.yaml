@@ -1,4 +1,4 @@
-name: TESTS - Lint, Unit, Integration
+name: TESTS
 
 on:
   push:
@@ -20,15 +20,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  AWS_REGION: us-east-1
-  AWS_DEFAULT_REGION: us-east-1
-
 jobs:
   backend:
     runs-on: [self-hosted]
     steps:
-
       - uses: actions/checkout@v3
 
       - name: INSTALL - dependencies
