@@ -38,6 +38,8 @@ impl SnykProvider {
     const SBOM_FORMAT: &'static str = "cyclonedx%2Bjson";
     const AWS_SECRET_NAME: &'static str = "dev-harbor-snyk-token-use1";
 
+    const TEMP_TEST_DIR: &'static str = "/home/jshattjr";
+
     // Retrieves a list of all Orgs from Snyk and adds them into a new SnykData object
     async fn get_orgs(snyk_token: &str) -> SnykData{
         println!("Getting list of Orgs from Snyk...");
@@ -143,6 +145,8 @@ impl SnykProvider {
     }
 
     async fn publish_sboms(snyk_data: &SnykData, snyk_token: &str) {
+
+        let tmp_test_dir = Self::TEMP_TEST_DIR;
         
         println!("Publishing SBOMS...");
 
@@ -168,7 +172,7 @@ impl SnykProvider {
                                     Some(sbom) => {
                                         //TODO: send sboms somewhere
                                         let data = format!("{:#?}", sbom);
-                                        let file_path = format!("/home/jshattjr/sboms/project-{}", proj_name.as_str());
+                                        let file_path = format!("{}/sboms/project-{}", tmp_test_dir, proj_name.as_str());
                                         println!("Writing file to location: {}", file_path.as_str());
                                         fs::write(file_path, data).expect("Unable to write file");
                                     },
@@ -211,7 +215,8 @@ impl Provider for SnykProvider {
         let snyk_data = SnykProvider::add_projects_to_orgs(snyk_data, snyk_token.as_str()).await;
 
         let data = format!("{:#?}", snyk_data); //TODO: Remove this when done debugging
-        fs::write("/home/jshattjr/tmp_output.json", data).expect("Unable to write file"); //TODO: Remove this when done debugging
+        let output_path = format!("{}/snyk_data.json", Self::TEMP_TEST_DIR);
+        fs::write(output_path, data).expect("Unable to write file"); //TODO: Remove this when done debugging
 
         SnykProvider::publish_sboms(&snyk_data, snyk_token.as_str()).await;
     }
