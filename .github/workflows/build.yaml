@@ -6,7 +6,6 @@ on:
       - "TESTS"
     branches: 
       - main
-      - "gha-workflow-cargo-build"
     types: 
       - completed
     paths-ignore:
