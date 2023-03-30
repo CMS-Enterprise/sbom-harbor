@@ -51,14 +51,3 @@ fn project_list_default() -> Vec<ProjectDetails> {
 fn sbom_default() -> String {
     return format!("");
 }
-// impl Default for ProjectDetails {
-//     fn default() -> ProjectDetails {
-//         ProjectDetails { 
-//             id: format!(""), 
-//             name: format!(""), 
-//             origin: format!(""), 
-//             r#type: format!(""), 
-//             sbom_url: format!("")
-//          }
-//     }
-// }
