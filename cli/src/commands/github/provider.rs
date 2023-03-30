@@ -5,8 +5,16 @@ use uuid::Uuid;
 use anyhow::{Result as AnyhowResult};
 use mongodb::Collection;
 use tokio::count;
-use harbcore::services::{clone_path, clone_repo, remove_clone, syft};
-use harbor_client::client::{Client as V1HarborClient, SBOMUploadResponse};
+use harbcore::services::{
+    clone_path,
+    clone_repo,
+    remove_clone,
+    syft
+};
+use harbor_client::client::{
+    Client as V1HarborClient,
+    SBOMUploadResponse
+};
 use platform::hyper::{Error as HyperError, ContentType, get};
 
 use crate::commands::{get_env_var, Provider};
@@ -28,7 +36,6 @@ use crate::commands::github::mongo::{
 use crate::commands::github::repo::{
     Repo,
     Commit,
-    authize,
     get_pages,
     should_skip,
     get_page_of_repos,
@@ -43,9 +50,13 @@ pub struct GitHubProvider {}
 ///
 impl GitHubProvider {
 
-    async fn get_repos(org: String) -> AnyhowResult<Vec<Repo>> {
+    async fn get_repos(org: String) -> Result<Vec<Repo>, GhProviderError> {
 
-        let mut pages = get_pages(&org).await;
+        let mut pages = match get_pages(&org).await {
+            Ok(pages) => pages,
+            Err(err) => panic!("Unable to get pages of repos from GitHub: {:#?}", err)
+        };
+
         let gh_fetch_token = match get_env_var("GH_FETCH_TOKEN") {
             Some(value) => value,
             None => panic!("Missing GitHub Token. export GH_FETCH_TOKEN=<token>")
@@ -56,7 +67,14 @@ impl GitHubProvider {
 
         for (page, per_page) in pages.iter_mut().enumerate() {
 
-            let mut gh_org_rsp = get_page_of_repos(&org, (page+1), per_page, &token).await;
+            let mut gh_org_rsp = match get_page_of_repos(&org, page+1, per_page, &token).await {
+                Ok(vector) => vector,
+                Err(err) => return Err(
+                    GhProviderError::GitHubRequest(
+                      format!("Error getting a page of repos: {}", err)
+                    )
+                ),
+            };
 
             for (repo_num, repo) in gh_org_rsp.iter_mut().enumerate() {
 
@@ -112,14 +130,7 @@ impl Provider for GitHubProvider {
 
         let harbor_config = get_harbor_config().unwrap();
 
-        let mut counter = Counter {
-            archived: 0,
-            disabled: 0,
-            empty: 0,
-            processed: 0,
-            hash_matched: 0,
-            upload_errors: 0,
-        };
+        let mut counter = Counter::default();
 
         println!("Scanning GitHub...");
         let org_name: String = String::from("cmsgov");
@@ -132,7 +143,7 @@ impl Provider for GitHubProvider {
         for repo in repos.iter() {
 
             let name = repo.full_name.clone().unwrap();
-            let url = repo.ssh_url.clone().unwrap();
+            let url = repo.html_url.clone().unwrap();
 
             if !should_skip(repo, name, url, &mut counter) {
                 process_repo(repo, &harbor_config, &mut counter).await;
@@ -168,7 +179,9 @@ async fn create_harbor_entities(
         Ok(project) => project,
         Err(err) => {
             let err_msg = format!("Error trying to create a project: {}", err);
-            return Err(GhProviderError::EntityCreation(err_msg))
+            return Err(
+                GhProviderError::EntityCreation(err_msg)
+            )
         }
     };
 
@@ -205,12 +218,8 @@ async fn send_to_pilot(
     /// Clones a repo, generates an SBOM, and then uploads to the Enrichment Engine.
 
     let clone_path = clone_path(&document.repo_url);
-    let authed_url = match authize(&document.repo_url) {
-        Ok(authed_url) => authed_url,
-        Err(err) => panic!("Unable to fix the URL: {}", err)
-    };
 
-    match clone_repo(&clone_path, authed_url.as_str()) {
+    match clone_repo(&clone_path, &document.repo_url.as_str()) {
         Ok(()) => println!("{} Cloned Successfully", document.repo_url),
         Err(err) => panic!("Unable to clone Repo {}, {}", document.repo_url, err)
     }
@@ -277,7 +286,7 @@ async fn create_document_in_db(
 
 async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut Counter) {
 
-    let url: &String = match &repo.ssh_url {
+    let url: &String = match &repo.html_url {
         Some(url) => url,
         None => panic!("No URL for Repository"),
     };
@@ -293,7 +302,7 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut C
 
     let db = match get_mongo_db().await {
         Ok(db) => db,
-        Err(err) => panic!("Problem getting DB: {}", err)
+        Err(err) => panic!("Problem getting DB: {:#?}", err)
     };
 
     let collection = db.collection::<GitHubCrawlerMongoDocument>(COLLECTION);
@@ -325,12 +334,12 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut C
                         // Upload is OK, update Mongo
 
                         println!("PROCESSING> One SBOM Down! {:#?}", upload_resp);
-                        update_last_hash_in_mongo(document, collection, last_hash.clone());
+                        update_last_hash_in_mongo(document, collection, last_hash.clone()).await;
                         counter.processed += 1;
                     },
                     Err(err) => {
                         counter.upload_errors += 1;
-                        println!("Error Uploading SBOM!! {}", err)
+                        println!("Error Uploading SBOM!! {:#?}", err)
                     }
                 }
             } else {
@@ -355,7 +364,7 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut C
                 },
             ).await {
                 Ok(entities) => entities,
-                Err(err) => panic!("Unable to create Harbor entities, {}", err),
+                Err(err) => panic!("Unable to create Harbor entities, {:#?}", err),
             };
 
             let document: GitHubCrawlerMongoDocument
@@ -366,7 +375,7 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut C
                 last_hash.clone()
             ).await {
                 Ok(document) => document,
-                Err(err) => panic!("Mongo Error: {}", err)
+                Err(err) => panic!("Mongo Error: {:#?}", err)
             };
 
             // Use the document to construct a request to Pilot
@@ -375,7 +384,7 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut C
                     println!("One SBOM Down! {:#?}", upload_resp);
                     counter.processed += 1;
                 },
-                Err(err) => println!("PROCESSING> Error Uploading SBOM!! {}", err)
+                Err(err) => println!("PROCESSING> Error Uploading SBOM!! {:#?}", err)
             }
         }
     };

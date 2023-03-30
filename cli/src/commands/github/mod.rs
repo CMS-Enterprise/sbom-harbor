@@ -149,6 +149,21 @@ pub struct Counter {
     upload_errors: i32,
 }
 
+/// Default, completely 0'd out default Counter
+///
+impl Default for Counter {
+    fn default() -> Self {
+        Self {
+            archived: 0,
+            disabled: 0,
+            empty: 0,
+            processed: 0,
+            hash_matched: 0,
+            upload_errors: 0,
+        }
+    }
+}
+
 /// Represents all handled Errors for the GitHub Crawler.
 ///
 #[derive(Error, Debug)]
@@ -175,4 +190,9 @@ pub enum GhProviderError {
     /// This is Raised when the Pilot has issues doing its job
     #[error("error running pilot: {0}")]
     Pilot(String),
+
+    /// This error is raised when there is a problem communicating
+    /// with GitHub over HTTP.
+    #[error("error running pilot: {0}")]
+    GitHubRequest(String),
 }

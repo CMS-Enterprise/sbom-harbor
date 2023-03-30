@@ -12,6 +12,7 @@ const GH_URL: &str = "https://api.github.com";
 
 /// Creates the URL one must use in an http request for
 /// acquiring the latest commit hash from a given branch
+///
 pub fn get_last_commit_url(repo: &mut Repo) -> String {
     let repo_name = repo.full_name.as_ref().unwrap();
     let default_branch = repo.default_branch.as_ref().unwrap();
@@ -41,18 +42,24 @@ pub struct Org {
 ///
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Repo {
+
     /// The name of the repo.  Getting the Full name
     /// is nice because it has teh "user" in it: <USER>>/<REPO>.git
     /// Ex: CMSgov/design-system.git
     pub(crate) full_name: Option<String>,
+
     /// Url of the repository.
-    pub(crate) ssh_url: Option<String>,
+    pub(crate) html_url: Option<String>,
+
     /// The default branch of the repo, usually master or main
     pub(crate) default_branch: Option<String>,
+
     /// The language of the code in the repo.
     pub(crate) language: Option<String>,
+
     /// Is this repo archived?
     archived: Option<bool>,
+
     /// Is this repo disabled?
     disabled: Option<bool>,
 
@@ -102,7 +109,12 @@ impl Repo {
 /// Should skip determines if the repository is disabled or archived.
 /// and if so, skips processing them.
 ///
-pub fn should_skip(repo: &Repo, repo_name: String, url: String, counter: &mut Counter) -> bool {
+pub fn should_skip(
+    repo: &Repo,
+    repo_name: String,
+    url: String,
+    counter: &mut Counter
+) -> bool {
 
     let mut skip: bool = false;
 
@@ -143,7 +155,7 @@ pub fn should_skip(repo: &Repo, repo_name: String, url: String, counter: &mut Co
 /// Function to get the number of public
 /// repos in the associated organization
 ///
-async fn get_num_pub_repos(org: String) -> AnyhowResult<Option<u32>> {
+async fn get_num_pub_repos(org: String) -> Result<Option<u32>, GhProviderError> {
 
     let token = match get_env_var(GH_FT_KEY) {
         Some(value) => value,
@@ -163,22 +175,38 @@ async fn get_num_pub_repos(org: String) -> AnyhowResult<Option<u32>> {
     match response {
         Ok(option) => match option {
             Some(value) => return Ok(value.public_repos),
-            None => panic!("Nothing in here!"),
+            None => return Err(
+                GhProviderError::GitHubRequest(
+                    format!("Get request from GitHub had an empty response")
+                )
+            ),
         },
-        Err(err) => panic!("Error in the response: {}", err),
+        Err(err) => return Err(
+            GhProviderError::GitHubRequest(
+                format!("Error in the response: {}", err)
+            )
+        ),
     }
 }
 
 /// Function to get the number of repos per page
 ///
-pub async fn get_pages(org: &String) -> Vec<u32> {
+pub async fn get_pages(org: &String) -> Result<Vec<u32>, GhProviderError> {
 
     let num_repos = match get_num_pub_repos(org.to_string()).await {
         Ok(option) => match option {
             Some(num) => num,
-            None => panic!("No Repos in the cmsgov ORG!!!")
+            None => return Err(
+                GhProviderError::GitHubRequest(
+                    format!("There are no repositories in {}, something is wrong", org)
+                )
+            ),
         },
-        Err(err) => panic!("Error Attempting to get num Repos: {}", err)
+        Err(err) => return Err(
+            GhProviderError::GitHubRequest(
+                format!("Error Attempting to get num Repos: {}", err)
+            )
+        ),
     };
 
     println!("Number of Repositories in {org}: {num_repos}");
@@ -191,7 +219,7 @@ pub async fn get_pages(org: &String) -> Vec<u32> {
     // This is crazy that it works.
     *vector.last_mut().unwrap() = num_last_call;
 
-    vector
+    Ok(vector)
 }
 
 /// Function to get the data for a page of repos
@@ -201,7 +229,7 @@ pub async fn get_page_of_repos(
     page: usize,
     per_page: &u32,
     token: &String
-) -> Vec<Repo> {
+) -> Result<Vec<Repo>, GhProviderError> {
 
     let github_org_url = format!("{GH_URL}/orgs/{org}/repos?type=sources&page={page}&per_page={per_page}");
 
@@ -216,26 +244,122 @@ pub async fn get_page_of_repos(
 
     match response {
         Ok(option) => match option {
-            Some(value) => value,
-            None => panic!("Nothing in here!"),
+            Some(value) => Ok(value),
+            None => return Err(
+                GhProviderError::GitHubRequest(
+                    format!("Get request from GitHub had an empty response")
+                )
+            ),
         },
-        Err(err) => panic!("Error in the response: {}", err),
+        Err(err) => return Err(
+            GhProviderError::GitHubRequest(
+                format!("Error in the response: {}", err)
+            )
+        ),
     }
 }
 
-/// Changes an SSH url into an HTTP url for cloning a GitHub Repo
-/// using HTTP.  We should probably get theis URL from GitHub TODO
-///
-pub fn authize(ssh_url: &String) -> Result<String, GhProviderError> {
+#[tokio::test]
+async fn test_should_skip_archived() {
 
-    let token = match get_env_var(GH_FT_KEY) {
-        Some(value) => value,
-        None => panic!("GitHub token not in environment. Variable name: GH_FETCH_TOKEN")
+    let test_name = String::from("test name, ignore");
+    let test_url = String::from("test url, ignore");
+
+    let test_repo = Repo {
+        full_name: None,
+        html_url: None,
+        default_branch: None,
+        language: None,
+        archived: Some(true),
+        disabled: None,
+        empty: false,
+        last_hash: "".to_string(),
     };
 
-    let ssh_url_no_colon = ssh_url.replace(":", "/");
-    let parts: Vec<&str> = ssh_url_no_colon.as_str().split("@").collect();
+    let mut test_counter = Counter {
+        archived: 0,
+        disabled: 0,
+        empty: 0,
+        processed: 0,
+        hash_matched: 0,
+        upload_errors: 0,
+    };
 
-    // TODO This should not be using qtpeters.  Need to fix this
-    Ok(format!("https://qtpeters:{}@{}", token, parts[1]))
+    if !should_skip(&test_repo, test_name, test_url, &mut test_counter) {
+        panic!("should_skip should be true for an archived repo");
+    } else {
+        if test_counter.archived != 1 {
+            panic!("Counter did not count the repo as archived");
+        }
+    }
+}
+
+#[tokio::test]
+async fn test_should_skip_disabled() {
+
+    let test_name = String::from("test name, ignore");
+    let test_url = String::from("test url, ignore");
+
+    let test_repo = Repo {
+        full_name: None,
+        html_url: None,
+        default_branch: None,
+        language: None,
+        archived: None,
+        disabled: Some(true),
+        empty: false,
+        last_hash: "".to_string(),
+    };
+
+    let mut test_counter = Counter {
+        archived: 0,
+        disabled: 0,
+        empty: 0,
+        processed: 0,
+        hash_matched: 0,
+        upload_errors: 0,
+    };
+
+    if !should_skip(&test_repo, test_name, test_url, &mut test_counter) {
+        panic!("should_skip should be true for an disabled repo");
+    } else {
+        if test_counter.disabled != 1 {
+            panic!("Counter did not count the repo as disabled");
+        }
+    }
+}
+
+#[tokio::test]
+async fn test_should_skip_empty() {
+
+    let test_name = String::from("test name, ignore");
+    let test_url = String::from("test url, ignore");
+
+    let test_repo = Repo {
+        full_name: None,
+        html_url: None,
+        default_branch: None,
+        language: None,
+        archived: None,
+        disabled: None,
+        empty: true,
+        last_hash: "".to_string(),
+    };
+
+    let mut test_counter = Counter {
+        archived: 0,
+        disabled: 0,
+        empty: 0,
+        processed: 0,
+        hash_matched: 0,
+        upload_errors: 0,
+    };
+
+    if !should_skip(&test_repo, test_name, test_url, &mut test_counter) {
+        panic!("should_skip should be true for an empty repo");
+    } else {
+        if test_counter.empty != 1 {
+            panic!("Counter did not count the repo as empty");
+        }
+    }
 }

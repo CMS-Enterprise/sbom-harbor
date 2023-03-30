@@ -12,6 +12,7 @@ use tracing::{info, instrument};
 /// to auto-generate and upload an SBOM.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PilotRequest {
+
     /// The team id for the request.
     #[serde(rename = "teamId")]
     pub team_id: String,

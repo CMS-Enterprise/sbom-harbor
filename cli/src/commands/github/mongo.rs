@@ -16,32 +16,26 @@ use crate::commands::github::{
 ///
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct GitHubCrawlerMongoDocument {
+
     /// Unique id of the [GitHubCrawlerMongoDocument].
     pub id: String,
+
     /// Url of the GitHub Repository
     pub repo_url: String,
+
     /// Last commit hash of the repository
     pub last_hash: String,
+
     /// Harbor v1 team id
     pub team_id: String,
+
     /// Harbor v1 project id
     pub project_id: String,
+
     /// Harbor v1 codebase id
     pub codebase_id: String,
 }
 mongo_doc!(GitHubCrawlerMongoDocument);
-
-/// LocalContext struct; probably going away after the code review.
-///
-pub struct LocalContext;
-
-/// Tiny implementation for LocalContext
-///
-impl LocalContext {
-    pub fn connection_string() -> String {
-        String::from("mongodb://localhost:27017")
-    }
-}
 
 /// Function to update the last commit hash in a document
 ///
