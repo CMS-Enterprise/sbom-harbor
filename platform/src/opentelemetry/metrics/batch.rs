@@ -3,7 +3,6 @@ use std::time::Duration;
 
 use opentelemetry::runtime;
 use opentelemetry::sdk::export::metrics::aggregation::cumulative_temporality_selector;
-use opentelemetry::sdk::export::metrics::AggregatorSelector;
 use opentelemetry::sdk::metrics::controllers::BasicController;
 use opentelemetry_api::{Context, global, KeyValue};
 use opentelemetry_api::metrics::{Counter, Meter};
@@ -17,13 +16,17 @@ use crate::Error;
 const DEFAULT_ENDPOINT: &str = "http://localhost:4317";
 static BATCH_EXPORT_CONTROLLER: once_cell::sync::OnceCell<BasicController> = once_cell::sync::OnceCell::new();
 
+/// A value that communicates a characteristic of the system under load.
 pub trait Metric {
+    /// The human readable name of the metric.
     fn name(&self) -> &str;
 }
 
 /// Enum that allows handling of variant metric data types.
 pub enum MetricValue {
+    /// Indicates that the metric holds an f64 value.
     F64(Box<dyn Metric>, f64),
+    /// Indicates that the metric holds an u64 value.
     U64(Box<dyn Metric>, u64),
 }
 
@@ -154,6 +157,7 @@ impl BatchExporter {
         Ok(())
     }
 
+    /// Increments a metric by the default interval.
     pub fn add(&self, value: MetricValue) -> Result<(), Error> {
         match value {
             MetricValue::F64(metric, val) => {

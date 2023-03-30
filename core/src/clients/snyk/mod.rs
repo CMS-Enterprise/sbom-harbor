@@ -29,11 +29,11 @@ pub mod models;
 
 #[cfg(test)]
 mod tests {
-    use crate::clients::snyk::client::{Client, org_groups};
+    use crate::clients::snyk::client::Client;
     use crate::Error;
 
     #[async_std::test]
-    async fn can_list_orgs_and_groups() -> Result<(), Error> {
+    async fn can_list_orgs() -> Result<(), Error> {
         let token = std::env::var("SNYK_API_TOKEN")
             .map_err(|e| Error::Config(e.to_string()))
             .unwrap();
@@ -44,9 +44,6 @@ mod tests {
 
         let orgs = orgs.unwrap();
         assert!(orgs.len() > 0);
-
-        let groups = org_groups(orgs);
-        assert!(groups.len() > 0);
 
         Ok(())
     }

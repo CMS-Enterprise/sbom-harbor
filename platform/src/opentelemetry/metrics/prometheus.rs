@@ -1,34 +1,23 @@
 use std::sync::Arc;
 
-use lazy_static::lazy_static;
 use opentelemetry_sdk::metrics::sdk_api::Descriptor;
 use opentelemetry_sdk::metrics::aggregators::Aggregator;
 
 use crate::Error;
-use crate::opentelemetry::metrics::MetricValue;
 
-// WATCH: Will need to allow configuring the list of allowed suffixes if as downstream users
-// begin using systems other than Prometheus.
-// See https://prometheus.io/docs/practices/naming/#metric-names for how we derived this list.
-lazy_static!(
-    static ref PROMETHEUS_SUFFIXES: Vec<&'static str> = init_prometheus_suffixes();
-);
-
-// Initializes the static vector of conventional suffixes.
-fn init_prometheus_suffixes() -> Vec<&'static str> {
-    vec![
+// TODO: This might need to be to be injectable or at least extendable config.
+/// Ensures metrics conform to naming conventions.
+pub fn validate_metric_name(name: &str) -> Result<(), Error> {
+    let suffixes = vec![
         "total",
         "seconds",
         "bytes",
         "ratio",
         "info",
-    ]
-}
+    ];
 
-/// Ensures metrics conform to naming conventions.
-pub fn validate_metric_name(name: &str) -> Result<(), Error> {
-    for valid in &*PROMETHEUS_SUFFIXES {
-        if name.ends_with(*valid) {
+    for valid in suffixes {
+        if name.ends_with(valid) {
             return Ok(());
         }
     }

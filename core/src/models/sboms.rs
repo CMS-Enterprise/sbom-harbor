@@ -1,11 +1,10 @@
 use serde::{Deserialize, Serialize};
 use platform::mongodb::{MongoDocument, mongo_doc};
 
-
-/// A Target is a item for which an SBOM can be generated. It serves as an aggregate root for all
+/// A [Package] is a item for which an SBOM can be generated. It serves as an aggregate root for all
 /// version of an SBOM, and as a way of cross-referencing SBOMs across disparate systems.
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Target {
+pub struct Package {
     /// The unique identifier for the Package.
     pub id: String,
     /// The name of the package.
@@ -13,7 +12,7 @@ pub struct Target {
     /// The package URL of the package.
     pub purl: Option<String>,
     /// Cross-references from the package to model type or external systems.
-    pub xref: TargetXRef,
+    pub xref: PackageXRef,
     /// Log of all SBOMs uploaded for the package.
     pub sboms: Vec<Sbom>,
 }
@@ -39,52 +38,67 @@ pub struct Sbom {
 /// A Spec is the SBOM specification to which the SBOM conforms.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Spec {
+    /// SBOM is a CycloneDx document.
     CycloneDx(CycloneDxFormat),
+    /// SBOM is an Spdx document.
     Spdx(SpdxFormat),
 }
 
 /// CycloneDxFormat is the document encoding format for the CycloneDx [Spec].
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum CycloneDxFormat {
+    /// Document is a JSON document.
     Json,
+    /// Document is an XML document.
     Xml,
 }
 
 /// SpdxFormat is the document encoding format for the Spdx [Spec].
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum SpdxFormat {
+    /// Document is a JSON document.
     Json,
+    /// Document is an RDF document. Not currently supported. Should throw validation error.
     Rdf,
+    /// Document is a TagValue document. Not currently supported. Should throw validation error.
     TagValue,
+    /// Document is a spreadsheet document. Not currently supported. Should throw validation error.
     Spreadsheet,
+    /// Document is a YAML document. Not currently supported. Should throw validation error.
     Yaml,
 }
 
 /// The system or tool that produced the Sbom.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Source {
+    /// SBOM produced by Harbor using the specified internal provider (e.g. GitHub, Snyk)
     Harbor(String),
-    Syft,
-    Snyk,
+    /// SBOM provided by the vendor.
     Vendor,
 }
 
 // TODO: This should really be a HashMap<&str, HashMap<&str, &str> to allow dynamism.
 // TODO: I'm leaving these as strong types during the modeling phase to make it easier to collaborate.
-/// TargetXRef contains the metadata used to cross-reference an SBOM to another system or subsystem.
+/// PackageXRef contains the metadata used to cross-reference an SBOM to another system or subsystem.
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct TargetXRef {
+pub struct PackageXRef {
+    /// FISMA cross-references.
     pub fisma: Option<FismaXRef>,
+    /// Codebase cross-references.
     pub codebase: Option<CodebaseXRef>,
+    /// Product cross-references.
     pub product: Option<ProductXRef>,
+    /// Snyk cross-references.
     pub snyk: Option<SnykXRef>,
 }
 
+#[allow(missing_docs)]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct FismaXRef {
     pub fisma_id: String,
 }
 
+#[allow(missing_docs)]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CodebaseXRef {
     pub team_id: Option<String>,
@@ -92,14 +106,17 @@ pub struct CodebaseXRef {
     pub codebase_id: Option<String>,
 }
 
+#[allow(missing_docs)]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ProductXRef {
     pub vendor_id: Option<String>,
     pub product_id: Option<String>,
 }
 
+#[allow(missing_docs)]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SnykXRef {
     pub org_id: Option<String>,
+    pub team_id: Option<String>,
     pub project_id: Option<String>,
 }

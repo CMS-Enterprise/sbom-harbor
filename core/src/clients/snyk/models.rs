@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 /// Generated and then manipulated from Snyk Rest API v2023-03-08
 use serde::{Deserialize, Serialize};
 

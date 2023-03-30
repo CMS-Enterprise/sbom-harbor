@@ -1,3 +1,4 @@
+#![feature(async_closure)]
 #![warn(missing_docs)]
 //! The [Core] crate contains the [Models], [Services], and domain logic for Harbor.
 //! Other crates such as the API or CLI are thin wrappers over the [Core] crate that handle
