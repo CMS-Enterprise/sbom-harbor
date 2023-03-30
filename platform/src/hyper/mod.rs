@@ -111,7 +111,13 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
     let resp = match client.request(req).await {
         Ok(r) => r,
         Err(err) => {
-            return Err(Error::Remote(err.to_string()));
+
+            // TODO Replace with the correct error
+            let local_error_sc = match StatusCode::try_from(418) {
+                Ok(teapot) => teapot,
+                Err(err) => panic!("Teapot not available: {}", err)
+            };
+            return Err(Error::Remote(local_error_sc, err.to_string()));
         }
     };
 

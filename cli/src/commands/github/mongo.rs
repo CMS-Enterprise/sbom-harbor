@@ -83,13 +83,9 @@ pub async fn update_last_hash_in_mongo(
 ///
 pub async fn get_mongo_db() -> Result<Database, GhProviderError> {
 
-    let ctx = MongoContext {
-        connection_uri: LocalContext::connection_string(),
-        db_name: DB_IDENTIFIER.to_string(),
-        key_name: KEY_NAME.to_string(),
-    };
+    let ctx = MongoContext::default();
 
-    let result = MongoClient::with_uri_str(ctx.connection_uri.clone()).await;
+    let result = MongoClient::with_uri_str(ctx.connection_uri()).await;
     let client = match result {
         Ok(client) => client,
         Err(err) => return Err(

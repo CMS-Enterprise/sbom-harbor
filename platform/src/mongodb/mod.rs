@@ -42,7 +42,7 @@ impl Default for Context {
             username: "root".to_string(),
             password: "harbor".to_string(),
             port: 27017,
-            db_name: "".to_string(),
+            db_name: "harbor".to_string(),
             key_name: "".to_string(),
         }
     }
