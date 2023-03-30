@@ -8,6 +8,7 @@ documentation.workspace = true
 
 [dependencies]
 async-trait = "0.1.63"
+aws-sdk-secretsmanager = "0.24.0"
 aws-config = "0.54.1"
 aws-sdk-cognitoidentityprovider = "0.24.0"
 aws-sdk-config = "0.24.0"
