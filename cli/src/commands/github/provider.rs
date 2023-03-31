@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use mongodb::bson::doc;
 use uuid::Uuid;
-use anyhow::{Result as AnyhowResult};
 use mongodb::Collection;
 use tokio::count;
 use harbcore::services::{
@@ -30,7 +29,7 @@ use crate::commands::github::{
 };
 use crate::commands::github::mongo::{
     get_mongo_db,
-    GitHubCrawlerMongoDocument,
+    GitHubProviderDocument,
     update_last_hash_in_mongo
 };
 use crate::commands::github::repo::{
@@ -211,7 +210,7 @@ async fn create_harbor_entities(
 /// Sends the data in the document to Harbor
 ///
 async fn send_to_pilot(
-    document: &GitHubCrawlerMongoDocument,
+    document: &GitHubProviderDocument,
     harbor_config: &HarborConfig,
 ) -> Result<SBOMUploadResponse, GhProviderError> {
 
@@ -256,12 +255,12 @@ async fn send_to_pilot(
 ///
 async fn create_document_in_db(
     entities: HashMap<String, String>,
-    collection: Collection<GitHubCrawlerMongoDocument>,
+    collection: Collection<GitHubProviderDocument>,
     url: String,
     last_hash: String,
-) -> Result<GitHubCrawlerMongoDocument, GhProviderError> {
+) -> Result<GitHubProviderDocument, GhProviderError> {
 
-    let document = GitHubCrawlerMongoDocument {
+    let document = GitHubProviderDocument {
         id: Uuid::new_v4().to_string(),
         repo_url: url.to_string(),
         last_hash: last_hash.to_string(),
@@ -282,6 +281,42 @@ async fn create_document_in_db(
     println!("PROCESSING> Added NEW Document to MongoDB: {:#?}", document);
 
     Ok(document)
+}
+
+async fn create_data_structures(
+    repo: &Repo,
+    harbor_config: &HarborConfig,
+    url: String,
+    collection: Collection<GitHubProviderDocument>,
+) -> Result<GitHubProviderDocument, GhProviderError> {
+
+    // TODO This will create entries without the ability to rollback.
+    //  Probably don't care because it's only v1.
+
+    println!("PROCESSING> No Document found document in mongo. Creating entities in harbor");
+
+    // This arm executes when nothing is found in the database associated
+    // to the given repo_url.  This means we need to create the project and codebase
+    // in Harbor before we can send SBOMs to that target.
+
+    let entities: HashMap<String, String> = match create_harbor_entities(
+        url.clone(),
+        harbor_config,
+        match &repo.language {
+            Some(language) => language.to_string(),
+            None => String::from("None"),
+        },
+    ).await {
+        Ok(entities) => entities,
+        Err(err) => panic!("Unable to create Harbor entities, {:#?}", err),
+    };
+
+    create_document_in_db(
+        entities,
+        collection,
+        url.clone(),
+        String::from(""),
+    ).await
 }
 
 async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut Counter) {
@@ -305,87 +340,51 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut C
         Err(err) => panic!("Problem getting DB: {:#?}", err)
     };
 
-    let collection = db.collection::<GitHubCrawlerMongoDocument>(COLLECTION);
+    let  collection = db.collection::<GitHubProviderDocument>(COLLECTION);
     let filter = doc! { "repo_url":  url.as_str() };
 
     println!("PROCESSING> Looking in Mongo for this document: {:#?}", filter);
 
-    let mut doc_option: Option<GitHubCrawlerMongoDocument> = match collection.find_one(filter, None).await {
-        Ok(cursor) => cursor,
-        Err(cursor_err) => panic!("Cursor - Error: {}", cursor_err)
+    let mut doc_option: Option<GitHubProviderDocument>
+        = match collection.find_one(filter, None).await {
+        Ok(option) => option,
+        Err(err) => panic!("Cursor - Error: {}", err)
     };
 
-    match doc_option {
-        Some(document) => {
-
-            println!("PROCESSING> Found document in mongo, comparing hashes");
-
-            // This arm is executed when something is in the database
-            // with the specified repo_url.
-
-            if last_hash.to_string() != document.last_hash {
-
-                println!("PROCESSING> Hashes are not equal, sending to pilot");
-
-                // Use the document to construct a request to Pilot
-                match send_to_pilot(&document, &harbor_config).await {
-                    Ok(upload_resp) => {
-
-                        // Upload is OK, update Mongo
-
-                        println!("PROCESSING> One SBOM Down! {:#?}", upload_resp);
-                        update_last_hash_in_mongo(document, collection, last_hash.clone()).await;
-                        counter.processed += 1;
-                    },
-                    Err(err) => {
-                        counter.upload_errors += 1;
-                        println!("Error Uploading SBOM!! {:#?}", err)
-                    }
-                }
-            } else {
-                counter.hash_matched += 1;
-                println!("PROCESSING> Hashes are equal, skipping pilot");
-            }
-        },
-        None => { // Nothing is in Mongo
-
-            println!("PROCESSING> No Document found document in mongo. Creating entities in harbor");
-
-            // This arm executes when nothing is found in the database associated
-            // to the given repo_url.  This means we need to create the project and codebase
-            // in Harbor before we can send SBOMs to that target.
-
-            let entities: HashMap<String, String> = match create_harbor_entities(
-                url.clone(),
-                harbor_config,
-                match &repo.language {
-                    Some(language) => language.to_string(),
-                    None => String::from("None"),
-                },
-            ).await {
-                Ok(entities) => entities,
-                Err(err) => panic!("Unable to create Harbor entities, {:#?}", err),
-            };
-
-            let document: GitHubCrawlerMongoDocument
-                = match create_document_in_db(
-                entities,
-                collection,
-                url.clone(),
-                last_hash.clone()
-            ).await {
-                Ok(document) => document,
-                Err(err) => panic!("Mongo Error: {:#?}", err)
-            };
-
-            // Use the document to construct a request to Pilot
-            match send_to_pilot(&document, &harbor_config).await {
-                Ok(upload_resp) => {
-                    println!("One SBOM Down! {:#?}", upload_resp);
-                    counter.processed += 1;
-                },
-                Err(err) => println!("PROCESSING> Error Uploading SBOM!! {:#?}", err)
-            }
+    let document = match doc_option {
+        Some(document) => document,
+        None => match create_data_structures(
+            repo,
+            harbor_config,
+            url.clone(),
+            collection.clone(),
+        ).await {
+            Ok(document) => document,
+            Err(err) => panic!("Error creating data structures in Mongo or Harbor: {}", err)
         }
     };
+
+    if last_hash.to_string() != document.last_hash {
+
+        println!("PROCESSING> Hashes are not equal, sending to pilot");
+
+        // Use the document to construct a request to Pilot
+        match send_to_pilot(&document, &harbor_config).await {
+            Ok(upload_resp) => {
+
+                // Upload is OK, update Mongo
+
+                println!("PROCESSING> One SBOM Down! {:#?}", upload_resp);
+                update_last_hash_in_mongo(document, collection, last_hash.clone()).await;
+                counter.processed += 1;
+            },
+            Err(err) => {
+                counter.upload_errors += 1;
+                println!("Error Uploading SBOM!! {:#?}", err)
+            }
+        }
+    } else {
+        counter.hash_matched += 1;
+        println!("PROCESSING> Hashes are equal, skipping pilot");
+    }
 }

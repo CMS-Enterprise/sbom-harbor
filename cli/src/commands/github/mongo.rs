@@ -15,9 +15,9 @@ use crate::commands::github::{
 /// Struct to define a GitHub Provider document in Mongo
 ///
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct GitHubCrawlerMongoDocument {
+pub struct GitHubProviderDocument {
 
-    /// Unique id of the [GitHubCrawlerMongoDocument].
+    /// Unique id of the [GitHubProviderDocument].
     pub id: String,
 
     /// Url of the GitHub Repository
@@ -35,13 +35,13 @@ pub struct GitHubCrawlerMongoDocument {
     /// Harbor v1 codebase id
     pub codebase_id: String,
 }
-mongo_doc!(GitHubCrawlerMongoDocument);
+mongo_doc!(GitHubProviderDocument);
 
 /// Function to update the last commit hash in a document
 ///
 pub async fn update_last_hash_in_mongo(
-    document: GitHubCrawlerMongoDocument,
-    collection: Collection<GitHubCrawlerMongoDocument>,
+    document: GitHubProviderDocument,
+    collection: Collection<GitHubProviderDocument>,
     last_hash: String,
 ) {
 

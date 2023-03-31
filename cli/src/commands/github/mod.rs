@@ -5,10 +5,8 @@ use std::fmt::Error;
 use std::ops::Deref;
 use std::pin::Pin;
 
-use anyhow::{Result as AnyhowResult};
 use async_trait::async_trait;
 use futures::TryStreamExt;
-use hyper::StatusCode;
 use mongodb::bson::doc;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;

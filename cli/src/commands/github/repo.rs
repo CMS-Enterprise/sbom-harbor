@@ -1,6 +1,5 @@
 use std::convert::TryFrom;
 
-use anyhow::{anyhow, Result as AnyhowResult};
 use serde;
 use serde::{Deserialize, Serialize};
 use platform::hyper::{ContentType, Error as HyperError, get};
