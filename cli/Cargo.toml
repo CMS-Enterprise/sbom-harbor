@@ -24,3 +24,8 @@ version = "0.1.0"
 [dependencies.harbcore]
 path = "../core"
 version = "0.1.0"
+
+[[bin]]
+name = "harbor-cli"
+path = "src/bin/main.rs"
+
