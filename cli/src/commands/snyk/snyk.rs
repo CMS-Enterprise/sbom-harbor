@@ -153,9 +153,9 @@ impl SnykProvider {
                     match option {
                         Some(sbom) => {
                             //TODO: review this with Quinn
-                            let cloud_front_domain = env::var("CF_DOMAIN").unwrap_or(String::from(""));
-                            let sbom_token = env::var("V1_CMS_TEAM_TOKEN").unwrap_or(String::from(""));
-                            let team_id = env::var("V1_CMS_TEAM_ID").unwrap_or(String::from(""));
+                            let cloud_front_domain = env::var("CF_DOMAIN").unwrap_or(String::from("")); //TODO: get this only once
+                            let sbom_token = env::var("V1_CMS_TEAM_TOKEN").unwrap_or(String::from("")); //TODO: get this only once
+                            let team_id = env::var("V1_CMS_TEAM_ID").unwrap_or(String::from("")); //TODO: get this only once
 
                             simple_upload_sbom(cloud_front_domain, sbom_token, team_id, project.browseUrl.clone(), project.r#type.clone(), sbom).await;
                         },
