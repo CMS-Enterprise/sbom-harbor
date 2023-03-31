@@ -15,6 +15,11 @@ fn orgs_url() -> String {
 }
 
 #[allow(dead_code)]
+fn org_issues_url(org_id: &str) -> String {
+    let route = format!("/orgs/{}/packages/issues", org_id);
+    format!("{}{}", V3_URL, route)
+}
+#[allow(dead_code)]
 fn issues_url(org_id: &str, purl: &str) -> String {
     let route = format!("/orgs/{}/packages/{}/issues", org_id, purl);
     format!("{}{}", V3_URL, route)
@@ -89,6 +94,20 @@ impl Client {
             Some(r) => Ok(*r.data),
         }
 
+    }
+
+    #[allow(dead_code)]
+    pub async fn get_org_issues(&self, org_id: &str) -> Result<Option<Vec<CommonIssueModel>>, Error> {
+        let response:Option<IssuesResponse> = hyper::get(
+            &org_issues_url(org_id),
+                ContentType::Json,
+            &self.token(),
+            None::<IssuesResponse>).await?;
+
+        match response {
+            None => Err(Error::Runtime("snyk failed to return org issues".to_string())),
+            Some(r) => Ok(r.data),
+        }
     }
 
     #[allow(dead_code)]
