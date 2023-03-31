@@ -1,9 +1,13 @@
-use std::{fs};
+use std::collections::HashMap;
+use std::{fs, env};
 use async_trait::async_trait;
+use serde_json::Value;
 use crate::commands::Provider;
-use crate::commands::snyk::snyk_data_model::{SnykData, ProjectJson, ProjectDetails, Sbom};
+use crate::commands::snyk::snyk_data_model::{SnykData, ProjectJson, ProjectDetails};
 use platform::hyper::{ContentType, Error as HyperError, get, post};
 use platform::auth::get_secret;
+use harbor_client::client::simple_upload_sbom;
+use anyhow::Result;
 //DONE: Add method call
 //DONE: See if it runs
 //DONE: Pull in HTTP library
@@ -14,9 +18,9 @@ use platform::auth::get_secret;
 //DONE: Restructure and cleanup pass 1
 //DONE: Merge Quinns code
 //DONE: Restructure and cleanup pass 2
-//TODO: Rebase main
+//DONE: Rebase main
 //TODO: Event logging
-//TODO: Send SBOM somewhere?
+//TODO: Send SBOM somewhere and review solution works...
 //TODO: Documentation
 //TODO: Final Restructure and cleanup pass
 
@@ -88,7 +92,7 @@ impl SnykProvider {
                     match response {
                         Ok(option) =>  {
                             match option {
-                                Some(project_json) => Self::find_valid_projects(project_json, org_id, &mut valid_projects),
+                                Some(project_json) => Self::find_valid_projects(project_json, org_id, org_name.clone(), &mut valid_projects),
                                 None => todo!(),
                             }
                         },
@@ -102,18 +106,21 @@ impl SnykProvider {
     }
 
     // Iterates over list of projects and creates a new project list that only has projects with a valid Origin and Type
-    fn find_valid_projects(project_list: ProjectJson, org_id: String, valid_projects: &mut Vec<ProjectDetails>) {
+    fn find_valid_projects(project_list: ProjectJson, org_id: String, org_name:String, valid_projects: &mut Vec<ProjectDetails>) {
 
         for project in project_list.projects.iter() {
             if(!project.id.is_empty()  && !project.origin.is_empty() && !project.r#type.is_empty()) {
                 if  (Self::VALID_ORIGINS.contains(&project.origin.as_str()) &&  Self::VALID_TYPES.contains(&project.r#type.as_str())){
-                    let sbom_url = format!("{}/orgs/{}/projects/{}/sbom?version={}&format={}", Self::API_V3_URL, org_id, project.id, Self::API_V3_VERSION, Self::SBOM_FORMAT);
+                    let sbom_url = format!("{}/orgs/{}/projects/{}/sbom?version={}&format={}", Self::API_V3_URL, org_id.clone(), project.id, Self::API_V3_VERSION, Self::SBOM_FORMAT);
 
                     let valid_project = ProjectDetails{
+                        org_id: org_id.clone(),
+                        org_name: org_name.clone(),
                         id: project.id.clone(),
                         name: project.name.clone(),
                         origin: project.origin.clone(),
                         r#type: project.r#type.clone(),
+                        browseUrl: project.browseUrl.clone(),
                         sbom_url: sbom_url
                     };
 
@@ -125,16 +132,16 @@ impl SnykProvider {
 
     async fn publish_sboms(valid_projects: &Vec<ProjectDetails>, snyk_token: &str) {
 
+        //TODO: delete this
         let tmp_test_dir = Self::TEMP_TEST_DIR;
         
         println!("Publishing SBOMS...");
 
         for project in valid_projects.iter() {
-            let current_org_id = "".to_string(); //TODO: get this correctly
             let proj_name = project.name.clone().replace("/", "-");
-            println!("Getting Sbom for project: {}",proj_name.as_str());
+            println!("Getting Sbom for project: {}",proj_name);
 
-            let response: Result<Option<Sbom>, HyperError> = get(
+            let response: Result<Option<HashMap<String, Value>>, HyperError> = get(
                 project.sbom_url.clone().as_str(),
                 ContentType::Json,
                 snyk_token,
@@ -145,17 +152,18 @@ impl SnykProvider {
                 Ok(option) =>  {
                     match option {
                         Some(sbom) => {
-                            //TODO: send sboms somewhere
-                            // let data = format!("{:#?}", sbom);
-                            // let file_path = format!("{}/sboms/project-{}", tmp_test_dir, proj_name.as_str());
-                            // println!("Writing file to location: {}", file_path.as_str());
-                            // fs::write(file_path, data).expect("Unable to write file");
+                            //TODO: review this with Quinn
+                            let cloud_front_domain = env::var("CF_DOMAIN").unwrap_or(String::from(""));
+                            let sbom_token = env::var("V1_CMS_TEAM_TOKEN").unwrap_or(String::from(""));
+                            let team_id = env::var("V1_CMS_TEAM_ID").unwrap_or(String::from(""));
+
+                            simple_upload_sbom(cloud_front_domain, sbom_token, team_id, project.browseUrl.clone(), project.r#type.clone(), sbom).await;
                         },
                         None => todo!(),
                     }
                 },
                 Err(err) => {
-                    println!("ERROR -> Failed to find sbom for project: {} in org: {}", proj_name.as_str(), current_org_id.as_str())
+                    println!("ERROR -> Failed to find sbom for project: {} in org: {}", proj_name, project.org_id)
                 },
             }
         }

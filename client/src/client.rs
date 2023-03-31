@@ -297,6 +297,46 @@ impl Client {
     }
 }
 
+/// Helper method that creates a client and uploads sbom based on provided information
+pub async fn simple_upload_sbom(cloud_front_domain: String, sbom_token: String, team_id: String, orig_url: String, language: String, sbom: HashMap<String, Value>) {
+        
+        let client = Client::new(
+            cloud_front_domain.to_string(),
+            sbom_token.to_string(),
+            team_id.clone(),
+        ).await.unwrap();
+
+        let project_result = client.create_project(team_id.clone(), orig_url, language).await;
+
+        let project = match project_result {
+            Ok(project) => project,
+            Err(_) => todo!(),
+        };
+
+        let codebase = project.codebases.into_iter().nth(0);
+
+        let upload_response = Client::upload_sbom(
+            &cloud_front_domain,
+            &sbom_token,
+            team_id,
+            project.id,
+            codebase.unwrap().id,
+            sbom
+        ).await;
+
+        match upload_response {
+            Ok(resp) => {
+                if resp.valid {
+                    println!("Sbom upload success \nbucket:{} \nobject key:{} ", resp.bucket_name, resp.object_key);
+                }
+                else {
+                    println!("Sbom upload failed: request was invalid");
+                }
+            },
+            Err(err) => panic!("{}", err),
+        }
+}
+
 #[derive(Serialize)]
 struct LoginRequest {
     pub username: String,
