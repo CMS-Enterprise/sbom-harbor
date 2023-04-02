@@ -15,6 +15,9 @@ pub enum Error {
     /// Runtime error.
     #[error("runtime error: {0}")]
     Runtime(String),
+    /// Serialization error.
+    #[error("serialization error: {0}")]
+    Serde(String),
 }
 
 

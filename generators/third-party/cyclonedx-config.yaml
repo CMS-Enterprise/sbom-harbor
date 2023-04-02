@@ -1,0 +1,7 @@
+generatorName: rust
+gitUserId: CMS-Enterprise
+gitRepoId: cms-enterprise/sbom-harbor/core
+inputSpec: /local/cyclonedx.yaml
+outputDir: /local/generated/cyclonedx
+packageName: models::cyclonedx # the module path in the core crate
+packageVersion: 0.2.0

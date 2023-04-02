@@ -568,18 +568,33 @@ pub struct Tag {
     pub value: String,
 }
 
+// #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
+// pub struct PaginatedLinks {
+//     #[serde(rename = "first", skip_serializing_if = "Option::is_none")]
+//     pub first: Option<Box<LinkProperty>>,
+//     #[serde(rename = "last", skip_serializing_if = "Option::is_none")]
+//     pub last: Option<Box<LinkProperty>>,
+//     #[serde(rename = "next", skip_serializing_if = "Option::is_none")]
+//     pub next: Option<Box<LinkProperty>>,
+//     #[serde(rename = "prev", skip_serializing_if = "Option::is_none")]
+//     pub prev: Option<Box<LinkProperty>>,
+//     #[serde(rename = "self", skip_serializing_if = "Option::is_none")]
+//     pub param_self: Option<Box<LinkProperty>>,
+// }
+
+// WARN: I had to change from the generated code above to Option<String> despite the spec.
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct PaginatedLinks {
     #[serde(rename = "first", skip_serializing_if = "Option::is_none")]
-    pub first: Option<Box<LinkProperty>>,
+    pub first: Option<String>,
     #[serde(rename = "last", skip_serializing_if = "Option::is_none")]
-    pub last: Option<Box<LinkProperty>>,
+    pub last: Option<String>,
     #[serde(rename = "next", skip_serializing_if = "Option::is_none")]
-    pub next: Option<Box<LinkProperty>>,
+    pub next: Option<String>,
     #[serde(rename = "prev", skip_serializing_if = "Option::is_none")]
-    pub prev: Option<Box<LinkProperty>>,
+    pub prev: Option<String>,
     #[serde(rename = "self", skip_serializing_if = "Option::is_none")]
-    pub param_self: Option<Box<LinkProperty>>,
+    pub param_self: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]

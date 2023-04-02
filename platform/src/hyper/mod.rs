@@ -1,5 +1,5 @@
 use std::fmt::{Display, Formatter};
-use hyper::{Body, Client, Method, Request, StatusCode, Uri};
+use hyper::{Body, Client, Request, Uri};
 use hyper::header::InvalidHeaderValue;
 use hyper::http::uri::InvalidUri;
 use hyper_rustls::HttpsConnectorBuilder;
@@ -8,6 +8,10 @@ use serde::Serialize;
 use thiserror::Error;
 
 const CONTENT_TYPE: &str = "content-type";
+
+/// Re-exports hyper Method and StatusCode so clients can make raw requests.
+pub use hyper::{Method, StatusCode};
+
 
 /// HTTP Content Types.
 pub enum ContentType {
@@ -74,8 +78,40 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
     token: String,
     payload: Option<T>,
 ) -> Result<Option<U>, Error> {
-    let uri: Uri = Uri::try_from(url)?;
 
+    let result = raw(method, url, content_type, token, payload).await?;
+    let resp_status = result.0;
+    let resp_body = result.1;
+
+
+    if resp_status != StatusCode::OK {
+        return Err(Error::Remote(resp_body));
+    }
+
+    // TODO: This a hack around empty JSON.
+    if resp_body.eq("{}") {
+        return Ok(None);
+    }
+
+    let result = match serde_json::from_slice(resp_body.as_ref()) {
+        Ok(r) => r,
+        Err(err) => {
+            return Err(Error::Serde(err.to_string()));
+        }
+    };
+
+    Ok(Some(result))
+}
+
+pub async fn raw<T: Serialize>(
+    method: Method,
+    url: &str,
+    content_type: ContentType,
+    token: String,
+    payload: Option<T>,
+) -> Result<(StatusCode, String), Error> {
+
+    let uri: Uri = Uri::try_from(url)?;
     let req_body: Body = match payload {
         Some(p) => {
             let body = match content_type {
@@ -121,23 +157,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
         }
     };
 
-    if resp_status != StatusCode::OK {
-        return Err(Error::Remote(resp_body));
-    }
-
-    // TODO: This a hack around empty JSON.
-    if resp_body.eq("{}") {
-        return Ok(None);
-    }
-
-    let result = match serde_json::from_slice(resp_body.as_ref()) {
-        Ok(r) => r,
-        Err(err) => {
-            return Err(Error::Serde(err.to_string()));
-        }
-    };
-
-    Ok(Some(result))
+    Ok((resp_status, resp_body))
 }
 
 /// Represents all handled Errors for this module.

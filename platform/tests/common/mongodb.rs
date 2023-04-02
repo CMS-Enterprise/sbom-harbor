@@ -6,7 +6,7 @@ use uuid::Uuid;
 use platform::Error;
 use platform::mongodb::{Context, MongoDocument, Store};
 use platform::auth::*;
-use platform::config::from_env;
+use platform::config::type_from_env;
 use platform::mongodb::auth::DefaultAuthorizer;
 
 pub const DB_IDENTIFIER: &str = "harbor";
@@ -15,7 +15,7 @@ pub const COLLECTION: &str = "Group";
 
 #[allow(dead_code)]
 pub async fn local_context() -> Result<Context, Error> {
-    let mut cx: Context = from_env("DB_CONNECTION")?;
+    let mut cx: Context = type_from_env("DB_CONNECTION")?;
 
     cx.db_name = DB_IDENTIFIER.to_string();
     cx.key_name = KEY_NAME.to_string();

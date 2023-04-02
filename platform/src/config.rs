@@ -18,7 +18,7 @@ fn region_short_codes() -> HashMap<&'static str, &'static str> {
 }
 
 /// Retrieve an arbitrary value from the environment and cast it to a type.
-pub fn from_env<T>(key: &str) -> Result<T, Error>
+pub fn type_from_env<T>(key: &str) -> Result<T, Error>
     where for<'a> T: Default + Deserialize<'a> {
     let raw = std::env::vars()
         .find(|(k, _)| k == key);
@@ -31,6 +31,13 @@ pub fn from_env<T>(key: &str) -> Result<T, Error>
 
             Ok(result)
         }
+    }
+}
+
+pub fn from_env(key: &str) -> Option<String> {
+    match std::env::vars().find(|(k, _)| k == key) {
+        None => None,
+        Some((_, v)) => Some(v),
     }
 }
 

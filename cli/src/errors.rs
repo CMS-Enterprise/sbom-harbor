@@ -15,7 +15,7 @@ pub enum Error {
     /// Invalid subcommand.
     #[error("invalid subcommand: {0}")]
     InvalidSubcommand(String),
-    /// Pilot runtime error.
+    /// SBOM runtime error.
     #[error("sbom: {0}")]
     Sbom(String),
 }

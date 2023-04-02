@@ -1,4 +1,4 @@
-# File is used by the openapi-generator cli to generate a rust client.
+# File is used by the openapi-generator cli to generate a harbor client.
 generatorName: typescript-fetch
 gitUserId: CMS-Enterprise
 gitRepoId: sbom-harbor/openapi/client
