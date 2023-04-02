@@ -187,24 +187,24 @@ async fn create_harbor_entities(
     // Each project will have only one codebase in this implementation
     let codebase = project.codebases.into_iter().nth(0);
 
-    let mut test_map = HashMap::new();
+    let mut id_map = HashMap::new();
 
-    test_map.insert(
+    id_map.insert(
         String::from(TEAM_ID_KEY),
         harbor_config.cms_team_id.to_string(),
     );
 
-    test_map.insert(
+    id_map.insert(
         String::from(PROJECT_ID_KEY),
         project.id
     );
 
-    test_map.insert(
+    id_map.insert(
         String::from(CODEBASE_ID_KEY),
         codebase.unwrap().id
     );
 
-    Ok(test_map)
+    Ok(id_map)
 }
 
 /// Sends the data in the document to Harbor
@@ -363,6 +363,8 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut C
             Err(err) => panic!("Error creating data structures in Mongo or Harbor: {}", err)
         }
     };
+
+    println!("Comparing Repo({}) to MongoDB({})", last_hash, document.last_hash);
 
     if last_hash.to_string() != document.last_hash {
 
