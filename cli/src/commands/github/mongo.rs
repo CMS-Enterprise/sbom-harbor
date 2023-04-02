@@ -1,16 +1,21 @@
-use mongodb::{Client as MongoClient, Collection, Cursor, Database};
-use mongodb::bson::doc;
-use mongodb::options::FindOptions;
-use serde::{Deserialize, Serialize};
-
-use platform::mongodb::{Context as MongoContext, mongo_doc, MongoDocument};
-use platform::mongodb::service::Service;
-
-use crate::commands::github::{
-    DB_IDENTIFIER,
-    KEY_NAME,
-    GhProviderError,
+use mongodb::{
+    Client as MongoClient,
+    Collection,
+    Database
 };
+use mongodb::bson::doc;
+use serde::{
+    Deserialize,
+    Serialize
+};
+
+use platform::mongodb::{
+    Context as MongoContext,
+    mongo_doc,
+    MongoDocument
+};
+
+use crate::commands::github::GhProviderError;
 
 /// Struct to define a GitHub Provider document in Mongo
 ///

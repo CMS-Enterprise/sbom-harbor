@@ -3,7 +3,6 @@ use async_trait::async_trait;
 use mongodb::bson::doc;
 use uuid::Uuid;
 use mongodb::Collection;
-use tokio::count;
 use harbcore::services::{
     clone_path,
     clone_repo,
@@ -207,14 +206,12 @@ async fn create_harbor_entities(
     Ok(id_map)
 }
 
-/// Sends the data in the document to Harbor
+/// Clones a repo, generates an SBOM, and then uploads to the Enrichment Engine.
 ///
 async fn send_to_pilot(
     document: &GitHubProviderDocument,
     harbor_config: &HarborConfig,
 ) -> Result<SBOMUploadResponse, GhProviderError> {
-
-    /// Clones a repo, generates an SBOM, and then uploads to the Enrichment Engine.
 
     let clone_path = clone_path(&document.repo_url);
 
@@ -340,12 +337,12 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut C
         Err(err) => panic!("Problem getting DB: {:#?}", err)
     };
 
-    let  collection = db.collection::<GitHubProviderDocument>(COLLECTION);
+    let collection = db.collection::<GitHubProviderDocument>(COLLECTION);
     let filter = doc! { "repo_url":  url.as_str() };
 
     println!("PROCESSING> Looking in Mongo for this document: {:#?}", filter);
 
-    let mut doc_option: Option<GitHubProviderDocument>
+    let doc_option: Option<GitHubProviderDocument>
         = match collection.find_one(filter, None).await {
         Ok(option) => option,
         Err(err) => panic!("Cursor - Error: {}", err)

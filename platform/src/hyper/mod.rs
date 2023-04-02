@@ -167,6 +167,7 @@ pub enum Error {
     /// Error calling remote resource.
     #[error("error from remote resource: {0}")]
     Remote(StatusCode, String),
+    /// Error in [Serde] runtime.
     #[error("error serializing types: {0}")]
     Serde(String),
 }

@@ -6,7 +6,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::path::Path;
 use std::process::Command;
-use tracing::{info, instrument};
+use tracing::info;
 
  /// An HTTP request that contains the necessary configuration and authorization
 /// to auto-generate and upload an SBOM.
@@ -44,6 +44,9 @@ pub struct PilotRequest {
 }
 
 impl PilotRequest {
+
+    /// Validates a Pilot Request
+    ///
     pub fn validate(&self) -> Result<()> {
         let mut errors: String = String::from("");
 

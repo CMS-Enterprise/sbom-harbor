@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::env;
 use std::fmt::{Display, Formatter};
 use std::fmt::Result as StdResult;
 
@@ -10,16 +9,6 @@ use tracing::info;
 
 use harbcore::models::{Codebase, Project, Team};
 use platform::hyper::{ContentType, delete, get, post};
-use uuid::Uuid;
-
-/// Extracts the value of an environment variable
-///
-fn get_env_var(variable_name: &str) -> Option<String> {
-    return match env::var(variable_name) {
-        Ok(v) => Some(v),
-        Err(_e) => None,
-    };
-}
 
 fn join_url(base: &str, route: &str) -> String {
     let mut url = base.to_owned();
@@ -173,6 +162,8 @@ impl Client {
         Ok(team)
     }
 
+    /// Redundant create_project method\
+    ///
     pub async fn create_project(
         &self,
         team_id: String,
@@ -208,6 +199,8 @@ impl Client {
         Ok(project)
     }
 
+    /// Method used to create a project url
+    ///
     pub fn create_project_url(&self, team_id: String) -> String {
         join_url(
             &self.base_url,
