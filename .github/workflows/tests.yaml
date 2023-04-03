@@ -54,33 +54,24 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
-    container:
-      image: node:19-bullseye-slim
     defaults:
       run:
         working-directory: ui
     steps:
       - name: CHECKOUT
         uses: actions/checkout@v3
-
+      
+      - name: INSTALL- nodejs, yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version: 19
+          cache: 'yarn'
+      
       - name: DEBUG - node, npm, yarn versions
         run: |
           echo "node --version: $(node --version)"
           echo "npm --version: $(npm --version)"
           echo "yarn --version: $(yarn --version)"
-
-      - name: CACHE - get ui cache path
-        id: yarn-cache-dir-path
-        run: echo "dir=$(yarn --cwd ui config get cacheFolder)" >> $GITHUB_OUTPUT
-
-      - name: CACHE - ui dependencies
-        id: yarn-cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: yarn-cache-folder-${{ hashFiles('ui/**/yarn.lock', 'ui/.yarnrc.yml') }}
-          restore-keys: |
-            yarn-cache-folder-
 
       - name: INSTALL - ui dependencies
         working-directory: ui
