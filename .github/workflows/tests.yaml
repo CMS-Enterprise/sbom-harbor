@@ -23,8 +23,6 @@ jobs:
         env:
           MONGO_INITDB_ROOT_USERNAME: root
           MONGO_INITDB_ROOT_PASSWORD: harbor
-        ports:
-          - 27017:27017
         options: >-
           --health-cmd "echo 'db.getMongo()' | mongo --norc --quiet --host=localhost:27017"
           --health-interval 10s
