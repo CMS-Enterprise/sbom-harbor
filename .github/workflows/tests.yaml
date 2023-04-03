@@ -23,6 +23,8 @@ jobs:
         env:
           MONGO_INITDB_ROOT_USERNAME: root
           MONGO_INITDB_ROOT_PASSWORD: harbor
+        ports:
+          - 27017:27017
         options: >-
           --health-cmd "echo 'db.getMongo()' | mongo --norc --quiet --host=localhost:27017"
           --health-interval 10s
@@ -30,6 +32,16 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v3
+      
+      - name: Setup Cache
+        uses: actions/cache@v3.3.1
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
             
       - name: INSTALL - dependencies
         run: cargo fetch
