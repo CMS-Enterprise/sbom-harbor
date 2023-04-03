@@ -24,13 +24,13 @@ jobs:
           MONGO_INITDB_ROOT_USERNAME: root
           MONGO_INITDB_ROOT_PASSWORD: harbor
         options: >-
-          --health-cmd mongo
+          --health-cmd "echo 'db.getMongo()' | mongo --norc --quiet --host=localhost:27017"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
     steps:
       - uses: actions/checkout@v3
-
+            
       - name: INSTALL - dependencies
         run: cargo fetch
 
