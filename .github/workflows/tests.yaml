@@ -66,6 +66,7 @@ jobs:
         with:
           node-version: 19
           cache: 'yarn'
+          cache-dependency-path: 'ui/yarn.lock'
       
       - name: DEBUG - node, npm, yarn versions
         run: |
