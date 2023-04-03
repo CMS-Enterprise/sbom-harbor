@@ -16,7 +16,7 @@ jobs:
   backend:
     runs-on: ubuntu-latest
     container:
-      image: aquia/rust-cargo-build-tools:1.68.0
+      image: rust:1.68.0
     services:
       mongo:
         image: mongo:5.0.15
@@ -29,7 +29,8 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v3
+      - name: CHECKOUT
+        uses: actions/checkout@v3
       
       - name: CACHE
         uses: actions/cache@v3
