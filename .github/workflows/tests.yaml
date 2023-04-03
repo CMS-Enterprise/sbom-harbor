@@ -20,8 +20,6 @@ jobs:
     services:
       mongo:
         image: mongo:5.0.15
-        ports: 
-          - 27017:27017
         env:
           MONGO_INITDB_ROOT_USERNAME: root
           MONGO_INITDB_ROOT_PASSWORD: harbor
