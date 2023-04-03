@@ -16,87 +16,91 @@ services:
     command: mongod
     volumes:
       - ./mongodb:/data/db
-  # # Jaeger
-  # jaeger-all-in-one:
-  #   image: jaegertracing/all-in-one:latest
-  #   restart: always
-  #   ports:
-  #     - "16686:16686"
-  #     - "14268"
-  #     - "14250"
 
-  # # Zipkin
-  # zipkin-all-in-one:
-  #   image: openzipkin/zipkin:latest
-  #   restart: always
-  #   ports:
-  #     - "9411:9411"
+  # Jaeger
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:latest
+    restart: always
+    ports:
+      - "16686:16686"
+      - "14268"
+      - "14250"
 
-  # # OpenTelemetry Collector
-  # otel-collector:
-  #   image: otel/opentelemetry-collector:latest
-  #   restart: always
-  #   command: ["--config=/etc/otel-collector-config.yaml", "${OTELCOL_ARGS}"]
-  #   volumes:
-  #     - ./opentelemetry/otel-collector-config.yaml:/etc/otel-collector-config.yaml
-  #   ports:
-  #     - "1888:1888"   # pprof extension
-  #     - "8888:8888"   # Prometheus metrics exposed by the collector
-  #     - "8889:8889"   # Prometheus exporter metrics
-  #     - "13133:13133" # health_check extension
-  #     - "4317:4317"   # OTLP gRPC receiver
-  #     - "55679:55679" # zpages extension
-  #   depends_on:
-  #     - jaeger-all-in-one
-  #     - zipkin-all-in-one
+  # Zipkin
+  zipkin-all-in-one:
+    image: openzipkin/zipkin:latest
+    restart: always
+    ports:
+      - "9411:9411"
 
-  # #Prometheus
-  # prometheus:
-  #   container_name: prometheus
-  #   image: prom/prometheus:latest
-  #   restart: always
-  #   volumes:
-  #     - ./prometheus:/etc/prometheus/
-  #     - prometheus_data:/prometheus
-  #   command:
-  #     - '--config.file=/etc/prometheus/prometheus.yml'
-  #     - '--storage.tsdb.path=/prometheus'
-  #     - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-  #     - '--web.console.templates=/usr/share/prometheus/consoles'
-  #   ports:
-  #     - "9090:9090"
-  #   links:
-  #     - alertmanager:alertmanager
+  # OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    restart: always
+    command:
+      [
+        "--config=/etc/otel-collector-config.yaml",
+        "${OTELCOL_ARGS}"
+      ]
+    volumes:
+      - ./opentelemetry/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "1888:1888" # pprof extension
+      - "8888:8888" # Prometheus metrics exposed by the collector
+      - "8889:8889" # Prometheus exporter metrics
+      - "13133:13133" # health_check extension
+      - "4317:4317" # OTLP gRPC receiver
+      - "55679:55679" # zpages extension
+    depends_on:
+      - jaeger-all-in-one
+      - zipkin-all-in-one
 
-  # # Prometheus AlertManager
-  # alertmanager:
-  #   image: prom/alertmanager
-  #   restart: always
-  #   ports:
-  #     - 9093:9093
-  #   volumes:
-  #     - ./alertmanager/:/etc/alertmanager/
-  #   command:
-  #     - '--config.file=/etc/alertmanager/config.yml'
-  #     - '--storage.path=/alertmanager'
+  #Prometheus
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    restart: always
+    volumes:
+      - ./prometheus:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    links:
+      - alertmanager:alertmanager
 
-  # # Grafana
-  # grafana:
-  #   image: grafana/grafana
-  #   user: '472'
-  #   restart: always
-  #   environment:
-  #     GF_INSTALL_PLUGINS: 'grafana-clock-panel,grafana-simple-json-datasource'
-  #   volumes:
-  #     - grafana_data:/var/lib/grafana
-  #     - ./grafana/provisioning/:/etc/grafana/provisioning/
-  #   env_file:
-  #     - ./grafana/config.harbor
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - prometheus
+  # Prometheus AlertManager
+  alertmanager:
+    image: prom/alertmanager
+    restart: always
+    ports:
+      - 9093:9093
+    volumes:
+      - ./alertmanager/:/etc/alertmanager/
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
 
+  # Grafana
+  grafana:
+    image: grafana/grafana
+    user: '472'
+    restart: always
+    environment:
+      GF_INSTALL_PLUGINS: 'grafana-clock-panel,grafana-simple-json-datasource'
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    env_file:
+      - ./grafana/config.harbor
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
   # Harbor API
   #  harbor-api:
   #    image: harbor-api:latest
