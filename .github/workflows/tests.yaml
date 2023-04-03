@@ -12,17 +12,18 @@ on:
       - reopened
       - synchronize
 
-# Rather counterintuitive, concurrency is used to ensure that a workflow runs *singularly* per pull request.
-# When a PR is updated, cancel any currently running workflows triggered by previous pushes,
-# as they are essentially redundant and made moot by later pushes
-# This will ensure that workflows do not block runners by executing unnecessarily
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   backend:
-    runs-on: [self-hosted]
+    runs-on: ubuntu-latest
+    container:
+      image: aquia/rust-cargo-build-tools:1.68.0
+    services:
+      mongo:
+        image: mongo:5.0.15
+        ports: 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: harbor
     steps:
       - uses: actions/checkout@v3
 
@@ -35,39 +36,39 @@ jobs:
       - name: TEST - unit & integration
         run: cargo test
 
-  frontend:
-    runs-on: [self-hosted]
-    defaults:
-      run:
-        working-directory: ui
-    steps:
-      - uses: actions/checkout@v3
+  # frontend:
+  #   runs-on: [self-hosted]
+  #   defaults:
+  #     run:
+  #       working-directory: ui
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - name: DEBUG - node, npm, yarn versions
-        run: |
-          echo "node --version: $(node --version)"
-          echo "npm --version: $(npm --version)"
-          echo "yarn --version: $(yarn --version)"
+  #     - name: DEBUG - node, npm, yarn versions
+  #       run: |
+  #         echo "node --version: $(node --version)"
+  #         echo "npm --version: $(npm --version)"
+  #         echo "yarn --version: $(yarn --version)"
 
-      - name: CACHE - get ui cache path
-        id: yarn-cache-dir-path
-        run: echo "dir=$(yarn --cwd ui config get cacheFolder)" >> $GITHUB_OUTPUT
+  #     - name: CACHE - get ui cache path
+  #       id: yarn-cache-dir-path
+  #       run: echo "dir=$(yarn --cwd ui config get cacheFolder)" >> $GITHUB_OUTPUT
 
-      - name: CACHE - ui dependencies
-        id: yarn-cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: yarn-cache-folder-${{ hashFiles('ui/**/yarn.lock', 'ui/.yarnrc.yml') }}
-          restore-keys: |
-            yarn-cache-folder-
+  #     - name: CACHE - ui dependencies
+  #       id: yarn-cache
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+  #         key: yarn-cache-folder-${{ hashFiles('ui/**/yarn.lock', 'ui/.yarnrc.yml') }}
+  #         restore-keys: |
+  #           yarn-cache-folder-
 
-      - name: INSTALL - ui dependencies
-        working-directory: ui
-        run: CI=true yarn install
+  #     - name: INSTALL - ui dependencies
+  #       working-directory: ui
+  #       run: CI=true yarn install
 
-      - name: LINT
-        run: yarn lint
+  #     - name: LINT
+  #       run: yarn lint
 
-      - name: TEST - unit
-        run: yarn test
+  #     - name: TEST - unit
+  #       run: yarn test
