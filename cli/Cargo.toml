@@ -17,6 +17,9 @@ tokio = { version = "1.25.0", features = ["full"] }
 thiserror = "1.0"
 percent-encoding = "^2.1.0"
 
+[dev-dependencies]
+async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
+
 [dependencies.platform]
 path = "../platform"
 version = "0.1.0"
