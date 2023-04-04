@@ -97,7 +97,7 @@ impl Client {
     }
 
     #[allow(dead_code)]
-    pub async fn sbom(&self, org_id: &str, project_id: &str, format: SbomFormat) -> Result<Option<String>, Error> {
+    pub async fn sbom_raw(&self, org_id: &str, project_id: &str, format: SbomFormat) -> Result<Option<String>, Error> {
         let response = hyper::raw(
             hyper::Method::GET,
             &sbom_url(org_id, project_id, format),

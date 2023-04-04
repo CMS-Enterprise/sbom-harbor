@@ -1,27 +1,13 @@
 use serde::{Deserialize, Serialize};
 use platform::mongodb::{MongoDocument, mongo_doc};
 
-/// A [Package] is a item for which an SBOM can be generated. It serves as an aggregate root for all
-/// version of an SBOM, and as a way of cross-referencing SBOMs across disparate systems.
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Package {
-    /// The unique identifier for the Package.
-    pub id: String,
-    /// The name of the package.
-    pub name: String,
-    /// The package URL of the package.
-    pub purl: Option<String>,
-    /// Cross-references from the package to model type or external systems.
-    pub xref: PackageXRef,
-    /// Log of all SBOMs uploaded for the package.
-    pub sboms: Vec<Sbom>,
-}
-
 /// An SBOM is a snapshot inventory of the components that make up a piece of software at a moment in time.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Sbom {
     /// The unique identifier for the Sbom.
     pub id: String,
+    /// The Package URL for the package that the Sbom targets.
+    pub purl: String,
     // TODO: Review with team. This is naive. Version varies widely based on a lot of factors.
     // This might be useful to us as humans, but might also be a really confusing name since
     // version has meaning that is context sensitive.
@@ -75,48 +61,4 @@ pub enum Source {
     Harbor(String),
     /// SBOM provided by the vendor.
     Vendor,
-}
-
-// TODO: This should really be a HashMap<&str, HashMap<&str, &str> to allow dynamism.
-// TODO: I'm leaving these as strong types during the modeling phase to make it easier to collaborate.
-/// PackageXRef contains the metadata used to cross-reference an SBOM to another system or subsystem.
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct PackageXRef {
-    /// FISMA cross-references.
-    pub fisma: Option<FismaXRef>,
-    /// Codebase cross-references.
-    pub codebase: Option<CodebaseXRef>,
-    /// Product cross-references.
-    pub product: Option<ProductXRef>,
-    /// Snyk cross-references.
-    pub snyk: Option<SnykXRef>,
-}
-
-#[allow(missing_docs)]
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct FismaXRef {
-    pub fisma_id: String,
-}
-
-#[allow(missing_docs)]
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct CodebaseXRef {
-    pub team_id: Option<String>,
-    pub project_id: Option<String>,
-    pub codebase_id: Option<String>,
-}
-
-#[allow(missing_docs)]
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ProductXRef {
-    pub vendor_id: Option<String>,
-    pub product_id: Option<String>,
-}
-
-#[allow(missing_docs)]
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct SnykXRef {
-    pub org_id: Option<String>,
-    pub team_id: Option<String>,
-    pub project_id: Option<String>,
 }

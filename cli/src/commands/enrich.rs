@@ -21,6 +21,7 @@ pub struct EnrichArgs {
     pub snyk_args: Option<SnykArgs>,
 
     /// Flattened args for use with the Dependency Track enrichment provider.
+    #[command(flatten)]
     pub dt_args: Option<DependencyTrackArgs>,
 }
 
@@ -93,11 +94,15 @@ pub struct SnykArgs {
 struct SnykProvider {}
 
 impl SnykProvider {
+    /// Factory method to create new instance of type.
     fn new_service() -> Result<SnykService, Error> {
         let token = harbcore::config::snyk_token()
             .map_err(|e| Error::Config(e.to_string()))?;
 
-       Ok(SnykService::new(token))
+        let cx = harbcore::config::db_connection()
+            .map_err(|e| Error::Config(e.to_string()))?;
+
+       Ok(SnykService::new(token, cx))
     }
 
     /// Concrete implementation of the command handler. Responsible for
@@ -118,7 +123,7 @@ impl SnykProvider {
     /// If no args are passed, the CLI will scan and sync the entire registry.
     async fn sync_registry() -> Result<Registry, Error> {
         let service = Self::new_service()?;
-        let registry = service.build_registry()
+        let registry = service.scan_and_sync_registry(harbcore::services::sync_debug)
             .await
             .map_err(|e| Error::Enrich(e.to_string()))?;
 
@@ -127,22 +132,23 @@ impl SnykProvider {
 
     // If project args are passed, the CLI will scan and sync a single project.
     // async fn sync_project(args: &SnykArgs) -> Result<(Option<Bom>, Option<Vec<Issue>>), Error> {
-    //     match (&args.org_id, &args.project_id) {
-    //         (Some(org_id), Some(project_id)) => {
-    //
-    //             let service = Self::new_service()?;
-    //
-    //             let (sbom, findings) = service
-    //                 .sbom_and_issues_by_project(org_id, project_id, SbomFormat::CycloneDxJson)
-    //                 .await
-    //                 .map_err(|e| Error::Enrich(e.to_string()))?;
-    //
-    //             Ok((sbom, findings))
-    //         }
-    //         _ => {
-    //             Err(Error::InvalidArg("org_id and project_id required".to_string()))
-    //         }
-    //     }
+        // todo!()
+        // match (&args.org_id, &args.project_id) {
+        //     (Some(org_id), Some(project_id)) => {
+        //
+        //         let service = Self::new_service()?;
+        //
+        //         let (sbom, findings) = service
+        //             .sbom_and_issues_by_project(org_id, project_id, SbomFormat::CycloneDxJson)
+        //             .await
+        //             .map_err(|e| Error::Enrich(e.to_string()))?;
+        //
+        //         Ok((sbom, findings))
+        //     }
+        //     _ => {
+        //         Err(Error::InvalidArg("org_id and project_id required".to_string()))
+        //     }
+        // }
     // }
 }
 

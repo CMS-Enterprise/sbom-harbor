@@ -12,6 +12,9 @@ pub enum Error {
     /// Error during db migrations.
     #[error("migrations error: {0}")]
     Migrations(String),
+    /// Error calling remote resource.
+    #[error("remote error: {0}")]
+    Remote(String),
     /// Runtime error.
     #[error("runtime error: {0}")]
     Runtime(String),
