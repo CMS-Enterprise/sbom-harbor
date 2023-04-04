@@ -38,7 +38,7 @@ pub struct Context {
 impl Default for Context {
     fn default() -> Self {
         Self {
-            host: "localhost".to_string(),
+            host: "mongo".to_string(),
             username: "root".to_string(),
             password: "harbor".to_string(),
             port: 27017,
