@@ -10,7 +10,7 @@ keywords = ["SBOM", "harbor", "cli"]
 readme = "README.md"
 
 [dependencies]
-clap = { version = "4.1.4", default-features = true }
+clap = { version = "4.1.4", default-features = true, features = ["derive"] }
 serde = { version = "1.0.92", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.25.0", features = ["full"] }
