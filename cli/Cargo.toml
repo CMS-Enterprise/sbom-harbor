@@ -10,12 +10,15 @@ keywords = ["SBOM", "harbor", "cli"]
 readme = "README.md"
 
 [dependencies]
-clap = { version = "4.1.4", default-features = true }
+clap = { version = "4.1.4", default-features = true, features = ["derive"] }
 serde = { version = "1.0.92", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.25.0", features = ["full"] }
 thiserror = "1.0"
 percent-encoding = "^2.1.0"
+
+[dev-dependencies]
+async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
 
 [dependencies.platform]
 path = "../platform"
