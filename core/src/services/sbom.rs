@@ -12,6 +12,7 @@ use crate::Error;
 use crate::models::cyclonedx::{Bom, Component};
 use crate::models::sboms::CycloneDxFormat;
 
+// TODO: Move this to the SnykService so that these can become &str and avoid a highly inefficient String.clone().
 pub async fn sync_debug(sbom: String, identifier: String) -> Result<(), Error> {
     let sanitizer = regex::Regex::new(r#"([^\p{L}\s\d_~,;:\[\]\(\).'])"#).unwrap();
     let sanitized_identifier = sanitizer.replace_all(identifier.as_str(), "_");

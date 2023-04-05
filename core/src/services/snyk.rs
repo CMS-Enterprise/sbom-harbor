@@ -1,6 +1,10 @@
+use std::collections::HashMap;
+use std::fs;
 use std::future::Future;
+use std::path::Path;
 use std::process::Output;
 use tracing::debug;
+use platform::config::from_env;
 use platform::mongodb::{Context, Store};
 
 use crate::clients::snyk::client::Client;
@@ -9,9 +13,10 @@ use crate::Error;
 pub use crate::clients::snyk::client::SbomFormat;
 use crate::clients::snyk::models::{OrgV1, ProjectStatus};
 use crate::models::cyclonedx::Bom;
-use crate::entities::packages::{CycloneDxComponent, Dependency, Package, Registry};
+use crate::entities::packages::{CycloneDxComponent, Dependency, Package, Purl, PurlSource, Registry};
 use crate::models::sboms::CycloneDxFormat;
 use crate::services::SbomService;
+use crate::services::snyk::adapters::Issue;
 
 // TODO: Lazy Static or OnceCell this.
 // const SUPPORTED_SBOM_PROJECT_TYPES: &'static [&'static str] = &[
@@ -45,8 +50,7 @@ impl SnykService {
     }
 
     pub async fn scan_and_sync_registry<F, Fut>(&self, sync_fn: F) -> Result<Registry, Error>
-    where
-        F: Fn(String, String) -> Fut + Copy,
+    where F: Fn(String, String) -> Fut + Copy,
         Fut: Future<Output=Result<(), Error>> {
 
         let mut registry = Registry::new();
@@ -379,13 +383,140 @@ impl SnykService {
 
         Ok(Some(results))
     }
+
+    // TODO: This is primarily for data exploration at this point. Needs more thought to be operationalized.
+    pub async fn register_purls(&self) -> Result<(), Error> {
+        let mut purls = HashMap::new();
+        let store = Store::new(&self.cx).await?;
+
+        let packages = store.list::<Package>().await?;
+        for package in packages {
+            let component = package.cdx_component.unwrap();
+            let package_url = component.purl.clone().unwrap();
+
+            if purls.contains_key(package_url.as_str()) {
+                let existing: &mut Purl = purls.get_mut(package_url.as_str()).unwrap();
+                existing.merge_snyk_refs(package.xref.snyk);
+            } else {
+                let (name, version) = Purl::parse(package_url.clone());
+                purls.insert(package_url.clone(), Purl {
+                    id: package_url,
+                    name,
+                    version,
+                    source: PurlSource::Package,
+                    snyk_refs: package.xref.snyk.clone(),
+                });
+            }
+        }
+
+        let dependencies = store.list::<Dependency>().await?;
+        for dependency in dependencies {
+            let component = dependency.cdx_component.unwrap();
+            let package_url = component.purl.clone().unwrap();
+
+            if purls.contains_key(package_url.as_str()) {
+                let existing: &mut Purl = purls.get_mut(package_url.as_str()).unwrap();
+                existing.merge_snyk_refs(dependency.xref.snyk);
+            } else {
+                let (name, version) = Purl::parse(package_url.clone());
+                purls.insert(package_url.clone(), Purl {
+                    id: package_url,
+                    name,
+                    version,
+                    source: PurlSource::Dependency,
+                    snyk_refs: dependency.xref.snyk,
+                });
+            }
+        }
+
+        for (package_url, purl) in purls {
+            match store.insert(&purl).await {
+                Ok(_) => {}
+                Err(e) => {
+                    debug!("failed to insert purl for {} - {}", package_url, e);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub async fn register_sboms(&self) -> Result<(), Error> {
+        let store = Store::new(&self.cx).await?;
+
+        let debug_dir = from_env("DEBUG_DIR").unwrap();
+        let sbom_dir = Path::new(&debug_dir).join("sboms");
+
+        for entry in std::fs::read_dir(sbom_dir)
+            .map_err(|e| Error::Runtime(format!("snyk_service::register_sboms::read_dir::{}", e)))? {
+
+            let entry = entry
+                .map_err(|e| Error::Runtime(format!("snyk_service::register_sboms::entry::{}", e)))?;
+            let path = entry.path();
+
+            let metadata = fs::metadata(path.clone())
+                .map_err(|e| Error::Runtime(format!("snyk_service::register_sboms::metadata::{}", e)))?;
+
+            if !metadata.is_file() {
+                continue;
+            }
+
+            let file = fs::read_to_string(path).unwrap();
+            let bom = SbomService::parse_cyclonedx_bom(file.as_str(), CycloneDxFormat::Json)?;
+
+            store.insert(&bom).await?;
+        }
+
+        Ok(())
+    }
+
+    pub async fn register_issues(&self) -> Result<(), Error> {
+        let store = Store::new(&self.cx).await?;
+
+        let purls = store.list::<Purl>().await?;
+
+        for purl in purls {
+            for r in purl.snyk_refs {
+                let org_id = r.org_id.clone();
+
+                let issues = match self.issues(org_id.as_str(), purl.id.as_str()).await {
+                    Ok(i) => i,
+                    Err(e) => {
+                        debug!("failed to get issues for purl: {}", purl.id);
+                        continue;
+                    }
+                };
+
+                let issues = match issues {
+                    None => { continue; }
+                    Some(issues) => issues,
+                };
+
+                for issue in issues {
+                    match store.insert(&issue).await {
+                        Ok(_) => {}
+                        Err(e) => {
+                            debug!("failed to insert issue for purl: {}", purl.id);
+                        }
+                    }
+                }
+
+            }
+        }
+
+        Ok(())
+    }
 }
 
 mod adapters {
+    use platform::mongodb::{MongoDocument, mongo_doc};
     use serde::{Deserialize, Serialize};
     use crate::clients::snyk::models::{CommonIssueModel, ListOrgProjects200ResponseDataInner, OrgV1, ProjectStatus, Severity};
     use crate::entities::packages::{PackageXRef, SnykXRef, Unsupported};
     use crate::models::cyclonedx::Bom;
+
+    mongo_doc!(Bom);
+    mongo_doc!(Issue);
 
     /// Adapter over a native Snyk Group.
     #[derive(Clone, Debug, Deserialize, Serialize)]

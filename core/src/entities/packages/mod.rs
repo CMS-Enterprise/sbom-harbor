@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use platform::mongodb::{MongoDocument, mongo_doc};
 use serde::{Deserialize, Serialize};
 use tracing::debug;
@@ -7,6 +8,7 @@ use crate::models::cyclonedx::component::ComponentType;
 mongo_doc!(Package);
 mongo_doc!(Dependency);
 mongo_doc!(Unsupported);
+mongo_doc!(Purl);
 
 // WATCH: This is useful for early prototyping, but we will likely outgrow this.
 /// Provides intelligent access to the full set of Packages.
@@ -208,6 +210,7 @@ pub struct Dependency {
     pub xref: PackageXRef,
 }
 
+/// Unsupported models code packages for which an SBOM cannot be produced (e.g. terraform projects).
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Unsupported {
     /// The unique identifier for the unsupported Package.
@@ -239,6 +242,77 @@ impl Unsupported {
                 && r.group_id == snyk_ref.group_id
                 && r.org_id == snyk_ref.org_id
             })
+    }
+}
+
+/// Purl is a derived type that facilitates analysis of a Package across the entire enterprise.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Purl {
+    /// The package URL.
+    pub(crate) id: String,
+
+    /// The package name extracted from the package URL.
+    pub(crate) name: String,
+
+    /// The package version extracted from the package URL.
+    pub(crate) version: String,
+
+    /// Source of the Purl.
+    pub source: PurlSource,
+
+    /// A map of projects that are associated with the Purl.
+    pub(crate) snyk_refs: Vec<SnykXRef>,
+}
+
+impl Purl {
+    pub(crate) fn parse(package_url: String) -> (String, String) {
+        if !package_url.contains("@") {
+            return (package_url, "".to_string());
+        }
+
+        if package_url.matches("@").count() > 1 {
+            return (package_url, "unknown".to_string());
+        }
+
+        let parts: Vec<&str> = package_url.split("@").collect();
+        if parts.len() != 2 {
+            debug!("should not be possible")
+        }
+
+        (parts[0].to_string(), parts[1].to_string())
+    }
+}
+
+/// The Source of the Purl.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum PurlSource {
+    /// The Purl was extracted from the Component Metadata of a Package in the Registry.
+    Package,
+    /// The Purl was extracted from a Dependency of a Package in the Registry.
+    Dependency,
+}
+
+impl ToString for PurlSource {
+    fn to_string(&self) -> String {
+        match self {
+            PurlSource::Package => "package".to_string(),
+            PurlSource::Dependency => "dependency".to_string(),
+        }
+    }
+}
+
+impl Purl {
+    pub(crate) fn merge_snyk_refs(&mut self, refs: Vec<SnykXRef>) {
+        for r in refs {
+            if self.snyk_refs.iter().any(|existing| {
+                r.org_id.eq(&existing.org_id)
+                && r.project_id.eq(&existing.project_id)
+                && r.group_id.eq(&existing.group_id)
+            }) { continue; }
+
+            self.snyk_refs.push(r);
+        }
+
     }
 }
 

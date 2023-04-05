@@ -132,23 +132,22 @@ impl SnykProvider {
 
     // If project args are passed, the CLI will scan and sync a single project.
     // async fn sync_project(args: &SnykArgs) -> Result<(Option<Bom>, Option<Vec<Issue>>), Error> {
-        // todo!()
-        // match (&args.org_id, &args.project_id) {
-        //     (Some(org_id), Some(project_id)) => {
-        //
-        //         let service = Self::new_service()?;
-        //
-        //         let (sbom, findings) = service
-        //             .sbom_and_issues_by_project(org_id, project_id, SbomFormat::CycloneDxJson)
-        //             .await
-        //             .map_err(|e| Error::Enrich(e.to_string()))?;
-        //
-        //         Ok((sbom, findings))
-        //     }
-        //     _ => {
-        //         Err(Error::InvalidArg("org_id and project_id required".to_string()))
-        //     }
-        // }
+    //     match (&args.org_id, &args.project_id) {
+    //         (Some(org_id), Some(project_id)) => {
+    //
+    //             let service = Self::new_service()?;
+    //
+    //             let (sbom, findings) = service
+    //                 .sbom_and_issues_by_project(org_id, project_id, SbomFormat::CycloneDxJson)
+    //                 .await
+    //                 .map_err(|e| Error::Enrich(e.to_string()))?;
+    //
+    //             Ok((sbom, findings))
+    //         }
+    //         _ => {
+    //             Err(Error::InvalidArg("org_id and project_id required".to_string()))
+    //         }
+    //     }
     // }
 }
 
