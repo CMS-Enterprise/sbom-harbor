@@ -1,3 +1,10 @@
+use thiserror::Error;
+
 pub mod snyk;
 pub use snyk::*;
-pub mod snyk_data_model;
+
+#[derive(Error, Debug)]
+pub enum SnykProviderError {
+    #[error("error connecting to Snyk: {0}")]
+    SnykConnection(String),
+}
