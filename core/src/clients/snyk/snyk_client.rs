@@ -106,6 +106,7 @@ pub async fn get_sbom_from_snyk(snyk_token: String, org_id: String, proj_id: Str
 #[tokio::test]
 async fn test_get_orgs() {
     let fake_token = format!("123-abc");
+    get_orgs(fake_token);
     //TODO: Stub for rest call
     //TODO: Test for OK results
     //TODO: Test for Error 
