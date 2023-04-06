@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub (crate) struct SnykData {
-    pub orgs: Vec<Option<Org>>,
+    pub orgs: Vec<Org>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]

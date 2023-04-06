@@ -1,11 +1,10 @@
-use std::{env};
+use std::{env, time::Instant};
 use async_trait::async_trait;
 use harbcore::clients::{ProjectJson, get_orgs, get_projects_from_org_list, get_sbom_from_snyk};
 use crate::commands::Provider;
 use platform::auth::get_secret;
 use harbor_client::client::simple_upload_sbom;
 
-use super::SnykProviderError;
 //DONE: Add method call
 //DONE: See if it runs
 //DONE: Pull in HTTP library
@@ -40,18 +39,25 @@ impl SnykProvider {
         let team_id = env::var("V1_CMS_TEAM_ID").unwrap_or(String::from("")); //TODO: get this only once
 
         for project in project_json.projects.iter() {
-            if(!project.id.is_empty()  && !project.origin.is_empty() && !project.r#type.is_empty()) {
-                if  (Self::VALID_ORIGINS.contains(&project.origin.as_str()) &&  Self::VALID_TYPES.contains(&project.r#type.as_str())){
-                    let result = get_sbom_from_snyk(snyk_token.clone(), project_json.org.id.clone().unwrap(), project.id.clone()).await;
-                    let test 
+            match project {
+                project_detail if project_detail.id.is_empty() => println!("Missing project Id for: {}", project_detail.name), 
+                project_detail if (Self::VALID_ORIGINS.contains(&project_detail.origin.as_str()) &&  Self::VALID_TYPES.contains(&project_detail.r#type.as_str()))=> {
+                    let result = get_sbom_from_snyk(snyk_token.clone(), project_json.org.id.clone().unwrap(), project_detail.id.clone()).await;
                     match result {
-                        Some(sbom) =>{
-                            println!("Uploading SBOM");
-                            //simple_upload_sbom(cloud_front_domain.clone(), sbom_token.clone(), team_id.clone(), project.browseUrl.clone(), project.r#type.clone(), sbom).await;
-                            },
-                        None => {return SnykProviderError::SnykConnection(format!("Failed to obtain SBOM file from SNYK"))},
+                        Ok(option_sbom) => {
+                            match option_sbom {
+                                Some(sbom) =>{
+                                    println!("Uploading SBOM to harbor for project: {}, from org: {}", project.id, project_json.org.id.clone().unwrap());
+                                    //simple_upload_sbom(cloud_front_domain.clone(), sbom_token.clone(), team_id.clone(), project.browseUrl.clone(), project.r#type.clone(), sbom).await;
+                                    },
+                                None => println!("No SBOM found for project: {}, from org: {}", project.id, project_json.org.id.clone().unwrap()),
+                            }
+                        },
+                        Err(err) => println!("{}", err),
+
                     }
-                }
+                },
+                _ => continue // Do nothing with projects that cannot make SBOMS
             }
         }
     }
@@ -62,36 +68,46 @@ impl SnykProvider {
 impl Provider for SnykProvider {
 
     async fn scan(&self) {
-        println!("Scanning Snyk for SBOMS...");
+        let start = Instant::now();
+
+        println!("Starting SnykProvider scan...");
+        
+
+        println!("Obtaining SNYK access key...");
         let response = get_secret(Self::AWS_SECRET_NAME).await;
         let snyk_token = match response {
             Ok(secret) => {
                 match secret {
                     Some(s) => s,
-                    None => panic!("No AWS token retrieved for secret: {}", Self::AWS_SECRET_NAME),
+                    None => panic!("No AWS token retrieved for secret: {}", Self::AWS_SECRET_NAME), //Stop everything if we dont get an access key
                 }
             },
-            Err(err) => panic!("Failed to retrieve token for secret: {}, with error: {}", Self::AWS_SECRET_NAME, err),
+            Err(err) => panic!("Failed to retrieve token for secret: {}, with error: {}", Self::AWS_SECRET_NAME, err), //Stop everything if we dont get an access key
         };
 
-        println!("{}", snyk_token);
-
+        println!("Scanning Snyk for SBOMS...");
         let snyk_data = get_orgs(snyk_token.clone()).await;
 
-        
-        let project_list = get_projects_from_org_list(snyk_token.clone(), snyk_data).await;
+        match snyk_data {
+            Ok(data) => {
+                let project_list = get_projects_from_org_list(snyk_token.clone(), data).await;
 
-        for project_json in project_list {
-            if (project_json.org.id.is_some()) {
-                Self::retrieve_and_upload_valid_sboms(snyk_token.clone(), project_json).await;
-            }
+                for project_json in project_list.0 {
+                    if project_json.org.id.is_some() {
+                        Self::retrieve_and_upload_valid_sboms(snyk_token.clone(), project_json).await;
+                    }
+                }
+
+                for errors in project_list.1 {
+                    println!("{}", errors)
+                }
+
+            },
+            Err(err) => panic!("{}", err), // If no orgs are found something went seriously wrong, no reason to go any further
         }
 
-       
-
-        println!("done"); 
-
-            //TODO: delete this
+        println!("Finished SnykProvider scan, elapsed time in milis: ({:?})", start.elapsed().as_millis());
+        //TODO: delete this
         // let TEMP_TEST_DIR: &'static str = "/home/jshattjr";
         // let data = format!("{:#?}", project_list); //TODO: Remove this when done debugging
         // let output_path = format!("{}/snyk_data.json", Self::TEMP_TEST_DIR);
