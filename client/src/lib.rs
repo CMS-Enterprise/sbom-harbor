@@ -18,7 +18,8 @@
 /// ```rust
 /// use std::env;
 /// use anyhow::Result;
-/// use harbor::lib::Client;
+/// use client::Client;
+/// use harbor_client::client;
 /// pub async fn get_client(cloud_front_domain: String) -> Result<Client> {
 ///     let username = env::var("ADMIN_USERNAME").unwrap_or(String::from(""));
 ///     let password = env::var("ADMIN_PASSWORD").unwrap_or(String::from(""));

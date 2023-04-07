@@ -1,11 +1,9 @@
-use async_std;
 use std::env;
 
-mod common;
+use async_std;
+use harbcore::lib::Client;
 
 use crate::common::{get_test_context, teardown};
-
-use harbor::lib::Client;
 
 #[async_std::test]
 async fn can_login() -> anyhow::Result<()> {
