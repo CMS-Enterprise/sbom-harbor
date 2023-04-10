@@ -39,6 +39,8 @@ use crate::commands::github::repo::{
     get_page_of_repos,
     get_last_commit_url,
 };
+use crate::services::github::{get_harbor_config, GhProviderError};
+use crate::services::github::repo::{Commit, get_last_commit_url, get_page_of_repos, get_pages, Repo};
 
 /// Definition of the GitHubProvider
 ///

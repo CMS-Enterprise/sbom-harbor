@@ -6,6 +6,8 @@ use platform::hyper::{ContentType, Error as HyperError, get};
 
 use crate::commands::get_env_var;
 use crate::commands::github::{Counter, GH_FT_KEY, GhProviderError};
+use crate::config::GH_FT_KEY;
+use crate::services::github::{Counter, GhProviderError};
 
 const GH_URL: &str = "https://api.github.com";
 
@@ -171,16 +173,16 @@ async fn get_num_pub_repos(org: String) -> Result<Option<u32>, GhProviderError> 
         None::<String>,
     ).await;
 
-    match response {
+    return match response {
         Ok(option) => match option {
-            Some(value) => return Ok(value.public_repos),
-            None => return Err(
+            Some(value) => Ok(value.public_repos),
+            None => Err(
                 GhProviderError::GitHubRequest(
                     format!("Get request from GitHub had an empty response")
                 )
             ),
         },
-        Err(err) => return Err(
+        Err(err) => Err(
             GhProviderError::GitHubRequest(
                 format!("Error in the response: {}", err)
             )

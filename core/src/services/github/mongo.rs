@@ -16,6 +16,7 @@ use platform::mongodb::{
 };
 
 use crate::commands::github::GhProviderError;
+use crate::services::github::GhProviderError;
 
 /// Struct to define a GitHub Provider document in Mongo
 ///
@@ -60,7 +61,7 @@ pub async fn update_last_hash_in_mongo(
 
     // This document is used by MongoDB to actually
     // set the new sha hash value on the record
-    let update_document = doc!{
+    let update_document = doc! {
         "$set": {
             "last_hash": last_hash.clone()
         }

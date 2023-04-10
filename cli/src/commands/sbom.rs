@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use clap::{Parser, ValueEnum};
 use clap::builder::PossibleValue;
+use harbcore::config::{get_cf_domain, get_cms_team_id, get_cms_team_token, get_v1_password, get_v1_username};
 
 use crate::Error;
 
@@ -114,8 +115,11 @@ struct GithubProvider {}
 
 impl GithubProvider {
     async fn execute(_args: &Option<GitHubArgs>) -> Result<(), Error> {
-        // Construct and invoke Core Services here or if args are contextual call specialized subroutine.
-        todo!()
+        let team_id = get_cms_team_id();
+        let v1_token = get_cms_team_token();
+        let cf_domain = get_cf_domain();
+        let v1_username = get_v1_username();
+        let v1_password = get_v1_password();
     }
 }
 

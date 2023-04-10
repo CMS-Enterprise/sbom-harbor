@@ -1,46 +1,61 @@
+use std::sync::Arc;
 use mongodb::bson::doc;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use platform::mongodb::{Service, Store};
 
 use crate::commands::get_env_var;
+use crate::config::*;
+use crate::services::github::mongo::GitHubProviderDocument;
 
 mod mongo;
 mod repo;
 pub mod provider;
 
-pub const COLLECTION: &str = "pilot";
+/// Args for generating one ore more SBOMs from a GitHub Organization.
+#[derive(Clone, Debug, Parser)]
+pub struct GitHubProviderConfig {
 
-pub const TEAM_ID_KEY: &str = "team_id";
-pub const CF_DOMAIN_KEY: &str = "CF_DOMAIN";
-pub const PROJECT_ID_KEY: &str = "project_id";
-pub const CODEBASE_ID_KEY: &str = "codebase_id";
-pub const GH_FT_KEY: &str = "GH_FETCH_TOKEN";
-pub const V1_TEAM_ID_KEY: &str = "V1_CMS_TEAM_ID";
-pub const V1_TEAM_TOKEN_KEY: &str = "V1_CMS_TEAM_TOKEN";
-pub const V1_HARBOR_USERNAME_KEY: &str = "V1_HARBOR_USERNAME";
-pub const V1_HARBOR_PASSWORD_KEY: &str = "V1_HARBOR_PASSWORD";
-
-/// Configuration from the environment for V1 Harbor
-///
-struct HarborConfig {
     /// This is the GUID that is in DynamoDB that
     /// belongs to the team we are using.
     cms_team_id: String,
+
     /// This is the token from that team
     cms_team_token: String,
+
     /// This is the Cloudfront Domain of the API endpoints
     cf_domain: String,
+
     /// The username we use to get the JWT and make API calls
     cognito_username: String,
+
     /// The password we use to get the JWT and make API calls
     cognito_password: String,
 }
 
+#[derive(Debug)]
+pub struct GitHubProviderService {
+    store: Arc<Store>,
+}
+
+impl GitHubProviderService {
+    /// Factory method to create new instances of a [TeamService].
+    pub fn new(store: Arc<Store>) -> GitHubProviderService {
+        GitHubProviderService { store }
+    }
+}
+
+impl Service<GitHubProviderDocument> for GitHubProviderService {
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
+    }
+}
+
 /// Snag a bunch of environment variables and put them into a struct
 ///
-fn get_harbor_config() -> Result<HarborConfig, GhProviderError> {
+fn get_harbor_config() -> Result<GitHubProviderConfig, GhProviderError> {
 
-    let cms_team_id = match get_env_var(V1_TEAM_ID_KEY) {
+    let cms_team_id = match get_cms_team_id() {
         Some(value) => value,
         None => return Err(
             GhProviderError::Configuration(
@@ -49,7 +64,7 @@ fn get_harbor_config() -> Result<HarborConfig, GhProviderError> {
         )
     };
 
-    let cms_team_token = match get_env_var(V1_TEAM_TOKEN_KEY) {
+    let cms_team_token = match get_cms_team_token() {
         Some(value) => value,
         None => return Err(
             GhProviderError::Configuration(
@@ -58,7 +73,7 @@ fn get_harbor_config() -> Result<HarborConfig, GhProviderError> {
         )
     };
 
-    let cf_domain = match get_env_var(CF_DOMAIN_KEY) {
+    let cf_domain = match get_cf_domain() {
         Some(value) => value,
         None => return Err(
             GhProviderError::Configuration(
@@ -67,7 +82,7 @@ fn get_harbor_config() -> Result<HarborConfig, GhProviderError> {
         )
     };
 
-    let cognito_username = match get_env_var(V1_HARBOR_USERNAME_KEY) {
+    let cognito_username = match get_v1_username() {
         Some(value) => value,
         None => return Err(
             GhProviderError::Configuration(
@@ -76,7 +91,7 @@ fn get_harbor_config() -> Result<HarborConfig, GhProviderError> {
         )
     };
 
-    let cognito_password = match get_env_var(V1_HARBOR_PASSWORD_KEY) {
+    let cognito_password = match get_v1_password() {
         Some(value) => value,
         None => return Err(
             GhProviderError::Configuration(
@@ -86,7 +101,7 @@ fn get_harbor_config() -> Result<HarborConfig, GhProviderError> {
     };
 
     Ok(
-        HarborConfig {
+        GitHubProviderConfig {
             cms_team_id,
             cms_team_token,
             cf_domain,
@@ -102,32 +117,24 @@ fn get_harbor_config() -> Result<HarborConfig, GhProviderError> {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Counter {
 
-    /// This value is incremented
-    /// if the Repo is archived
+    /// This value is incremented if the Repo is archived
     archived: i32,
 
-    /// This value is incremented
-    /// if the Repo is disabled
+    /// This value is incremented if the Repo is disabled
     disabled: i32,
 
-    /// This value is incremented
-    /// if the Repo is empty
+    /// This value is incremented if the Repo is empty
     empty: i32,
 
-    /// This value is incremented
-    /// if the Repo is processed successfully
+    /// This value is incremented if the Repo is processed successfully
     processed: i32,
 
-    /// This value is incremented
-    /// if the last commit hash of
-    /// the repo is in the database
-    /// already. This happens when
-    /// there has been no change in
-    /// the repo since last run
+    /// This value is incremented if the last commit hash of
+    /// the repo is in the database already. This happens when
+    /// there has been no change in the repo since last run
     hash_matched: i32,
 
-    /// This value is incremented if there is an
-    /// error when trying to upload the SBOM.
+    /// This value is incremented if there is an error when trying to upload the SBOM.
     upload_errors: i32,
 }
 
