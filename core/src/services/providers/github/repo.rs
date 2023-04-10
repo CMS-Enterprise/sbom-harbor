@@ -8,6 +8,7 @@ use crate::commands::get_env_var;
 use crate::commands::github::{Counter, GH_FT_KEY, GhProviderError};
 use crate::config::GH_FT_KEY;
 use crate::services::github::{Counter, GhProviderError};
+use crate::services::providers::github::{Counter, GhProviderError};
 
 const GH_URL: &str = "https://api.github.com";
 

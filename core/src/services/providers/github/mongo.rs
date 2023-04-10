@@ -17,6 +17,7 @@ use platform::mongodb::{
 
 use crate::commands::github::GhProviderError;
 use crate::services::github::GhProviderError;
+use crate::services::providers::github::GhProviderError;
 
 /// Struct to define a GitHub Provider document in Mongo
 ///

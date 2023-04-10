@@ -2,6 +2,6 @@ mod team;
 pub use team::*;
 
 mod pilot;
-pub mod github;
+pub mod providers;
 
 pub use pilot::*;

@@ -1,12 +1,15 @@
 use std::sync::Arc;
-use mongodb::bson::doc;
+
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+
+use mongodb::bson::doc;
 use platform::mongodb::{Service, Store};
 
 use crate::commands::get_env_var;
 use crate::config::*;
 use crate::services::github::mongo::GitHubProviderDocument;
+use crate::services::providers::github::mongo::GitHubProviderDocument;
 
 mod mongo;
 mod repo;

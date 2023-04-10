@@ -39,8 +39,14 @@ use crate::commands::github::repo::{
     get_page_of_repos,
     get_last_commit_url,
 };
+use crate::config::{CODEBASE_ID_KEY, COLLECTION, PROJECT_ID_KEY, TEAM_ID_KEY};
+use crate::services::{clone_path, clone_repo, remove_clone, syft};
 use crate::services::github::{get_harbor_config, GhProviderError};
 use crate::services::github::repo::{Commit, get_last_commit_url, get_page_of_repos, get_pages, Repo};
+use crate::services::providers::github::{Counter, get_harbor_config, GhProviderError};
+use crate::services::providers::github::mongo::{get_mongo_db, GitHubProviderDocument, update_last_hash_in_mongo};
+use crate::services::providers::github::repo::{Commit, get_last_commit_url, get_page_of_repos, get_pages, Repo, should_skip};
+use crate::services::providers::SbomProvider;
 
 /// Definition of the GitHubProvider
 ///
@@ -124,9 +130,9 @@ impl GitHubProvider {
 /// GitHub Provider
 ///
 #[async_trait]
-impl Provider for GitHubProvider {
+impl SbomProvider for GitHubProvider {
 
-    async fn scan(&self) {
+    async fn provide_sboms(&self) {
 
         let harbor_config = get_harbor_config().unwrap();
 
