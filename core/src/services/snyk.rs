@@ -13,7 +13,7 @@ use crate::Error;
 pub use crate::clients::snyk::client::SbomFormat;
 use crate::clients::snyk::models::{OrgV1, ProjectStatus};
 use crate::models::cyclonedx::Bom;
-use crate::entities::packages::{CycloneDxComponent, Dependency, Package, Purl, PurlSource, Registry};
+use crate::entities::packages::{CycloneDxComponent, Dependency, Package, Purl, PurlSource, Registry, SnykXRef};
 use crate::models::sboms::CycloneDxFormat;
 use crate::services::SbomService;
 use crate::services::snyk::adapters::Issue;
@@ -379,7 +379,7 @@ impl SnykService {
         let mut results = vec![];
         issues
             .iter()
-            .for_each(|inner| results.push(adapters::Issue::new(inner.clone())));
+            .for_each(|inner| results.push(adapters::Issue::new(purl.to_string(), inner.clone())));
 
         Ok(Some(results))
     }
@@ -471,11 +471,24 @@ impl SnykService {
     }
 
     pub async fn register_issues(&self) -> Result<(), Error> {
+        let distinct = HashMap::<&str, Vec<&SnykXRef>>::new();
         let store = Store::new(&self.cx).await?;
-
         let purls = store.list::<Purl>().await?;
 
         for purl in purls {
+            match distinct.get(purl.id.as_str()) {
+                None => { distinct.insert(purl.id.as_str(), vec![])}
+                Some(refs) => {
+
+                }
+            }
+        }
+
+        for purl in purls {
+
+            // This is a BUG!!!  Could and probably DO call same purl numerous times.
+            //     I need to do some work to make sure I'm calling a distinct set of Purl/Org Id
+            //     combos and can map it back to the right project.
             for r in purl.snyk_refs {
                 let org_id = r.org_id.clone();
 
@@ -704,6 +717,7 @@ mod adapters {
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct Issue {
         pub id: String,
+        pub purl: String,
         pub title: String,
         pub description: String,
         pub versions: Vec<String>,
@@ -713,7 +727,7 @@ mod adapters {
     }
 
     impl Issue {
-        pub fn new(inner: CommonIssueModel) -> Self {
+        pub fn new(purl: String, inner: CommonIssueModel) -> Self {
             let id = inner.id.clone().unwrap_or("issue id not set".to_string()).clone();
             let mut title = "".to_string(); // from attributes.title
             let mut description = "".to_string(); // from attributes
@@ -766,6 +780,7 @@ mod adapters {
 
             Self {
                 id,
+                purl,
                 title,
                 description,
                 versions,

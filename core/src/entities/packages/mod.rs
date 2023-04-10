@@ -146,6 +146,7 @@ pub struct CycloneDxComponent {
     pub component_type: ComponentType,
 
     /// The unique identifier of the component, service, or vulnerability within the BOM.
+    #[serde(rename = "bom-ref")]
     pub bom_ref: Option<String>,
 
     /// The name of the package.
