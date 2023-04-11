@@ -13,7 +13,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
 use tracing::Span;
-use harbcore::config::db_connection;
+use harbcore::config::mongo_context;
 
 use platform::mongodb::Store;
 use harbor_api::controllers;
@@ -76,7 +76,7 @@ async fn main() {
     // Load injectable types.
     // let config = sdk_config_from_env().await.expect("failed to load config from environment");
     // let authorizer = Authorizer::new(&config).unwrap().expect("failed to load authorizer");
-    let cx = db_connection();
+    let cx = mongo_context();
 
     if cx.is_err() {
         trace!("unable to retrieve connection config: {}", cx.err().unwrap());

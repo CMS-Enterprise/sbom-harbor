@@ -10,7 +10,8 @@ use crate::mongodb::{Context, MongoDocument};
 
 /// Default client factory method. Allows callers to avoid a direct dependency on the Mongo Driver.
 pub async fn client_from_context(cx: &Context) -> Result<Client, Error> {
-    Ok(Client::with_uri_str(cx.connection_uri()).await?)
+    let connection_uri = cx.connection_uri()?;
+    Ok(Client::with_uri_str(connection_uri.as_str()).await?)
 }
 
 /// Facade that provides access to a MongoDB compliant data store.

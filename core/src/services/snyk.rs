@@ -1,29 +1,28 @@
+use std::borrow::BorrowMut;
 use std::collections::HashMap;
+use std::fmt::{Debug, Formatter};
 use std::fs;
 use std::future::Future;
 use std::path::Path;
 use std::process::Output;
-use tracing::debug;
+use std::sync::Arc;
+
+use async_trait::async_trait;
 use platform::config::from_env;
-use platform::mongodb::{Context, Store};
+use platform::mongodb::{Context, Service, Store};
+use tracing::debug;
 
 use crate::clients::snyk::client::Client;
 use crate::Error;
 
 pub use crate::clients::snyk::client::SbomFormat;
-use crate::clients::snyk::models::{OrgV1, ProjectStatus};
+use crate::clients::snyk::models::{Coordinate, OrgV1, ProjectStatus};
 use crate::models::cyclonedx::Bom;
-use crate::entities::packages::{CycloneDxComponent, Dependency, Package, Purl, PurlSource, Registry, SnykXRef};
+use crate::entities::packages::{CycloneDxComponent, Dependency, Package, Purl, PurlSource, Registry, SnykXRef, Unsupported};
 use crate::models::sboms::CycloneDxFormat;
-use crate::services::SbomService;
+use crate::models::teams::Project;
+use crate::services::{SbomProvider, SbomService};
 use crate::services::snyk::adapters::Issue;
-
-// TODO: Lazy Static or OnceCell this.
-// const SUPPORTED_SBOM_PROJECT_TYPES: &'static [&'static str] = &[
-//     "npm", "nuget", "hex", "pip", "poetry", "rubygems",
-//     "maven", "yarn", "yarn-workspace", "composer", "gomodules",
-//     "govendor", "golang", "golangdep", "paket",
-//     "cocoapods", "cpp", "sbt"];
 
 // TODO: Lazy Static or OnceCell this.
 const SUPPORTED_SBOM_PROJECT_TYPES: &'static [&'static str] = &[
@@ -34,9 +33,109 @@ pub fn is_sbom_project_type(project_type: &str) -> bool {
 }
 
 /// Provides Snyk related data retrieval and analytics capabilities.
+#[derive(Debug)]
 pub struct SnykService {
     client: Client,
     cx: Context,
+}
+
+// Implement mongo Service with type arg for all the types that this service can persist.
+impl Service<Bom> for SnykService {
+    fn cx(&self) -> &Context{ &self.cx }
+}
+
+impl Service<Dependency> for SnykService {
+    fn cx(&self) -> &Context{ &self.cx }
+}
+
+impl Service<Issue> for SnykService {
+    fn cx(&self) -> &Context{ &self.cx }
+}
+
+impl Service<Package> for SnykService {
+    fn cx(&self) -> &Context{ &self.cx }
+}
+
+impl Service<Purl> for SnykService {
+    fn cx(&self) -> &Context{ &self.cx }
+}
+
+impl Service<SnykXRef> for SnykService {
+    fn cx(&self) -> &Context{ &self.cx }
+}
+
+impl Service<Unsupported> for SnykService {
+    fn cx(&self) -> &Context{ &self.cx }
+}
+
+#[async_trait]
+impl SbomProvider for SnykService {
+    /// Synchronizes a Snyk instance with the Harbor [Registry].
+    async fn sync(&self) -> Result<(), Error> {
+        // This function intentionally inlines some logic that could be moved into specialized
+        // functions so that this process can emit metrics at specific control flow points.
+        let mut registry = Registry::new();
+        let store = Store::new(&self.cx).await?;
+
+        let packages = store.list().await?;
+        registry.packages = packages;
+
+        let orgs = match self.client.orgs().await {
+            Ok(o) => {
+                match o {
+                    None => {
+                        let msg = "snyk_service::sync::orgs:orgs_not_found";
+                        debug!(msg);
+                        return Err(Error::Remote(msg.to_string()));
+                    },
+                    Some(orgs) => orgs,
+                }
+            },
+            Err(e) => {
+                debug!("snyk_service::sync::orgs::{}", e);
+                return Err(Error::Remote(e.to_string()));
+            }
+        };
+
+        for inner in orgs {
+            let mut org = adapters::Organization::new(inner);
+            // Get the projects for the org.
+            match self.projects(&mut org).await {
+                Ok(_) => {
+                    debug!("snyk_service::sync::projects::org_id::{}::projects_total::{}", org.id, org.projects_total);
+                }
+                Err(e) => {
+                    debug!("snyk_service::sync::org_id::{}::{}", org.id, e);
+                    continue;
+                }
+            }
+
+            match self.sync_sboms(&mut org).await {
+                Ok(sboms_total) => {
+                    debug!("snyk_service::sync::sync_sboms::org_id::{}::sboms_total::{}", org.id, sboms_total);
+                }
+                Err(e) => {
+                    debug!("snyk_service::sync::sync_sboms::{}", e);
+                    continue;
+                }
+            }
+
+            match self.sync_packages(&mut registry, &mut org).await {
+                Ok(_) => {}
+                Err(e) => { debug!("snyk_service::sync::sync_packages::{}", e); }
+            }
+        }
+
+        match self.update_registry(&mut registry).await {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                let msg = format!("snyk_service::sync::update_registry::{}", e);
+                debug!(msg);
+                Err(Error::Runtime(msg))
+            }
+        }
+
+    }
 }
 
 impl SnykService {
@@ -49,151 +148,89 @@ impl SnykService {
         }
     }
 
-    pub async fn scan_and_sync_registry<F, Fut>(&self, sync_fn: F) -> Result<Registry, Error>
-    where F: Fn(String, String) -> Fut + Copy,
-        Fut: Future<Output=Result<(), Error>> {
-
-        let mut registry = Registry::new();
-        let store = Store::new(&self.cx).await?;
-
-        let packages = store.list().await?;
-        registry.packages = packages;
-
-        let orgs = match self.orgs().await {
-            Ok(o) => {
-                match o {
-                    None => {
-                        let msg = "snyk_service::scan_and_sync_registry::orgs: no orgs found";
-                        debug!(msg);
-                        return Err(Error::Remote(msg.to_string()));
-                    },
-                    Some(orgs) => orgs,
-                }
-            },
-            Err(e) => {
-                debug!("snyk_service::scan_and_sync_registry::orgs::{}", e);
-                return Err(Error::Remote(e.to_string()));
-            }
-        };
-
-        for inner in orgs {
-            let mut org = adapters::Organization::new(inner);
-            // Get the projects for the org.
-            match self.projects(&mut org).await {
-                Ok(_) => {
-                    debug!("snyk_service::scan_and_sync_registry::projects::org_id::{}::projects_total::{}", org.id, org.projects_total);
-                }
-                Err(e) => {
-                    debug!("snyk_service::scan_and_sync_registry::org_id::{}::{}", org.id, e);
-                    continue;
-                }
-            }
-
-            match self.sync_sboms(&mut org, sync_fn).await {
-                Ok(sboms_total) => {
-                    debug!("snyk_service::scan_and_sync_registry::sync_sboms::org_id::{}::sboms_total::{}", org.id, sboms_total);
-                }
-                Err(e) => {
-                    debug!("snyk_service::scan_and_sync_registry::sync_sboms::{}", e);
-                    continue;
-                }
-            }
-
-            match self.sync_packages(&mut registry, &mut org).await {
-                Ok(_) => {}
-                Err(e) => { debug!("snyk_service::scan_and_sync_registry::sync_packages::{}", e); }
-            }
-        }
-
-        Self::sync_registry(&mut registry, store).await;
-
-        Ok(registry)
-    }
-
-    async fn sync_registry(registry: &mut Registry, store: Store) {
-        for package in &registry.packages {
+    async fn update_registry(&self, registry: &mut Registry) -> Result<(), Error>{
+        // TODO: fix these metrics
+        for mut package in registry.packages.iter_mut() {
             if package.id.is_empty() {
-                match store.insert(package).await {
+                match self.insert(package).await {
                     Ok(_) => { continue; }
                     Err(e) => {
-                        debug!("snyk_service::scan_and_sync_registry::store::package::insert::{}", e);
+                        debug!("snyk_service::sync::store::package::insert::{}", e);
                         continue;
                     }
                 }
             } else {
-                match store.update(package).await {
+                match self.update(package).await {
                     Ok(_) => {}
                     Err(e) => {
-                        debug!("snyk_service::scan_and_sync_registry::store::package::update::{}", e);
+                        debug!("snyk_service::sync::store::package::update::{}", e);
                         continue;
                     }
                 }
             }
         }
 
-        for dependency in &registry.dependencies {
+        for dependency in registry.dependencies.iter_mut() {
             if dependency.id.is_empty() {
-                match store.insert(dependency).await {
+                match self.insert(dependency).await {
                     Ok(_) => { continue; }
                     Err(e) => {
-                        debug!("snyk_service::scan_and_sync_registry::store::dependency::insert::{}", e);
+                        debug!("snyk_service::sync::store::dependency::insert::{}", e);
                         continue;
                     }
                 }
             } else {
-                match store.update(dependency).await {
+                match self.update(dependency).await {
                     Ok(_) => {}
                     Err(e) => {
-                        debug!("snyk_service::scan_and_sync_registry::store::dependency::update::{}", e);
+                        debug!("snyk_service::sync::store::dependency::update::{}", e);
                         continue;
                     }
                 }
             }
         }
 
-        for unsupported in &registry.unsupported {
+        for unsupported in registry.unsupported.iter_mut() {
             if unsupported.id.is_empty() {
-                match store.insert(unsupported).await {
+                match self.insert(unsupported).await {
                     Ok(_) => { continue; }
                     Err(e) => {
-                        debug!("snyk_service::scan_and_sync_registry::store::unsupported::insert::{}", e);
+                        debug!("snyk_service::sync::store::unsupported::insert::{}", e);
                         continue;
                     }
                 }
             } else {
-                match store.update(unsupported).await {
+                match self.update(unsupported).await {
                     Ok(_) => {}
                     Err(e) => {
-                        debug!("snyk_service::scan_and_sync_registry::store::unsupported::update::{}", e);
+                        debug!("snyk_service::sync::store::unsupported::update::{}", e);
                         continue;
                     }
                 }
             }
         }
+
+        Ok(())
     }
 
-    async fn sync_sboms<F, Fut>(&self, org: &mut adapters::Organization, sync_fn: F) -> Result<u32, Error>
-        where
-        F: Fn(String, String) -> Fut + Copy,
-        Fut: Future<Output=Result<(), Error>> {
-
+    async fn sync_sboms(&self, org: &mut adapters::Organization) -> Result<u32, Error> {
         let mut sboms_total = 0;
 
         for mut project in org.projects.iter_mut() {
             if project.status == ProjectStatus::Inactive {
                 // TODO: Emit Metric.
-                debug!("sync_sboms::sync_fn::is_sbom_project_type::inactive::project_name::{}::package_manager::{}", project.name, project.package_manager);
+                debug!("snyk_service::sync_sboms::sync_fn::is_sbom_project_type::inactive::project_name::{}::package_manager::{}", project.name, project.package_manager);
                 continue;
             }
 
             if !is_sbom_project_type(&project.package_manager) {
                 // TODO: Emit Metric.
-                debug!("sync_sboms::sync_fn::is_sbom_project_type::project_name::{}: package_manager::{}", project.name, project.package_manager);
+                debug!("snyk_service::sync_sboms::sync_fn::is_sbom_project_type::project_name::{}: package_manager::{}", project.name, project.package_manager);
                 // TODO: Handle tracking packages that aren't SBOM targets so that we can profile what the Snyk registry looks like.
                 continue;
             }
 
-            let bom = self.sbom(
+            let bom = self.client.sbom_raw(
                 org.id.as_str(),
                 project.id.as_str(),
                 SbomFormat::CycloneDxJson)
@@ -202,18 +239,18 @@ impl SnykService {
             let bom = match bom {
                 None => {
                     // TODO: Emit Metric.
-                    debug!("sync_sboms::sbom::empty::project_name::{}", project.name);
+                    debug!("snyk_service::sync_sboms::sbom::empty::project_name::{}", project.name);
                     continue;
                 }
                 Some(raw) => {
-                    match sync_fn(raw.clone(), project.name.clone()).await {
+                    match self.sync_sbom(&raw, project).await {
                         Ok(()) => {
                             // TODO: Emit Metric.
-                            debug!("sync_sboms::sync_fn::success::project_name::{}", project.name);
+                            debug!("snyk_service::sync_sboms::sync_sbom::success::project_name::{}", project.name);
                         },
                         Err(e) => {
                             // TODO: Emit Metric.
-                            debug!("sync_sboms::sync_fn::failure::project_name::{}: {}", project.name, e);
+                            debug!("snyk_service::sync_sboms::sync_sbom::failure::project_name::{}: {}", project.name, e);
                             continue;
                         }
                     };
@@ -225,7 +262,7 @@ impl SnykService {
                 Ok(bom) => { project.bom = Some(bom); }
                 Err(e) => {
                     // TODO: Emit Metric.
-                    debug!("sync_sboms::parse_cyclonedx_bom::project_name::{}: {}", project.name, e);
+                    debug!("snyk_service::sync_sboms::parse_cyclonedx_bom::project_name::{}: {}", project.name, e);
                 }
             }
 
@@ -233,6 +270,19 @@ impl SnykService {
         }
 
         Ok(sboms_total)
+    }
+
+    pub async fn sync_sbom(&self, _raw: &String, project: &mut adapters::Project) -> Result<(), Error> {
+        // TODO: Post to v1 API.
+
+        let bom = match project.bom.borrow_mut() {
+            None => { return Ok(()); }
+            Some(b) => b
+        };
+
+        self.insert(bom).await?;
+
+        Ok(())
     }
 
     async fn sync_packages(&self, registry: &mut Registry, org: &mut adapters::Organization) -> Result<(), Error> {
@@ -321,19 +371,6 @@ impl SnykService {
         };
 
         Ok(())
-    }
-
-    async fn orgs(&self) -> Result<Option<Vec<OrgV1>>, Error> {
-        match self.client.orgs().await? {
-            None => {
-                return Err(Error::Config("no organizations for token".to_string()));
-            }
-            Some(o) => Ok(Some(o)),
-        }
-    }
-
-    pub async fn sbom(&self, org_id: &str, project_id: &str, format: SbomFormat) -> Result<Option<String>, Error> {
-        self.client.sbom_raw(org_id, project_id, format).await
     }
 
     pub async fn sbom_issues(&self, org_id: &str, bom: &Bom) -> Result<Option<Vec<adapters::Issue>>, Error> {
@@ -471,17 +508,19 @@ impl SnykService {
     }
 
     pub async fn register_issues(&self) -> Result<(), Error> {
-        let distinct = HashMap::<&str, Vec<&SnykXRef>>::new();
+        //let mut distinct = HashMap::<&str, Vec<SnykXRef>>::new();
         let store = Store::new(&self.cx).await?;
         let purls = store.list::<Purl>().await?;
 
-        for purl in purls {
-            match distinct.get(purl.id.as_str()) {
-                None => { distinct.insert(purl.id.as_str(), vec![])}
-                Some(refs) => {
-
-                }
-            }
+        for purl in purls.clone() {
+            let _raw_purl = purl.id.clone();
+            // let raw_purl = raw_purl.as_str();
+            // match distinct.get::<&Vec<SnykXRef>>(raw_purl.as_ref()) {
+            //     None => { distinct.insert(raw_purl, vec![]);}
+            //     Some(refs) => {
+            //
+            //     }
+            // }
         }
 
         for purl in purls {
@@ -528,7 +567,6 @@ mod adapters {
     use crate::entities::packages::{PackageXRef, SnykXRef, Unsupported};
     use crate::models::cyclonedx::Bom;
 
-    mongo_doc!(Bom);
     mongo_doc!(Issue);
 
     /// Adapter over a native Snyk Group.
@@ -536,9 +574,6 @@ mod adapters {
     pub struct Group {
         pub id: String,
         pub name: String,
-        pub orgs_total: u32,
-        pub(crate) inner: crate::clients::snyk::models::Group,
-        pub orgs: Vec<Organization>,
     }
 
     impl Group {
@@ -547,26 +582,8 @@ mod adapters {
             let name = inner.name.clone().unwrap_or("group name not set".to_string());
 
             Self {
-                inner,
                 id,
                 name,
-                orgs: vec![],
-                orgs_total: 0,
-            }
-        }
-
-        pub(crate) fn orgs(&mut self, org: Organization) {
-            self.orgs.push(org);
-            self.orgs_total = self.orgs.len() as u32;
-        }
-
-        pub(crate) fn none() -> Self {
-             Self {
-                inner: Default::default(),
-                id: "none-group".to_string(),
-                name: "Orgs with no group set".to_string(),
-                orgs: vec![],
-                orgs_total: 0,
             }
         }
     }
@@ -577,10 +594,8 @@ mod adapters {
         pub id: String,
         pub name: String,
         pub projects_total: u32,
-        pub issues_total: u32,
-        pub(crate) inner: OrgV1,
         pub projects: Vec<Project>,
-        pub issues: Vec<Issue>,
+        pub(crate) inner: OrgV1,
     }
 
     impl Organization {
@@ -591,8 +606,6 @@ mod adapters {
                 id,
                 name,
                 inner,
-                issues_total: 0,
-                issues: vec![],
                 projects: vec![],
                 projects_total: 0,
             }
@@ -609,9 +622,6 @@ mod adapters {
                     Group {
                         id: "not set".to_string(),
                         name: "not set".to_string(),
-                        orgs_total: 0,
-                        inner: Default::default(),
-                        orgs: vec![]
                     }
                 },
                 Some(inner) => {Group::new(inner)}
@@ -703,6 +713,7 @@ mod adapters {
 
         pub(crate) fn to_snyk_xref(&self, org: &Organization) -> SnykXRef {
             SnykXRef{
+                id: "".to_string(),
                 org_id: org.id.clone(),
                 org_name: org.name.clone(),
                 group_id: org.group().id,
@@ -798,37 +809,61 @@ mod adapters {
 mod tests {
     use std::io::Write;
     use platform::mongodb::Context;
+    use crate::config::{Environ, environment, mongo_context};
     use super::*;
     use crate::Error;
 
-    #[async_std::test]
-    async fn can_build_registry() -> Result<(), Error> {
+    fn test_service() -> SnykService {
         let token = std::env::var("SNYK_API_TOKEN")
             .map_err(|e| Error::Config(e.to_string()))
             .unwrap();
 
-        let cx = Context{
-            host: "".to_string(),
-            username: "".to_string(),
-            password: "".to_string(),
-            port: 0,
-            db_name: "".to_string(),
-            key_name: "".to_string(),
-        };
+        let cx = mongo_context(Some("core-test"))?;
 
         let service = SnykService::new(token, cx);
-        let registry = service.build_registry().await?;
+        service
+    }
 
-        assert!(registry.groups.len() > 0);
-
-        let json = serde_json::to_string(&registry)
-            .map_err(|e| Error::Runtime(e.to_string()))?;
-
-        let mut file = std::fs::File::create("/Users/derek/code/scratch/debug/snyk-registry.json")
-            .map_err(|e| Error::Runtime(e.to_string()))?;
-
-        file.write_all(json.as_ref()).map_err(|e| Error::Runtime(e.to_string()))?;
+    #[async_std::test]
+    #[ignore = "manual run only"]
+    async fn can_sync() -> Result<(), Error> {
+        let service = test_service();
+        service.sync().await?;
 
         Ok(())
     }
+
+    #[async_std::test]
+    async fn can_sync_purls() -> Result<(), Error> {
+        let service = test_service();
+
+        service.register_purls().await
+            .map_err(|e| Error::Enrich(e.to_string()))?;;
+
+
+        //service.registry_issues(purls).await?;
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn can_sync_issues() -> Result<(), Error> {
+        let service = test_service();
+
+        service.register_issues().await
+            .map_err(|e| Error::Enrich(e.to_string()))?;
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn can_register_sboms() -> Result<(), Error> {
+        let service = test_service();
+
+        service.register_sboms().await
+            .map_err(|e| Error::Enrich(e.to_string()))?;
+
+        Ok(())
+    }
+
 }

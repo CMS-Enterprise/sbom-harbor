@@ -175,39 +175,6 @@ mod tests {
     }
 
     #[async_std::test]
-    async fn can_sync_purls() -> Result<(), Error> {
-        let service = SnykProvider::new_service()?;
-
-        service.register_purls().await
-            .map_err(|e| Error::Enrich(e.to_string()))?;;
-
-
-        //service.registry_issues(purls).await?;
-
-        Ok(())
-    }
-
-    #[async_std::test]
-    async fn can_sync_issues() -> Result<(), Error> {
-        let service = SnykProvider::new_service()?;
-
-        service.register_issues().await
-            .map_err(|e| Error::Enrich(e.to_string()))?;
-
-        Ok(())
-    }
-
-    #[async_std::test]
-    async fn can_register_sboms() -> Result<(), Error> {
-        let service = SnykProvider::new_service()?;
-
-        service.register_sboms().await
-            .map_err(|e| Error::Enrich(e.to_string()))?;
-
-        Ok(())
-    }
-
-    #[async_std::test]
     async fn can_sync_project() -> Result<(), Error> {
         // let org_id = from_env("SNYK_TEST_ORG");
         // let project_id = from_env("SNYK_TEST_PROJECT");

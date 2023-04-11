@@ -9,6 +9,7 @@ mongo_doc!(Package);
 mongo_doc!(Dependency);
 mongo_doc!(Unsupported);
 mongo_doc!(Purl);
+mongo_doc!(SnykXRef);
 
 // WATCH: This is useful for early prototyping, but we will likely outgrow this.
 /// Provides intelligent access to the full set of Packages.
@@ -379,6 +380,7 @@ pub struct ProductXRef {
 #[allow(missing_docs)]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SnykXRef {
+    pub id: String,
     pub org_id: String,
     pub org_name: String,
     pub group_id: String,

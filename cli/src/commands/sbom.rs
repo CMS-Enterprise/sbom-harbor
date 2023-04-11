@@ -2,6 +2,8 @@ use std::str::FromStr;
 
 use clap::{Parser, ValueEnum};
 use clap::builder::PossibleValue;
+use harbcore::services::{SbomProvider, SnykService};
+use platform::mongodb::Context;
 
 use crate::Error;
 
@@ -79,9 +81,16 @@ pub struct FileSystemArgs {}
 #[derive(Clone, Debug, Parser)]
 pub struct GitHubArgs {}
 
-/// Args for generating one or more SBOMs from the Snyk API.
+/// Args for generating a single SBOM from the Snyk API.
 #[derive(Clone, Debug, Parser)]
-pub struct SnykArgs {}
+pub struct SnykArgs {
+    /// The Snyk Org ID for the SBOM target.
+    #[arg(short, long)]
+    pub org_id: Option<String>,
+    /// The Snyk Project ID for the SBOM target.
+    #[arg(short, long)]
+    pub project_id: Option<String>,
+}
 
 impl FromStr for SbomProviderKind {
     type Err = ();
@@ -123,8 +132,44 @@ impl GithubProvider {
 struct SnykProvider {}
 
 impl SnykProvider {
-    async fn execute(_args: &Option<SnykArgs>) -> Result<(), Error> {
-        // Construct and invoke Core Services here or if args are contextual call specialized subroutine.
+    /// Factory method to create new instance of type.
+    fn new_service(cx: Context) -> Result<SnykService, Error> {
+        let token = harbcore::config::snyk_token()
+            .map_err(|e| Error::Config(e.to_string()))?;
+
+       Ok(SnykService::new(token, cx))
+    }
+
+    async fn execute(args: &Option<SnykArgs>) -> Result<(), Error> {
+        match args {
+            None => Err(Error::Sbom("snyk args required".to_string())),
+            Some(args) => {
+                let cx = harbcore::config::mongo_context(None)
+                    .map_err(|e| Error::Config(e.to_string()))?;
+
+                match args {
+                    None => {
+                        let service = Self::new_service(cx)?;
+                        service.sync().await?;
+                    },
+                    Some(args) => {
+                        todo!() // Handle single project target use case.
+                    }
+                }
+            }
+        }
+    }
+}
+
+mod tests {
+    use harbcore::config::{Environ, environment};
+    use platform::config::from_env;
+    use super::*;
+    use crate::Error;
+
+    #[async_std::test]
+    async fn can_sync() -> Result<(), Error> {
+        // Figure out how to test arg parsing.
         todo!()
     }
 }

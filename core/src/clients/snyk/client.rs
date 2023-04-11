@@ -53,6 +53,7 @@ fn sbom_url(org_id: &str, project_id: &str, format: SbomFormat) -> String {
 }
 
 /// A purpose build Snyk HTTP Client.
+#[derive(Debug)]
 pub(crate) struct Client {
     token: String,
 }
@@ -79,7 +80,6 @@ impl Client {
             None => Err(Error::Runtime("snyk failed to list orgs".to_string())),
             Some(r) => Ok(r.orgs),
         }
-
     }
 
     #[allow(dead_code)]

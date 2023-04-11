@@ -1,65 +1,29 @@
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-use async_std::fs::OpenOptions;
 
+use async_std::fs::OpenOptions;
 use async_std::io::WriteExt;
+use async_trait::async_trait;
+use platform::config::from_env;
 use regex::Regex;
 use tracing::debug;
-use platform::config::from_env;
 
 use crate::Error;
 use crate::models::cyclonedx::{Bom, Component};
 use crate::models::sboms::CycloneDxFormat;
 
-// TODO: Move this to the SnykService so that these can become &str and avoid a highly inefficient String.clone().
-pub async fn sync_debug(sbom: String, identifier: String) -> Result<(), Error> {
-    let sanitizer = regex::Regex::new(r#"([^\p{L}\s\d_~,;:\[\]\(\).'])"#).unwrap();
-    let sanitized_identifier = sanitizer.replace_all(identifier.as_str(), "_");
-
-    let debug_dir = from_env("DEBUG_DIR").unwrap();
-    let sbom_dir = Path::new(&debug_dir).join("sboms");
-    let sbom_path = sbom_dir.join(format!("{}.json", sanitized_identifier));
-
-    match std::fs::create_dir_all(sbom_dir.as_path()) {
-        Ok(_) => {}
-        Err(e) => {
-            let msg = format!("error creating debug directory: {}", e);
-            debug!(msg);
-            return Err(Error::Runtime(msg.to_string()));
-        }
-    }
-
-    let mut file = match File::create(sbom_path.as_path()) {
-        Ok(f) => f,
-        Err(e) => {
-            let msg = format!("error opening debug file: {}", e);
-            debug!(msg);
-            return Err(Error::Runtime(msg.to_string()));
-        }
-    };
-
-    match file.write_all(sbom.as_ref()) {
-        Ok(_) => Ok(()),
-        Err(e) => {
-            let msg = format!("error writing debug file: {}", e);
-            debug!(msg);
-            return Err(Error::Runtime(msg.to_string()));
-        }
-    }
+#[async_trait]
+pub trait SbomProvider {
+    async fn sync(&self) -> Result<(), Error>;
+    // TODO
+    // async fn sync_one<T>(&self, opts: T) -> Result<(), Error>;
 }
 
 /// Provides SBOM related capabilities.
 pub struct SbomService {}
 
 impl SbomService {
-    pub async fn sync_v1(&self, _sbom: String, _identifier: String) -> Result<(), Error> {
-        todo!()
-    }
-
-    pub async fn sync_v2(&self, _sbom: String, _identifier: String) -> Result<(), Error> {
-        todo!()
-    }
 
     pub fn parse_cyclonedx_bom(raw: &str, format: CycloneDxFormat) -> Result<Bom, Error> {
         match format {

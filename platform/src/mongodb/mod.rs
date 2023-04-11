@@ -7,6 +7,7 @@ pub use service::*;
 pub use store::*;
 
 use crate::auth::*;
+use crate::Error;
 
 /// Provides MongoDB db migrations support.
 pub mod migrations;
@@ -17,9 +18,23 @@ pub mod store;
 /// Provides a row-level authorization mechanism for controlling access to entries in a [Collection].
 pub mod auth;
 
+/// Specifies the backend data store for the [Context].
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum ContextKind {
+    /// Specifies the data store is provided by Cosmos DB for MongoDB.
+    CosmosDB,
+    /// Specifies the data store is provided by DocumentDB.
+    DocumentDB,
+    /// Specifies the data store is a native MongoDB instance.
+    Mongo,
+}
+
+// TODO: Make Context a trait and split these up in to purpose build contexts instead of a single type.
 /// Provides connection information and schema conventions for a MongoDB/DocumentDB backed [Store].
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Context {
+    /// Backend provider for the [Context].
+    pub kind: ContextKind,
     /// Instance host name which must be a resolvable DNS name.
     pub host: String,
     /// MongoDB username.
@@ -32,26 +47,46 @@ pub struct Context {
     pub db_name: String,
     /// The conventional name of document key fields.
     pub key_name: String,
-}
-
-// Used by tests. Assumes devenv is running when environment variable is not set.
-impl Default for Context {
-    fn default() -> Self {
-        Self {
-            host: "mongo".to_string(),
-            username: "root".to_string(),
-            password: "harbor".to_string(),
-            port: 27017,
-            db_name: "".to_string(),
-            key_name: "".to_string(),
-        }
-    }
+    /// The name of the cluster when connecting to a DocumentDB instance.
+    pub region: Option<String>,
+    /// The name of the cluster when connecting to a DocumentDB instance.
+    pub cluster_name: Option<String>,
+    /// The name of the account when connecting to a Cosmos DB instance.
+    pub account_name: Option<String>,
 }
 
 impl Context {
     /// Returns a formatted MongoDB compliant URI for the MongoDB instance.
-    pub fn connection_uri(&self) -> String {
-        format!("mongodb://{}:{}@{}:{}", self.username, self.password, self.host, self.port)
+    pub fn connection_uri(&self) -> Result<String, Error> {
+        match self.kind {
+            ContextKind::CosmosDB => {
+                match &self.account_name {
+                    None => Err(Error::Config("account name required".to_string())),
+                    Some(account_name) => {
+                        Ok(format!("mongodb://{}:{}@{}.documents.azure.com:10255/?ssl=true", self.username, self.password, account_name))
+                    }
+                }
+            }
+            ContextKind::DocumentDB => {
+                let cluster_name = match &self.cluster_name {
+                    None => {
+                        return Err(Error::Config("cluster name required".to_string()));
+                    }
+                    Some(c) => c
+                };
+                let region = match &self.region {
+                    None => {
+                        return Err(Error::Config("region required".to_string()));
+                    }
+                    Some(r) => r
+                };
+
+                Ok(format!("mongodb://{}:{}@{}.node.{}.docdb.amazonaws.com:27017/?tls=true&tlsCAFile=global-bundle.pem", self.username, self.password, cluster_name, region))
+            }
+            ContextKind::Mongo => {
+                Ok(format!("mongodb://{}:{}@{}:{}", self.username, self.password, self.host, self.port))
+            }
+        }
     }
 }
 
