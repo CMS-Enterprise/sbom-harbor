@@ -1,9 +1,11 @@
 use std::{env, time::Instant};
 use async_trait::async_trait;
-use harbcore::clients::{ProjectJson, get_orgs, get_projects_from_org_list, get_sbom_from_snyk};
-use crate::commands::Provider;
+use clients::{ProjectJson, get_orgs, get_projects_from_org_list, get_sbom_from_snyk};
 use platform::auth::get_secret;
-use harbor_client::client::simple_upload_sbom;
+
+use crate::clients::{self, SnykAPI_Impl, SnykAPI};
+
+use super::SbomProvider;
 
 //DONE: Add method call
 //DONE: See if it runs
@@ -30,7 +32,7 @@ impl SnykProvider {
     //Types that can have associated SBOM data in Snyk
     const VALID_TYPES: &'static [&'static str] = &["npm", "nuget", "gradle", "hex", "pip", "poetry", "rubygems", 
     "maven", "yarn", "yarn-workspace", "composer", "gomodules", "govendor", "golang", "golangdep", "gradle", "paket", "cocoapods", "cpp", "sbt"];
-    const AWS_SECRET_NAME: &'static str = "dev-harbor-snyk-token-use1";
+    const AWS_SECRET_NAME: &'static str = "dev-sbom-harbor-snyk-token-use1";
 
     // Iterates over list of projects and uploads any valid sboms to harbor
     async fn retrieve_and_upload_valid_sboms(snyk_token: String, project_json: ProjectJson) {
@@ -65,9 +67,9 @@ impl SnykProvider {
 }
 
 #[async_trait]
-impl Provider for SnykProvider {
+impl SbomProvider for SnykProvider {
 
-    async fn scan(&self) {
+    async fn provide_sboms(&self) {
         let start = Instant::now();
 
         println!("Starting SnykProvider scan...");
@@ -86,6 +88,7 @@ impl Provider for SnykProvider {
         };
 
         println!("Scanning Snyk for SBOMS...");
+        SnykAPI_Impl::get_orgs(snyk_token.clone());
         let snyk_data = get_orgs(snyk_token.clone()).await;
 
         match snyk_data {
@@ -119,5 +122,5 @@ impl Provider for SnykProvider {
 #[tokio::test]
 async fn test_get_snyk_data() {
     let provider = SnykProvider{};
-    provider.scan().await;
+    provider.provide_sboms().await;
 }

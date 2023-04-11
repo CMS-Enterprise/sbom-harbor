@@ -1,7 +1,7 @@
 use platform::config::from_env;
 use platform::mongodb::Context;
 use crate::Error;
-use crate::services::github::GitHubProviderConfig;
+//use crate::services::github::GitHubProviderConfig;
 
 pub const COLLECTION: &str = "pilot";
 pub const TEAM_ID_KEY: &str = "team_id";
@@ -16,65 +16,71 @@ pub const V1_HARBOR_PASSWORD_KEY: &str = "V1_HARBOR_PASSWORD";
 
 /// Returns the Mongo Connection URI as an environment variable. Defaults to local dev environment if not set.
 pub fn db_connection() -> Result<Context, Error> {
-    let mut cx: Context = from_env("DB_CONNECTION")?;
+    panic!("Not Implemented");
+    // let mut cx: Context = from_env("DB_CONNECTION")?;
 
-    cx.db_name = "harbor".to_string();
-    cx.key_name = "id".to_string();
+    // cx.db_name = "harbor".to_string();
+    // cx.key_name = "id".to_string();
 
-    Ok(cx)
+    // Ok(cx)
 }
 
 pub fn get_cms_team_id() -> Result<String, Error> {
-    match from_env(V1_TEAM_ID_KEY) {
-        Some(value) => value,
-        None => return Err(
-            Error::Config(
-                String::from("Missing Team Id of V1 Team")
-            )
-        )
-    }
+    panic!("Not Implemented");
+    // match from_env(V1_TEAM_ID_KEY) {
+    //     Some(value) => value,
+    //     None => return Err(
+    //         Error::Config(
+    //             String::from("Missing Team Id of V1 Team")
+    //         )
+    //     )
+    // }
 }
 
 pub fn get_cms_team_token() -> Result<String, Error> {
-    match from_env::<String>(V1_TEAM_TOKEN_KEY) {
-        Some(value) => value,
-        None => return Err(
-            Error::Config(
-                String::from("Missing Team token of V1 Team")
-            )
-        )
-    }
+    panic!("Not Implemented");
+    // match from_env::<String>(V1_TEAM_TOKEN_KEY) {
+    //     Some(value) => value,
+    //     None => return Err(
+    //         Error::Config(
+    //             String::from("Missing Team token of V1 Team")
+    //         )
+    //     )
+    // }
 }
 
 pub fn get_cf_domain() -> Result<String, Error> {
-    match from_env(CF_DOMAIN_KEY) {
-        Some(value) => value,
-        None => return Err(
-            Error::Config(
-                String::from("Missing CloudFront Domain")
-            )
-        )
-    }
+    panic!("Not Implemented");
+    // match from_env(CF_DOMAIN_KEY) {
+    //     Some(value) => value,
+    //     None => return Err(
+    //         Error::Config(
+    //             String::from("Missing CloudFront Domain")
+    //         )
+    //     )
+    // }
 }
 
 pub fn get_v1_username() -> Result<String, Error> {
-    match from_env(V1_HARBOR_USERNAME_KEY) {
-        Some(value) => value,
-        None => return Err(
-            Error::Config(
-                String::from("Missing Cognito Username")
-            )
-        )
-    }
+    panic!("Not Implemented");
+    // match from_env(V1_HARBOR_USERNAME_KEY) {
+    //     Some(value) => value,
+    //     None => return Err(
+    //         Error::Config(
+    //             String::from("Missing Cognito Username")
+    //         )
+    //     )
+    // }
 }
 
 pub fn get_v1_password() -> Result<String, Error> {
-    match from_env(V1_HARBOR_PASSWORD_KEY) {
-        Some(value) => value,
-        None => return Err(
-            Error::Config(
-                String::from("Missing Cognito Password")
-            )
-        )
-    }
+    panic!("Not Implemented");
+    // match from_env(V1_HARBOR_PASSWORD_KEY) {
+    //     Some(value) => value,
+    //     None => return Err(
+    //         Error::Config(
+    //             String::from("Missing Cognito Password")
+    //         )
+    //     )
+    // }
 }

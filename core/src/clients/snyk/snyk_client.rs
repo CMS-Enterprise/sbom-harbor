@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use async_trait::async_trait;
+use httpmock::{MockServer, Method::POST};
 use platform::hyper::{ContentType, Error as HyperError, get, post};
 use serde_json::Value;
 use crate::clients::{ProjectJson, SnykProviderError};
@@ -14,6 +16,39 @@ const API_V3_VERSION: &'static str = "2023-02-15~beta";
 //Format of SBOMs returned from Snyk
 const SBOM_FORMAT: &'static str = "cyclonedx%2Bjson";
 
+
+pub struct SnykAPI_Impl{}
+#[async_trait]
+pub trait SnykAPI {
+    async fn get_orgs(snyk_token: String) -> Result<Vec<Org>, SnykProviderError>;
+}
+
+#[async_trait]
+impl SnykAPI for SnykAPI_Impl {
+    async fn get_orgs(snyk_token: String) -> Result<Vec<Org>, SnykProviderError>{
+        println!("Getting list of Orgs from Snyk...");
+    
+        let url = format!("{}/orgs", API_V1_URL);
+        let response: Result<Option<SnykData>, HyperError> = get(
+            url.as_str(),
+            ContentType::Json,
+            snyk_token.as_str(),
+            None::<String>,
+        ).await;
+    
+        match response {
+            Ok(option) => 
+                match option {
+                Some(value) => {return Ok(value.orgs)},
+                None => {
+                    println!("No orgs found using URL: {}", url);
+                    return Err(SnykProviderError::SnykDataValidationError(format!("No orgs found using URL: {}", url)));
+                }
+            },
+            Err(err) => return Err(SnykProviderError::SnykConnection(format!("Error in the response: {}", err)))
+        }
+    }
+}
 /// Retrieves a list of all Orgs from Snyk and adds them into a new SnykData object
 pub async fn get_orgs(snyk_token: String) -> Result<Vec<Org>, SnykProviderError>{
     println!("Getting list of Orgs from Snyk...");
@@ -105,8 +140,17 @@ pub async fn get_sbom_from_snyk(snyk_token: String, org_id: String, proj_id: Str
 
 #[tokio::test]
 async fn test_get_orgs() {
+    let server = MockServer::start_async();
+    let url = format!("{}/orgs", API_V1_URL);
+    let orgs_mock = server.await.mock(|when, then|{
+        when.method(POST).path(url);
+        then.status(200).header("content-type", "application/json").body("body");
+    });
+
     let fake_token = format!("123-abc");
-    get_orgs(fake_token);
+    let result = get_orgs(fake_token).await;
+
+    println!("{:#?}", result);
     //TODO: Stub for rest call
     //TODO: Test for OK results
     //TODO: Test for Error 
