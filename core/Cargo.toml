@@ -39,3 +39,7 @@ name = "harbcore"
 path = "src/lib.rs"
 proc-macro = false
 crate-type = ["lib"]
+
+[dependencies.harbor-client]
+path = "../client"
+version = "0.1.0"
