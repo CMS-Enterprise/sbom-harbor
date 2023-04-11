@@ -5,23 +5,22 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0.68"
+chrono = "0.4.24"
 hyper = { version = "0.14", features = ["full"] }
 hyper-rustls = { version = "0.23.1", features =["http2"] }
 serde = "1.0.147"
 serde_json = "1.0.87"
+serde_derive = "1.0.147"
 serde_urlencoded = "0.7"
 tracing = { version = "0.1", features = ["log"] }
 uuid = { version = "1.2.2", features = ["serde", "v4"] }
+thiserror = "1.0"
 
 [dev-dependencies]
 async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
 ctor = "0.1.26"
 dotenv = "0.15.0"
 tokio-test = "*"
-
-[dependencies.harbcore]
-path = "../core"
-version = "0.1.0"
 
 [dependencies.platform]
 path = "../platform"

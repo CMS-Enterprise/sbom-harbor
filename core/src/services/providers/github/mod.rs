@@ -4,46 +4,39 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use uuid::Uuid;
 
-use platform::mongodb::{
-    Service as MongoService
-};
-
-use crate::services::{
-    clone_path,
-    clone_repo,
-    remove_clone,
-    syft
-};
 use harbor_client::client::{
     Client as V1HarborClient,
     SBOMUploadResponse
 };
-use mongodb::Collection;
+use platform::config::from_env;
 use platform::hyper::{
     ContentType,
     Error as HyperError,
     get
 };
-use platform::mongodb::{Service, Store};
+use platform::mongodb::{
+    Context as MongoContext,
+    Service as MongoService,
+    Store as MongoStore
+};
 
 use crate::clients::github::{
-    Commit,
-    Repo,
     clone_path,
     clone_repo,
+    Commit,
     get_last_commit_url,
     get_page_of_repos,
     get_pages,
     remove_clone,
+    Repo,
     should_skip,
     syft
 };
 use crate::config::*;
-use crate::services::github::{get_harbor_config, GhProviderError};
-use crate::services::github::mongo::GitHubProviderDocument;
-use crate::services::providers::github::mongo::{get_mongo_db, GitHubProviderMongoService, update_last_hash_in_mongo};
+use crate::services::providers::github::mongo::{
+    GitHubProviderMongoService,
+};
 use crate::services::providers::github::mongo::GitHubSbomProviderEntry;
 use crate::services::providers::SbomProvider;
 
@@ -57,16 +50,16 @@ pub struct GitHubSbomProvider {}
 ///
 impl GitHubSbomProvider {
 
-    async fn get_repos(org: String) -> Result<Vec<Repo>, GhProviderError> {
+    async fn get_repos(org: String) -> Result<Vec<Repo>, Error> {
 
         let mut pages = match get_pages(&org).await {
             Ok(pages) => pages,
             Err(err) => panic!("Unable to get pages of repos from GitHub: {:#?}", err)
         };
 
-        let gh_fetch_token = match get_env_var("GH_FETCH_TOKEN") {
-            Some(value) => value,
-            None => panic!("Missing GitHub Token. export GH_FETCH_TOKEN=<token>")
+        let gh_fetch_token = match from_env::<String>("GH_FETCH_TOKEN") {
+            Ok(value) => value,
+            Err(e) => panic!("Missing GitHub Token. export GH_FETCH_TOKEN=<token>, {}", e)
         };
 
         let token: String = String::from("Bearer ") + &gh_fetch_token;
@@ -77,7 +70,7 @@ impl GitHubSbomProvider {
             let mut gh_org_rsp = match get_page_of_repos(&org, page+1, per_page, &token).await {
                 Ok(vector) => vector,
                 Err(err) => return Err(
-                    GhProviderError::GitHubRequest(
+                    Error::GitHubRequest(
                         format!("Error getting a page of repos: {}", err)
                     )
                 ),
@@ -166,9 +159,9 @@ impl SbomProvider for GitHubSbomProvider {
 ///
 async fn create_harbor_entities(
     github_url: String,
-    harbor_config: &HarborConfig,
+    harbor_config: &GitHubProviderConfig,
     language: String,
-) -> Result<HashMap<String, String>, GhProviderError> {
+) -> Result<HashMap<String, String>, Error> {
 
     let client = V1HarborClient::new(
         harbor_config.cf_domain.clone(),
@@ -187,7 +180,7 @@ async fn create_harbor_entities(
         Err(err) => {
             let err_msg = format!("Error trying to create a project: {}", err);
             return Err(
-                GhProviderError::EntityCreation(err_msg)
+                Error::EntityCreation(err_msg)
             )
         }
     };
@@ -219,14 +212,14 @@ async fn create_harbor_entities(
 ///
 async fn send_to_v1(
     document: &GitHubSbomProviderEntry,
-    harbor_config: &HarborConfig,
-) -> Result<SBOMUploadResponse, GhProviderError> {
+    harbor_config: &GitHubProviderConfig,
+) -> Result<SBOMUploadResponse, Error> {
 
-    let clone_path = clone_path(&document.repo_url);
+    let clone_path = clone_path(&document.id);
 
-    match clone_repo(&clone_path, &document.repo_url.as_str()) {
-        Ok(()) => println!("{} Cloned Successfully", document.repo_url),
-        Err(err) => panic!("Unable to clone Repo {}, {}", document.repo_url, err)
+    match clone_repo(&clone_path, &document.id.as_str()) {
+        Ok(()) => println!("{} Cloned Successfully", document.id),
+        Err(err) => panic!("Unable to clone Repo {}, {}", document.id, err)
     }
 
     let syft_result = match syft(&clone_path) {
@@ -249,7 +242,7 @@ async fn send_to_v1(
     ).await {
         Ok(response) => Ok(response),
         Err(err) => return Err(
-            GhProviderError::Pilot(
+            Error::Pilot(
                 String::from(format!("Pilot Error: {}", err))
             )
         )
@@ -261,24 +254,23 @@ async fn send_to_v1(
 ///
 async fn create_document_in_db(
     entities: HashMap<String, String>,
-    collection: Collection<GitHubSbomProviderEntry>,
+    mongo_service: GitHubProviderMongoService,
     url: String,
     last_hash: String,
-) -> Result<GitHubSbomProviderEntry, GhProviderError> {
+) -> Result<GitHubSbomProviderEntry, Error> {
 
-    let document = GitHubSbomProviderEntry {
-        id: Uuid::new_v4().to_string(),
-        repo_url: url.to_string(),
+    let mut document = GitHubSbomProviderEntry {
+        id: url.to_string(),
         last_hash: last_hash.to_string(),
         team_id: entities.get(TEAM_ID_KEY).unwrap().to_string(),
         project_id: entities.get(PROJECT_ID_KEY).unwrap().to_string(),
         codebase_id: entities.get(CODEBASE_ID_KEY).unwrap().to_string(),
     };
 
-    match collection.insert_one(document.clone(), None).await {
+    match mongo_service.insert(&mut document).await {
         Ok(result) => result,
         Err(err) => return Err(
-            GhProviderError::MongoDb(
+            Error::MongoDb(
                 format!("Error inserting into mongo: {}", err)
             )
         ),
@@ -291,10 +283,10 @@ async fn create_document_in_db(
 
 async fn create_data_structures(
     repo: &Repo,
-    harbor_config: &HarborConfig,
+    harbor_config: &GitHubProviderConfig,
     url: String,
-    collection: Collection<GitHubSbomProviderEntry>,
-) -> Result<GitHubSbomProviderEntry, GhProviderError> {
+    mongo_service: GitHubProviderMongoService,
+) -> Result<GitHubSbomProviderEntry, Error> {
 
     // TODO This will create entries without the ability to rollback.
     //  Probably don't care because it's only v1.
@@ -302,7 +294,7 @@ async fn create_data_structures(
     println!("PROCESSING> No Document found document in mongo. Creating entities in harbor");
 
     // This arm executes when nothing is found in the database associated
-    // to the given repo_url.  This means we need to create the project and codebase
+    // to the given id.  This means we need to create the project and codebase
     // in Harbor before we can send SBOMs to that target.
 
     let entities: HashMap<String, String> = match create_harbor_entities(
@@ -319,58 +311,64 @@ async fn create_data_structures(
 
     create_document_in_db(
         entities,
-        collection,
+        mongo_service,
         url.clone(),
         String::from(""),
     ).await
 }
 
-async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut Counter) {
+async fn process_repo(
+    repo: &Repo,
+    harbor_config: &GitHubProviderConfig,
+    counter: &mut Counter
+) {
 
-    let mongo_service = GitHubProviderMongoService {
-        name: String::from("Test name whatever")
+    let ctx = MongoContext {
+        host: "localhost".to_string(),
+        username: "root".to_string(),
+        password: "harbor".to_string(),
+        db_name: "harbor".to_string(),
+        key_name: "last_hash".to_string(),
+        port: 0,
     };
+
+    let mongo_service = GitHubProviderMongoService::new(
+        match MongoStore::new(&ctx).await {
+            Ok(store) => store,
+            Err(err) => panic!("Error getting store: {}", err)
+        }
+    );
 
     let url: &String = match &repo.html_url {
         Some(url) => url,
         None => panic!("No URL for Repository"),
     };
 
-    let repo_name: &String = match &repo.full_name {
-        Some(name) => name,
-        None => panic!("No Full Name for Repository"),
-    };
-
     let last_hash: &String = &repo.last_hash;
 
-    println!("PROCESSING> Will be processing {}@{}", repo_name, url);
+    println!("PROCESSING> Looking in Mongo for the document with repo url: {}", url);
 
-    let db = match get_mongo_db().await {
-        Ok(db) => db,
-        Err(err) => panic!("Problem getting DB: {:#?}", err)
-    };
-
-    let collection = db.collection::<GitHubSbomProviderEntry>(COLLECTION);
-    let filter = doc! { "repo_url":  url.as_str() };
-
-    println!("PROCESSING> Looking in Mongo for this document: {:#?}", filter);
-
-    let doc_option: Option<GitHubSbomProviderEntry>
-        = match collection.find_one(filter, None).await {
+    let doc_option = match mongo_service.find(url).await {
         Ok(option) => option,
-        Err(err) => panic!("Cursor - Error: {}", err)
+        Err(err) => panic!(
+            "Error attempting to find document in mongo with url: {}, Error: {}",
+            url, err
+        )
     };
 
-    let document = match doc_option {
+    let mut document = match doc_option {
         Some(document) => document,
         None => match create_data_structures(
             repo,
             harbor_config,
             url.clone(),
-            collection.clone(),
+            mongo_service.clone(),
         ).await {
             Ok(document) => document,
-            Err(err) => panic!("Error creating data structures in Mongo or Harbor: {}", err)
+            Err(err) => panic!(
+                "Error creating data structures in Mongo or Harbor: {}",
+                err
+            )
         }
     };
 
@@ -385,10 +383,11 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut C
             Ok(upload_resp) => {
 
                 // Upload is OK, update Mongo
+                document.last_hash = last_hash.to_string();
+                mongo_service.update(&document);
+                counter.processed += 1;
 
                 println!("PROCESSING> One SBOM Down! {:#?}", upload_resp);
-                update_last_hash_in_mongo(document, collection, last_hash.clone()).await;
-                counter.processed += 1;
             },
             Err(err) => {
                 counter.upload_errors += 1;
@@ -403,7 +402,7 @@ async fn process_repo(repo: &Repo, harbor_config: &HarborConfig, counter: &mut C
 
 
 /// Args for generating one ore more SBOMs from a GitHub Organization.
-#[derive(Clone, Debug, Parser)]
+#[derive(Clone, Debug)]
 pub struct GitHubProviderConfig {
 
     /// This is the GUID that is in DynamoDB that
@@ -425,67 +424,78 @@ pub struct GitHubProviderConfig {
 
 #[derive(Debug)]
 pub struct GitHubProviderService {
-    store: Arc<Store>,
+    store: Arc<MongoStore>,
 }
 
 impl GitHubProviderService {
+
     /// Factory method to create new instances of a [TeamService].
-    pub fn new(store: Arc<Store>) -> GitHubProviderService {
+    pub fn new(store: Arc<MongoStore>) -> GitHubProviderService {
         GitHubProviderService { store }
     }
 }
 
-impl Service<GitHubSbomProviderEntry> for GitHubProviderService {
-    fn store(&self) -> Arc<Store> {
+impl MongoService<GitHubSbomProviderEntry> for GitHubProviderService {
+    fn store(&self) -> Arc<MongoStore> {
         self.store.clone()
     }
 }
 
 /// Snag a bunch of environment variables and put them into a struct
 ///
-fn get_harbor_config() -> Result<GitHubProviderConfig, GhProviderError> {
+fn get_harbor_config() -> Result<GitHubProviderConfig, Error> {
 
     let cms_team_id = match get_cms_team_id() {
-        Some(value) => value,
-        None => return Err(
-            GhProviderError::Configuration(
-                String::from("Missing Team Id of V1 Team")
+        Ok(value) => value,
+        Err(err) => return Err(
+            Error::Configuration(
+                String::from(
+                    format!("Missing Team Id of V1 Team: {}", err)
+                )
             )
         )
     };
 
     let cms_team_token = match get_cms_team_token() {
-        Some(value) => value,
-        None => return Err(
-            GhProviderError::Configuration(
-                String::from("Missing Team token of V1 Team")
+        Ok(value) => value,
+        Err(err) => return Err(
+            Error::Configuration(
+                String::from(
+                    format!("Missing Team token of V1 Team: {}", err)
+                )
             )
         )
     };
 
     let cf_domain = match get_cf_domain() {
-        Some(value) => value,
-        None => return Err(
-            GhProviderError::Configuration(
-                String::from("Missing Cognito Username")
+        Ok(value) => value,
+        Err(err) => return Err(
+            Error::Configuration(
+                String::from(
+                    format!("Missing Cognito Username: {}", err)
+                )
             )
         )
     };
 
     let cognito_username = match get_v1_username() {
-        Some(value) => value,
-        None => return Err(
-            GhProviderError::Configuration(
-                String::from("Missing Cognito Username")
+        Ok(value) => value,
+        Err(err) => return Err(
+            Error::Configuration(
+                String::from(
+                    format!("Missing Cognito Username: {}", err)
+                )
             )
         )
     };
 
     let cognito_password = match get_v1_password() {
-        Some(value) => value,
-        None => return Err(
-            GhProviderError::Configuration(
-                String::from("Missing Cognito Password")
+        Ok(value) => value,
+        Err(err) => return Err(
+            Error::Configuration(
+                String::from(
+                    format!("Missing Cognito Password: {}", err)
+                )
             )
         )
     };
@@ -508,24 +518,24 @@ fn get_harbor_config() -> Result<GitHubProviderConfig, GhProviderError> {
 pub struct Counter {
 
     /// This value is incremented if the Repo is archived
-    archived: i32,
+    pub(crate) archived: i32,
 
     /// This value is incremented if the Repo is disabled
-    disabled: i32,
+    pub(crate) disabled: i32,
 
     /// This value is incremented if the Repo is empty
-    empty: i32,
+    pub(crate) empty: i32,
 
     /// This value is incremented if the Repo is processed successfully
-    processed: i32,
+    pub(crate) processed: i32,
 
     /// This value is incremented if the last commit hash of
     /// the repo is in the database already. This happens when
     /// there has been no change in the repo since last run
-    hash_matched: i32,
+    pub(crate) hash_matched: i32,
 
     /// This value is incremented if there is an error when trying to upload the SBOM.
-    upload_errors: i32,
+    pub(crate) upload_errors: i32,
 }
 
 /// Default, completely 0'd out default Counter
@@ -546,7 +556,7 @@ impl Default for Counter {
 /// Represents all handled Errors for the GitHub Crawler.
 ///
 #[derive(Error, Debug)]
-pub enum GhProviderError {
+pub enum Error {
 
     /// Raised when we have a generic MongoDB Error
     #[error("error getting database: {0}")]
@@ -570,6 +580,8 @@ pub enum GhProviderError {
     #[error("error running pilot: {0}")]
     GitHubRequest(String),
 }
+
+
 
 #[tokio::test]
 async fn test_get_github_data() {

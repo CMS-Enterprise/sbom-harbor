@@ -7,7 +7,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tracing::info;
 
-use harbcore::models::{Codebase, Project, Team};
+use crate::models::{
+    Team,
+    Project,
+    Codebase,
+};
 use platform::hyper::{ContentType, delete, get, post};
 
 fn join_url(base: &str, route: &str) -> String {

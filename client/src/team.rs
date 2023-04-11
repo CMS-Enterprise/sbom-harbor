@@ -1,11 +1,17 @@
 use core::default::Default;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
-
-use crate::Error;
-use crate::models::{Codebase, Member, Project, Team, Token};
+use crate::errors::Error;
+use crate::models::{
+    Team,
+    Project,
+    Codebase,
+    Member,
+    Token,
+};
 
 impl Team {
+
     /// Constructor function for creating new [Team] instances.
     pub fn new(name: String) -> Self {
         Self {
@@ -45,7 +51,9 @@ impl Team {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn get_sbom_token(&self) -> Option<&str> {
+    /// Extracts the token from model state
+    ///
+    pub fn get_sbom_token(&self) -> Option<&str> {
         let sbom_token = self
             .tokens
             .iter()
@@ -58,6 +66,7 @@ impl Team {
 }
 
 impl Project {
+
     /// Constructor function for creating new [Project] instances.
     pub fn new(name: String, fisma: Option<String>) -> Self {
         Self {
@@ -76,6 +85,7 @@ impl Project {
 }
 
 impl Token {
+
     /// Constructor function for creating new [Token] instances.
     pub fn new(name: String, expires: String, enabled: Option<bool>) -> Self {
         Self {
@@ -89,14 +99,18 @@ impl Token {
 
     /// Determines whether a token is expired.
     #[allow(dead_code)]
-    pub(crate) fn expired(&self) -> Result<bool, Error> {
+    pub fn expired(&self) -> Result<bool, Error> {
         if self.expires.is_empty() {
             return Ok(false);
         }
 
         match DateTime::parse_from_rfc3339(&self.expires) {
             Ok(expiry) => Ok(Utc::now() >= expiry),
-            Err(e) => Err(Error::InvalidFormat(format!("error parsing token expires: {}", e))),
+            Err(e) => Err(
+                Error::InvalidFormat(
+                    format!("error parsing token expires: {}", e)
+                )
+            ),
         }
     }
 }

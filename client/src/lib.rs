@@ -27,3 +27,9 @@
 /// }
 /// ```
 pub mod client;
+/// The [Models] module contains the schema types defined by the OpenAPI specification for this API.
+/// [Models] are data transfer objects.
+pub mod models;
+/// Team module contains Model def. for the v1 API
+pub mod team;
+mod errors;

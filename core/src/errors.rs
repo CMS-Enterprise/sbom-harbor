@@ -1,7 +1,11 @@
 use thiserror::Error;
+use serde::{
+    Deserialize,
+    Serialize
+};
 
 /// Represents all exposed Errors for this crate.
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Serialize, Deserialize)]
 pub enum Error {
     /// Configuration error.
     #[error("config error: {0}")]

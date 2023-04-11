@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
-//mod github;
 mod snyk;
+pub mod github;
 
 #[async_trait]
 pub trait SbomProvider {

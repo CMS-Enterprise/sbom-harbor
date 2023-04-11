@@ -4,10 +4,6 @@
 //! translating user input from the wire protocol or stdin to native types and then invoking
 //! the corresponding [Service] type found in this crate.
 
-/// The [Models] module contains the schema types defined by the OpenAPI specification for this API.
-/// [Models] are data transfer objects.
-pub mod models;
-
 /// The [Entities] module extends the [Models] and contains domain logic relevant to managing
 /// entity relationships.
 ///

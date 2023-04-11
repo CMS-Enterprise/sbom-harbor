@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use std::path::Path;
 use std::process::Command;
 
+use crate::services::providers::github::{Counter, Error};
 use anyhow::Result;
 use chrono::Utc;
 use git2::Repository;
@@ -10,12 +11,11 @@ use serde;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tracing::info;
+use platform::config::from_env;
 
 use platform::hyper::{ContentType, Error as HyperError, get};
 
 use crate::config::GH_FT_KEY;
-use crate::services::github::{Counter, GhProviderError};
-use crate::services::providers::github::{Counter, GhProviderError};
 
 const GH_URL: &str = "https://api.github.com";
 
@@ -164,11 +164,11 @@ pub fn should_skip(
 /// Function to get the number of public
 /// repos in the associated organization
 ///
-async fn get_num_pub_repos(org: String) -> Result<Option<u32>, GhProviderError> {
+async fn get_num_pub_repos(org: String) -> Result<Option<u32>, Error> {
 
-    let token = match get_env_var(GH_FT_KEY) {
-        Some(value) => value,
-        None => panic!("GitHub token not in environment. Variable name: GH_FETCH_TOKEN")
+    let token = match from_env::<String>(GH_FT_KEY) {
+        Ok(value) => value,
+        Err(err) => panic!("GitHub token not in environment. GH_FETCH_TOKEN, {}", err)
     };
 
     let token: String = format!("Bearer {}", &token);
@@ -185,13 +185,13 @@ async fn get_num_pub_repos(org: String) -> Result<Option<u32>, GhProviderError> 
         Ok(option) => match option {
             Some(value) => Ok(value.public_repos),
             None => Err(
-                GhProviderError::GitHubRequest(
+                Error::GitHubRequest(
                     format!("Get request from GitHub had an empty response")
                 )
             ),
         },
         Err(err) => Err(
-            GhProviderError::GitHubRequest(
+            Error::GitHubRequest(
                 format!("Error in the response: {}", err)
             )
         ),
@@ -200,19 +200,19 @@ async fn get_num_pub_repos(org: String) -> Result<Option<u32>, GhProviderError> 
 
 /// Function to get the number of repos per page
 ///
-pub async fn get_pages(org: &String) -> Result<Vec<u32>, GhProviderError> {
+pub async fn get_pages(org: &String) -> Result<Vec<u32>, Error> {
 
     let num_repos = match get_num_pub_repos(org.to_string()).await {
         Ok(option) => match option {
             Some(num) => num,
             None => return Err(
-                GhProviderError::GitHubRequest(
+                Error::GitHubRequest(
                     format!("There are no repositories in {}, something is wrong", org)
                 )
             ),
         },
         Err(err) => return Err(
-            GhProviderError::GitHubRequest(
+            Error::GitHubRequest(
                 format!("Error Attempting to get num Repos: {}", err)
             )
         ),
@@ -238,7 +238,7 @@ pub async fn get_page_of_repos(
     page: usize,
     per_page: &u32,
     token: &String
-) -> Result<Vec<Repo>, GhProviderError> {
+) -> Result<Vec<Repo>, Error> {
 
     let github_org_url = format!("{GH_URL}/orgs/{org}/repos?type=sources&page={page}&per_page={per_page}");
 
@@ -255,13 +255,13 @@ pub async fn get_page_of_repos(
         Ok(option) => match option {
             Some(value) => Ok(value),
             None => return Err(
-                GhProviderError::GitHubRequest(
+                Error::GitHubRequest(
                     format!("Get request from GitHub had an empty response")
                 )
             ),
         },
         Err(err) => return Err(
-            GhProviderError::GitHubRequest(
+            Error::GitHubRequest(
                 format!("Error in the response: {}", err)
             )
         ),

@@ -39,3 +39,7 @@ version = "0.1.0"
 [[bin]]
 name = "harbor-api"
 path = "src/bin/main.rs"
+
+[dependencies.harbor-client]
+path = "../client"
+version = "0.1.0"

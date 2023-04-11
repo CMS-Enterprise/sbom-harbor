@@ -6,7 +6,7 @@ edition.workspace = true
 documentation.workspace = true
 
 [dependencies]
-async-trait = "0.1.63"
+async-trait = "0.1.66"
 chrono = "0.4.5"
 git2 = "0.16.1"
 jsonwebtoken = "8.2.0"

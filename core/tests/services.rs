@@ -1,11 +1,11 @@
 use std::sync::Arc;
 use harbcore::config::db_connection;
 use platform::mongodb::{Service, Store};
-use harbcore::models::*;
+use harbor_client::models::*;
 use harbcore::services::*;
 use harbcore::Error;
 
-fn test_team_model(test_name: &str) -> harbcore::models::Team {
+fn test_team_model(test_name: &str) -> harbor_client::models::Team {
     Team{
         id: "".to_string(),
         name: test_name.to_string(),

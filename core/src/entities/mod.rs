@@ -1,2 +1,1 @@
-mod team;
-pub use team::*;
+pub use harbor_client::team::*;

@@ -7,6 +7,8 @@ use aws_sdk_secretsmanager::{Client, Error as awsError};
 
 use crate::Error;
 
+/// Extracts a secret from AWS Secrets
+///
 pub async fn get_secret(secret_name: &str) -> Result<Option<String>, awsError> {
     println!("Getting Secret {} from AWS", secret_name);
 

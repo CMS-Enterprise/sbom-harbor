@@ -1,7 +1,7 @@
 use platform::mongodb::{Service, Store};
 use std::sync::Arc;
 
-use crate::models::Team;
+use harbor_client::models::Team;
 
 /// Contains all domain and transaction logic related to [Teams] and their subordinate entities.
 #[derive(Debug)]
