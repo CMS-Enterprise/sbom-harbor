@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -45,191 +46,112 @@ mod mongo;
 ///
 pub struct GitHubSbomProvider {}
 
+/// GitHubProvider's own implementation
+///
+impl GitHubSbomProvider {
+
+    async fn get_repos(org: String) -> Result<Vec<Repo>, Error> {
+
+        let mut pages = match get_pages(&org).await {
+            Ok(pages) => pages,
+            Err(err) => panic!("Unable to get pages of repos from GitHub: {:#?}", err)
+        };
+
+        let gh_fetch_token = match from_env::<String>("GH_FETCH_TOKEN") {
+            Ok(value) => value,
+            Err(e) => panic!("Missing GitHub Token. export GH_FETCH_TOKEN=<token>, {}", e)
+        };
+
+        let token: String = String::from("Bearer ") + &gh_fetch_token;
+        let mut repo_vec: Vec<Repo> = Vec::new();
+
+        for (page, per_page) in pages.iter_mut().enumerate() {
+
+            let mut gh_org_rsp = match get_page_of_repos(&org, page+1, per_page, &token).await {
+                Ok(vector) => vector,
+                Err(err) => return Err(
+                    Error::GitHubRequest(
+                        format!("Error getting a page of repos: {}", err)
+                    )
+                ),
+            };
+
+            for (repo_num, repo) in gh_org_rsp.iter_mut().enumerate() {
+
+                let github_last_commit_url = get_last_commit_url(repo);
+
+                println!("({}) Making call to {}", repo_num, github_last_commit_url);
+
+                let response: Result<Option<Commit>, HyperError> = get(
+                    github_last_commit_url.as_str(),
+                    ContentType::Json,
+                    token.as_str(),
+                    None::<String>,
+                ).await;
+
+                let gh_commits_rsp = match response {
+                    Ok(option) => match option {
+                        Some(value) => value,
+                        None => panic!("Nothing in here!"),
+                    },
+                    Err(err) => {
+                        if let HyperError::Remote(status, _msg) = err {
+
+                            if status == 409 {
+                                repo.mark_repo_empty();
+                            }
+
+                            Commit { sha: Some(String::from("<empty repo>")) }
+                        } else {
+                            panic!("No matching Error Type: {}", err)
+                        }
+                    },
+                };
+
+                match gh_commits_rsp.sha {
+                    Some(val) => repo.add_last_hash(val),
+                    None => panic!("No value for commit found!")
+                }
+            }
+            repo_vec.extend(gh_org_rsp);
+        }
+
+        Ok(repo_vec)
+    }
+}
+
 /// The implementation of Provider for
 /// GitHub Provider
 ///
 #[async_trait]
 impl SbomProvider for GitHubSbomProvider {
 
-    /// This is the method that provides access
-    /// to this service's functionality. It is the entry point.
-    ///
     async fn provide_sboms(&self) {
 
-        // Extract the configuration data from the environment
         let harbor_config = get_harbor_config().unwrap();
 
-        // The Counter keeps track of how many Repos have
-        // been processed, failures and errors.
         let mut counter = Counter::default();
 
         println!("Scanning GitHub...");
-
-        // TODO Get this organization name from somewhere.
         let org_name: String = String::from("cmsgov");
-
-        // Extract some metadata from all of the repositories in the Org
-        let repos_result = get_repos(org_name).await;
+        let repos_result = GitHubSbomProvider::get_repos(org_name).await;
         let repos: Vec<Repo> = match repos_result {
             Ok(value) => value,
-            Err(err) => panic!("Panic trying to extract the GitHub Repos: {}", err),
+            Err(err) => panic!("Panic trying to extract value from Result: {}", err),
         };
 
-        // For each repository in the Organization...
         for repo in repos.iter() {
 
             let name = repo.full_name.clone().unwrap();
             let url = repo.html_url.clone().unwrap();
 
-            // Skip processing the repo if it is disabled, archived or empty
             if !should_skip(repo, name, url, &mut counter) {
-
-                // Otherwise process the repo!
                 process_repo(repo, &harbor_config, &mut counter).await;
             }
         }
 
         println!("Collection Run Complete: {:#?}", counter);
     }
-}
-
-/// The Counter struct is used to keep track of
-/// what happened to an attempt to submit an SBOM.
-///
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Counter {
-
-    /// This value is incremented if the Repo is archived
-    pub(crate) archived: i32,
-
-    /// This value is incremented if the Repo is disabled
-    pub(crate) disabled: i32,
-
-    /// This value is incremented if the Repo is empty
-    pub(crate) empty: i32,
-
-    /// This value is incremented if the Repo is processed successfully
-    pub(crate) processed: i32,
-
-    /// This value is incremented if the last commit hash of
-    /// the repo is in the database already. This happens when
-    /// there has been no change in the repo since last run
-    pub(crate) hash_matched: i32,
-
-    /// This value is incremented if there is an error when trying to upload the SBOM.
-    pub(crate) upload_errors: i32,
-}
-
-/// Default, completely 0'd out default Counter
-///
-impl Default for Counter {
-    fn default() -> Self {
-        Self {
-            archived: 0,
-            disabled: 0,
-            empty: 0,
-            processed: 0,
-            hash_matched: 0,
-            upload_errors: 0,
-        }
-    }
-}
-
-/// Represents all handled Errors for the GitHub Crawler.
-///
-#[derive(Error, Debug)]
-pub enum Error {
-
-    /// Raised when we have a generic MongoDB Error
-    #[error("error getting database: {0}")]
-    MongoDb(String),
-
-    /// This is raised when there is an issue creating entities
-    #[error("error creating Harbor v1 entities: {0}")]
-    EntityCreation(String),
-
-    /// This is raised when there is a problem getting
-    /// configuration from the environment.
-    #[error("error creating Harbor v1 entities: {0}")]
-    Configuration(String),
-
-    /// This is Raised when the Pilot has issues doing its job
-    #[error("error running pilot: {0}")]
-    Pilot(String),
-
-    /// This error is raised when there is a problem communicating
-    /// with GitHub over HTTP.
-    #[error("error running pilot: {0}")]
-    GitHubRequest(String),
-}
-
-async fn get_repos(org: String) -> Result<Vec<Repo>, Error> {
-
-    let mut pages = match get_pages(&org).await {
-        Ok(pages) => pages,
-        Err(err) => panic!("Unable to get pages of repos from GitHub: {:#?}", err)
-    };
-
-    let gh_fetch_token = match from_env::<String>("GH_FETCH_TOKEN") {
-        Ok(value) => value,
-        Err(e) => panic!("Missing GitHub Token. export GH_FETCH_TOKEN=<token>, {}", e)
-    };
-
-    let token: String = String::from("Bearer ") + &gh_fetch_token;
-    let mut repo_vec: Vec<Repo> = Vec::new();
-
-    for (page, per_page) in pages.iter_mut().enumerate() {
-
-        let mut gh_org_rsp = match get_page_of_repos(&org, page+1, per_page, &token).await {
-            Ok(vector) => vector,
-            Err(err) => return Err(
-                Error::GitHubRequest(
-                    format!("Error getting a page of repos: {}", err)
-                )
-            ),
-        };
-
-        for (repo_num, repo) in gh_org_rsp.iter_mut().enumerate() {
-
-            let github_last_commit_url = get_last_commit_url(repo);
-
-            println!("({}) Making call to {}", repo_num, github_last_commit_url);
-
-            let response: Result<Option<Commit>, HyperError> = get(
-                github_last_commit_url.as_str(),
-                ContentType::Json,
-                token.as_str(),
-                None::<String>,
-            ).await;
-
-            let gh_commits_rsp = match response {
-                Ok(option) => match option {
-                    Some(value) => value,
-                    None => panic!("Nothing in here!"),
-                },
-                Err(err) => {
-                    if let HyperError::Remote(status, _msg) = err {
-
-                        if status == 409 {
-                            repo.mark_repo_empty();
-                        }
-
-                        Commit { sha: Some(String::from("<empty repo>")) }
-                    } else {
-                        panic!("No matching Error Type: {}", err)
-                    }
-                },
-            };
-
-            match gh_commits_rsp.sha {
-                Some(val) => repo.add_last_hash(val),
-                None => panic!("No value for commit found!")
-            }
-        }
-        repo_vec.extend(gh_org_rsp);
-    }
-
-    Ok(repo_vec)
 }
 
 /// Create the entities like project and codebase
@@ -401,9 +323,6 @@ async fn process_repo(
     counter: &mut Counter
 ) {
 
-    // TODO Where do I get these vales from?  The Environment?
-    // If so, the Mongo package under platform service should provide
-    // me with helper methods to extract the values.
     let ctx = MongoContext {
         host: "localhost".to_string(),
         username: "root".to_string(),
@@ -503,6 +422,25 @@ pub struct GitHubProviderConfig {
     cognito_password: String,
 }
 
+#[derive(Debug)]
+pub struct GitHubProviderService {
+    store: Arc<MongoStore>,
+}
+
+impl GitHubProviderService {
+
+    /// Factory method to create new instances of a [TeamService].
+    pub fn new(store: Arc<MongoStore>) -> GitHubProviderService {
+        GitHubProviderService { store }
+    }
+}
+
+impl MongoService<GitHubSbomProviderEntry> for GitHubProviderService {
+    fn store(&self) -> Arc<MongoStore> {
+        self.store.clone()
+    }
+}
+
 /// Snag a bunch of environment variables and put them into a struct
 ///
 fn get_harbor_config() -> Result<GitHubProviderConfig, Error> {
@@ -572,6 +510,78 @@ fn get_harbor_config() -> Result<GitHubProviderConfig, Error> {
         }
     )
 }
+
+/// The Counter struct is used to keep track of
+/// what happened to an attempt to submit an SBOM.
+///
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Counter {
+
+    /// This value is incremented if the Repo is archived
+    pub(crate) archived: i32,
+
+    /// This value is incremented if the Repo is disabled
+    pub(crate) disabled: i32,
+
+    /// This value is incremented if the Repo is empty
+    pub(crate) empty: i32,
+
+    /// This value is incremented if the Repo is processed successfully
+    pub(crate) processed: i32,
+
+    /// This value is incremented if the last commit hash of
+    /// the repo is in the database already. This happens when
+    /// there has been no change in the repo since last run
+    pub(crate) hash_matched: i32,
+
+    /// This value is incremented if there is an error when trying to upload the SBOM.
+    pub(crate) upload_errors: i32,
+}
+
+/// Default, completely 0'd out default Counter
+///
+impl Default for Counter {
+    fn default() -> Self {
+        Self {
+            archived: 0,
+            disabled: 0,
+            empty: 0,
+            processed: 0,
+            hash_matched: 0,
+            upload_errors: 0,
+        }
+    }
+}
+
+/// Represents all handled Errors for the GitHub Crawler.
+///
+#[derive(Error, Debug)]
+pub enum Error {
+
+    /// Raised when we have a generic MongoDB Error
+    #[error("error getting database: {0}")]
+    MongoDb(String),
+
+    /// This is raised when there is an issue creating entities
+    #[error("error creating Harbor v1 entities: {0}")]
+    EntityCreation(String),
+
+    /// This is raised when there is a problem getting
+    /// configuration from the environment.
+    #[error("error creating Harbor v1 entities: {0}")]
+    Configuration(String),
+
+    /// This is Raised when the Pilot has issues doing its job
+    #[error("error running pilot: {0}")]
+    Pilot(String),
+
+    /// This error is raised when there is a problem communicating
+    /// with GitHub over HTTP.
+    #[error("error running pilot: {0}")]
+    GitHubRequest(String),
+}
+
+
 
 #[tokio::test]
 async fn test_get_github_data() {
