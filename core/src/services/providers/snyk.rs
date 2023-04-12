@@ -1,9 +1,9 @@
 use std::{env, time::Instant};
 use async_trait::async_trait;
-use clients::{ProjectJson, get_orgs, get_projects_from_org_list, get_sbom_from_snyk};
+use clients::{ProjectJson};
 use platform::auth::get_secret;
 
-use crate::clients::{self, SnykAPI_Impl, SnykAPI};
+use crate::clients::{self, SnykApiImpl, SnykAPI};
 
 use super::SbomProvider;
 
@@ -18,9 +18,10 @@ use super::SbomProvider;
 //DONE: Merge Quinns code
 //DONE: Restructure and cleanup pass 2
 //DONE: Rebase main
-//TODO: Event logging
+//DONE: Event logging
+//DONE: Documentation
+//TODO: Better unit tests
 //TODO: Send SBOM somewhere and review solution works...
-//TODO: Documentation
 //TODO: Final Restructure and cleanup pass
 
 impl SnykProvider {
@@ -42,7 +43,7 @@ impl SnykProvider {
             match project {
                 project_detail if project_detail.id.is_empty() => println!("Missing project Id for: {}", project_detail.name), 
                 project_detail if (Self::VALID_ORIGINS.contains(&project_detail.origin.as_str()) &&  Self::VALID_TYPES.contains(&project_detail.r#type.as_str()))=> {
-                    let result = get_sbom_from_snyk(snyk_token.clone(), project_json.org.id.clone().unwrap(), project_detail.id.clone()).await;
+                    let result = SnykApiImpl::get_sbom_from_snyk(snyk_token.clone(), project_json.org.id.clone().unwrap(), project_detail.id.clone()).await;
                     match result {
                         Ok(option_sbom) => {
                             match option_sbom {
@@ -86,12 +87,11 @@ impl SbomProvider for SnykProvider {
         };
 
         println!("Scanning Snyk for SBOMS...");
-        SnykAPI_Impl::get_orgs(snyk_token.clone());
-        let snyk_data = get_orgs(snyk_token.clone()).await;
+        let snyk_data = SnykApiImpl::get_orgs(snyk_token.clone()).await;
 
         match snyk_data {
             Ok(data) => {
-                let project_list = get_projects_from_org_list(snyk_token.clone(), data).await;
+                let project_list = SnykApiImpl::get_projects_from_org_list(snyk_token.clone(), data).await;
 
                 for project_json in project_list.0 {
                     if project_json.org.id.is_some() {
