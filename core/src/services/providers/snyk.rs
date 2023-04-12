@@ -29,6 +29,8 @@ use crate::clients::MockSnykAPI;
 //TODO: Send SBOM somewhere and review solution works...
 //TODO: Final Restructure and cleanup pass
 
+pub struct SnykProvider {}
+
 impl SnykProvider {
 
     //Origins that can have associated SBOM data in Snyk
