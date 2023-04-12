@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -420,25 +419,6 @@ pub struct GitHubProviderConfig {
 
     /// The password we use to get the JWT and make API calls
     cognito_password: String,
-}
-
-#[derive(Debug)]
-pub struct GitHubProviderService {
-    store: Arc<MongoStore>,
-}
-
-impl GitHubProviderService {
-
-    /// Factory method to create new instances of a [TeamService].
-    pub fn new(store: Arc<MongoStore>) -> GitHubProviderService {
-        GitHubProviderService { store }
-    }
-}
-
-impl MongoService<GitHubSbomProviderEntry> for GitHubProviderService {
-    fn store(&self) -> Arc<MongoStore> {
-        self.store.clone()
-    }
 }
 
 /// Snag a bunch of environment variables and put them into a struct
