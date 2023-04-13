@@ -103,7 +103,7 @@ impl SbomProvider<(), Error> for GitHubSbomProvider {
             let url = repo.html_url.clone().unwrap();
 
             if !should_skip(repo, name, url, &mut counter) {
-                process_repo(repo, &harbor_config, &mut counter).await;
+                return process_repo(repo, &harbor_config, &mut counter).await
             }
         }
 
@@ -459,7 +459,8 @@ async fn test_get_github_data() {
         )
     };
 
-    if provider.provide_sboms().await.is_err() {
-        panic!("Error getting github data in test")
+    match provider.provide_sboms().await {
+        Ok(_) => println!("FINISHED!"),
+        Err(_) => panic!("Error getting github data in test")
     }
 }

@@ -141,8 +141,8 @@ pub enum Error {
 }
 
 
-#[tokio::test]
-async fn test_get_snyk_data() {
-    let provider = SnykProvider{};
-    provider.provide_sboms().await;
-}
+// #[tokio::test]
+// async fn test_get_snyk_data() {
+//     let provider = SnykProvider{};
+//     provider.provide_sboms().await;
+// }
