@@ -70,10 +70,11 @@ impl GitHubSbomProvider {
 /// GitHub Provider
 ///
 #[async_trait]
-impl SbomProvider for GitHubSbomProvider {
+impl SbomProvider<(), Error> for GitHubSbomProvider {
 
-    async fn provide_sboms(&self) {
+    async fn provide_sboms(&self) -> Result<(), Error> {
 
+        println!("Scanning GitHub...");
 
         let harbor_config = match GitHubProviderEnvironmentConfig::extract() {
             Ok(config) => config,
@@ -81,8 +82,6 @@ impl SbomProvider for GitHubSbomProvider {
         };
 
         let mut counter = Counter::default();
-
-        println!("Scanning GitHub...");
 
         let org_name: String = match &self.org {
             Some(org_name) => org_name,
@@ -109,6 +108,8 @@ impl SbomProvider for GitHubSbomProvider {
         }
 
         println!("Collection Run Complete: {:#?}", counter);
+
+        Ok(())
     }
 }
 
@@ -351,7 +352,7 @@ async fn process_repo(
     repo: &Repo,
     harbor_config: &GitHubProviderEnvironmentConfig,
     counter: &mut Counter
-) {
+) -> Result<(), Error> {
 
     let ctx = MongoContext {
         host: "localhost".to_string(),
@@ -404,35 +405,48 @@ async fn process_repo(
 
     println!("PROCESSING> Comparing Repo({}) to MongoDB({})", last_hash, document.last_hash);
 
-    if last_hash.to_string() != document.last_hash {
+    return if last_hash.to_string() != document.last_hash {
 
         println!("PROCESSING> Hashes are not equal, sending to pilot");
 
-        // Use the document to construct a request to Pilot
+        // Use the document to construct a request to Harbor v1
         match send_to_v1(&document, &harbor_config).await {
-            Ok(upload_resp) => {
 
-                // Upload is OK, update Mongo
+            // Upload is OK, update Mongo
+            Ok(upload_resp) => {
                 document.last_hash = last_hash.to_string();
                 match mongo_service.update(&document).await {
+
+                    // Mongo update went OK.
                     Ok(()) => {
                         counter.processed += 1;
                         println!("PROCESSING> One SBOM Down! {:#?}", upload_resp);
+                        Ok(())
                     },
+
+                    // Mongo update failed!
                     Err(err) => {
                         counter.store_error += 1;
                         println!("PROCESSING> Mongo service error!! {:#?}", err);
+                        Err(Error::MongoDb(String::from(err.to_string())))
                     }
-                };
+                }
             },
+
+            // Error trying to upload
             Err(err) => {
                 counter.upload_errors += 1;
-                println!("PROCESSING> Error Uploading SBOM!! {:#?}", err)
+                println!("PROCESSING> Error Uploading SBOM!! {:#?}", err);
+                Err(Error::SbomUpload(String::from(err.to_string())))
             }
         }
-    } else {
+    }
+
+    // The last commit hash on the master/main GitHub matched the one in Mongo
+    else {
         counter.hash_matched += 1;
         println!("PROCESSING> Hashes are equal, skipping pilot");
+        Ok(())
     }
 }
 
@@ -445,5 +459,7 @@ async fn test_get_github_data() {
         )
     };
 
-    provider.provide_sboms().await;
+    if provider.provide_sboms().await.is_err() {
+        panic!("Error getting github data in test")
+    }
 }

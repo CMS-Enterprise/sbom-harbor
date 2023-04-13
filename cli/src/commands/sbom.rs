@@ -118,6 +118,7 @@ impl FileSystemProvider {
 struct GithubProvider {}
 
 impl GithubProvider {
+
     async fn execute(args: &Option<GitHubArgs>) -> Result<(), Error> {
 
         let gh_args = match args {
@@ -140,7 +141,12 @@ impl GithubProvider {
             ),
         };
 
-        service.provide_sboms()
+        match service.provide_sboms().await {
+            Ok(_r) => Ok(()),
+            Err(err) => Err(
+                Error::Sbom(err.to_string())
+            )
+        }
     }
 }
 

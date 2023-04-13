@@ -9,9 +9,9 @@ pub mod github;
 /// Common Trait for SBOM Providers
 ///
 #[async_trait]
-pub trait SbomProvider {
+pub trait SbomProvider<T, E> {
 
     /// Common method to start the process
     ///
-    async fn provide_sboms(&self);
+    async fn provide_sboms(&self) -> Result<T, E>;
 }

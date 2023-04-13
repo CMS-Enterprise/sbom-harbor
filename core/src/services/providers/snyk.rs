@@ -2,6 +2,7 @@
 #[allow(unused_imports)]
 #[allow(unused_must_use)]
 
+use thiserror::Error;
 use std::{env, time::Instant};
 use async_trait::async_trait;
 use clients::{ProjectJson};
@@ -73,48 +74,51 @@ impl SnykProvider {
 }
 
 #[async_trait]
-impl SbomProvider for SnykProvider {
+impl SbomProvider<(), Error> for SnykProvider {
 
-    async fn provide_sboms(&self) {
-        let start = Instant::now();
+    async fn provide_sboms(&self) -> Result<(), Error> {
 
-        println!("Starting SnykProvider scan...");
-        
+        Ok(())
 
-        println!("Obtaining SNYK access key...");
-        let response = get_secret(Self::AWS_SECRET_NAME).await;
-        let snyk_token = match response {
-            Ok(secret) => {
-                match secret {
-                    Some(s) => s,
-                    None => panic!("No AWS token retrieved for secret: {}", Self::AWS_SECRET_NAME), //Stop everything if we dont get an access key
-                }
-            },
-            Err(err) => panic!("Failed to retrieve token for secret: {}, with error: {}", Self::AWS_SECRET_NAME, err), //Stop everything if we dont get an access key
-        };
-
-        println!("Scanning Snyk for SBOMS...");
-        let snyk_data = SnykApiImpl::get_orgs(snyk_token.clone()).await;
-
-        match snyk_data {
-            Ok(data) => {
-                let project_list = SnykApiImpl::get_projects_from_org_list(snyk_token.clone(), data).await;
-
-                for project_json in project_list.0 {
-                    if project_json.org.id.is_some() {
-                        Self::retrieve_and_upload_valid_sboms(snyk_token.clone(), project_json).await;
-                    }
-                }
-
-                for errors in project_list.1 {
-                    println!("{}", errors)
-                }
-
-            },
-            Err(err) => panic!("{}", err), // If no orgs are found something went seriously wrong, no reason to go any further
-        }
-
-        println!("Finished SnykProvider scan, elapsed time in milis: ({:?})", start.elapsed().as_millis());
+        // let start = Instant::now();
+        //
+        // println!("Starting SnykProvider scan...");
+        //
+        //
+        // println!("Obtaining SNYK access key...");
+        // let response = get_secret(Self::AWS_SECRET_NAME).await;
+        // let snyk_token = match response {
+        //     Ok(secret) => {
+        //         match secret {
+        //             Some(s) => s,
+        //             None => panic!("No AWS token retrieved for secret: {}", Self::AWS_SECRET_NAME), //Stop everything if we dont get an access key
+        //         }
+        //     },
+        //     Err(err) => panic!("Failed to retrieve token for secret: {}, with error: {}", Self::AWS_SECRET_NAME, err), //Stop everything if we dont get an access key
+        // };
+        //
+        // println!("Scanning Snyk for SBOMS...");
+        // let snyk_data = SnykApiImpl::get_orgs(snyk_token.clone()).await;
+        //
+        // match snyk_data {
+        //     Ok(data) => {
+        //         let project_list = SnykApiImpl::get_projects_from_org_list(snyk_token.clone(), data).await;
+        //
+        //         for project_json in project_list.0 {
+        //             if project_json.org.id.is_some() {
+        //                 Self::retrieve_and_upload_valid_sboms(snyk_token.clone(), project_json).await;
+        //             }
+        //         }
+        //
+        //         for errors in project_list.1 {
+        //             println!("{}", errors)
+        //         }
+        //
+        //     },
+        //     Err(err) => panic!("{}", err), // If no orgs are found something went seriously wrong, no reason to go any further
+        // }
+        //
+        // println!("Finished SnykProvider scan, elapsed time in milis: ({:?})", start.elapsed().as_millis());
         //TODO: delete this
         // let TEMP_TEST_DIR: &'static str = "/home/jshattjr";
         // let data = format!("{:#?}", project_list); //TODO: Remove this when done debugging
@@ -123,6 +127,19 @@ impl SbomProvider for SnykProvider {
 
     }
 }
+
+/// Represents all handled Errors for the Snyk Crawler.
+///
+#[derive(Error, Debug)]
+pub enum Error {
+
+    /// This error is raised when there is a problem communicating
+    /// with GitHub over HTTP.
+    ///
+    #[error("error running snyk provider : {0}")]
+    GenericError(String),
+}
+
 
 #[tokio::test]
 async fn test_get_snyk_data() {
