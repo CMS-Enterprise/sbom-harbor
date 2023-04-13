@@ -290,14 +290,7 @@ async fn test_should_skip_archived() {
         last_hash: "".to_string(),
     };
 
-    let mut test_counter = Counter {
-        archived: 0,
-        disabled: 0,
-        empty: 0,
-        processed: 0,
-        hash_matched: 0,
-        upload_errors: 0,
-    };
+    let mut test_counter = Counter::default();
 
     if !should_skip(&test_repo, test_name, test_url, &mut test_counter) {
         panic!("should_skip should be true for an archived repo");
@@ -325,14 +318,7 @@ async fn test_should_skip_disabled() {
         last_hash: "".to_string(),
     };
 
-    let mut test_counter = Counter {
-        archived: 0,
-        disabled: 0,
-        empty: 0,
-        processed: 0,
-        hash_matched: 0,
-        upload_errors: 0,
-    };
+    let mut test_counter = Counter::default();
 
     if !should_skip(&test_repo, test_name, test_url, &mut test_counter) {
         panic!("should_skip should be true for an disabled repo");
@@ -360,14 +346,7 @@ async fn test_should_skip_empty() {
         last_hash: "".to_string(),
     };
 
-    let mut test_counter = Counter {
-        archived: 0,
-        disabled: 0,
-        empty: 0,
-        processed: 0,
-        hash_matched: 0,
-        upload_errors: 0,
-    };
+    let mut test_counter = Counter::default();
 
     if !should_skip(&test_repo, test_name, test_url, &mut test_counter) {
         panic!("should_skip should be true for an empty repo");

@@ -1,9 +1,6 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
 use harbor_client::client::{
     Client as V1HarborClient,
@@ -368,13 +365,13 @@ async fn process_repo(
     let mongo_service = GitHubProviderMongoService::new(
         match MongoStore::new(&ctx).await {
             Ok(store) => store,
-            Err(err) => panic!("Error getting store: {}", err)
+            Err(err) => panic!("PROCESSING> Error getting store: {}", err)
         }
     );
 
     let url: &String = match &repo.html_url {
         Some(url) => url,
-        None => panic!("No URL for Repository"),
+        None => panic!("PROCESSING> No URL for Repository"),
     };
 
     let last_hash: &String = &repo.last_hash;
@@ -384,7 +381,7 @@ async fn process_repo(
     let doc_option = match mongo_service.find(url).await {
         Ok(option) => option,
         Err(err) => panic!(
-            "Error attempting to find document in mongo with url: {}, Error: {}",
+            "PROCESSING> Error attempting to find document in mongo with url: {}, Error: {}",
             url, err
         )
     };
@@ -399,13 +396,13 @@ async fn process_repo(
         ).await {
             Ok(document) => document,
             Err(err) => panic!(
-                "Error creating data structures in Mongo or Harbor: {}",
+                "PROCESSING> Error creating data structures in Mongo or Harbor: {}",
                 err
             )
         }
     };
 
-    println!("Comparing Repo({}) to MongoDB({})", last_hash, document.last_hash);
+    println!("PROCESSING> Comparing Repo({}) to MongoDB({})", last_hash, document.last_hash);
 
     if last_hash.to_string() != document.last_hash {
 
@@ -417,14 +414,20 @@ async fn process_repo(
 
                 // Upload is OK, update Mongo
                 document.last_hash = last_hash.to_string();
-                mongo_service.update(&document);
-                counter.processed += 1;
-
-                println!("PROCESSING> One SBOM Down! {:#?}", upload_resp);
+                match mongo_service.update(&document).await {
+                    Ok(()) => {
+                        counter.processed += 1;
+                        println!("PROCESSING> One SBOM Down! {:#?}", upload_resp);
+                    },
+                    Err(err) => {
+                        counter.store_error += 1;
+                        println!("PROCESSING> Mongo service error!! {:#?}", err);
+                    }
+                };
             },
             Err(err) => {
                 counter.upload_errors += 1;
-                println!("Error Uploading SBOM!! {:#?}", err)
+                println!("PROCESSING> Error Uploading SBOM!! {:#?}", err)
             }
         }
     } else {

@@ -101,3 +101,11 @@ impl GitHubProviderEnvironmentConfig {
         )
     }
 }
+
+#[tokio::test]
+async fn test_get_env_vars() {
+    match GitHubProviderEnvironmentConfig::extract() {
+        Ok(config) => println!("{:#?}", config),
+        Err(err) => panic!("Extracting env failed: {}", err)
+    }
+}

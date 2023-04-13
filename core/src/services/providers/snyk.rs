@@ -1,16 +1,15 @@
+
+#[allow(unused_imports)]
+#[allow(unused_must_use)]
+
 use std::{env, time::Instant};
 use async_trait::async_trait;
 use clients::{ProjectJson};
 use platform::auth::get_secret;
 
-use crate::{clients::{self, SnykApiImpl, SnykAPI, Org}, config::{get_cf_domain, get_cms_team_token, get_cms_team_id, get_snyk_access_token}};
+use crate::clients::{self, SnykApiImpl, SnykAPI};
 
 use super::SbomProvider;
-
-#[cfg(test)]
-use mockall::{automock, mock, predicate::*};
-#[cfg(test)]
-use crate::clients::MockSnykAPI;
 
 //DONE: Add method call
 //DONE: See if it runs
@@ -38,12 +37,13 @@ impl SnykProvider {
     //Types that can have associated SBOM data in Snyk
     const VALID_TYPES: &'static [&'static str] = &["npm", "nuget", "gradle", "hex", "pip", "poetry", "rubygems", 
     "maven", "yarn", "yarn-workspace", "composer", "gomodules", "govendor", "golang", "golangdep", "gradle", "paket", "cocoapods", "cpp", "sbt"];
+    const AWS_SECRET_NAME: &'static str = "dev-sbom-harbor-snyk-token-use1";
 
     // Iterates over list of projects and uploads any valid sboms to harbor
     async fn retrieve_and_upload_valid_sboms(snyk_token: String, project_json: ProjectJson) {
-        let cloud_front_domain = get_cf_domain().unwrap();
-        let sbom_token = get_cms_team_token().unwrap();
-        let team_id = get_cms_team_id().unwrap();
+        // let cloud_front_domain = env::var("CF_DOMAIN").unwrap_or(String::from("")); //TODO: get this only once
+        // let sbom_token = env::var("V1_CMS_TEAM_TOKEN").unwrap_or(String::from("")); //TODO: get this only once
+        // let team_id = env::var("V1_CMS_TEAM_ID").unwrap_or(String::from("")); //TODO: get this only once
 
         for project in project_json.projects.iter() {
             match project {
@@ -53,9 +53,9 @@ impl SnykProvider {
                     match result {
                         Ok(option_sbom) => {
                             match option_sbom {
+                                #[allow(unused_variables)]
                                 Some(sbom) =>{
                                     println!("Uploading SBOM to harbor for project: {}, from org: {}", project.id, project_json.org.id.clone().unwrap());
-                                    //TODO: Re-enable the next line
                                     //simple_upload_sbom(cloud_front_domain.clone(), sbom_token.clone(), team_id.clone(), project.browseUrl.clone(), project.r#type.clone(), sbom).await;
                                     },
                                 None => println!("No SBOM found for project: {}, from org: {}", project.id, project_json.org.id.clone().unwrap()),
@@ -80,7 +80,19 @@ impl SbomProvider for SnykProvider {
 
         println!("Starting SnykProvider scan...");
         
-        let snyk_token = get_snyk_access_token().await;
+
+        println!("Obtaining SNYK access key...");
+        let response = get_secret(Self::AWS_SECRET_NAME).await;
+        let snyk_token = match response {
+            Ok(secret) => {
+                match secret {
+                    Some(s) => s,
+                    None => panic!("No AWS token retrieved for secret: {}", Self::AWS_SECRET_NAME), //Stop everything if we dont get an access key
+                }
+            },
+            Err(err) => panic!("Failed to retrieve token for secret: {}, with error: {}", Self::AWS_SECRET_NAME, err), //Stop everything if we dont get an access key
+        };
+
         println!("Scanning Snyk for SBOMS...");
         let snyk_data = SnykApiImpl::get_orgs(snyk_token.clone()).await;
 
@@ -114,15 +126,6 @@ impl SbomProvider for SnykProvider {
 
 #[tokio::test]
 async fn test_get_snyk_data() {
-    let fake_token = format!("123-abc");
-    let ctx = MockSnykAPI::get_orgs_context();
-    ctx.expect().returning(|_| {
-        let fake_org_1 = Org{id: Some(format!("Org_1_id")), name: Some(format!("Org_1_name"))};
-        let fake_orgs_list: Vec<Org> = vec![fake_org_1];
-        Ok(fake_orgs_list)
-    });
-    let res = MockSnykAPI::get_orgs(fake_token).await;
-   // let mo = MockSnykApiImpl
     let provider = SnykProvider{};
     provider.provide_sboms().await;
 }

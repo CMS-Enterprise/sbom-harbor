@@ -84,27 +84,30 @@ async fn test_add_document() {
     let project_id = String::from("test-project-id");
     let codebase_id = String::from("test-codebase-id");
 
-    svc.insert(
-        &mut GitHubSbomProviderEntry {
-            id: id.clone(),
-            last_hash: last_hash.clone(),
-            team_id: team_id.clone(),
-            project_id: project_id.clone(),
-            codebase_id: codebase_id.clone(),
-        }
-    );
+    let entry = &mut GitHubSbomProviderEntry {
+        id: id.clone(),
+        last_hash: last_hash.clone(),
+        team_id: team_id.clone(),
+        project_id: project_id.clone(),
+        codebase_id: codebase_id.clone(),
+    };
 
-    match svc.find(id.as_str()).await {
-        Ok(opt) => match opt {
-            Some(doc) => {
-                assert_eq!(id, doc.id.clone());
-                assert_eq!(last_hash, doc.last_hash);
-                assert_eq!(team_id, doc.team_id);
-                assert_eq!(project_id, doc.project_id);
-                assert_eq!(codebase_id, doc.codebase_id);
-            },
-            None => panic!("No value in Option: Missing GitHubSbomProviderEntry")
+    match svc.insert(entry).await {
+        Ok(_result) => {
+            match svc.find(id.as_str()).await {
+                Ok(opt) => match opt {
+                    Some(doc) => {
+                        assert_eq!(id, doc.id.clone());
+                        assert_eq!(last_hash, doc.last_hash);
+                        assert_eq!(team_id, doc.team_id);
+                        assert_eq!(project_id, doc.project_id);
+                        assert_eq!(codebase_id, doc.codebase_id);
+                    },
+                    None => panic!("No value in Option: Missing GitHubSbomProviderEntry")
+                },
+                Err(err) => panic!("Error getting GitHubSbomProviderEntry: {}", err)
+            }
         },
-        Err(err) => panic!("Error getting GitHubSbomProviderEntry: {}", err)
+        Err(err) => panic!("Unable to insert document into Mongo: {}", err)
     }
 }

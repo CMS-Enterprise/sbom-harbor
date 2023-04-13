@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use thiserror::Error;
 
 /// Represents all handled Errors for the GitHub Crawler.

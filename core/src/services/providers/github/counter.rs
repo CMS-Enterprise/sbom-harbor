@@ -25,6 +25,9 @@ pub struct Counter {
 
     /// This value is incremented if there is an error when trying to upload the SBOM.
     pub upload_errors: i32,
+
+    /// This value will increment if there is a problem communicating with Mongo
+    pub store_error: i32,
 }
 
 /// Default, completely 0'd out default Counter
@@ -38,6 +41,7 @@ impl Default for Counter {
             processed: 0,
             hash_matched: 0,
             upload_errors: 0,
+            store_error: 0,
         }
     }
 }
