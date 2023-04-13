@@ -6,6 +6,9 @@ pub enum Error {
     /// Configuration error.
     #[error("config error: {0}")]
     Config(String),
+    /// Entity error.
+    #[error("entity error: {0}")]
+    Entity(String),
     /// Invalid format.
     #[error("invalid format: {0}")]
     InvalidFormat(String),
@@ -21,8 +24,10 @@ pub enum Error {
     /// Serialization error.
     #[error("serialization error: {0}")]
     Serde(String),
+    /// Snyk provider error.
+    #[error("snyk error: {0}")]
+    Snyk(String),
 }
-
 
 impl From<platform::Error> for Error {
     fn from(value: platform::Error) -> Self {
@@ -35,5 +40,3 @@ impl From<platform::hyper::Error> for Error {
         Error::Runtime(format!("{:?}", value))
     }
 }
-
-

@@ -17,5 +17,7 @@ impl TeamService {
 }
 
 impl Service<Team> for TeamService {
-    fn cx(&self) -> &Context { &self.cx }
+    fn cx(&self) -> &Context {
+        &self.cx
+    }
 }

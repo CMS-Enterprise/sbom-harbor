@@ -40,6 +40,9 @@ pub enum Error {
     /// Error serializing item.
     #[error("error serializing item: {0}")]
     Serde(String),
+    /// Error in S3 provider.
+    #[error("error in S3 provider: {0}")]
+    S3(String),
     /// Error executing update.
     #[error("error executing update: {0}")]
     Update(String),

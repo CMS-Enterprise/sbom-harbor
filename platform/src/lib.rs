@@ -31,3 +31,6 @@ pub mod opentelemetry;
 
 /// Implementation of the `thiserror` enum.
 pub use errors::Error;
+
+/// S3 Provider module
+pub mod persistence;

@@ -17,19 +17,20 @@ use crate::clients::snyk::models::OrgV1;
 ///
 /// Example
 /// ```rust
-/// 
+///
 /// ```
 
 /// A lightweight Snyk OpenAPI client.
-pub mod client;
+mod client;
+pub(crate) use client::*;
 
 /// Rust structs that represent the models/schemas relevant to the endpoints the client supports from
 /// the Snyk OpenAPI specification.
-pub mod models;
+pub(crate) use models;
 
 #[cfg(test)]
 mod tests {
-    use crate::clients::snyk::client::Client;
+    use crate::services::snyk::client::Client;
     use crate::Error;
 
     #[async_std::test]

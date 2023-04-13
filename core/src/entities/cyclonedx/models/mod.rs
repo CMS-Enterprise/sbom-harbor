@@ -1,5 +1,7 @@
-use platform::mongo_doc;
+use platform::mongodb::mongo_doc;
 use platform::mongodb::MongoDocument;
+
+mongo_doc!(Bom);
 
 pub mod advisory;
 pub use self::advisory::Advisory;
@@ -93,5 +95,3 @@ pub mod vulnerability;
 pub use self::vulnerability::Vulnerability;
 pub mod vulnerability_source;
 pub use self::vulnerability_source::VulnerabilitySource;
-
-mongo_doc!(Bom);

@@ -1,9 +1,31 @@
-use core::default::Default;
 use chrono::{DateTime, Utc};
+use core::default::Default;
 use uuid::Uuid;
 
-use crate::Error;
 use crate::models::teams::{Codebase, Member, Project, Team, Token};
+use crate::Error;
+
+///  A Team is a named entity that can contain 3 child types:
+/// - [Project]
+/// - [Member]
+/// - [Token]
+#[serde(rename_all = "camelCase")]
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Team {
+    /// The unique identifier for the Team.
+    pub id: String,
+    /// The name of the team.
+    pub name: String,
+    /// Members of the Team.
+    #[serde(default = "Vec::new")]
+    pub members: Vec<Member>,
+    /// Projects that are owned by the Team.
+    #[serde(default = "Vec::new")]
+    pub projects: Vec<Project>,
+    /// Tokens associated with the Team.
+    #[serde(default = "Vec::new")]
+    pub tokens: Vec<Token>,
+}
 
 impl Team {
     /// Constructor function for creating new [Team] instances.
@@ -54,49 +76,5 @@ impl Team {
             .next();
 
         sbom_token
-    }
-}
-
-impl Project {
-    /// Constructor function for creating new [Project] instances.
-    pub fn new(name: String, fisma: Option<String>) -> Self {
-        Self {
-            id: "".to_string(),
-            name,
-            fisma: fisma.unwrap_or("".to_string()),
-            codebases: vec![],
-        }
-    }
-
-    /// Add a [Codebase] to the codebases Vector.
-    pub fn codebases(&mut self, codebase: Codebase) -> &Self {
-        self.codebases.push(codebase);
-        self
-    }
-}
-
-impl Token {
-    /// Constructor function for creating new [Token] instances.
-    pub fn new(name: String, expires: String, enabled: Option<bool>) -> Self {
-        Self {
-            id: "".to_string(),
-            name,
-            token: Uuid::new_v4().to_string(),
-            enabled: enabled.unwrap_or(false),
-            expires,
-        }
-    }
-
-    /// Determines whether a token is expired.
-    #[allow(dead_code)]
-    pub(crate) fn expired(&self) -> Result<bool, Error> {
-        if self.expires.is_empty() {
-            return Ok(false);
-        }
-
-        match DateTime::parse_from_rfc3339(&self.expires) {
-            Ok(expiry) => Ok(Utc::now() >= expiry),
-            Err(e) => Err(Error::InvalidFormat(format!("error parsing token expires: {}", e))),
-        }
     }
 }

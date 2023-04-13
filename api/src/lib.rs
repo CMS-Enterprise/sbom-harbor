@@ -10,12 +10,11 @@ pub mod auth;
 /// Request handler implementations.
 pub mod controllers;
 
-
 /// Error module for the crate.
 mod errors;
 /// Error type for the crate.
 pub use errors::Error;
 
 // Re-export models so that clients can bind.
-pub use harbcore::models::sboms::*;
+pub use harbcore::models::sbom::*;
 pub use harbcore::models::teams::*;

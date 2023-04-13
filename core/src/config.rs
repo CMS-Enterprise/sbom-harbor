@@ -1,8 +1,8 @@
-use std::str::FromStr;
-use serde::__private::de::IdentifierDeserializer;
+use crate::Error;
 use platform::config::{from_env, type_from_env};
 use platform::mongodb::{Context, ContextKind};
-use crate::Error;
+use serde::__private::de::IdentifierDeserializer;
+use std::str::FromStr;
 
 pub enum Environ {
     Local,
@@ -34,7 +34,7 @@ pub fn mongo_context(db_name: Option<&str>) -> Result<Context, Error> {
         Some(db_name) => db_name,
     };
 
-    let mut cx = Context{
+    let mut cx = Context {
         kind: ContextKind::Mongo,
         host: "".to_string(),
         username: "".to_string(),
@@ -84,13 +84,9 @@ fn build_context(cx: &mut Context) -> Result<(), Error> {
 pub fn environment() -> Environ {
     match from_env("ENVIRONMENT") {
         None => Environ::Local,
-        Some(environ) => {
-            match Environ::from_str(environ.as_str()) {
-                Ok(e) => e,
-                Err(e) => {
-                    Environ::Local
-                }
-            }
+        Some(environ) => match Environ::from_str(environ.as_str()) {
+            Ok(e) => e,
+            Err(e) => Environ::Local,
         },
     }
 }
@@ -99,6 +95,14 @@ pub fn environment() -> Environ {
 pub fn snyk_token() -> Result<String, Error> {
     match from_env("SNYK_API_TOKEN") {
         None => Err(Error::Config("Snyk token not set".to_string())),
+        Some(v) => Ok(v),
+    }
+}
+
+/// Returns the SBOM Upload S3 Bucket name.
+pub fn sbom_upload_bucket() -> Result<String, Error> {
+    match from_env("SBOM_UPLOAD_BUCKET") {
+        None => Err(Error::Config("SBOM upload bucket not set".to_string())),
         Some(v) => Ok(v),
     }
 }
