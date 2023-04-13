@@ -33,7 +33,7 @@ impl GitHubProviderEnvironmentConfig {
 
     /// Snag a bunch of environment variables and put them into a struct
     ///
-    fn extract() -> Result<GitHubProviderEnvironmentConfig, Error> {
+    pub(crate) fn extract() -> Result<GitHubProviderEnvironmentConfig, Error> {
 
         let cms_team_id = match get_cms_team_id() {
             Ok(value) => value,

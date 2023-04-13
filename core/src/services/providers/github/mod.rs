@@ -44,8 +44,8 @@ use crate::services::providers::github::mongo::GitHubSbomProviderEntry;
 use crate::services::providers::SbomProvider;
 
 mod mongo;
-mod counter;
-mod error;
+pub mod counter;
+pub(crate) mod error;
 mod env;
 
 /// Definition of the GitHubProvider
@@ -60,14 +60,12 @@ impl GitHubSbomProvider {
 
     /// new method sets the organization for the struct
     ///
-    fn new(in_org: String) -> Result<Self, Error> {
-
-        let org = match in_org {
-            Some(org) => org,
-            None => panic!("No organization specified")
-        };
-
-        Ok( GitHubSbomProvider { org } )
+    pub fn new(org: String) -> Result<Self, Error> {
+        Ok(
+            GitHubSbomProvider {
+                org: Some(org)
+            }
+        )
     }
 }
 
@@ -79,16 +77,20 @@ impl SbomProvider for GitHubSbomProvider {
 
     async fn provide_sboms(&self) {
 
-        let harbor_config = GitHubProviderEnvironmentConfig().extract();
+
+        let harbor_config = match GitHubProviderEnvironmentConfig::extract() {
+            Ok(config) => config,
+            Err(err) => panic!("Error trying to extract config from environment: {}", err)
+        };
 
         let mut counter = Counter::default();
 
         println!("Scanning GitHub...");
 
-        let org_name: String = match cli_conf.org {
+        let org_name: String = match &self.org {
             Some(org_name) => org_name,
             None => panic!("No organization name provided, quitting...")
-        };
+        }.to_string();
 
         let repos: Vec<Repo> = match get_repos(org_name).await {
             Ok(value) => value,
@@ -433,6 +435,12 @@ async fn process_repo(
 
 #[tokio::test]
 async fn test_get_github_data() {
-    let provider = GitHubSbomProvider {};
+
+    let provider = GitHubSbomProvider {
+        org: Some(
+            String::from("cmsgov")
+        )
+    };
+
     provider.provide_sboms().await;
 }

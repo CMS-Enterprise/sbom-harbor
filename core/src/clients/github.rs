@@ -3,7 +3,6 @@ use std::convert::TryFrom;
 use std::path::Path;
 use std::process::Command;
 
-use crate::services::providers::github::{Counter, Error};
 use anyhow::Result;
 use chrono::Utc;
 use git2::Repository;
@@ -11,11 +10,17 @@ use serde;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tracing::info;
-use platform::config::from_env;
 
-use platform::hyper::{ContentType, Error as HyperError, get};
+use platform::config::from_env;
+use platform::hyper::{
+    ContentType,
+    Error as HyperError,
+    get
+};
 
 use crate::config::GH_FT_KEY;
+use crate::services::providers::github::counter::Counter;
+use crate::services::providers::github::error::Error;
 
 const GH_URL: &str = "https://api.github.com";
 

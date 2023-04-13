@@ -6,20 +6,15 @@ use serde::{
     Serialize
 };
 
-use platform::mongodb::{
-    Service as MongoService,
-    MongoDocument,
-    Store,
-    mongo_doc,
-};
+use platform::mongodb::{Service as MongoService, MongoDocument, Store as MongoStore, mongo_doc, Context};
 
 #[derive(Clone)]
 pub struct GitHubProviderMongoService {
-    pub(crate) store: Arc<Store>
+    pub(crate) store: Arc<MongoStore>
 }
 
 impl GitHubProviderMongoService {
-    pub(crate) fn new(store: Store) -> Self {
+    pub(crate) fn new(store: MongoStore) -> Self {
         GitHubProviderMongoService {
             store: Arc::new(store)
         }
@@ -29,7 +24,7 @@ impl GitHubProviderMongoService {
 impl MongoService<GitHubSbomProviderEntry>
     for GitHubProviderMongoService {
 
-    fn store(&self) -> Arc<Store> {
+    fn store(&self) -> Arc<MongoStore> {
         (&self.store).clone()
     }
 }
@@ -65,6 +60,15 @@ mongo_doc!(GitHubSbomProviderEntry);
 #[tokio::test]
 async fn test_add_document() {
 
+    let ctx = Context {
+        host: "localhost".to_string(),
+        port: 27017,
+        db_name: "harbor".to_string(),
+        key_name: "id".to_string(),
+        username: "root".to_string(),
+        password: "harbor".to_string(),
+    };
+
     let svc = GitHubProviderMongoService {
         store: Arc::new(
             match MongoStore::new(&ctx).await {
@@ -82,18 +86,18 @@ async fn test_add_document() {
 
     svc.insert(
         &mut GitHubSbomProviderEntry {
-            id,
-            last_hash,
-            team_id,
-            project_id,
-            codebase_id,
+            id: id.clone(),
+            last_hash: last_hash.clone(),
+            team_id: team_id.clone(),
+            project_id: project_id.clone(),
+            codebase_id: codebase_id.clone(),
         }
     );
 
-    match svc.find(id.as_str()) {
+    match svc.find(id.as_str()).await {
         Ok(opt) => match opt {
             Some(doc) => {
-                assert_eq!(id, doc.id);
+                assert_eq!(id, doc.id.clone());
                 assert_eq!(last_hash, doc.last_hash);
                 assert_eq!(team_id, doc.team_id);
                 assert_eq!(project_id, doc.project_id);

@@ -4,6 +4,7 @@ use clap::{Parser, ValueEnum};
 use clap::builder::PossibleValue;
 use harbcore::config::{get_cf_domain, get_cms_team_id, get_cms_team_token, get_v1_password, get_v1_username};
 use harbcore::services::providers::github::GitHubSbomProvider;
+use harbcore::services::providers::SbomProvider;
 
 use crate::Error;
 
@@ -79,7 +80,9 @@ pub struct FileSystemArgs {}
 
 /// Args for generating one ore more SBOMs from a GitHub Organization.
 #[derive(Clone, Debug, Parser)]
-pub struct GitHubArgs {}
+pub struct GitHubArgs {
+    org: Option<String>
+}
 
 /// Args for generating one or more SBOMs from the Snyk API.
 #[derive(Clone, Debug, Parser)]
@@ -115,8 +118,29 @@ impl FileSystemProvider {
 struct GithubProvider {}
 
 impl GithubProvider {
-    async fn execute(_args: &Option<GitHubArgs>) -> Result<(), Error> {
-        GitHubSbomProvider::new()
+    async fn execute(args: &Option<GitHubArgs>) -> Result<(), Error> {
+
+        let gh_args = match args {
+            Some(gh_args) => gh_args,
+
+            // TODO Do we have a graceful way of telling the user the
+            //  app isn't able to execute without an org?
+            None => panic!("No idea what to do here, maybe just die..?")
+        };
+
+        let org = match &gh_args.org {
+            Some(org) => org,
+            None => panic!("No org!")
+        }.to_string();
+
+        let service = match GitHubSbomProvider::new(org) {
+            Ok(service) => service,
+            Err(err) => return Err(
+                Error::Config(err.to_string())
+            ),
+        };
+
+        service.provide_sboms()
     }
 }
 

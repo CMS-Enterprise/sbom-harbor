@@ -1,8 +1,9 @@
 use std::fmt::Display;
+use thiserror::Error;
 
 /// Represents all handled Errors for the GitHub Crawler.
 ///
-#[derive(Error, Debug, Display)]
+#[derive(Error, Debug)]
 pub enum Error {
 
     /// Raised when we have a generic MongoDB Error
@@ -26,13 +27,4 @@ pub enum Error {
     /// with GitHub over HTTP.
     #[error("error running pilot: {0}")]
     GitHubRequest(String),
-}
-
-/// Display implementation for Error
-///
-impl Display for Error {
-    fn fmt(&self, _fmt: &mut std::fmt::Formatter<'_>)
-        -> Result<(), Error> {
-        write!(f, "{:?}", self)
-    }
 }
