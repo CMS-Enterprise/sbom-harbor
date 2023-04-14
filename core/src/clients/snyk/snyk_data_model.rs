@@ -38,9 +38,12 @@ pub struct ProjectDetails {
     /// Project Type (Project's build tools or language)
     pub r#type: String,
     /// Url to the project's source control page
+    #[serde(default = "browse_url_default")]
     pub browse_url: String,
 }
-
+fn browse_url_default() -> String {
+    return format!("");
+}
 fn project_list_default() -> Vec<ProjectDetails> {
     return Vec::new();
 }

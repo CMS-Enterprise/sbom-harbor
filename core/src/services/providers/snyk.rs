@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use clients::{ProjectJson};
 use platform::auth::get_secret;
 
-use crate::{clients::{self, SnykApiImpl, SnykAPI, Org}, config::{get_cf_domain, get_cms_team_token, get_cms_team_id}};
+use crate::{clients::{self, SnykApiImpl, SnykAPI, Org}, config::{get_cf_domain, get_cms_team_token, get_cms_team_id, get_snyk_access_token}};
 
 use super::SbomProvider;
 
@@ -38,7 +38,6 @@ impl SnykProvider {
     //Types that can have associated SBOM data in Snyk
     const VALID_TYPES: &'static [&'static str] = &["npm", "nuget", "gradle", "hex", "pip", "poetry", "rubygems", 
     "maven", "yarn", "yarn-workspace", "composer", "gomodules", "govendor", "golang", "golangdep", "gradle", "paket", "cocoapods", "cpp", "sbt"];
-    const AWS_SECRET_NAME: &'static str = "dev-sbom-harbor-snyk-token-use1";
 
     // Iterates over list of projects and uploads any valid sboms to harbor
     async fn retrieve_and_upload_valid_sboms(snyk_token: String, project_json: ProjectJson) {
@@ -81,19 +80,7 @@ impl SbomProvider for SnykProvider {
 
         println!("Starting SnykProvider scan...");
         
-
-        println!("Obtaining SNYK access key...");
-        let response = get_secret(Self::AWS_SECRET_NAME).await;
-        let snyk_token = match response {
-            Ok(secret) => {
-                match secret {
-                    Some(s) => s,
-                    None => panic!("No AWS token retrieved for secret: {}", Self::AWS_SECRET_NAME), //Stop everything if we dont get an access key
-                }
-            },
-            Err(err) => panic!("Failed to retrieve token for secret: {}, with error: {}", Self::AWS_SECRET_NAME, err), //Stop everything if we dont get an access key
-        };
-
+        let snyk_token = get_snyk_access_token().await;
         println!("Scanning Snyk for SBOMS...");
         let snyk_data = SnykApiImpl::get_orgs(snyk_token.clone()).await;
 

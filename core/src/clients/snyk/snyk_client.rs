@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use platform::hyper::{ContentType, Error as HyperError, get, post};
 use serde_json::Value;
-use crate::clients::{ProjectJson, SnykProviderError};
+use crate::{clients::{ProjectJson, SnykProviderError}, config::get_snyk_access_token};
 
 use super::{SnykData, Org};
 
@@ -128,41 +128,161 @@ impl SnykAPI for SnykApiImpl {
 
 #[tokio::test]
 pub async fn test_get_orgs() {
-    //TODO: Stub for rest call
-    //TODO: Test for OK results
-    //TODO: Test for Error 
+    //TODO: Validate results
+    //TODO: Configure mock rest call
+    let snyk_token = get_snyk_access_token().await;
 
-    let fake_token = format!("123-abc");
-    let ctx = MockSnykAPI::get_orgs_context();
-    ctx.expect().returning(|_| {
-        let fake_org_1 = Org{id: Some(format!("Org_1_id")), name: Some(format!("Org_1_name"))};
-        let fake_orgs_list: Vec<Org> = vec![fake_org_1];
-        Ok(fake_orgs_list)
-    });
-
-    let res = MockSnykAPI::get_orgs(fake_token).await;
-
-    println!("{:#?}", res);
+    let orgs = SnykApiImpl::get_orgs(snyk_token).await;
+    println!("{:#?}", orgs);
 }
 
 #[tokio::test]
 async fn test_get_projects_from_org() {
-    // let fake_token = format!("123-abc");
-    // let fake_org_id = format!("456-ORG");
-    // let fake_org_name = format!("Test_ORG");
     //TODO: Stub for rest call
     //TODO: Test for OK results
     //TODO: Test for Error 
+    let org_id = format!("f288c129-6c28-4b65-aec2-bd753e095b13");
+    let org_name= format!("Test Organization");
+    // let org_id = format!("555797d4-7d2b-4588-ba4a-84776b2f9ee8");
+    // let org_name= format!("BatCAVE (ISPG) [AWS]");
+    let snyk_token = get_snyk_access_token().await;
+    let projects = SnykApiImpl::get_projects_from_org(snyk_token, org_id, org_name).await;
+    println!("{:#?}", projects);
+
+    // Org {
+    //     id: Some(
+    //         "555797d4-7d2b-4588-ba4a-84776b2f9ee8",
+    //     ),
+    //     name: Some(
+    //         "BatCAVE (ISPG) [AWS]",
+    //     ),
+    // },
+    // Org {
+    //     id: Some(
+    //         "71e3fb2e-696c-426f-9774-5e62fa2ac44a",
+    //     ),
+    //     name: Some(
+    //         "IDDOC|4 Innovation [ACO-OS]",
+    //     ),
+    // },
+    // Org {
+    //     id: Some(
+    //         "00d7ace1-af35-4535-a1bb-c468d22336d0",
+    //     ),
+    //     name: Some(
+    //         "ZONE [ZONE]",
+    //     ),
+    // },
+    // Org {
+    //     id: Some(
+    //         "61163aee-82c0-4183-88a2-7df9470c154a",
+    //     ),
+    //     name: Some(
+    //         "RASS (OIT) [RAS-RAPS]",
+    //     ),
+    // },
+    // Org {
+    //     id: Some(
+    //         "b745377d-e6ac-465f-bc66-b642491805ad",
+    //     ),
+    //     name: Some(
+    //         "CDRAP - FAS [CDRAP]",
+    //     ),
+    // },
+    // Org {
+    //     id: Some(
+    //         "ad46f70d-5139-47cf-b4a1-bfbb4cf42ae4",
+    //     ),
+    //     name: Some(
+    //         "CDRAP - QDAS [CDRAP]",
+    //     ),
+    // },
+    // Org {
+    //     id: Some(
+    //         "0aacbfcb-6a16-4307-b38f-e1ef0cd017ca",
+    //     ),
+    //     name: Some(
+    //         "EQRS - S&F [EQRS]",
+    //     ),
+    // },
+    // Org {
+    //     id: Some(
+    //         "ea7509ec-8d27-45fe-a878-d0c1d4be1751",
+    //     ),
+    //     name: Some(
+    //         "SC QCOR [SC QCOR]",
+    //     ),
+    // },
+    // Org {
+    //     id: Some(
+    //         "7ca8a69a-014b-45b3-8c2a-45f28acfdbb1",
+    //     ),
+    //     name: Some(
+    //         "AMS [AMS]",
+    //     ),
+    // },
+    // Org {
+    //     id: Some(
+    //         "f288c129-6c28-4b65-aec2-bd753e095b13",
+    //     ),
+    //     name: Some(
+    //         "Test Organization",
+    //     ),
+    // },
+    // Org {
+    //     id: Some(
+    //         "a1738e18-1b90-4ee9-b3dc-10a3b7c51953",
+    //     ),
+    //     name: Some(
+    //         "HIOS [HIOS]",
+    //     ),
+    // },
+    // Org {
+    //     id: Some(
+    //         "3957864e-d4a0-4290-bc83-750a2ea495e8",
+    //     ),
+    //     name: Some(
+    //         "MACFIN [MACFIN]",
+    //     ),
+    // },
+    // Org {
+    //     id: Some(
+    //         "230a9cf3-8880-43bb-a8ff-c69f372d4fc3",
+    //     ),
+    //     name: Some(
+    //         "PMPP [PMPP]",
+    //     ),
+    // },
 }
 
 #[tokio::test]
 async fn test_get_projects_from_org_list() {
-    // let fake_token = format!("123-abc");
-    // let fake_orgs_list: Vec<Org> = Vec::new();
-    //TODO: Add fake data to list
-    //TODO: Stub for rest call
-    //TODO: Test for OK results
-    //TODO: Test for Errors 
+    let org_list: Vec<Org> = vec![
+        Org{
+            id: Some(format!("230a9cf3-8880-43bb-a8ff-c69f372d4fc3")), 
+            name: Some(format!("PMPP [PMPP]"))
+        },
+        Org{
+            id: Some(format!("3957864e-d4a0-4290-bc83-750a2ea495e8")), 
+            name: Some(format!("MACFIN [MACFIN]"))
+        },
+        Org{
+            id: Some(format!("a1738e18-1b90-4ee9-b3dc-10a3b7c51953")), 
+            name: Some(format!("HIOS [HIOS]"))
+        }
+    ];
+    let snyk_token = get_snyk_access_token().await;
+    let projects = SnykApiImpl::get_projects_from_org_list(snyk_token, org_list).await;
+
+    for project_json in projects.0 {
+        if project_json.org.id.is_some() {
+            println!("{:#?}", project_json);
+        }
+    }
+
+    for errors in projects.1 {
+        println!("{}", errors)
+    }
 }
 
 #[tokio::test]

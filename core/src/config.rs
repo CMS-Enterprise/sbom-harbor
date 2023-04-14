@@ -1,3 +1,5 @@
+use async_trait::async_trait;
+use platform::auth::get_secret;
 use platform::config::from_env;
 use platform::mongodb::Context;
 use crate::Error;
@@ -28,6 +30,9 @@ pub const V1_HARBOR_USERNAME_KEY: &str = "V1_HARBOR_USERNAME";
 
 /// Key to get the v1 password from the env
 pub const V1_HARBOR_PASSWORD_KEY: &str = "V1_HARBOR_PASSWORD";
+
+/// Key to get Snyk access key from AWS
+pub const SNYK_TOKEN_KEY: &str = "dev-sbom-harbor-snyk-token-use1"; //TODO: This needs to become an env var
 
 /// Returns the Mongo Connection URI as an environment variable.
 /// Defaults to local dev environment if not set.
@@ -104,4 +109,20 @@ pub fn get_v1_password() -> Result<String, Error> {
             )
         )
     }
+}
+
+/// Function to get the Snyk Access token from AWS.
+/// TODO: this needs to get the token from an env variable instead
+pub async fn get_snyk_access_token() -> String {
+    println!("Obtaining SNYK access key...");
+    let response = get_secret(SNYK_TOKEN_KEY).await;
+    return match response {
+        Ok(secret) => {
+            match secret {
+                Some(s) => s,
+                None => panic!("No AWS token retrieved for secret: {}", SNYK_TOKEN_KEY), //Stop everything if we dont get an access key
+            }
+        },
+        Err(err) => panic!("Failed to retrieve token for secret: {}, with error: {}", SNYK_TOKEN_KEY, err), //Stop everything if we dont get an access key
+    };
 }
