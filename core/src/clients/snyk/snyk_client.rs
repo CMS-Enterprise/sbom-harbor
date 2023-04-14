@@ -7,6 +7,9 @@ use crate::clients::{ProjectJson, SnykProviderError};
 
 use super::{SnykData, Org};
 
+#[cfg(test)]
+use mockall::{automock, mock, predicate::*};
+
 //URL used for getting org and project details
 const API_V1_URL: &'static str = "https://snyk.io/api/v1";
 //URL used for getting SBOMS
@@ -20,6 +23,7 @@ const SBOM_FORMAT: &'static str = "cyclonedx%2Bjson";
 pub struct SnykApiImpl{}
 
 /// SnykAPI trait that contains all methods related to retrieving SBOM data from snyk
+#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait SnykAPI {
     /// Retrieves a list of all Orgs from Snyk and adds them into a new SnykData object
@@ -118,13 +122,27 @@ impl SnykAPI for SnykApiImpl {
             Err(err) => Err(SnykProviderError::SnykSBOMError(format!("Error with: {}, \nadditional errors: {}", display_msg, err)))
         }
     }
+
+
 }
 
 #[tokio::test]
-async fn test_get_orgs() {
+pub async fn test_get_orgs() {
     //TODO: Stub for rest call
     //TODO: Test for OK results
     //TODO: Test for Error 
+
+    let fake_token = format!("123-abc");
+    let ctx = MockSnykAPI::get_orgs_context();
+    ctx.expect().returning(|_| {
+        let fake_org_1 = Org{id: Some(format!("Org_1_id")), name: Some(format!("Org_1_name"))};
+        let fake_orgs_list: Vec<Org> = vec![fake_org_1];
+        Ok(fake_orgs_list)
+    });
+
+    let res = MockSnykAPI::get_orgs(fake_token).await;
+
+    println!("{:#?}", res);
 }
 
 #[tokio::test]

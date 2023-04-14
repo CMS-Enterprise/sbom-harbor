@@ -3,9 +3,14 @@ use async_trait::async_trait;
 use clients::{ProjectJson};
 use platform::auth::get_secret;
 
-use crate::clients::{self, SnykApiImpl, SnykAPI};
+use crate::{clients::{self, SnykApiImpl, SnykAPI, Org}, config::{get_cf_domain, get_cms_team_token, get_cms_team_id}};
 
 use super::SbomProvider;
+
+#[cfg(test)]
+use mockall::{automock, mock, predicate::*};
+#[cfg(test)]
+use crate::clients::MockSnykAPI;
 
 //DONE: Add method call
 //DONE: See if it runs
@@ -37,9 +42,9 @@ impl SnykProvider {
 
     // Iterates over list of projects and uploads any valid sboms to harbor
     async fn retrieve_and_upload_valid_sboms(snyk_token: String, project_json: ProjectJson) {
-        let cloud_front_domain = env::var("CF_DOMAIN").unwrap_or(String::from("")); //TODO: get this only once
-        let sbom_token = env::var("V1_CMS_TEAM_TOKEN").unwrap_or(String::from("")); //TODO: get this only once
-        let team_id = env::var("V1_CMS_TEAM_ID").unwrap_or(String::from("")); //TODO: get this only once
+        let cloud_front_domain = get_cf_domain().unwrap();
+        let sbom_token = get_cms_team_token().unwrap();
+        let team_id = get_cms_team_id().unwrap();
 
         for project in project_json.projects.iter() {
             match project {
@@ -51,6 +56,7 @@ impl SnykProvider {
                             match option_sbom {
                                 Some(sbom) =>{
                                     println!("Uploading SBOM to harbor for project: {}, from org: {}", project.id, project_json.org.id.clone().unwrap());
+                                    //TODO: Re-enable the next line
                                     //simple_upload_sbom(cloud_front_domain.clone(), sbom_token.clone(), team_id.clone(), project.browseUrl.clone(), project.r#type.clone(), sbom).await;
                                     },
                                 None => println!("No SBOM found for project: {}, from org: {}", project.id, project_json.org.id.clone().unwrap()),
@@ -121,6 +127,15 @@ impl SbomProvider for SnykProvider {
 
 #[tokio::test]
 async fn test_get_snyk_data() {
+    let fake_token = format!("123-abc");
+    let ctx = MockSnykAPI::get_orgs_context();
+    ctx.expect().returning(|_| {
+        let fake_org_1 = Org{id: Some(format!("Org_1_id")), name: Some(format!("Org_1_name"))};
+        let fake_orgs_list: Vec<Org> = vec![fake_org_1];
+        Ok(fake_orgs_list)
+    });
+    let res = MockSnykAPI::get_orgs(fake_token).await;
+   // let mo = MockSnykApiImpl
     let provider = SnykProvider{};
     provider.provide_sboms().await;
 }
