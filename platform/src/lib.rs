@@ -34,3 +34,6 @@ pub use errors::Error;
 
 /// S3 Provider module
 pub mod persistence;
+
+/// Extensions to `std::time`.
+pub mod time;

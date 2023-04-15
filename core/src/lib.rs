@@ -1,18 +1,12 @@
 #![feature(async_closure)]
 #![warn(missing_docs)]
+#![feature(async_fn_in_trait)]
 //! The [Core] crate contains the [Models], [Services], and domain logic for Harbor.
 //! Other crates such as the API or CLI are thin wrappers over the [Core] crate that handle
 //! translating user input from the wire protocol or stdin to native types and then invoking
 //! the corresponding [Service] type found in this crate.
 
-/// The [Models] module contains the schema types defined by the OpenAPI specification for this API.
-/// [Models] are data transfer objects.
-pub mod models;
-
-/// The [Entities] module extends the [Models] and contains domain logic relevant to managing
-/// entity relationships.
-///
-/// Entities are the things that the Service Layer manages. Some entities, on the server side,
+/// [Entities] are the things that the Service Layer manages. Some entities, on the server side,
 /// may be persisted as entries in a database. Some entities are materialized at runtime only for the
 /// purpose of executing business logic, and are never serialized or persisted.
 ///
@@ -63,6 +57,7 @@ pub mod services;
 
 /// Errors exposed by this crate.
 pub mod errors;
+
 /// The Error type for this crate.
 pub use errors::Error;
 
@@ -74,7 +69,3 @@ pub mod auth;
 
 /// The Migrations module contains all database migrations for the Harbor application.
 mod migrations;
-
-/// The Clients module contains all client abstractions used to call external services.
-mod clients;
-

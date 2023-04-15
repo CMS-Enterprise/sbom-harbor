@@ -1,8 +1,9 @@
 use chrono::{DateTime, Utc};
 use core::default::Default;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::models::teams::{Codebase, Member, Project, Team, Token};
+use crate::entities::teams::{Member, Project, Token};
 use crate::Error;
 
 ///  A Team is a named entity that can contain 3 child types:

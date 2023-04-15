@@ -1,12 +1,14 @@
 use serde::{Deserialize, Serialize};
 
 #[allow(missing_docs)]
+#[serde(rename_all = "camelCase")]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct FismaXRef {
     pub fisma_id: String,
 }
 
 #[allow(missing_docs)]
+#[serde(rename_all = "camelCase")]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CodebaseXRef {
     pub team_id: String,
@@ -15,6 +17,7 @@ pub struct CodebaseXRef {
 }
 
 #[allow(missing_docs)]
+#[serde(rename_all = "camelCase")]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ProductXRef {
     pub vendor_id: String,
@@ -22,6 +25,7 @@ pub struct ProductXRef {
 }
 
 #[allow(missing_docs)]
+#[serde(rename_all = "camelCase")]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SnykXRef {
     pub id: String,

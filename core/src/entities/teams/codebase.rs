@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 /// A Codebase is a named entity that contains information about
 /// a code base such as the language the software is developed in
 /// and the tooling use to build the code.

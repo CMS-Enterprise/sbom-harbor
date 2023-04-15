@@ -1,10 +1,10 @@
-se crate::entities::packages::Purl;
 use crate::entities::cyclonedx::{Bom, Component};
-use crate::entities::packages::Purl;
+use crate::entities::packages::{Purl, SourceKind};
 use crate::entities::sboms::CdxFormat;
 use crate::models::sbom::CycloneDxFormat;
 use crate::services::cyclonedx::models::{Bom, Component};
 use crate::Error;
+use tracing::debug;
 
 impl Bom {
     /// Compares Bom instances for equality.
@@ -24,8 +24,9 @@ impl Bom {
     pub fn parse(raw: &str, format: CdxFormat) -> Result<Bom, Error> {
         match format {
             CdxFormat::Json => {
-                let bom = serde_json::from_str::<Bom>(raw)
-                    .map_err(|e| Error::Serde(format!("error serializing CycloneDx SBOM - {}", e)))?;
+                let bom = serde_json::from_str::<Bom>(raw).map_err(|e| {
+                    Error::Serde(format!("error serializing CycloneDx SBOM - {}", e))
+                })?;
 
                 Ok(bom)
             }
@@ -44,29 +45,28 @@ impl Bom {
     }
 
     /// Extract the purls from the Components and Dependencies in a CycloneDx SBOM.
-    pub fn extract_purls(&self) -> Option<Vec<Purl>> {
-        let mut result = Vec::<Purl>::new();
+    pub fn extract_purls(&self, snyk_ref: SnykXRef) -> Option<Vec<Purl>> {
+        let mut purls = Vec::<Purl>::new();
 
         let components: &Vec<Component> = match &self.components {
             None => &vec![],
             Some(c) => c,
         };
 
-        components.iter().for_each(|c| match &c.purl {
-            None => {}
-            Some(purl) => {
-                if !purl.is_empty() {
-                    result.push(Purl::from(purl.to_string()));
-                }
+        components.iter().for_each(|c| {
+            match Purl::from_snyk(c, SourceKind::Dependency, snyk_ref) {
+                Ok(purl) => match purl {
+                    None => {}
+                    Some(purl) => purls.push(purl),
+                },
+                Err(e) => debug!("bom::extract_purls::{}", e),
             }
         });
 
-
-
-        if result.is_empty() {
+        if purls.is_empty() {
             return None;
         }
 
-        Some(result)
+        Some(purls)
     }
 }

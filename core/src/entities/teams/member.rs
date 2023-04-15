@@ -1,3 +1,6 @@
+use platform::auth::User;
+use serde::{Deserialize, Serialize};
+
 /// A Member is an entity representing a Harbor User who can manage projects, codebases, tokens, and SBOMs.
 #[serde(rename_all = "camelCase")]
 #[derive(Clone, Debug, Deserialize, Serialize)]

@@ -7,10 +7,12 @@ pub struct Sbom {
     /// The unique identifier for the Sbom.
     pub id: String,
 
-    /// The Package URL for the package that the Sbom targets.
-    pub purl: String,
+    /// The Package URL for the package that the Sbom was generated from.
+    #[skip_serializing_none]
+    pub purl: Option<String>,
 
     // TODO: Review with team. This is naive. Version varies widely based on a lot of factors.
+    // TODO: Also, we have a timestamp, and that should be sortable. Is that good enough?
     // This might be useful to us as humans, but might also be a really confusing name since
     // version has meaning that is context sensitive.
     /// The version of the Sbom. Forward-only incrementing counter.
@@ -23,7 +25,9 @@ pub struct Sbom {
     pub source: Source,
 
     /// The unix timestamp for when the Sbom was received by Harbor.
-    pub timestamp: String,
+    pub timestamp: u128,
+
+    pub checksum_sha256: Option<String>,
 }
 
 /// A Spec is the SBOM specification to which the SBOM conforms.

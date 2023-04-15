@@ -1,7 +1,6 @@
-use aws_sdk_s3::output::PutObjectOutput;
 use aws_sdk_s3::types::ByteStream;
 use aws_sdk_s3::Client;
-use aws_types::{ByteStream, SdkConfig};
+use aws_types::SdkConfig;
 use std::collections::HashMap;
 use tracing::instrument;
 
@@ -22,9 +21,9 @@ impl Store {
         &self,
         bucket_name: String,
         key: String,
-        body: &[u8],
+        body: &'static [u8],
         metadata: Option<HashMap<String, String>>,
-    ) -> Result<&str, Error> {
+    ) -> Result<String, Error> {
         let client = Client::new(&self.config);
         let body = Some(ByteStream::from_static(body));
 
@@ -40,7 +39,7 @@ impl Store {
 
         match result.checksum_sha256() {
             None => Err(Error::S3("checksum_failure".to_string())),
-            Some(checksum) => Ok(checksum),
+            Some(checksum) => Ok(checksum.to_string()),
         }
     }
 }
