@@ -8,10 +8,10 @@ use serde::{Deserialize, Serialize};
 pub struct Credits {
     /// The organizations credited with vulnerability discovery.
     #[serde(rename = "organizations", skip_serializing_if = "Option::is_none")]
-    pub organizations: Option<Vec<crate::models::cyclonedx::OrganizationalEntity>>,
+    pub organizations: Option<Vec<crate::entities::cyclonedx::models::OrganizationalEntity>>,
     /// The individuals, not associated with organizations, that are credited with vulnerability discovery.
     #[serde(rename = "individuals", skip_serializing_if = "Option::is_none")]
-    pub individuals: Option<Vec<crate::models::cyclonedx::OrganizationalContact>>,
+    pub individuals: Option<Vec<crate::entities::cyclonedx::models::OrganizationalContact>>,
 }
 
 impl Credits {
@@ -23,5 +23,3 @@ impl Credits {
         }
     }
 }
-
-

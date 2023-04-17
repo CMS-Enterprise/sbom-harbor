@@ -10,10 +10,10 @@ pub struct Patch {
     #[serde(rename = "type")]
     pub r#type: PatchType,
     #[serde(rename = "diff", skip_serializing_if = "Option::is_none")]
-    pub diff: Option<Box<crate::models::cyclonedx::Diff>>,
+    pub diff: Option<Box<crate::entities::cyclonedx::models::Diff>>,
     /// A collection of issues the patch resolves
     #[serde(rename = "resolves", skip_serializing_if = "Option::is_none")]
-    pub resolves: Option<Vec<crate::models::cyclonedx::Issue>>,
+    pub resolves: Option<Vec<crate::entities::cyclonedx::models::Issue>>,
 }
 
 impl Patch {
@@ -45,4 +45,3 @@ impl Default for PatchType {
         Self::Unofficial
     }
 }
-

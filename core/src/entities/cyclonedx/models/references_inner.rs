@@ -9,16 +9,17 @@ pub struct ReferencesInner {
     #[serde(rename = "id")]
     pub id: String,
     #[serde(rename = "source")]
-    pub source: Box<crate::models::cyclonedx::VulnerabilitySource>,
+    pub source: Box<crate::entities::cyclonedx::models::VulnerabilitySource>,
 }
 
 impl ReferencesInner {
-    pub fn new(id: String, source: crate::models::cyclonedx::VulnerabilitySource) -> ReferencesInner {
+    pub fn new(
+        id: String,
+        source: crate::entities::cyclonedx::models::VulnerabilitySource,
+    ) -> ReferencesInner {
         ReferencesInner {
             id,
             source: Box::new(source),
         }
     }
 }
-
-

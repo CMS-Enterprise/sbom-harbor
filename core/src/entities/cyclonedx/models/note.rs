@@ -10,17 +10,15 @@ pub struct Note {
     #[serde(rename = "locale", skip_serializing_if = "Option::is_none")]
     pub locale: Option<String>,
     #[serde(rename = "text")]
-    pub text: Box<crate::models::cyclonedx::Attachment>,
+    pub text: Box<crate::entities::cyclonedx::models::Attachment>,
 }
 
 impl Note {
     /// A note containing the locale and content.
-    pub fn new(text: crate::models::cyclonedx::Attachment) -> Note {
+    pub fn new(text: crate::entities::cyclonedx::models::Attachment) -> Note {
         Note {
             locale: None,
             text: Box::new(text),
         }
     }
 }
-
-

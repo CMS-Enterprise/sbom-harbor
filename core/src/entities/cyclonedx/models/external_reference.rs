@@ -17,7 +17,7 @@ pub struct ExternalReference {
     pub r#type: ExternalReferenceType,
     /// The hashes of the external reference (if applicable).
     #[serde(rename = "hashes", skip_serializing_if = "Option::is_none")]
-    pub hashes: Option<Vec<crate::models::cyclonedx::Hash>>,
+    pub hashes: Option<Vec<crate::entities::cyclonedx::models::Hash>>,
 }
 
 impl ExternalReference {
@@ -74,4 +74,3 @@ impl Default for ExternalReferenceType {
         Self::Vcs
     }
 }
-

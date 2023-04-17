@@ -1,3 +1,4 @@
+use crate::entities::teams::Codebase;
 use serde::{Deserialize, Serialize};
 
 /// A Project is a named entity that can contain 1 child type:

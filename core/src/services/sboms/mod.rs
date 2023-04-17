@@ -3,6 +3,8 @@ pub use service::*;
 
 use crate::Error;
 
+use async_trait::async_trait;
+
 /// Service that is capable of creating and storing one or more SBOMs.
 #[async_trait]
 pub trait SbomProvider {

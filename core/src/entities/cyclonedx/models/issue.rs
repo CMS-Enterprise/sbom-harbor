@@ -19,7 +19,7 @@ pub struct Issue {
     #[serde(rename = "description", skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(rename = "source", skip_serializing_if = "Option::is_none")]
-    pub source: Option<Box<crate::models::cyclonedx::Source>>,
+    pub source: Option<Box<crate::entities::cyclonedx::models::Source>>,
     /// A collection of URL's for reference. Multiple URLs are allowed.
     #[serde(rename = "references", skip_serializing_if = "Option::is_none")]
     pub references: Option<Vec<String>>,
@@ -55,4 +55,3 @@ impl Default for IssueType {
         Self::Defect
     }
 }
-

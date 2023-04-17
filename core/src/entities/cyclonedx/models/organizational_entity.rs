@@ -13,7 +13,7 @@ pub struct OrganizationalEntity {
     pub url: Option<Vec<String>>,
     /// A contact at the organization. Multiple contacts are allowed.
     #[serde(rename = "contact", skip_serializing_if = "Option::is_none")]
-    pub contact: Option<Vec<crate::models::cyclonedx::OrganizationalContact>>,
+    pub contact: Option<Vec<crate::entities::cyclonedx::models::OrganizationalContact>>,
 }
 
 impl OrganizationalEntity {
@@ -25,5 +25,3 @@ impl OrganizationalEntity {
         }
     }
 }
-
-

@@ -12,7 +12,7 @@ pub struct VersionsInner {
     #[serde(rename = "range", skip_serializing_if = "Option::is_none")]
     pub range: Option<String>,
     #[serde(rename = "status", skip_serializing_if = "Option::is_none")]
-    pub status: Option<crate::models::cyclonedx::AffectedStatus>,
+    pub status: Option<crate::entities::cyclonedx::models::AffectedStatus>,
 }
 
 impl VersionsInner {
@@ -24,5 +24,3 @@ impl VersionsInner {
         }
     }
 }
-
-

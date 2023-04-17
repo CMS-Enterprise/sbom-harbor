@@ -7,14 +7,14 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct Rating {
     #[serde(rename = "source", skip_serializing_if = "Option::is_none")]
-    pub source: Option<Box<crate::models::cyclonedx::VulnerabilitySource>>,
+    pub source: Option<Box<crate::entities::cyclonedx::models::VulnerabilitySource>>,
     /// The numerical score of the rating.
     #[serde(rename = "score", skip_serializing_if = "Option::is_none")]
     pub score: Option<f32>,
     #[serde(rename = "severity", skip_serializing_if = "Option::is_none")]
-    pub severity: Option<crate::models::cyclonedx::Severity>,
+    pub severity: Option<crate::entities::cyclonedx::models::Severity>,
     #[serde(rename = "method", skip_serializing_if = "Option::is_none")]
-    pub method: Option<crate::models::cyclonedx::ScoreMethod>,
+    pub method: Option<crate::entities::cyclonedx::models::ScoreMethod>,
     /// Textual representation of the metric values used to score the vulnerability
     #[serde(rename = "vector", skip_serializing_if = "Option::is_none")]
     pub vector: Option<String>,
@@ -36,5 +36,3 @@ impl Rating {
         }
     }
 }
-
-

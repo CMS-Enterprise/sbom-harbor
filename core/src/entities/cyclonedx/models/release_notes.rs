@@ -31,13 +31,13 @@ pub struct ReleaseNotes {
     pub tags: Option<Vec<String>>,
     /// A collection of issues that have been resolved.
     #[serde(rename = "resolves", skip_serializing_if = "Option::is_none")]
-    pub resolves: Option<Vec<crate::models::cyclonedx::Issue>>,
+    pub resolves: Option<Vec<crate::entities::cyclonedx::models::Issue>>,
     /// Zero or more release notes containing the locale and content. Multiple note objects may be specified to support release notes in a wide variety of languages.
     #[serde(rename = "notes", skip_serializing_if = "Option::is_none")]
-    pub notes: Option<Vec<crate::models::cyclonedx::Note>>,
+    pub notes: Option<Vec<crate::entities::cyclonedx::models::Note>>,
     /// Provides the ability to document properties in a name-value store. This provides flexibility to include data not officially supported in the standard without having to use additional namespaces or create extensions. Unlike key-value stores, properties support duplicate names, each potentially having different values. Property names of interest to the general public are encouraged to be registered in the [CycloneDX Property Taxonomy](https://github.com/CycloneDX/cyclonedx-property-taxonomy). Formal registration is OPTIONAL.
     #[serde(rename = "properties", skip_serializing_if = "Option::is_none")]
-    pub properties: Option<Vec<crate::models::cyclonedx::Property>>,
+    pub properties: Option<Vec<crate::entities::cyclonedx::models::Property>>,
 }
 
 impl ReleaseNotes {
@@ -57,5 +57,3 @@ impl ReleaseNotes {
         }
     }
 }
-
-

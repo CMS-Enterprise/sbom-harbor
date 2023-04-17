@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct Diff {
     #[serde(rename = "text", skip_serializing_if = "Option::is_none")]
-    pub text: Option<Box<crate::models::cyclonedx::Attachment>>,
+    pub text: Option<Box<crate::entities::cyclonedx::models::Attachment>>,
     /// Specifies the URL to the diff
     #[serde(rename = "url", skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
@@ -22,5 +22,3 @@ impl Diff {
         }
     }
 }
-
-

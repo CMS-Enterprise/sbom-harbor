@@ -1,5 +1,5 @@
 use crate::entities::cyclonedx::component::ComponentType;
-use crate::entities::cyclonedx::{Bom, Component};
+use crate::entities::cyclonedx::{Bom, Component, Issue};
 use crate::entities::packages::Purl;
 use crate::Error;
 use serde::{Deserialize, Serialize};
@@ -8,31 +8,26 @@ use std::string::FromUtf8Error;
 use tracing::log::debug;
 use urlencoding::decode;
 
-/// A subset of the full CycloneDx Component suitable for tracking packages and dependencies within
-/// the registry.
+/// A subset of the full CycloneDx Component suitable for tracking packages and dependencies.
 #[serde(rename_all = "camelCase")]
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Cdx {
+pub struct PackageCdx {
     /// The denormalized raw Package URL from the CdxComponent.
-    #[skip_serializing_none]
     pub purl: Option<String>,
 
     /// The name of the package.
     pub name: String,
 
     /// The package manager of the package.
-    #[skip_serializing_none]
     pub package_manager: Option<String>,
 
     /// The type of the package (e.g. application, library, container).
     pub component_type: ComponentType,
 
     /// The unique identifier of the component, service, or vulnerability within the BOM.
-    #[skip_serializing_none]
     pub bom_ref: Option<String>,
 
     /// The version specifier for the package.
-    #[skip_serializing_none]
     pub version: Option<String>,
 
     /// The denormalized raw Package URLs from the SBOM Components list.
@@ -40,14 +35,22 @@ pub struct Cdx {
     pub dependencies: Vec<String>,
 }
 
-impl Cdx {
+impl PackageCdx {
     /// Creates a Cdx summary from a full CycloneDx Bom. Typically used during [Package] creation.
-    pub(crate) fn from_bom(bom: &Bom, package_manager: Option<String>) -> Result<Cdx, Error> {
+    pub(crate) fn from_bom(
+        bom: &Bom,
+        package_manager: Option<String>,
+    ) -> Result<PackageCdx, Error> {
         let component = match bom.component() {
             None => {
-                return Err(Error::Entity("no_bom_component".to_string()));
+                return Err(Error::Entity("bom_component_none".to_string()));
             }
             Some(c) => c,
+        };
+
+        let purl = match bom.purl() {
+            None => return Err(Error::Entity("bom_purl_none".to_string())),
+            Some(purl) => Purl::decode(purl.as_str())?,
         };
 
         let mut dependencies = vec![];
@@ -56,20 +59,18 @@ impl Cdx {
             None => {}
             Some(c) => c
                 .iter()
-                .for_each(|component: Component| match component.purl {
+                .for_each(|component: &Component| match &component.purl {
                     None => {}
-                    Some(purl) => {
-                        match Purl::decode(purl.as_str()) {
+                    Some(p) => {
+                        match Purl::decode(p.as_str()) {
                             Ok(purl) => dependencies.push(purl),
                             Err(e) => {
-                                debug!("cdx::from_bom::purl:decode::{}::{}", purl, e);
+                                debug!("cdx::from_bom::purl:decode::{}::{}", p, e);
                             }
                         };
                     }
                 }),
         }
-
-        let purl = Purl::decode(purl)?;
 
         Ok(Self {
             component_type: component.r#type,
@@ -84,7 +85,7 @@ impl Cdx {
 
     /// Creates a Cdx summary from a CycloneDx Component. Typically used during [Dependency]
     /// creation.
-    pub fn from_component(component: &Component, package_manager: Option<String>) -> Cdx {
+    pub fn from_component(component: &Component, package_manager: Option<String>) -> PackageCdx {
         Self {
             component_type: component.r#type,
             bom_ref: component.bom_ref.clone(),
@@ -97,7 +98,7 @@ impl Cdx {
     }
 
     /// Compares the purl of two Cdx instances for equality.
-    pub fn purl_eq(&self, other: Option<Cdx>) -> bool {
+    pub fn purl_eq(&self, other: Option<PackageCdx>) -> bool {
         // Guard against cases where equality cannot be evaluated.
         let self_purl = match &self.purl {
             None => {

@@ -6,12 +6,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct License {
     #[serde(rename = "id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<crate::models::cyclonedx::SpdxPeriodSchema>,
+    pub id: Option<crate::entities::cyclonedx::models::SpdxPeriodSchema>,
     /// If SPDX does not define the license used, this field may be used to provide the license name
     #[serde(rename = "name", skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "text", skip_serializing_if = "Option::is_none")]
-    pub text: Option<Box<crate::models::cyclonedx::Attachment>>,
+    pub text: Option<Box<crate::entities::cyclonedx::models::Attachment>>,
     /// The URL to the license file. If specified, a 'license' externalReference should also be specified for completeness
     #[serde(rename = "url", skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
@@ -27,5 +27,3 @@ impl License {
         }
     }
 }
-
-

@@ -12,3 +12,6 @@ pub mod sboms;
 /// Persistence models that support storing and managing groups of people that produce and manage
 /// SBOMs.
 pub mod teams;
+
+/// Model extensions that allow cross-referencing to external systems.
+pub mod xrefs;

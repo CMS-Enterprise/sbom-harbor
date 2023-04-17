@@ -7,9 +7,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct ImpactAnalysis {
     #[serde(rename = "state", skip_serializing_if = "Option::is_none")]
-    pub state: Option<crate::models::cyclonedx::ImpactAnalysisState>,
+    pub state: Option<crate::entities::cyclonedx::models::ImpactAnalysisState>,
     #[serde(rename = "justification", skip_serializing_if = "Option::is_none")]
-    pub justification: Option<crate::models::cyclonedx::ImpactAnalysisJustification>,
+    pub justification: Option<crate::entities::cyclonedx::models::ImpactAnalysisJustification>,
     /// A response to the vulnerability by the manufacturer, supplier, or project responsible for the affected component or service. More than one response is allowed. Responses are strongly encouraged for vulnerabilities where the analysis state is exploitable.
     #[serde(rename = "response", skip_serializing_if = "Option::is_none")]
     pub response: Option<Vec<Response>>,
@@ -50,4 +50,3 @@ impl Default for Response {
         Self::CanNotFix
     }
 }
-

@@ -13,9 +13,9 @@ pub struct Commit {
     #[serde(rename = "url", skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
     #[serde(rename = "author", skip_serializing_if = "Option::is_none")]
-    pub author: Option<Box<crate::models::cyclonedx::IdentifiableAction>>,
+    pub author: Option<Box<crate::entities::cyclonedx::models::IdentifiableAction>>,
     #[serde(rename = "committer", skip_serializing_if = "Option::is_none")]
-    pub committer: Option<Box<crate::models::cyclonedx::IdentifiableAction>>,
+    pub committer: Option<Box<crate::entities::cyclonedx::models::IdentifiableAction>>,
     /// The text description of the contents of the commit
     #[serde(rename = "message", skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -33,5 +33,3 @@ impl Commit {
         }
     }
 }
-
-

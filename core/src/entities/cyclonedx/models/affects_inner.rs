@@ -8,7 +8,7 @@ pub struct AffectsInner {
     pub r#ref: String,
     /// Zero or more individual versions or range of versions.
     #[serde(rename = "versions", skip_serializing_if = "Option::is_none")]
-    pub versions: Option<Vec<crate::models::cyclonedx::VersionsInner>>,
+    pub versions: Option<Vec<crate::entities::cyclonedx::VersionsInner>>,
 }
 
 impl AffectsInner {
@@ -19,5 +19,3 @@ impl AffectsInner {
         }
     }
 }
-
-

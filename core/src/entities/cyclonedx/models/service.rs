@@ -8,7 +8,7 @@ pub struct Service {
     #[serde(rename = "bom-ref", skip_serializing_if = "Option::is_none")]
     pub bom_ref: Option<String>,
     #[serde(rename = "provider", skip_serializing_if = "Option::is_none")]
-    pub provider: Option<Box<crate::models::cyclonedx::OrganizationalEntity>>,
+    pub provider: Option<Box<crate::entities::cyclonedx::models::OrganizationalEntity>>,
     /// The grouping name, namespace, or identifier. This will often be a shortened, single name of the company or project that produced the service or domain name. Whitespace and special characters should be avoided.
     #[serde(rename = "group", skip_serializing_if = "Option::is_none")]
     pub group: Option<String>,
@@ -32,20 +32,20 @@ pub struct Service {
     pub x_trust_boundary: Option<bool>,
     /// Specifies the data classification.
     #[serde(rename = "data", skip_serializing_if = "Option::is_none")]
-    pub data: Option<Vec<crate::models::cyclonedx::DataClassification>>,
+    pub data: Option<Vec<crate::entities::cyclonedx::models::DataClassification>>,
     #[serde(rename = "licenses", skip_serializing_if = "Option::is_none")]
-    pub licenses: Option<Vec<crate::models::cyclonedx::LicenseChoice>>,
+    pub licenses: Option<Vec<crate::entities::cyclonedx::models::LicenseChoice>>,
     /// External references provide a way to document systems, sites, and information that may be relevant but which are not included with the BOM.
     #[serde(rename = "externalReferences", skip_serializing_if = "Option::is_none")]
-    pub external_references: Option<Vec<crate::models::cyclonedx::ExternalReference>>,
+    pub external_references: Option<Vec<crate::entities::cyclonedx::models::ExternalReference>>,
     /// A list of services included or deployed behind the parent service. This is not a dependency tree. It provides a way to specify a hierarchical representation of service assemblies.
     #[serde(rename = "services", skip_serializing_if = "Option::is_none")]
-    pub services: Option<Vec<crate::models::cyclonedx::Service>>,
+    pub services: Option<Vec<crate::entities::cyclonedx::models::Service>>,
     #[serde(rename = "releaseNotes", skip_serializing_if = "Option::is_none")]
-    pub release_notes: Option<Box<crate::models::cyclonedx::ReleaseNotes>>,
+    pub release_notes: Option<Box<crate::entities::cyclonedx::models::ReleaseNotes>>,
     /// Provides the ability to document properties in a name-value store. This provides flexibility to include data not officially supported in the standard without having to use additional namespaces or create extensions. Unlike key-value stores, properties support duplicate names, each potentially having different values. Property names of interest to the general public are encouraged to be registered in the [CycloneDX Property Taxonomy](https://github.com/CycloneDX/cyclonedx-property-taxonomy). Formal registration is OPTIONAL.
     #[serde(rename = "properties", skip_serializing_if = "Option::is_none")]
-    pub properties: Option<Vec<crate::models::cyclonedx::Property>>,
+    pub properties: Option<Vec<crate::entities::cyclonedx::models::Property>>,
     #[serde(rename = "signature", skip_serializing_if = "Option::is_none")]
     pub signature: Option<serde_json::Value>,
 }
@@ -72,5 +72,3 @@ impl Service {
         }
     }
 }
-
-

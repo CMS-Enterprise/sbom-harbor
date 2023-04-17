@@ -1,5 +1,3 @@
-use crate::clients::snyk::models::OrgV1;
-
 /// ## Overview
 /// This module provides a lightweight partial OpenAPI client for the Snyk API. It is primarily used for
 ///
@@ -19,18 +17,17 @@ use crate::clients::snyk::models::OrgV1;
 /// ```rust
 ///
 /// ```
-
 /// A lightweight Snyk OpenAPI client.
-mod client;
-pub(crate) use client::*;
+pub mod client;
+pub use client::*;
 
 /// Rust structs that represent the models/schemas relevant to the endpoints the client supports from
 /// the Snyk OpenAPI specification.
-pub(crate) use models;
+pub mod models;
 
 #[cfg(test)]
 mod tests {
-    use crate::services::snyk::client::Client;
+    use crate::services::snyk::client::client::Client;
     use crate::Error;
 
     #[async_std::test]

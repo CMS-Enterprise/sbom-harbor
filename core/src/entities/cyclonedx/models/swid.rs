@@ -22,7 +22,7 @@ pub struct Swid {
     #[serde(rename = "patch", skip_serializing_if = "Option::is_none")]
     pub patch: Option<bool>,
     #[serde(rename = "text", skip_serializing_if = "Option::is_none")]
-    pub text: Option<Box<crate::models::cyclonedx::Attachment>>,
+    pub text: Option<Box<crate::entities::cyclonedx::models::Attachment>>,
     /// The URL to the SWID file.
     #[serde(rename = "url", skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
@@ -42,5 +42,3 @@ impl Swid {
         }
     }
 }
-
-

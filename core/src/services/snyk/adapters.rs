@@ -1,12 +1,18 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
-use crate::clients::snyk::models::{
+use crate::entities::cyclonedx::Bom;
+use crate::entities::packages::Unsupported;
+use crate::entities::sboms::{CdxFormat, SbomSource, Spec};
+use crate::entities::xrefs::{Xref, XrefKind};
+use crate::services::snyk::client::models::{
     CommonIssueModel, ListOrgProjects200ResponseDataInner, OrgV1, ProjectStatus, Severity,
 };
-use crate::entities::cyclonedx::{Bom, Severity};
-use crate::entities::packages::{PackageXRef, SnykXRef, Unsupported};
-use crate::models::cyclonedx::Bom;
-use crate::services::cyclonedx::models::Bom;
+use crate::services::snyk::{SnykRef, SNYK_DISCRIMINATOR};
+
+use platform::mongodb::{mongo_doc, MongoDocument};
+
+mongo_doc!(Project);
 
 /// Adapter over a native Snyk Group.
 pub(in crate::services::snyk) struct Group {
@@ -15,7 +21,7 @@ pub(in crate::services::snyk) struct Group {
 }
 
 impl Group {
-    pub fn new(inner: crate::clients::snyk::models::Group) -> Self {
+    pub fn new(inner: crate::services::snyk::client::models::Group) -> Self {
         let id = inner.id.clone().unwrap_or("group id not set".to_string());
         let name = inner
             .name
@@ -40,6 +46,7 @@ impl Organization {
             .clone()
             .unwrap_or("org id not set".to_string())
             .clone();
+
         let name = inner
             .name
             .clone()
@@ -47,12 +54,21 @@ impl Organization {
             .clone();
         Self { id, name, inner }
     }
+
+    pub fn group(&self) -> Group {
+        Group::new(self.inner.group.clone().unwrap_or_default())
+    }
 }
 
 /// Adapter over a native Snyk Project.
+#[serde(rename_all = "camelCase")]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub(in crate::services::snyk) struct Project {
     pub id: String,
-    pub name: String,
+    pub project_id: String,
+    pub project_name: String,
+    pub group_id: String,
+    pub group_name: String,
     pub org_id: String,
     pub org_name: String,
     pub package_manager: String,
@@ -68,12 +84,15 @@ pub(in crate::services::snyk) struct Project {
 
 impl Project {
     pub fn new(
+        group_id: String,
+        group_name: String,
         org_id: String,
         org_name: String,
         inner: ListOrgProjects200ResponseDataInner,
     ) -> Self {
-        let id = inner.id.clone().to_string();
-        let mut name = "project name not set".to_string();
+        let id = "".to_string();
+        let project_id = inner.id.clone().to_string();
+        let mut project_name = "project name not set".to_string();
         let mut target_file = "".to_string();
         let mut target_reference = "".to_string();
         let mut status = ProjectStatus::default();
@@ -82,7 +101,7 @@ impl Project {
         match inner.clone().attributes {
             None => {}
             Some(attrs) => {
-                name = attrs.name.clone();
+                project_name = attrs.name.clone();
                 target_file = attrs.target_file.clone();
                 target_reference = attrs.target_reference.clone();
                 status = attrs.status.clone();
@@ -92,7 +111,10 @@ impl Project {
 
         Self {
             id,
-            name,
+            project_id,
+            project_name,
+            group_id,
+            group_name,
             org_id,
             org_name,
             target_file,
@@ -106,22 +128,25 @@ impl Project {
     pub fn to_unsupported(&self) -> Unsupported {
         Unsupported {
             id: "".to_string(),
-            name: self.name.clone(),
-            package_manager: self.package_manager.clone(),
-            snyk_refs: vec![self.to_snyk_xref()],
+            spec: Some(Spec::Cdx(CdxFormat::Json)),
+            cdx: None,
+            package_manager: Some(self.package_manager.clone()),
+            source: SbomSource::Harbor,
+            xrefs: Some(HashMap::from([(
+                XrefKind::External(SNYK_DISCRIMINATOR.to_string()),
+                HashMap::from(self.to_snyk_ref()),
+            )])),
         }
     }
 
-    pub fn to_snyk_xref(&self) -> SnykXRef {
-        SnykXRef {
-            id: "".to_string(),
-            active: self.status == ProjectStatus::Active,
+    pub fn to_snyk_ref(&self) -> SnykRef {
+        SnykRef {
             org_id: self.org_id.clone(),
             org_name: self.org_name.clone(),
-            group_id: org.group().id,
-            group_name: org.group().name,
-            project_id: self.id.clone(),
-            project_name: self.name.clone(),
+            group_id: self.group_id.clone(),
+            group_name: self.group_name.clone(),
+            project_id: self.project_id.clone(),
+            project_name: self.project_name.clone(),
         }
     }
 }

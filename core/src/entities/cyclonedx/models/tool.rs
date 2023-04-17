@@ -17,10 +17,10 @@ pub struct Tool {
     pub version: Option<String>,
     /// The hashes of the tool (if applicable).
     #[serde(rename = "hashes", skip_serializing_if = "Option::is_none")]
-    pub hashes: Option<Vec<crate::models::cyclonedx::Hash>>,
+    pub hashes: Option<Vec<crate::entities::cyclonedx::models::Hash>>,
     /// External references provide a way to document systems, sites, and information that may be relevant but which are not included with the BOM.
     #[serde(rename = "externalReferences", skip_serializing_if = "Option::is_none")]
-    pub external_references: Option<Vec<crate::models::cyclonedx::ExternalReference>>,
+    pub external_references: Option<Vec<crate::entities::cyclonedx::models::ExternalReference>>,
 }
 
 impl Tool {
@@ -35,5 +35,3 @@ impl Tool {
         }
     }
 }
-
-

@@ -14,7 +14,7 @@ pub struct Component {
     #[serde(rename = "bom-ref", skip_serializing_if = "Option::is_none")]
     pub bom_ref: Option<String>,
     #[serde(rename = "supplier", skip_serializing_if = "Option::is_none")]
-    pub supplier: Option<Box<crate::models::cyclonedx::OrganizationalEntity>>,
+    pub supplier: Option<Box<crate::entities::cyclonedx::models::OrganizationalEntity>>,
     /// The person(s) or organization(s) that authored the component
     #[serde(rename = "author", skip_serializing_if = "Option::is_none")]
     pub author: Option<String>,
@@ -37,9 +37,9 @@ pub struct Component {
     #[serde(rename = "scope", skip_serializing_if = "Option::is_none")]
     pub scope: Option<Scope>,
     #[serde(rename = "hashes", skip_serializing_if = "Option::is_none")]
-    pub hashes: Option<Vec<crate::models::cyclonedx::Hash>>,
+    pub hashes: Option<Vec<crate::entities::cyclonedx::models::Hash>>,
     #[serde(rename = "licenses", skip_serializing_if = "Option::is_none")]
-    pub licenses: Option<Vec<crate::models::cyclonedx::LicenseChoice>>,
+    pub licenses: Option<Vec<crate::entities::cyclonedx::models::LicenseChoice>>,
     /// A copyright notice informing users of the underlying claims to copyright ownership in a published work.
     #[serde(rename = "copyright", skip_serializing_if = "Option::is_none")]
     pub copyright: Option<String>,
@@ -50,25 +50,25 @@ pub struct Component {
     #[serde(rename = "purl", skip_serializing_if = "Option::is_none")]
     pub purl: Option<String>,
     #[serde(rename = "swid", skip_serializing_if = "Option::is_none")]
-    pub swid: Option<Box<crate::models::cyclonedx::Swid>>,
+    pub swid: Option<Box<crate::entities::cyclonedx::models::Swid>>,
     /// [Deprecated] - DO NOT USE. This will be removed in a future version. Use the pedigree element instead to supply information on exactly how the component was modified. A boolean value indicating if the component has been modified from the original. A value of true indicates the component is a derivative of the original. A value of false indicates the component has not been modified from the original.
     #[serde(rename = "modified", skip_serializing_if = "Option::is_none")]
     pub modified: Option<bool>,
     #[serde(rename = "pedigree", skip_serializing_if = "Option::is_none")]
-    pub pedigree: Option<Box<crate::models::cyclonedx::ComponentPedigree>>,
+    pub pedigree: Option<Box<crate::entities::cyclonedx::models::ComponentPedigree>>,
     /// External references provide a way to document systems, sites, and information that may be relevant but which are not included with the BOM.
     #[serde(rename = "externalReferences", skip_serializing_if = "Option::is_none")]
-    pub external_references: Option<Vec<crate::models::cyclonedx::ExternalReference>>,
+    pub external_references: Option<Vec<crate::entities::cyclonedx::models::ExternalReference>>,
     /// A list of software and hardware components included in the parent component. This is not a dependency tree. It provides a way to specify a hierarchical representation of component assemblies, similar to system &#8594; subsystem &#8594; parts assembly in physical supply chains.
     #[serde(rename = "components", skip_serializing_if = "Option::is_none")]
-    pub components: Option<Vec<crate::models::cyclonedx::Component>>,
+    pub components: Option<Vec<crate::entities::cyclonedx::models::Component>>,
     #[serde(rename = "evidence", skip_serializing_if = "Option::is_none")]
-    pub evidence: Option<Box<crate::models::cyclonedx::ComponentEvidence>>,
+    pub evidence: Option<Box<crate::entities::cyclonedx::models::ComponentEvidence>>,
     #[serde(rename = "releaseNotes", skip_serializing_if = "Option::is_none")]
-    pub release_notes: Option<Box<crate::models::cyclonedx::ReleaseNotes>>,
+    pub release_notes: Option<Box<crate::entities::cyclonedx::models::ReleaseNotes>>,
     /// Provides the ability to document properties in a name-value store. This provides flexibility to include data not officially supported in the standard without having to use additional namespaces or create extensions. Unlike key-value stores, properties support duplicate names, each potentially having different values. Property names of interest to the general public are encouraged to be registered in the [CycloneDX Property Taxonomy](https://github.com/CycloneDX/cyclonedx-property-taxonomy). Formal registration is OPTIONAL.
     #[serde(rename = "properties", skip_serializing_if = "Option::is_none")]
-    pub properties: Option<Vec<crate::models::cyclonedx::Property>>,
+    pub properties: Option<Vec<crate::entities::cyclonedx::models::Property>>,
     #[serde(rename = "signature", skip_serializing_if = "Option::is_none")]
     pub signature: Option<serde_json::Value>,
 }
@@ -147,4 +147,3 @@ impl Default for Scope {
         Self::Required
     }
 }
-

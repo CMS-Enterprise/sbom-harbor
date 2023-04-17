@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct Compositions {
     #[serde(rename = "aggregate")]
-    pub aggregate: crate::models::cyclonedx::AggregateType,
+    pub aggregate: crate::entities::cyclonedx::models::AggregateType,
     /// The bom-ref identifiers of the components or services being described. Assemblies refer to nested relationships whereby a constituent part may include other constituent parts. References do not cascade to child parts. References are explicit for the specified constituent part only.
     #[serde(rename = "assemblies", skip_serializing_if = "Option::is_none")]
     pub assemblies: Option<Vec<String>>,
@@ -18,7 +18,7 @@ pub struct Compositions {
 }
 
 impl Compositions {
-    pub fn new(aggregate: crate::models::cyclonedx::AggregateType) -> Compositions {
+    pub fn new(aggregate: crate::entities::cyclonedx::models::AggregateType) -> Compositions {
         Compositions {
             aggregate,
             assemblies: None,
@@ -27,5 +27,3 @@ impl Compositions {
         }
     }
 }
-
-

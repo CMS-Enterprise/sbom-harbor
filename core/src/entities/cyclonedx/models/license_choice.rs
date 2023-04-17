@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct LicenseChoice {
     #[serde(rename = "license", skip_serializing_if = "Option::is_none")]
-    pub license: Option<Box<crate::models::cyclonedx::License>>,
+    pub license: Option<Box<crate::entities::cyclonedx::models::License>>,
     #[serde(rename = "expression", skip_serializing_if = "Option::is_none")]
     pub expression: Option<String>,
 }
@@ -19,5 +19,3 @@ impl LicenseChoice {
         }
     }
 }
-
-

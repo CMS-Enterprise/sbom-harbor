@@ -1,15 +1,17 @@
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
+use std::collections::HashMap;
 use tracing::debug;
 use urlencoding::decode;
 
 use crate::entities::cyclonedx::Component;
 use crate::entities::packages::finding::Finding;
-use crate::entities::packages::xrefs::SnykXRef;
-use crate::entities::packages::SnykXRef;
+use crate::entities::xrefs::{Xref, XrefKind};
 use crate::Error;
 
 /// Purl is a derived type that facilitates analysis of a Package across the entire enterprise.
 #[serde(rename_all = "camelCase")]
+#[skip_serializing_none]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Purl {
     /// Unique identifier for the Package URL.
@@ -22,35 +24,47 @@ pub struct Purl {
     pub name: String,
 
     /// The package version.
-    #[skip_serializing_none]
     pub version: Option<String>,
 
     /// Source of the Purl.
-    pub source: SourceKind,
+    pub component_kind: ComponentKind,
 
     /// The list of vulnerability findings associated with this Purl.
-    #[skip_serializing_none]
     pub findings: Option<Vec<Finding>>,
 
-    /// A map of projects that are associated with the Purl.
-    #[skip_serializing_none]
-    pub snyk_refs: Option<Vec<SnykXRef>>,
+    /// A map of cross-references to internal and external systems.
+    pub xrefs: Option<HashMap<XrefKind, Xref>>,
+}
+
+impl Default for Purl {
+    fn default() -> Self {
+        Self {
+            id: "".to_string(),
+            purl: "".to_string(),
+            name: "".to_string(),
+            version: None,
+            component_kind: ComponentKind::Package,
+            findings: None,
+            xrefs: None,
+        }
+    }
 }
 
 impl Purl {
     pub(crate) fn decode(purl: &str) -> Result<String, Error> {
-        let result = decode(purl)?;
+        let result = decode(purl).map_err(|e| Error::Entity(format!("purl::decode::{}", e)))?;
         Ok(result.to_string())
     }
 
-    pub(crate) fn from_snyk(
+    pub(crate) fn from_component(
         component: &Component,
-        source: SourceKind,
-        snyk_ref: SnykXRef,
-    ) -> Result<Option<Self>, Error> {
+        component_kind: ComponentKind,
+        xref_kind: XrefKind,
+        xrefs: Option<Xref>,
+    ) -> Result<Self, Error> {
         let purl = match &component.purl {
             None => {
-                return Ok(None);
+                return Err(Error::Entity("component_purl_none".to_string()));
             }
             Some(p) => p,
         };
@@ -62,79 +76,54 @@ impl Purl {
             }
         };
 
-        Ok(Some(Self {
+        let xrefs = match xrefs {
+            None => None,
+            Some(xrefs) => Some(HashMap::from([(xref_kind, xrefs)])),
+        };
+
+        Ok(Self {
             id: "".to_string(),
             purl,
             name: component.name.clone(),
             version: component.version.clone(),
-            source,
+            component_kind,
             findings: None,
-            snyk_refs: Some(vec![snyk_ref]),
-        }))
+            xrefs,
+        })
     }
 
     pub fn finding(&mut self, finding: Finding) {
-        match &self.findings {
-            None => self.findings = Some(vec![finding]),
-            Some(existing) => {
-                let exists = existing.iter().any(|f| f.eq(&finding));
-
-                if !exists {
-                    self.findings.push(finding);
-                }
+        let mut existing = match self.findings.clone() {
+            None => {
+                self.findings = Some(vec![finding]);
+                return;
             }
-        }
-    }
+            Some(existing) => existing,
+        };
 
-    pub fn snyk_ref(&mut self, snyk_ref: SnykXRef) {
-        match &self.snyk_refs {
-            None => self.snyk_refs = Some(vec![snyk_ref]),
-            Some(existing) => {
-                let exists = existing.iter().any(|r| r.eq(&snyk_ref));
-
-                if !exists {
-                    self.snyk_refs.push(snyk_ref);
-                }
-            }
+        let exists = existing.iter().any(|f| f.eq(&finding));
+        if !exists {
+            existing.push(finding);
+            self.findings = Some(existing);
         }
     }
 }
 
-/// Indicates the type from which the Purl was extracted.
+/// Discriminator that indicates whether the Purl was extracted from a [Package] or a [Dependency].
 #[serde(rename_all = "camelCase")]
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum SourceKind {
-    /// The Purl was extracted from the Component Metadata of a Package.
+pub enum ComponentKind {
+    /// The Purl was extracted from a Package.
     Package,
-    /// The Purl was extracted from a Dependency of a Package.
+    /// The Purl was extracted from a Dependency.
     Dependency,
 }
 
-impl ToString for SourceKind {
+impl ToString for ComponentKind {
     fn to_string(&self) -> String {
         match self {
-            SourceKind::Package => "package".to_string(),
-            SourceKind::Dependency => "dependency".to_string(),
-        }
-    }
-}
-
-impl Purl {
-    pub(crate) fn merge_snyk_refs(&mut self, refs: Vec<SnykXRef>) {
-        let existing_refs = match &self.snyk_refs {
-            None => {
-                self.snyk_refs = Some(refs);
-                return;
-            }
-            Some(r) => r,
-        };
-
-        for r in refs {
-            if existing_refs.iter().any(|existing| r.eq(&existing)) {
-                continue;
-            }
-
-            self.snyk_refs.push(r);
+            ComponentKind::Package => "package".to_string(),
+            ComponentKind::Dependency => "dependency".to_string(),
         }
     }
 }

@@ -8,19 +8,19 @@ use serde::{Deserialize, Serialize};
 pub struct ComponentPedigree {
     /// Describes zero or more components in which a component is derived from. This is commonly used to describe forks from existing projects where the forked version contains a ancestor node containing the original component it was forked from. For example, Component A is the original component. Component B is the component being used and documented in the BOM. However, Component B contains a pedigree node with a single ancestor documenting Component A - the original component from which Component B is derived from.
     #[serde(rename = "ancestors", skip_serializing_if = "Option::is_none")]
-    pub ancestors: Option<Vec<crate::models::cyclonedx::Component>>,
+    pub ancestors: Option<Vec<crate::entities::cyclonedx::models::Component>>,
     /// Descendants are the exact opposite of ancestors. This provides a way to document all forks (and their forks) of an original or root component.
     #[serde(rename = "descendants", skip_serializing_if = "Option::is_none")]
-    pub descendants: Option<Vec<crate::models::cyclonedx::Component>>,
+    pub descendants: Option<Vec<crate::entities::cyclonedx::models::Component>>,
     /// Variants describe relations where the relationship between the components are not known. For example, if Component A contains nearly identical code to Component B. They are both related, but it is unclear if one is derived from the other, or if they share a common ancestor.
     #[serde(rename = "variants", skip_serializing_if = "Option::is_none")]
-    pub variants: Option<Vec<crate::models::cyclonedx::Component>>,
+    pub variants: Option<Vec<crate::entities::cyclonedx::models::Component>>,
     /// A list of zero or more commits which provide a trail describing how the component deviates from an ancestor, descendant, or variant.
     #[serde(rename = "commits", skip_serializing_if = "Option::is_none")]
-    pub commits: Option<Vec<crate::models::cyclonedx::Commit>>,
+    pub commits: Option<Vec<crate::entities::cyclonedx::models::Commit>>,
     /// >A list of zero or more patches describing how the component deviates from an ancestor, descendant, or variant. Patches may be complimentary to commits or may be used in place of commits.
     #[serde(rename = "patches", skip_serializing_if = "Option::is_none")]
-    pub patches: Option<Vec<crate::models::cyclonedx::Patch>>,
+    pub patches: Option<Vec<crate::entities::cyclonedx::models::Patch>>,
     /// Notes, observations, and other non-structured commentary describing the components pedigree.
     #[serde(rename = "notes", skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
@@ -39,5 +39,3 @@ impl ComponentPedigree {
         }
     }
 }
-
-

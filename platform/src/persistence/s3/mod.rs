@@ -1,3 +1,4 @@
+use crate::config::sdk_config_from_env;
 use aws_sdk_s3::types::ByteStream;
 use aws_sdk_s3::Client;
 use aws_types::SdkConfig;
@@ -16,16 +17,23 @@ impl Store {
         Self { config }
     }
 
+    pub async fn new_from_env() -> Result<Self, Error> {
+        let config = sdk_config_from_env()
+            .await
+            .map_err(|e| Error::Config(e.to_string()))?;
+        Ok(Self { config })
+    }
+
     #[instrument]
     pub async fn insert(
         &self,
         bucket_name: String,
         key: String,
-        body: &'static [u8],
+        body: Vec<u8>,
         metadata: Option<HashMap<String, String>>,
     ) -> Result<String, Error> {
         let client = Client::new(&self.config);
-        let body = Some(ByteStream::from_static(body));
+        let body = Some(ByteStream::from(body));
 
         let result = client
             .put_object()

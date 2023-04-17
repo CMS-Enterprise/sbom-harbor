@@ -7,9 +7,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct ComponentEvidence {
     #[serde(rename = "licenses", skip_serializing_if = "Option::is_none")]
-    pub licenses: Option<Vec<crate::models::cyclonedx::LicenseChoice>>,
+    pub licenses: Option<Vec<crate::entities::cyclonedx::models::LicenseChoice>>,
     #[serde(rename = "copyright", skip_serializing_if = "Option::is_none")]
-    pub copyright: Option<Vec<crate::models::cyclonedx::Copyright>>,
+    pub copyright: Option<Vec<crate::entities::cyclonedx::models::Copyright>>,
 }
 
 impl ComponentEvidence {
@@ -21,5 +21,3 @@ impl ComponentEvidence {
         }
     }
 }
-
-

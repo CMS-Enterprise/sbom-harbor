@@ -11,13 +11,22 @@ pub use dependency::*;
 pub use finding::*;
 pub use package::*;
 pub use purl::*;
-pub use registry::*;
+pub use unsupported::*;
+pub use xrefs::*;
 
+use crate::entities::xrefs::{Xref, XrefKind, Xrefs};
+use crate::xref;
 use platform::mongodb::{mongo_doc, MongoDocument};
+use std::collections::HashMap;
 
 mongo_doc!(Dependency);
 mongo_doc!(Finding);
 mongo_doc!(Package);
 mongo_doc!(Purl);
 mongo_doc!(Unsupported);
-mongo_doc!(SnykXRef);
+
+xref!(Dependency);
+xref!(Finding);
+xref!(Package);
+xref!(Purl);
+xref!(Unsupported);

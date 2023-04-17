@@ -1,47 +1,39 @@
+use crate::entities::xrefs::Xref;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[allow(missing_docs)]
 #[serde(rename_all = "camelCase")]
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct FismaXRef {
-    pub fisma_id: String,
-}
-
-#[allow(missing_docs)]
-#[serde(rename_all = "camelCase")]
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct CodebaseXRef {
+pub struct CodebaseRef {
     pub team_id: String,
     pub project_id: String,
     pub codebase_id: String,
 }
 
+impl From<CodebaseRef> for Xref {
+    fn from(codebase_ref: CodebaseRef) -> Self {
+        HashMap::from([
+            ("team_id".to_string(), codebase_ref.team_id.clone()),
+            ("project_id".to_string(), codebase_ref.project_id.clone()),
+            ("codebase_id".to_string(), codebase_ref.codebase_id.clone()),
+        ])
+    }
+}
+
 #[allow(missing_docs)]
 #[serde(rename_all = "camelCase")]
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ProductXRef {
+pub struct ProductRef {
     pub vendor_id: String,
     pub product_id: String,
 }
 
-#[allow(missing_docs)]
-#[serde(rename_all = "camelCase")]
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct SnykXRef {
-    pub id: String,
-    pub active: bool,
-    pub org_id: String,
-    pub org_name: String,
-    pub group_id: String,
-    pub group_name: String,
-    pub project_id: String,
-    pub project_name: String,
-}
-
-impl SnykXRef {
-    pub fn eq(&self, xref: &SnykXRef) -> bool {
-        self.org_id == xref.org_id
-            && self.group_id == xref.group_id
-            && self.project_id == xref.project_id
+impl From<ProductRef> for Xref {
+    fn from(product_ref: ProductRef) -> Self {
+        HashMap::from([
+            ("vendor_id".to_string(), product_ref.vendor_id.clone()),
+            ("product_id".to_string(), product_ref.product_id.clone()),
+        ])
     }
 }
