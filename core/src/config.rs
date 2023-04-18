@@ -127,3 +127,16 @@ pub async fn get_snyk_access_token() -> String {
         Err(err) => panic!("Failed to retrieve token for secret: {}, with error: {}", SNYK_TOKEN_KEY, err), //Stop everything if we dont get an access key
     };
 }
+
+/// Function to get the v1 password from the environment
+///
+pub fn get_gh_token() -> Result<String, Error> {
+    match env::var(GH_FT_KEY) {
+        Ok(value) => Ok(value),
+        Err(_err) => return Err(
+            Error::Config(
+                String::from("Missing GitHub token")
+            )
+        )
+    }
+}

@@ -121,17 +121,24 @@ impl GithubProvider {
 
     async fn execute(args: &Option<GitHubArgs>) -> Result<(), Error> {
 
-        let gh_args = match args {
-            Some(gh_args) => gh_args,
+        let default_org = String::from("cmsgov");
 
-            // TODO Do we have a graceful way of telling the user the
-            //  app isn't able to execute without an org?
-            None => panic!("No idea what to do here, maybe just die..?")
+        print!("Github args: {:#?}", args);
+
+        let gh_args = match args {
+            Some(gh_args) => gh_args.clone(),
+            None => {
+                GitHubArgs {
+                    org: Some(
+                        default_org.clone()
+                    )
+                }
+            }
         };
 
         let org = match &gh_args.org {
             Some(org) => org,
-            None => panic!("No org!")
+            None => &default_org
         }.to_string();
 
         let service = match GitHubSbomProvider::new(org) {

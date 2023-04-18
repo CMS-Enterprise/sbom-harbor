@@ -19,11 +19,19 @@ pub enum Error {
     Configuration(String),
 
     /// This is raised when we are unable to upload to v1
-    #[error("error running pilot: {0}")]
+    #[error("error uploading to v1: {0}")]
     SbomUpload(String),
 
     /// This error is raised when there is a problem communicating
     /// with GitHub over HTTP.
-    #[error("error running pilot: {0}")]
+    #[error("error requesting from Github: {0}")]
     GitHubRequest(String),
+}
+
+impl From<platform::Error> for Error {
+    fn from(err: platform::Error) -> Self {
+        Error::MongoDb(
+            err.to_string()
+        )
+    }
 }

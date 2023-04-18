@@ -12,11 +12,7 @@ use platform::hyper::{
     Error as HyperError,
     get
 };
-use platform::mongodb::{
-    Context as MongoContext,
-    Service as MongoService,
-    Store as MongoStore
-};
+use platform::mongodb::{Context as MongoContext, Service as MongoService, Store as MongoStore, Store};
 
 use crate::clients::github::{
     clone_path,
@@ -34,9 +30,7 @@ use crate::config::*;
 use crate::services::providers::github::counter::Counter;
 use crate::services::providers::github::env::GitHubProviderEnvironmentConfig;
 use crate::services::providers::github::error::Error;
-use crate::services::providers::github::mongo::{
-    GitHubProviderMongoService,
-};
+use crate::services::providers::github::mongo::{get_default_context, GitHubProviderMongoService};
 use crate::services::providers::github::mongo::GitHubSbomProviderEntry;
 use crate::services::providers::SbomProvider;
 
@@ -102,8 +96,11 @@ impl SbomProvider<(), Error> for GitHubSbomProvider {
             // TODO if this is empty, we have nothing to do.
             let url = repo.html_url.clone().unwrap();
 
-            if !should_skip(repo, name, url, &mut counter) {
-                return process_repo(repo, &harbor_config, &mut counter).await
+            if !should_skip(repo, name, url.clone(), &mut counter) {
+                match process_repo(repo, &harbor_config, &mut counter).await {
+                    Ok(_) => println!("PROCESSING> One Repo Down. {} is ok.", url),
+                    Err(err) => println!("PROCESSING> Repo processing failure: {}", err)
+                }
             }
         }
 
@@ -120,12 +117,18 @@ async fn get_repos(org: String) -> Result<Vec<Repo>, Error> {
         Err(err) => panic!("Unable to get pages of repos from GitHub: {:#?}", err)
     };
 
-    let gh_fetch_token = match from_env::<String>("GH_FETCH_TOKEN") {
+    let token = match get_gh_token() {
         Ok(value) => value,
-        Err(e) => panic!("Missing GitHub Token. export GH_FETCH_TOKEN=<token>, {}", e)
+        Err(err) => return Err(
+            Error::Configuration(
+                String::from(
+                    format!("GitHub token not in environment {}", err)
+                )
+            )
+        )
     };
 
-    let token: String = String::from("Bearer ") + &gh_fetch_token;
+    let token: String = String::from("Bearer ") + &token;
     let mut repo_vec: Vec<Repo> = Vec::new();
 
     for (page, per_page) in pages.iter_mut().enumerate() {
@@ -274,7 +277,7 @@ async fn send_to_v1(
         Ok(response) => Ok(response),
         Err(err) => return Err(
             Error::SbomUpload(
-                String::from(format!("Pilot Error: {}", err))
+                String::from(format!("Error uploading SBOM: {}", err))
             )
         )
     }
@@ -319,9 +322,6 @@ async fn create_data_structures(
     mongo_service: GitHubProviderMongoService,
 ) -> Result<GitHubSbomProviderEntry, Error> {
 
-    // TODO This will create entries without the ability to rollback.
-    //  Probably don't care because it's only v1.
-
     println!("PROCESSING> No Document found document in mongo. Creating entities in harbor");
 
     // This arm executes when nothing is found in the database associated
@@ -354,14 +354,7 @@ async fn process_repo(
     counter: &mut Counter
 ) -> Result<(), Error> {
 
-    let ctx = MongoContext {
-        host: "localhost".to_string(),
-        username: "root".to_string(),
-        password: "harbor".to_string(),
-        db_name: "harbor".to_string(),
-        key_name: "last_hash".to_string(),
-        port: 0,
-    };
+    let ctx = get_default_context();
 
     let mongo_service = GitHubProviderMongoService::new(
         match MongoStore::new(&ctx).await {
@@ -388,18 +381,24 @@ async fn process_repo(
     };
 
     let mut document = match doc_option {
-        Some(document) => document,
-        None => match create_data_structures(
-            repo,
-            harbor_config,
-            url.clone(),
-            mongo_service.clone(),
-        ).await {
-            Ok(document) => document,
-            Err(err) => panic!(
-                "PROCESSING> Error creating data structures in Mongo or Harbor: {}",
-                err
-            )
+        Some(document) => {
+            println!("PROCESSING> Got a Document From Mongo!");
+            document
+        },
+        None => {
+            println!("PROCESSING> No document exists in mongo with the id: {}", url);
+            match create_data_structures(
+                repo,
+                harbor_config,
+                url.clone(),
+                mongo_service.clone(),
+            ).await {
+                Ok(document) => document,
+                Err(err) => panic!(
+                    "PROCESSING> Error creating data structures in Mongo or Harbor: {}",
+                    err
+                )
+            }
         }
     };
 
@@ -407,20 +406,19 @@ async fn process_repo(
 
     return if last_hash.to_string() != document.last_hash {
 
-        println!("PROCESSING> Hashes are not equal, sending to pilot");
+        println!("PROCESSING> Hashes are not equal, sending to v1");
 
         // Use the document to construct a request to Harbor v1
         match send_to_v1(&document, &harbor_config).await {
 
             // Upload is OK, update Mongo
-            Ok(upload_resp) => {
+            Ok(_) => {
                 document.last_hash = last_hash.to_string();
                 match mongo_service.update(&document).await {
 
                     // Mongo update went OK.
                     Ok(()) => {
                         counter.processed += 1;
-                        println!("PROCESSING> One SBOM Down! {:#?}", upload_resp);
                         Ok(())
                     },
 
@@ -445,7 +443,7 @@ async fn process_repo(
     // The last commit hash on the master/main GitHub matched the one in Mongo
     else {
         counter.hash_matched += 1;
-        println!("PROCESSING> Hashes are equal, skipping pilot");
+        println!("PROCESSING> Hashes are equal, skipping sending to v1");
         Ok(())
     }
 }
@@ -464,3 +462,31 @@ async fn test_get_github_data() {
         Err(_) => panic!("Error getting github data in test")
     }
 }
+
+#[tokio::test]
+async fn test_create_entry_in_store() {
+
+    let entities: HashMap<String, String> = HashMap::from(
+        [
+            (TEAM_ID_KEY.to_string(), "team_id".to_string()),
+            (PROJECT_ID_KEY.to_string(), "project_id".to_string()),
+            (CODEBASE_ID_KEY.to_string(), "codebase_id".to_string()),
+        ]
+    );
+
+    let store = match Store::new(&get_default_context()).await {
+        Ok(store) => store,
+        Err(err) => panic!("Error in test: {}", err)
+    };
+
+    let mongo_service = GitHubProviderMongoService::new(store);
+
+    let url: String = String::from("http://test.repos");
+    let last_hash: String = String::from("abc123def456");
+
+    match create_document_in_db(entities, mongo_service, url, last_hash).await {
+        Ok(_) => println!("FINISHED!"),
+        Err(_) => panic!("Error getting github data in test")
+    }
+}
+

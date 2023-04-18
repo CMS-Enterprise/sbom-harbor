@@ -36,7 +36,7 @@ impl SnykProvider {
     //Origins that can have associated SBOM data in Snyk
     const VALID_ORIGINS: &'static [&'static str] = &["cli", "github", "github-enterprise", "gitlab"];
     //Types that can have associated SBOM data in Snyk
-    const VALID_TYPES: &'static [&'static str] = &["npm", "nuget", "gradle", "hex", "pip", "poetry", "rubygems", 
+    const VALID_TYPES: &'static [&'static str] = &["npm", "nuget", "gradle", "hex", "pip", "poetry", "rubygems",
     "maven", "yarn", "yarn-workspace", "composer", "gomodules", "govendor", "golang", "golangdep", "gradle", "paket", "cocoapods", "cpp", "sbt"];
     const AWS_SECRET_NAME: &'static str = "dev-sbom-harbor-snyk-token-use1";
 
@@ -141,8 +141,8 @@ pub enum Error {
 }
 
 
-// #[tokio::test]
-// async fn test_get_snyk_data() {
-//     let provider = SnykProvider{};
-//     provider.provide_sboms().await;
-// }
+#[tokio::test]
+async fn test_get_snyk_data() {
+    let provider = SnykProvider{};
+    provider.provide_sboms().await;
+}

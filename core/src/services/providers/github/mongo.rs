@@ -1,12 +1,26 @@
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
+use async_trait::async_trait;
 
 use serde::{
     Deserialize,
     Serialize
 };
+use tracing::instrument;
+use uuid::Uuid;
 
-use platform::mongodb::{Service as MongoService, MongoDocument, Store as MongoStore, mongo_doc, Context};
+use platform::errors::{
+    Error as PlatformError
+};
+
+use platform::mongodb::{
+    Service as MongoService,
+    MongoDocument,
+    Store as MongoStore,
+    mongo_doc,
+    Context
+};
+use crate::services::providers::github::error::Error;
 
 #[derive(Clone)]
 pub struct GitHubProviderMongoService {
@@ -21,17 +35,47 @@ impl GitHubProviderMongoService {
     }
 }
 
+#[async_trait]
 impl MongoService<GitHubSbomProviderEntry>
     for GitHubProviderMongoService {
 
     fn store(&self) -> Arc<MongoStore> {
         (&self.store).clone()
     }
+
+    /// Insert a document into a [Collection].
+    async fn insert<'a>(
+        &self, doc: & mut GitHubSbomProviderEntry
+    ) -> Result<(), PlatformError> {
+
+        let id = doc.id();
+        if id.is_empty() {
+            doc.set_id(
+                Uuid::new_v4().to_string()
+            );
+        }
+
+        return match self.store().insert::<GitHubSbomProviderEntry>(doc).await {
+            Ok(_rsp) => Ok(()),
+            Err(err) => Err(err)
+        }
+    }
 }
 
 impl Debug for GitHubProviderMongoService {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "GitHubProvider")
+    }
+}
+
+pub fn get_default_context() -> Context {
+    Context {
+        host: "localhost".to_string(),
+        db_name: "harbor".to_string(),
+        key_name: "id".to_string(),
+        username: "root".to_string(),
+        password: "harbor".to_string(),
+        port: 27017,
     }
 }
 
@@ -60,14 +104,7 @@ mongo_doc!(GitHubSbomProviderEntry);
 #[tokio::test]
 async fn test_add_document() {
 
-    let ctx = Context {
-        host: "localhost".to_string(),
-        port: 27017,
-        db_name: "harbor".to_string(),
-        key_name: "id".to_string(),
-        username: "root".to_string(),
-        password: "harbor".to_string(),
-    };
+    let ctx = get_default_context();
 
     let svc = GitHubProviderMongoService {
         store: Arc::new(
