@@ -2,7 +2,7 @@ use crate::entities::cyclonedx::Bom;
 use crate::entities::packages::{
     ComponentKind, Dependency, Package, PackageCdx, Purl, Unsupported,
 };
-use crate::entities::sboms::{CdxFormat, Sbom, SbomSource, Source, Spec};
+use crate::entities::sboms::{CdxFormat, Sbom, SbomProviderKind, Source, Spec};
 use crate::entities::xrefs::{Xref, XrefKind, Xrefs};
 use crate::services::packages::PackageProvider;
 use crate::services::snyk::adapters::{Organization, Project};
@@ -119,7 +119,7 @@ impl ChangeSet {
     ) -> Result<Package, Error> {
         Package::from_bom(
             &bom,
-            SbomSource::Snyk {
+            SbomProviderKind::Snyk {
                 api_version: crate::services::snyk::client::API_VERSION.to_string(),
             },
             Some(Spec::Cdx(CdxFormat::Json)),
@@ -193,7 +193,7 @@ impl ChangeSet {
                 purl_key,
                 Dependency::from_component(
                     &component,
-                    SbomSource::Snyk {
+                    SbomProviderKind::Snyk {
                         api_version: API_VERSION.to_string(),
                     },
                     package_ref.clone(),
@@ -256,21 +256,16 @@ impl ChangeSet {
     /// Track an unsupported Package.
     pub(crate) fn unsupported(&mut self, unsupported: Unsupported) -> Result<(), Error> {
         // Validate the incoming unsupported and return error for metrics.
-        let purl = match unsupported.cdx.clone() {
+        let external_id = match unsupported.external_id.clone() {
             None => {
-                return Err(Error::Entity("missing_unsupported_component".to_string()));
+                return Err(Error::Entity("missing_unsupported_external_id".to_string()));
             }
-            Some(cdx) => match cdx.purl {
-                None => {
-                    return Err(Error::Entity("missing_unsupported_purl".to_string()));
-                }
-                Some(purl) => purl,
-            },
+            Some(external_id) => external_id,
         };
 
-        match self.unsupported.get_mut(purl.as_str()) {
+        match self.unsupported.get_mut(external_id.as_str()) {
             None => {
-                self.unsupported.insert(purl, unsupported.to_owned());
+                self.unsupported.insert(external_id, unsupported.to_owned());
             }
             Some(existing) => {
                 existing.xrefs(unsupported.xrefs);

@@ -1,5 +1,6 @@
 use crate::entities::cyclonedx::Issue;
 use crate::entities::xrefs::{Xref, XrefKind};
+use crate::services::snyk::IssueSnyk;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
@@ -13,24 +14,42 @@ pub struct Finding {
     /// Unique identifier for the Finding.
     pub id: String,
 
-    /// Indicates which enrichment source reported the vulnerability.
-    pub source: FindingSource,
+    /// Indicates which enrichment provider reported the vulnerability.
+    pub provider: FindingProviderKind,
 
     /// The Package URL for the finding.
     pub purl: Option<String>,
 
-    /// Encapsulates CycloneDx specific attributes.
+    /// Encapsulates CycloneDx specific model.
     pub cdx: Option<IssueCdx>,
+
+    /// Encapsulates Snyk specific model.
+    pub snyk_issue: Option<IssueSnyk>,
 
     /// A map of cross-references to internal and external systems.
     pub xrefs: Option<HashMap<XrefKind, Xref>>,
 }
 
 impl Finding {
+    pub(crate) fn from_snyk(
+        purl: String,
+        issue: IssueSnyk,
+        xrefs: Option<HashMap<XrefKind, Xref>>,
+    ) -> Self {
+        Self {
+            id: "".to_string(),
+            provider: FindingProviderKind::Snyk,
+            purl: Some(purl),
+            cdx: None,
+            snyk_issue: Some(issue),
+            xrefs,
+        }
+    }
+
     /// Compares the current finding with another to determine if they are functionally equal.
     /// Not an instance equality comparator.
     pub fn eq(&self, other: &Finding) -> bool {
-        self.purl.eq(&other.purl) && self.source == other.source && self.xrefs.eq(&other.xrefs)
+        self.purl.eq(&other.purl) && self.provider == other.provider && self.xrefs.eq(&other.xrefs)
     }
 }
 
@@ -39,7 +58,7 @@ impl Finding {
 /// use the Custom variant without having to hard fork.
 #[serde(rename_all = "camelCase")]
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub enum FindingSource {
+pub enum FindingProviderKind {
     DependencyTrack,
     IonChannel,
     Snyk,

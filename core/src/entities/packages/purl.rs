@@ -2,10 +2,9 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
 use tracing::debug;
-use urlencoding::decode;
 
 use crate::entities::cyclonedx::Component;
-use crate::entities::packages::finding::Finding;
+use crate::entities::sboms::Finding;
 use crate::entities::xrefs::{Xref, XrefKind};
 use crate::Error;
 
@@ -52,7 +51,8 @@ impl Default for Purl {
 
 impl Purl {
     pub(crate) fn decode(purl: &str) -> Result<String, Error> {
-        let result = decode(purl).map_err(|e| Error::Entity(format!("purl::decode::{}", e)))?;
+        let result = platform::encoding::url_decode(purl)
+            .map_err(|e| Error::Entity(format!("purl::decode::{}", e)))?;
         Ok(result.to_string())
     }
 

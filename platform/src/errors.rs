@@ -13,9 +13,14 @@ pub enum Error {
     /// Invalid configuration.
     #[error("invalid configuration: {0}")]
     Config(String),
+    #[error("error in cryptography provider: {0}")]
+    Cryptography(String),
     /// Error executing delete.
     #[error("error executing delete: {0}")]
     Delete(String),
+    /// Error in encoding provider.
+    #[error("error in encoding provider: {0}")]
+    Encoding(String),
     /// Error with entity specification.
     #[error("error with entity specification: {0}")]
     Entity(String),

@@ -1,12 +1,15 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use std::ops::Deref;
 use tracing::log::debug;
 
 use crate::entities::cyclonedx::Bom;
-use crate::entities::packages::Purl;
+use crate::entities::packages::{PackageCdx, Purl};
+use crate::entities::sboms::{SbomProviderKind, Scan};
 use crate::entities::xrefs::{Xref, XrefKind};
+use crate::services::snyk::SnykRef;
 use crate::Error;
 
 /// An SBOM is a snapshot inventory of the components that make up a piece of software at a moment in time.
@@ -20,30 +23,38 @@ pub struct Sbom {
     /// The Package URL for the package that the Sbom was generated from.
     pub purl: Option<String>,
 
-    /// The instance of the Sbom. Forward-only incrementing counter.
+    /// The instance of the [Sbom]. Forward-only incrementing counter.
     pub instance: u32,
 
-    /// The spec the Sbom conforms to.
+    /// The spec the [Sbom] conforms to.
     pub spec: Spec,
 
-    /// The system or tool that produced the Sbom.
+    /// The entity that that was the source of the [Sbom].
     pub source: Source,
 
-    /// The unix timestamp for when the Sbom was received by Harbor.
+    /// The system or tool that generated the [Sbom] if known.
+    pub provider: Option<SbomProviderKind>,
+
+    /// The unix timestamp for when the [Sbom] was created.
     pub timestamp: u64,
 
-    /// The checksum of the file when persisted to disk.
-    pub checksum_sha256: Option<String>,
+    /// The checksum of the file.
+    pub checksum_sha256: String,
 
+    /// The results of each vulnerability [Scan].
+    pub scans: Vec<Scan>,
+
+    // TODO: Define a new interface for types that can only have one Xref per kind.
     /// A map of cross-references to internal and external systems.
     pub xrefs: Option<HashMap<XrefKind, Xref>>,
 
     /// In-memory struct representation of SBOM based on CycloneDx JSON spec.
-    // #[serde(skip_serializing)]
+    #[serde(skip_serializing)]
     pub(crate) bom: Option<Bom>,
 }
 
 impl Sbom {
+    /// Factory method to create new instance of type from a CycloneDx model.
     pub fn from_raw_cdx(
         raw: &str,
         format: CdxFormat,
@@ -78,14 +89,21 @@ impl Sbom {
             }
         };
 
+        let provider = match source.clone() {
+            Source::Harbor(provider) => Some(provider),
+            Source::Vendor(_) => None,
+        };
+
         let sbom = Sbom {
             id: "".to_string(),
             purl: Some(purl),
             instance: 1,
             spec: Spec::Cdx(format),
             source,
+            provider,
             timestamp: platform::time::timestamp()?,
-            checksum_sha256: None,
+            checksum_sha256: "".to_string(),
+            scans: vec![],
             xrefs,
             bom: Some(bom),
         };
@@ -93,6 +111,8 @@ impl Sbom {
         Ok(sbom)
     }
 
+    /// Accessor method to encapsulate logic for accessing the purl field with consistent errors
+    /// that can be reported as metrics.
     pub fn purl(&self) -> Result<String, Error> {
         let purl = match &self.purl {
             None => {
@@ -106,6 +126,38 @@ impl Sbom {
         }
 
         Ok(purl.clone())
+    }
+
+    pub fn scans(&mut self, mut scan: Scan) {
+        scan.iteration = match self
+            .scans
+            .iter()
+            .filter(|scan| scan.provider == provider)
+            .max_by_key(|scan| scan.iteration)
+        {
+            None => 1,
+            Some(scan) => scan.iteration + 1,
+        };
+
+        self.scans.push(scan);
+    }
+
+    pub fn snyk_ref(&self) -> Result<HashMap<String, String>, Error> {
+        let xrefs = match &self.xrefs {
+            None => {
+                return Err(Error::Entity("sbom_xrefs_none".to_string()));
+            }
+            Some(snyk_refs) => snyk_refs,
+        };
+
+        let snyk_ref = match xrefs.get(&XrefKind::External(SNYK_DISCRIMINATOR.to_string())) {
+            None => {
+                return Err(Error::Entity("sbom_xrefs_snyk_none".to_string()));
+            }
+            Some(xref) => xref.clone(),
+        };
+
+        Ok(snyk_ref)
     }
 }
 
@@ -176,12 +228,12 @@ impl Display for SpdxFormat {
     }
 }
 
-/// The system or tool that produced the Sbom.
+/// The entity that provided or generated the Sbom.
 #[serde(rename_all = "camelCase")]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Source {
     /// SBOM produced by Harbor using the specified internal provider (e.g. GitHub, Snyk)
-    Harbor(String),
+    Harbor(SbomProviderKind),
     /// SBOM provided by the vendor.
     Vendor(String),
 }
@@ -189,7 +241,7 @@ pub enum Source {
 impl Display for Source {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Source::Harbor(name) => write!(f, "harbor::{}", name.to_lowercase()),
+            Source::Harbor(provider) => write!(f, "harbor::{}", provider),
             Source::Vendor(name) => write!(f, "vendor::{}", name.to_lowercase()),
         }
     }

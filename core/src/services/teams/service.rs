@@ -1,7 +1,7 @@
 use platform::mongodb::{Context, Service};
 use std::sync::Arc;
 
-use crate::models::teams::Team;
+use crate::entities::teams::Team;
 
 /// Contains all domain and transaction logic related to [Teams] and their subordinate entities.
 #[derive(Debug)]

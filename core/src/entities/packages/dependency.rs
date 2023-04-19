@@ -5,7 +5,7 @@ use std::fmt::{Display, Formatter};
 
 use crate::entities::cyclonedx::Component;
 use crate::entities::packages::PackageCdx;
-use crate::entities::sboms::{CdxFormat, SbomSource, Spec};
+use crate::entities::sboms::{CdxFormat, SbomProviderKind, Spec};
 use crate::entities::xrefs::{Xref, XrefKind};
 use crate::Error;
 
@@ -17,8 +17,8 @@ pub struct Dependency {
     /// The unique identifier for the Package.
     pub id: String,
 
-    /// The system that generated the SBOM that the [Dependency] was extracted from.
-    pub source: SbomSource,
+    /// The provider that generated the SBOM that the [Dependency] was extracted from.
+    pub provider: SbomProviderKind,
 
     /// A unique identifier for the package that this dependency was found in. The format of this
     /// value will vary by Spec. For CycloneDx, this will be the purl of the parent [Package].
@@ -39,7 +39,7 @@ pub struct Dependency {
 impl Dependency {
     pub(crate) fn from_component(
         component: &Component,
-        source: SbomSource,
+        source: SbomProviderKind,
         package_ref: String,
         package_manager: Option<String>,
         xref_kind: XrefKind,
@@ -54,7 +54,7 @@ impl Dependency {
 
         Dependency {
             id: "".to_string(),
-            source,
+            provider: source,
             package_ref,
             spec: Some(Spec::Cdx(CdxFormat::Json)),
             cdx: Some(cdx),

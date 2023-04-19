@@ -3,13 +3,14 @@ use std::collections::HashMap;
 
 use crate::entities::cyclonedx::Bom;
 use crate::entities::packages::Unsupported;
-use crate::entities::sboms::{CdxFormat, SbomSource, Spec};
+use crate::entities::sboms::{CdxFormat, SbomProviderKind, Spec};
 use crate::entities::xrefs::{Xref, XrefKind};
 use crate::services::snyk::client::models::{
     CommonIssueModel, ListOrgProjects200ResponseDataInner, OrgV1, ProjectStatus, Severity,
 };
 use crate::services::snyk::{SnykRef, SNYK_DISCRIMINATOR};
 
+use crate::services::snyk::client::API_VERSION;
 use platform::mongodb::{mongo_doc, MongoDocument};
 
 mongo_doc!(Project);
@@ -128,10 +129,12 @@ impl Project {
     pub fn to_unsupported(&self) -> Unsupported {
         Unsupported {
             id: "".to_string(),
-            spec: Some(Spec::Cdx(CdxFormat::Json)),
-            cdx: None,
+            external_id: Some(self.project_id.clone()),
+            name: self.project_name.clone(),
             package_manager: Some(self.package_manager.clone()),
-            source: SbomSource::Harbor,
+            provider: SbomProviderKind::Snyk {
+                api_version: API_VERSION.to_string(),
+            },
             xrefs: Some(HashMap::from([(
                 XrefKind::External(SNYK_DISCRIMINATOR.to_string()),
                 HashMap::from(self.to_snyk_ref()),

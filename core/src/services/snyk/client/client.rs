@@ -1,9 +1,10 @@
+use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use tracing::debug;
 
+use platform::encoding::url_encode;
 use platform::hyper;
 use platform::hyper::ContentType;
-use urlencoding::encode;
 
 use super::models::{
     CommonIssueModel, Group, IssuesResponse, ListOrgProjects200Response,
@@ -16,6 +17,7 @@ const V3_URL: &str = "https://api.snyk.io/rest";
 const ORGS_ROUTE: &str = "/orgs";
 pub const API_VERSION: &str = "2023-03-08~beta"; // "2023-03-29"
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum SbomFormat {
     CycloneDxJson,
     CycloneDxXml,
@@ -25,33 +27,32 @@ pub enum SbomFormat {
 impl Display for SbomFormat {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            SbomFormat::CycloneDxJson => write!(f, "{}", encode("cyclonedx+json")),
-            SbomFormat::CycloneDxXml => write!(f, "{}", encode("cyclonedx+xml")),
-            SbomFormat::SpdxJson => write!(f, "{}", encode("spdx2.3+json")),
+            SbomFormat::CycloneDxJson => write!(f, "{}", url_encode("cyclonedx+json")),
+            SbomFormat::CycloneDxXml => write!(f, "{}", url_encode("cyclonedx+xml")),
+            SbomFormat::SpdxJson => write!(f, "{}", url_encode("spdx2.3+json")),
         }
     }
 }
 
 #[allow(dead_code)]
 fn orgs_url() -> String {
-    format!("{}{}", V1_URL, ORGS_ROUTE)
+    url_encode(format!("{}{}", V1_URL, ORGS_ROUTE).as_str())
 }
 
 #[allow(dead_code)]
 fn issues_url(org_id: &str, purl: &str) -> String {
     let route = format!(
         "/orgs/{}/packages/{}/issues?version={}",
-        org_id,
-        encode(purl),
-        API_VERSION
+        org_id, purl, API_VERSION
     );
-    format!("{}{}", V3_URL, route)
+
+    url_encode(format!("{}{}", V3_URL, route).as_str())
 }
 
 #[allow(dead_code)]
 fn projects_url(org_id: &str) -> String {
     let route = format!("/orgs/{}/projects?version={}", org_id, API_VERSION);
-    format!("{}{}", V3_URL, route)
+    url_encode(format!("{}{}", V3_URL, route).as_str())
 }
 
 #[allow(dead_code)]
@@ -60,7 +61,7 @@ fn sbom_url(org_id: &str, project_id: &str, format: SbomFormat) -> String {
         "/orgs/{}/projects/{}/sbom?version={}&format={}",
         org_id, project_id, API_VERSION, format
     );
-    format!("{}{}", V3_URL, route)
+    url_encode(format!("{}{}", V3_URL, route).as_str())
 }
 
 /// A purpose build Snyk HTTP Client.
@@ -121,6 +122,8 @@ impl Client {
         project_id: &str,
         format: SbomFormat,
     ) -> Result<Option<String>, Error> {
+        let url = &sbom_url(org_id, project_id, format.clone());
+        debug!(url);
         let response = hyper::raw(
             hyper::Method::GET,
             &sbom_url(org_id, project_id, format),

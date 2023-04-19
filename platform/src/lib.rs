@@ -10,11 +10,17 @@
 /// usable in a variety of scenarios.
 pub mod auth;
 
+/// The `encoding` package provides exports and utility methods related to data encoding.
+pub mod encoding;
+
 /// The `cognito` module provides high level abstractions over the AWS Cognito SDK.
 pub mod cognito;
 
 /// The config module contains functions that are used to retrieve runtime configuration.
 pub mod config;
+
+/// The cryptography module contains convenience functions for common cryptographic operations.
+pub mod cryptography;
 
 /// The `errors` module provides common error types for the library.
 pub mod errors;

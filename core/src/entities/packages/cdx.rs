@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::string::FromUtf8Error;
 use tracing::log::debug;
-use urlencoding::decode;
 
 /// A subset of the full CycloneDx Component suitable for tracking packages and dependencies.
 #[serde(rename_all = "camelCase")]

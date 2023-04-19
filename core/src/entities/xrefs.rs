@@ -1,6 +1,9 @@
-use serde::{Deserialize, Serialize};
+use serde::de::{self};
+use serde::ser::Serializer;
+use serde::{ser, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use thiserror::__private::DisplayAsDisplay;
 
 /// An [Xref] is a dynamic way to track cross-references to internal and external systems.
 /// Fundamentally, it is just a [HashMap] of one or more id names to id value. By aliasing the
@@ -9,7 +12,7 @@ pub type Xref = HashMap<String, String>;
 
 #[allow(missing_docs)]
 #[serde(rename_all = "camelCase")]
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize)]
 pub enum XrefKind {
     Codebase,
     Product,
@@ -23,6 +26,15 @@ impl Display for XrefKind {
             XrefKind::Product => write!(f, "product"),
             XrefKind::External(name) => write!(f, "external::{}", name.to_lowercase()),
         }
+    }
+}
+
+impl ser::Serialize for XrefKind {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.to_string().as_str())
     }
 }
 
@@ -83,4 +95,5 @@ macro_rules! xref {
     };
 }
 
+use crate::Error;
 pub use xref;

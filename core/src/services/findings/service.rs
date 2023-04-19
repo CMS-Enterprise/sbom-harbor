@@ -1,4 +1,5 @@
-use crate::entities::packages::Finding;
+use crate::entities::sboms::{Finding, Sbom};
+use crate::services::findings::StorageProvider;
 use crate::Error;
 use platform::mongodb::{Context, Service};
 use std::fmt::{Debug, Formatter};
@@ -7,10 +8,15 @@ use std::fmt::{Debug, Formatter};
 #[derive(Debug)]
 pub struct FindingService {
     cx: Context,
+    storage: Box<dyn StorageProvider>,
 }
 
-impl Service<Finding> for FindingService {
+impl Service<Sbom> for FindingService {
     fn cx(&self) -> &Context {
         &self.cx
     }
+}
+
+pub fn new(cx: Context, storage: Box<dyn StorageProvider>) -> Self {
+    Self { cx, storage }
 }

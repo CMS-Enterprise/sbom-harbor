@@ -10,8 +10,9 @@ use platform::persistence::s3;
 use tracing::debug;
 
 use crate::entities::cyclonedx::models::{Bom, Component};
-use crate::entities::packages::{Dependency, Finding, FindingSource, Package, Purl, Unsupported};
+use crate::entities::packages::{Dependency, Package, Purl, Unsupported};
 use crate::entities::sboms::{CdxFormat, Spec};
+use crate::services::findings::FindingService;
 use crate::services::snyk::adapters::{Issue, Organization, Project};
 use crate::Error;
 
@@ -37,15 +38,31 @@ pub(in crate::services::snyk) const SUPPORTED_SBOM_PROJECT_TYPES: &'static [&'st
 /// Provides Snyk related data retrieval and analytics capabilities.
 #[derive(Debug)]
 pub struct SnykService {
+    /// The Snyk API Client instance.
     pub(in crate::services::snyk) client: Client,
+    /// The datastore connection context.
     pub(in crate::services::snyk) cx: Context,
+    /// Allows injecting different persistence behaviors.
+    pub(in crate::services::snyk) sbom_service: SbomService,
+    /// Allows injecting different persistence behaviors.
+    pub(in crate::services::snyk) finding_service: FindingService,
 }
 
 impl SnykService {
     /// Factory method to create new instance of type.
-    pub fn new(token: String, cx: Context) -> Self {
+    pub fn new(
+        token: String,
+        cx: Context,
+        sbom_service: SbomService,
+        finding_service: FindingService,
+    ) -> Self {
         let client = Client::new(token);
-        Self { client, cx }
+        Self {
+            client,
+            cx,
+            sbom_service,
+            finding_service,
+        }
     }
 
     /// Retrieves orgs from the Snyk API.
@@ -77,8 +94,38 @@ impl SnykService {
         }
     }
 
+    /// Gathers all projects across all orgs so that index can be analyzed linearly.
+    pub(in crate::services::snyk) async fn projects(&self) -> Result<Vec<Project>, Error> {
+        let mut projects = vec![];
+
+        let mut orgs = match self.orgs().await {
+            Ok(o) => o,
+            Err(e) => {
+                let msg = format!("gather_projects::orgs::{}", e);
+                debug!(msg);
+                return Err(Error::Snyk(msg));
+            }
+        };
+
+        // Get projects for each org.
+        for org in orgs.iter() {
+            // Get the projects for the org.
+            match self.projects_by_org(org).await {
+                Ok(p) => {
+                    projects.extend(p.into_iter());
+                }
+                Err(e) => {
+                    debug!("gather_projects::projects::{}", e);
+                    continue;
+                }
+            }
+        }
+
+        Ok(projects)
+    }
+
     /// Retrieves [Projects] for an [Organization] from the Snyk API.
-    pub(in crate::services::snyk) async fn projects(
+    pub(in crate::services::snyk) async fn projects_by_org(
         &self,
         org: &Organization,
     ) -> Result<Vec<Project>, Error> {
