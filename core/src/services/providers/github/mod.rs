@@ -1,18 +1,22 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
+use mockall::mock;
 
 use harbor_client::client::{
     Client as V1HarborClient,
     SBOMUploadResponse
 };
-use platform::config::from_env;
 use platform::hyper::{
     ContentType,
     Error as HyperError,
-    get
+    Http,
+    Hyper
 };
-use platform::mongodb::{Context as MongoContext, Service as MongoService, Store as MongoStore, Store};
+use platform::mongodb::{
+    Service as MongoService,
+    Store as MongoStore
+};
 
 use crate::clients::github::{
     clone_path,
@@ -30,7 +34,10 @@ use crate::config::*;
 use crate::services::providers::github::counter::Counter;
 use crate::services::providers::github::env::GitHubProviderEnvironmentConfig;
 use crate::services::providers::github::error::Error;
-use crate::services::providers::github::mongo::{get_default_context, GitHubProviderMongoService};
+use crate::services::providers::github::mongo::{
+    get_default_context,
+    GitHubProviderMongoService
+};
 use crate::services::providers::github::mongo::GitHubSbomProviderEntry;
 use crate::services::providers::SbomProvider;
 
@@ -68,6 +75,9 @@ impl SbomProvider<(), Error> for GitHubSbomProvider {
 
     async fn provide_sboms(&self) -> Result<(), Error> {
 
+        // Here is where we create the Http type to thread in...
+        let http = Hyper::new();
+
         println!("Scanning GitHub...");
 
         let harbor_config = match GitHubProviderEnvironmentConfig::extract() {
@@ -82,7 +92,7 @@ impl SbomProvider<(), Error> for GitHubSbomProvider {
             None => panic!("No organization name provided, quitting...")
         }.to_string();
 
-        let repos: Vec<Repo> = match get_repos(org_name).await {
+        let repos: Vec<Repo> = match get_repos(org_name, http).await {
             Ok(value) => value,
             Err(err) => panic!("Panic trying to extract value from Result: {}", err),
         };
@@ -110,9 +120,9 @@ impl SbomProvider<(), Error> for GitHubSbomProvider {
     }
 }
 
-async fn get_repos(org: String) -> Result<Vec<Repo>, Error> {
+async fn get_repos(org: String, http: Hyper) -> Result<Vec<Repo>, Error> {
 
-    let mut pages = match get_pages(&org).await {
+    let mut pages = match get_pages(&org, http.as_ref()).await {
         Ok(pages) => pages,
         Err(err) => panic!("Unable to get pages of repos from GitHub: {:#?}", err)
     };
@@ -133,7 +143,7 @@ async fn get_repos(org: String) -> Result<Vec<Repo>, Error> {
 
     for (page, per_page) in pages.iter_mut().enumerate() {
 
-        let mut gh_org_rsp = match get_page_of_repos(&org, page+1, per_page, &token).await {
+        let mut gh_org_rsp = match get_page_of_repos(&org, page+1, per_page, &token, http.as_ref()).await {
             Ok(vector) => vector,
             Err(err) => return Err(
                 Error::GitHubRequest(
@@ -148,7 +158,7 @@ async fn get_repos(org: String) -> Result<Vec<Repo>, Error> {
 
             println!("({}) Making call to {}", repo_num, github_last_commit_url);
 
-            let response: Result<Option<Commit>, HyperError> = get(
+            let response: Result<Option<Commit>, HyperError> = hyper.get(
                 github_last_commit_url.as_str(),
                 ContentType::Json,
                 token.as_str(),
@@ -315,6 +325,10 @@ async fn create_document_in_db(
     Ok(document)
 }
 
+/// This function executes when nothing is found in the database associated
+/// to the given id.  This means we need to create the project and codebase
+/// in Harbor before we can send SBOMs to that target.
+///
 async fn create_data_structures(
     repo: &Repo,
     harbor_config: &GitHubProviderEnvironmentConfig,
@@ -323,10 +337,6 @@ async fn create_data_structures(
 ) -> Result<GitHubSbomProviderEntry, Error> {
 
     println!("PROCESSING> No Document found document in mongo. Creating entities in harbor");
-
-    // This arm executes when nothing is found in the database associated
-    // to the given id.  This means we need to create the project and codebase
-    // in Harbor before we can send SBOMs to that target.
 
     let entities: HashMap<String, String> = match create_harbor_entities(
         url.clone(),
@@ -448,6 +458,10 @@ async fn process_repo(
     }
 }
 
+mock! {
+    Hyper {}
+}
+
 #[tokio::test]
 async fn test_get_github_data() {
 
@@ -474,7 +488,7 @@ async fn test_create_entry_in_store() {
         ]
     );
 
-    let store = match Store::new(&get_default_context()).await {
+    let store = match MongoStore::new(&get_default_context()).await {
         Ok(store) => store,
         Err(err) => panic!("Error in test: {}", err)
     };

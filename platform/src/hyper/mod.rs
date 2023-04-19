@@ -1,14 +1,101 @@
 use std::fmt::{Display, Formatter};
-use hyper::{Body, Client, Method, Request, StatusCode, Uri};
+use async_trait::async_trait;
+use hyper::{
+    Body,
+    Client,
+    Method,
+    Request,
+    StatusCode as StatusCode,
+    Uri
+};
 use hyper::header::InvalidHeaderValue;
 use hyper::http::uri::InvalidUri;
 use hyper_rustls::HttpsConnectorBuilder;
 use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 const CONTENT_TYPE: &str = "content-type";
 const USER_AGENT: &str = "User-Agent";
+
+#[async_trait]
+/// This trait is an OOP wrapper around [request<T, U>].
+///
+pub trait Http<'a, T, U>
+    where
+        T: Serialize + Send + 'a,
+        U: DeserializeOwned, {
+
+    /// This function is a convenience wrapper around [request<T, U>].
+    async fn get(
+        &self,
+        url: &str,
+        content_type: ContentType,
+        token: &str,
+        payload: Option<T>,
+    ) -> Result<Option<U>, Error> {
+
+        request(
+            Method::GET,
+            url,
+            content_type,
+            String::from(token),
+            payload
+        ).await
+    }
+
+    /// This function is a convenience wrapper around [request<T, U>].
+    async fn post(
+        &self,
+        url: &str,
+        content_type: ContentType,
+        token: &str,
+        payload: Option<T>,
+    ) -> Result<Option<U>, Error> {
+
+        request(
+            Method::POST,
+            url,
+            content_type,
+            String::from(token),
+            payload
+        ).await
+    }
+
+    /// This function is a convenience wrapper around [request<T, U>].
+    async fn delete(
+        &self,
+        url: &str,
+        content_type: ContentType,
+        token: &str,
+        payload: Option<T>,
+    ) -> Result<Option<U>, Error> {
+
+        request(
+            Method::DELETE,
+            url,
+            content_type,
+            String::from(token),
+            payload
+        ).await
+    }
+}
+
+/// This struct is a convenience wrapper around [request<T, U>].
+pub struct Hyper {}
+
+impl Hyper {
+    /// new() method to create a Hyper.
+    pub fn new() -> Self {
+        Hyper {}
+    }
+}
+
+#[async_trait]
+impl<'a, T, U> Http<'a, T, U> for Hyper
+    where
+        T: Serialize + Send + 'a,
+        U: for<'de> Deserialize<'de>, {}
 
 /// HTTP Content Types.
 pub enum ContentType {
@@ -106,7 +193,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
         .enable_http2()
         .build();
 
-    let client: Client<_, hyper::Body> = Client::builder().build(https);
+    let client: Client<_, Body> = Client::builder().build(https);
 
     let resp = match client.request(req).await {
         Ok(r) => r,
@@ -117,7 +204,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
                 Ok(teapot) => teapot,
                 Err(err) => panic!("Teapot not available: {}", err)
             };
-            return Err(Error::Remote(local_error_sc, err.to_string()));
+            return Err(Error::Remote(local_error_sc.as_u16(), err.to_string()));
         }
     };
 
@@ -131,7 +218,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
     };
 
     if resp_status != StatusCode::OK {
-        return Err(Error::Remote(resp_status, resp_body));
+        return Err(Error::Remote(resp_status.as_u16(), resp_body));
     }
 
     // TODO: This a hack around empty JSON.
@@ -150,7 +237,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
 }
 
 /// Represents all handled Errors for this module.
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Deserialize)]
 pub enum Error {
     /// Error parsing [Body].
     #[error("error parsing body: {0}")]
@@ -166,7 +253,7 @@ pub enum Error {
     Hyper(String),
     /// Error calling remote resource.
     #[error("error from remote resource: {0}")]
-    Remote(StatusCode, String),
+    Remote(u16, String),
     /// Error in [Serde] runtime.
     #[error("error serializing types: {0}")]
     Serde(String),

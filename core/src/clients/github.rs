@@ -12,11 +12,7 @@ use serde_json::Value;
 use tracing::info;
 
 use platform::config::from_env;
-use platform::hyper::{
-    ContentType,
-    Error as HyperError,
-    get
-};
+use platform::hyper::{ContentType, Error as HyperError, get, Http, Hyper};
 use crate::config::get_gh_token;
 
 use crate::services::providers::github::counter::Counter;
@@ -243,7 +239,7 @@ pub fn should_skip(
 /// Function to get the number of public
 /// repos in the associated organization
 ///
-async fn get_num_pub_repos(org: String) -> Result<Option<u32>, Error> {
+async fn get_num_pub_repos(org: String, http: &Hyper) -> Result<Option<u32>, Error> {
 
     let token = match get_gh_token() {
         Ok(value) => value,
@@ -259,7 +255,7 @@ async fn get_num_pub_repos(org: String) -> Result<Option<u32>, Error> {
     let bearer_token: String = format!("Bearer {}", &token);
     let org_url: String = format!("{GH_URL}/orgs/{org}");
 
-    let response: Result<Option<Org>, HyperError> = get(
+    let response: Result<Option<Org>, HyperError> = http.get(
         org_url.as_str(),
         ContentType::Json,
         bearer_token.as_str(),
@@ -285,9 +281,9 @@ async fn get_num_pub_repos(org: String) -> Result<Option<u32>, Error> {
 
 /// Function to get the number of repos per page
 ///
-pub async fn get_pages(org: &String) -> Result<Vec<u32>, Error> {
+pub async fn get_pages(org: &String, http: &Hyper) -> Result<Vec<u32>, Error> {
 
-    let num_repos = match get_num_pub_repos(org.to_string()).await {
+    let num_repos = match get_num_pub_repos(org.to_string(), http).await {
         Ok(option) => match option {
             Some(num) => num,
             None => return Err(
@@ -322,14 +318,15 @@ pub async fn get_page_of_repos(
     org: &String,
     page: usize,
     per_page: &u32,
-    token: &String
+    token: &String,
+    http: &Hyper,
 ) -> Result<Vec<Repo>, Error> {
 
     let github_org_url = format!("{GH_URL}/orgs/{org}/repos?type=sources&page={page}&per_page={per_page}");
 
     println!("Calling({})", github_org_url);
 
-    let response: Result<Option<Vec<Repo>>, HyperError> = get(
+    let response: Result<Option<Vec<Repo>>, HyperError> = http.get(
         github_org_url.as_str(),
         ContentType::Json,
         token.as_str(),
@@ -431,6 +428,12 @@ pub fn remove_clone(clone_path: &str) -> std::io::Result<()> {
     }
 
     Ok(())
+}
+
+#[test]
+fn test_remove_clone() {
+    let dir = std::env::temp_dir();
+    println!("Temp Directory: {:#?}", dir)
 }
 
 #[tokio::test]
