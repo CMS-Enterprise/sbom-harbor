@@ -190,7 +190,7 @@ async fn create_harbor_entities(
 ) -> Result<HashMap<String, String>, Error> {
 
     let client = V1HarborClient::new(
-        harbor_config.cf_domain.clone(),
+        harbor_config.api_url.clone(),
         harbor_config.cognito_username.clone(),
         harbor_config.cognito_password.clone(),
     ).await.unwrap();
@@ -260,7 +260,7 @@ async fn send_to_v1(
     };
 
     match V1HarborClient::upload_sbom(
-        harbor_config.cf_domain.as_str(),
+        harbor_config.api_url.as_str(),
         harbor_config.cms_team_token.as_str(),
         harbor_config.cms_team_id.clone(),
         document.project_id.clone(),

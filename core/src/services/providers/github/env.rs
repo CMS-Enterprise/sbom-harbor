@@ -1,5 +1,5 @@
 use crate::config::{
-    get_cf_domain,
+    get_api_url,
     get_cms_team_id,
     get_cms_team_token,
     get_v1_password,
@@ -20,7 +20,7 @@ pub struct GitHubProviderEnvironmentConfig {
     pub(crate) cms_team_token: String,
 
     /// This is the Cloudfront Domain of the API endpoints
-    pub(crate) cf_domain: String,
+    pub(crate) api_url: String,
 
     /// The username we use to get the JWT and make API calls
     pub(crate) cognito_username: String,
@@ -57,7 +57,7 @@ impl GitHubProviderEnvironmentConfig {
             )
         };
 
-        let cf_domain = match get_cf_domain() {
+        let api_url = match get_api_url() {
             Ok(value) => value,
             Err(err) => return Err(
                 Error::Configuration(
@@ -94,7 +94,7 @@ impl GitHubProviderEnvironmentConfig {
             GitHubProviderEnvironmentConfig {
                 cms_team_id,
                 cms_team_token,
-                cf_domain,
+                api_url,
                 cognito_username,
                 cognito_password,
             }

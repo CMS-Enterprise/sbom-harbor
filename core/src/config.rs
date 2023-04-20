@@ -9,7 +9,7 @@ use crate::Error;
 pub const TEAM_ID_KEY: &str = "team_id";
 
 /// Key for getting the cloudfront domain
-pub const CF_DOMAIN_KEY: &str = "CF_DOMAIN";
+pub const API_URL_KEY: &str = "API_URL";
 
 /// Key for the Project Id
 pub const PROJECT_ID_KEY: &str = "project_id";
@@ -75,8 +75,8 @@ pub fn get_cms_team_token() -> Result<String, Error> {
 
 /// Function to get the cloudfront domain from the environment
 ///
-pub fn get_cf_domain() -> Result<String, Error> {
-    match env::var(CF_DOMAIN_KEY) {
+pub fn get_api_url() -> Result<String, Error> {
+    match env::var(API_URL_KEY) {
         Ok(value) => Ok(value),
         Err(_err) => return Err(
             Error::Config(
