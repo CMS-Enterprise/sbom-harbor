@@ -12,13 +12,281 @@ use serde_json::Value;
 use tracing::info;
 
 use platform::config::from_env;
-use platform::hyper::{ContentType, Error as HyperError, get, Http, Hyper};
+use platform::hyper::{ContentType, Error as HyperError, get};
 use crate::config::get_gh_token;
 
 use crate::services::providers::github::counter::Counter;
 use crate::services::providers::github::error::Error;
 
 const GH_URL: &str = "https://api.github.com";
+
+// TODO: Make an enum with all possible formats, then make
+// TODO: this a config option with default.
+const CYCLONEDX_JSON_FORMAT: &str = "cyclonedx-json";
+
+pub struct Client {}
+
+impl Client {
+
+    /* Private */
+
+    /// Function to get the number of public
+    /// repos in the associated organization
+    ///
+    async fn get_num_pub_repos(&self, org: String) -> Result<Option<u32>, Error> {
+
+        let token = match get_gh_token() {
+            Ok(value) => value,
+            Err(err) => return Err(
+                Error::Configuration(
+                    String::from(
+                        format!("GitHub token not in environment {}", err)
+                    )
+                )
+            )
+        };
+
+        let bearer_token: String = format!("Bearer {}", &token);
+        let org_url: String = format!("{GH_URL}/orgs/{org}");
+
+        let response: Result<Option<Org>, HyperError> = get(
+            org_url.as_str(),
+            ContentType::Json,
+            bearer_token.as_str(),
+            None::<String>,
+        ).await;
+
+        return match response {
+            Ok(option) => match option {
+                Some(value) => Ok(value.public_repos),
+                None => Err(
+                    Error::GitHubRequest(
+                        format!("Get request from GitHub had an empty response")
+                    )
+                ),
+            },
+            Err(err) => Err(
+                Error::GitHubRequest(
+                    format!("Error in the response: {}", err)
+                )
+            ),
+        }
+    }
+
+    /* Public */
+
+    /// Conventional Constructor.
+    ///
+    pub fn new() -> Self {
+        Client {}
+    }
+
+    /// Should skip determines if the repository is disabled or archived.
+    /// and if so, skips processing them.
+    ///
+    pub fn should_skip(
+        &self,
+        repo: &Repo,
+        repo_name: String,
+        url: String,
+        counter: &mut Counter
+    ) -> bool {
+
+        let mut skip: bool = false;
+
+        match &repo.archived {
+            Some(archived) => {
+                if *archived {
+                    println!("{} at {} is archived, skipping", repo_name, url);
+                    counter.archived += 1;
+                    skip = true;
+                }
+            },
+            None => {
+                println!("No value to determine if the repo is archived");
+            }
+        }
+
+        match &repo.disabled {
+            Some(disabled) => {
+                if *disabled {
+                    println!("{} at {} is disabled, skipping", repo_name, url);
+                    counter.disabled += 1;
+                    skip = true;
+                }
+            },
+            None => {
+                println!("No value to determine if the repo is disabled, processing");
+            }
+        }
+
+        if repo.empty {
+            skip = true;
+            counter.empty += 1;
+        }
+
+        return skip;
+    }
+
+    /// Function to get the number of repos per page
+    ///
+    pub async fn get_pages(&self, org: &String) -> Result<Vec<u32>, Error> {
+
+        let num_repos = match self.get_num_pub_repos(org.to_string()).await {
+            Ok(option) => match option {
+                Some(num) => num,
+                None => return Err(
+                    Error::GitHubRequest(
+                        format!("There are no repositories in {}, something is wrong", org)
+                    )
+                ),
+            },
+            Err(err) => return Err(
+                Error::GitHubRequest(
+                    format!("Error Attempting to get num Repos: {}", err)
+                )
+            ),
+        };
+
+        println!("Number of Repositories in {org}: {num_repos}");
+
+        let num_calls = ((num_repos/100) as i8) + 1;
+        let num_last_call = num_repos % 100;
+
+        let mut vector = vec![100; usize::try_from(num_calls).unwrap()];
+
+        // This is crazy that it works.
+        *vector.last_mut().unwrap() = num_last_call;
+
+        Ok(vector)
+    }
+
+    /// Function to get the data for a page of repos
+    ///
+    pub async fn get_page_of_repos(
+        &self,
+        org: &String,
+        page: usize,
+        per_page: &u32,
+        token: &String,
+    ) -> Result<Vec<Repo>, Error> {
+
+        let github_org_url = format!("{GH_URL}/orgs/{org}/repos?type=sources&page={page}&per_page={per_page}");
+
+        println!("Calling({})", github_org_url);
+
+        let response: Result<Option<Vec<Repo>>, HyperError> = get(
+            github_org_url.as_str(),
+            ContentType::Json,
+            token.as_str(),
+            None::<String>,
+        ).await;
+
+        match response {
+            Ok(option) => match option {
+                Some(value) => Ok(value),
+                None => return Err(
+                    Error::GitHubRequest(
+                        format!("Get request from GitHub had an empty response")
+                    )
+                ),
+            },
+            Err(err) => return Err(
+                Error::GitHubRequest(
+                    format!("Error in the response: {}", err)
+                )
+            ),
+        }
+    }
+
+    /// Creates the URL one must use in an http request for
+    /// acquiring the latest commit hash from a given branch
+    ///
+    pub fn get_last_commit_url(&self, repo: &mut Repo) -> String {
+        let repo_name = repo.full_name.as_ref().unwrap();
+        let default_branch = repo.default_branch.as_ref().unwrap();
+        format!("{GH_URL}/repos/{repo_name}/commits/{default_branch}")
+    }
+
+    /// Generates a unique clone path for a repository.
+    ///
+    pub fn clone_path(&self, url: &str) -> String {
+        // add a unique element to the path to prevent collisions.
+        let timestamp = Utc::now().to_rfc3339();
+
+        let repo_name = url
+            .split('/')
+            .collect::<Vec<&str>>()
+            .pop()
+            .unwrap()
+            .replace(".git", "");
+
+        format!("/tmp/{}/{}", timestamp, repo_name)
+    }
+
+    /// Clones a git repository to the specified clone path.
+    ///
+    pub fn clone_repo(&self, clone_path: &str, url: &str) -> Result<()> {
+        info!("Cloning repo: {}", url);
+
+        match Repository::clone(url, clone_path) {
+            Err(err) => {
+                panic!("error cloning repository from {}: {}", url, err);
+            }
+            _ => info!("Successfully cloned repo"),
+        };
+
+        Ok(())
+    }
+
+    /// Invokes the syft CLI against the cloned repository to generate an SBOM.
+    ///
+    pub fn syft(&self, source_path: &str) -> Result<HashMap<String, Value>> {
+        let output = match Command::new("syft")
+            .arg("--output")
+            .arg(CYCLONEDX_JSON_FORMAT)
+            .arg(source_path)
+            .output()
+        {
+            Ok(output) => output,
+            Err(err) => {
+                panic!("error executing syft cli: {}", err);
+            }
+        };
+
+        // Handle error generated by syft.
+        if !&output.status.success() {
+            match String::from_utf8(output.stderr) {
+                Ok(stderr) => {
+                    panic!("error generating SBOM: {}", &stderr);
+                }
+                Err(err) => {
+                    panic!("error formatting syft stderr: {}", &err);
+                }
+            };
+        }
+
+        if output.stdout.is_empty() {
+            panic!("syft generated empty SBOM");
+        };
+
+        match serde_json::from_slice::<HashMap<String, Value>>(output.stdout.as_slice()) {
+            Ok(result) => Ok(result),
+            Err(err) => {
+                panic!("error serializing SBOM to hash map: {}", err);
+            }
+        }
+    }
+
+    /// Removes a cloned repository from the filesystem.
+    pub fn remove_clone(&self, clone_path: &str) -> std::io::Result<()> {
+        if Path::new(&clone_path).is_dir() {
+            return std::fs::remove_dir_all(clone_path);
+        }
+
+        Ok(())
+    }
+}
 
 /// An HTTP request that contains the necessary configuration and authorization
 /// to auto-generate and upload an SBOM.
@@ -179,255 +447,6 @@ impl Repo {
     pub(crate) fn mark_repo_empty(&mut self) {
         self.empty = true;
     }
-}
-
-/// Creates the URL one must use in an http request for
-/// acquiring the latest commit hash from a given branch
-///
-pub fn get_last_commit_url(repo: &mut Repo) -> String {
-    let repo_name = repo.full_name.as_ref().unwrap();
-    let default_branch = repo.default_branch.as_ref().unwrap();
-    format!("{GH_URL}/repos/{repo_name}/commits/{default_branch}")
-}
-
-/// Should skip determines if the repository is disabled or archived.
-/// and if so, skips processing them.
-///
-pub fn should_skip(
-    repo: &Repo,
-    repo_name: String,
-    url: String,
-    counter: &mut Counter
-) -> bool {
-
-    let mut skip: bool = false;
-
-    match &repo.archived {
-        Some(archived) => {
-            if *archived {
-                println!("{} at {} is archived, skipping", repo_name, url);
-                counter.archived += 1;
-                skip = true;
-            }
-        },
-        None => {
-            println!("No value to determine if the repo is archived");
-        }
-    }
-
-    match &repo.disabled {
-        Some(disabled) => {
-            if *disabled {
-                println!("{} at {} is disabled, skipping", repo_name, url);
-                counter.disabled += 1;
-                skip = true;
-            }
-        },
-        None => {
-            println!("No value to determine if the repo is disabled, processing");
-        }
-    }
-
-    if repo.empty {
-        skip = true;
-        counter.empty += 1;
-    }
-
-    return skip;
-}
-
-/// Function to get the number of public
-/// repos in the associated organization
-///
-async fn get_num_pub_repos(org: String, http: &Hyper) -> Result<Option<u32>, Error> {
-
-    let token = match get_gh_token() {
-        Ok(value) => value,
-        Err(err) => return Err(
-            Error::Configuration(
-                String::from(
-                    format!("GitHub token not in environment {}", err)
-                )
-            )
-        )
-    };
-
-    let bearer_token: String = format!("Bearer {}", &token);
-    let org_url: String = format!("{GH_URL}/orgs/{org}");
-
-    let response: Result<Option<Org>, HyperError> = http.get(
-        org_url.as_str(),
-        ContentType::Json,
-        bearer_token.as_str(),
-        None::<String>,
-    ).await;
-
-    return match response {
-        Ok(option) => match option {
-            Some(value) => Ok(value.public_repos),
-            None => Err(
-                Error::GitHubRequest(
-                    format!("Get request from GitHub had an empty response")
-                )
-            ),
-        },
-        Err(err) => Err(
-            Error::GitHubRequest(
-                format!("Error in the response: {}", err)
-            )
-        ),
-    }
-}
-
-/// Function to get the number of repos per page
-///
-pub async fn get_pages(org: &String, http: &Hyper) -> Result<Vec<u32>, Error> {
-
-    let num_repos = match get_num_pub_repos(org.to_string(), http).await {
-        Ok(option) => match option {
-            Some(num) => num,
-            None => return Err(
-                Error::GitHubRequest(
-                    format!("There are no repositories in {}, something is wrong", org)
-                )
-            ),
-        },
-        Err(err) => return Err(
-            Error::GitHubRequest(
-                format!("Error Attempting to get num Repos: {}", err)
-            )
-        ),
-    };
-
-    println!("Number of Repositories in {org}: {num_repos}");
-
-    let num_calls = ((num_repos/100) as i8) + 1;
-    let num_last_call = num_repos % 100;
-
-    let mut vector = vec![100; usize::try_from(num_calls).unwrap()];
-
-    // This is crazy that it works.
-    *vector.last_mut().unwrap() = num_last_call;
-
-    Ok(vector)
-}
-
-/// Function to get the data for a page of repos
-///
-pub async fn get_page_of_repos(
-    org: &String,
-    page: usize,
-    per_page: &u32,
-    token: &String,
-    http: &Hyper,
-) -> Result<Vec<Repo>, Error> {
-
-    let github_org_url = format!("{GH_URL}/orgs/{org}/repos?type=sources&page={page}&per_page={per_page}");
-
-    println!("Calling({})", github_org_url);
-
-    let response: Result<Option<Vec<Repo>>, HyperError> = http.get(
-        github_org_url.as_str(),
-        ContentType::Json,
-        token.as_str(),
-        None::<String>,
-    ).await;
-
-    match response {
-        Ok(option) => match option {
-            Some(value) => Ok(value),
-            None => return Err(
-                Error::GitHubRequest(
-                    format!("Get request from GitHub had an empty response")
-                )
-            ),
-        },
-        Err(err) => return Err(
-            Error::GitHubRequest(
-                format!("Error in the response: {}", err)
-            )
-        ),
-    }
-}
-
-// TODO: Make an enum with all possible formats, then make
-// TODO: this a config option with default.
-const CYCLONEDX_JSON_FORMAT: &str = "cyclonedx-json";
-
-/// Invokes the syft CLI against the cloned repository to generate an SBOM.
-pub fn syft(source_path: &str) -> Result<HashMap<String, Value>> {
-    let output = match Command::new("syft")
-        .arg("--output")
-        .arg(CYCLONEDX_JSON_FORMAT)
-        .arg(source_path)
-        .output()
-    {
-        Ok(output) => output,
-        Err(err) => {
-            panic!("error executing syft cli: {}", err);
-        }
-    };
-
-    // Handle error generated by syft.
-    if !&output.status.success() {
-        match String::from_utf8(output.stderr) {
-            Ok(stderr) => {
-                panic!("error generating SBOM: {}", &stderr);
-            }
-            Err(err) => {
-                panic!("error formatting syft stderr: {}", &err);
-            }
-        };
-    }
-
-    if output.stdout.is_empty() {
-        panic!("syft generated empty SBOM");
-    };
-
-    match serde_json::from_slice::<HashMap<String, Value>>(output.stdout.as_slice()) {
-        Ok(result) => Ok(result),
-        Err(err) => {
-            panic!("error serializing SBOM to hash map: {}", err);
-        }
-    }
-}
-
-/// Generates a unique clone path for a repository.
-pub fn clone_path(url: &str) -> String {
-    // add a unique element to the path to prevent collisions.
-    let timestamp = Utc::now().to_rfc3339();
-
-    let repo_name = url
-        .split('/')
-        .collect::<Vec<&str>>()
-        .pop()
-        .unwrap()
-        .replace(".git", "");
-
-    format!("/tmp/{}/{}", timestamp, repo_name)
-}
-
-/// Clones a git repository to the specified clone path.
-pub fn clone_repo(clone_path: &str, url: &str) -> Result<()> {
-    info!("Cloning repo: {}", url);
-
-    match Repository::clone(url, clone_path) {
-        Err(err) => {
-            panic!("error cloning repository from {}: {}", url, err);
-        }
-        _ => info!("Successfully cloned repo"),
-    };
-
-    Ok(())
-}
-
-/// Removes a cloned repository from the filesystem.
-pub fn remove_clone(clone_path: &str) -> std::io::Result<()> {
-    if Path::new(&clone_path).is_dir() {
-        return std::fs::remove_dir_all(clone_path);
-    }
-
-    Ok(())
 }
 
 #[test]

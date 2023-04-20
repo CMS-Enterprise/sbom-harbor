@@ -1,34 +1,21 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use mockall::mock;
 
 use harbor_client::client::{
     Client as V1HarborClient,
     SBOMUploadResponse
 };
-use platform::hyper::{
-    ContentType,
-    Error as HyperError,
-    Http,
-    Hyper
-};
+use platform::hyper::{ContentType, Error as HyperError, get};
 use platform::mongodb::{
     Service as MongoService,
     Store as MongoStore
 };
 
 use crate::clients::github::{
-    clone_path,
-    clone_repo,
+    Client as GitHubClient,
     Commit,
-    get_last_commit_url,
-    get_page_of_repos,
-    get_pages,
-    remove_clone,
     Repo,
-    should_skip,
-    syft
 };
 use crate::config::*;
 use crate::services::providers::github::counter::Counter;
@@ -75,10 +62,9 @@ impl SbomProvider<(), Error> for GitHubSbomProvider {
 
     async fn provide_sboms(&self) -> Result<(), Error> {
 
-        // Here is where we create the Http type to thread in...
-        let http = Hyper::new();
-
         println!("Scanning GitHub...");
+
+        let gh_client = GitHubClient::new();
 
         let harbor_config = match GitHubProviderEnvironmentConfig::extract() {
             Ok(config) => config,
@@ -92,7 +78,7 @@ impl SbomProvider<(), Error> for GitHubSbomProvider {
             None => panic!("No organization name provided, quitting...")
         }.to_string();
 
-        let repos: Vec<Repo> = match get_repos(org_name, http).await {
+        let repos: Vec<Repo> = match get_repos(org_name, &gh_client).await {
             Ok(value) => value,
             Err(err) => panic!("Panic trying to extract value from Result: {}", err),
         };
@@ -106,8 +92,8 @@ impl SbomProvider<(), Error> for GitHubSbomProvider {
             // TODO if this is empty, we have nothing to do.
             let url = repo.html_url.clone().unwrap();
 
-            if !should_skip(repo, name, url.clone(), &mut counter) {
-                match process_repo(repo, &harbor_config, &mut counter).await {
+            if !gh_client.should_skip(repo, name, url.clone(), &mut counter) {
+                match process_repo(repo, &harbor_config, &mut counter, &gh_client).await {
                     Ok(_) => println!("PROCESSING> One Repo Down. {} is ok.", url),
                     Err(err) => println!("PROCESSING> Repo processing failure: {}", err)
                 }
@@ -120,9 +106,9 @@ impl SbomProvider<(), Error> for GitHubSbomProvider {
     }
 }
 
-async fn get_repos(org: String, http: Hyper) -> Result<Vec<Repo>, Error> {
+async fn get_repos(org: String, gh_client: &GitHubClient) -> Result<Vec<Repo>, Error> {
 
-    let mut pages = match get_pages(&org, http.as_ref()).await {
+    let mut pages = match gh_client.get_pages(&org).await {
         Ok(pages) => pages,
         Err(err) => panic!("Unable to get pages of repos from GitHub: {:#?}", err)
     };
@@ -143,7 +129,12 @@ async fn get_repos(org: String, http: Hyper) -> Result<Vec<Repo>, Error> {
 
     for (page, per_page) in pages.iter_mut().enumerate() {
 
-        let mut gh_org_rsp = match get_page_of_repos(&org, page+1, per_page, &token, http.as_ref()).await {
+        let mut gh_org_rsp = match gh_client.get_page_of_repos(
+            &org,
+            page+1,
+            per_page,
+            &token
+        ).await {
             Ok(vector) => vector,
             Err(err) => return Err(
                 Error::GitHubRequest(
@@ -154,11 +145,11 @@ async fn get_repos(org: String, http: Hyper) -> Result<Vec<Repo>, Error> {
 
         for (repo_num, repo) in gh_org_rsp.iter_mut().enumerate() {
 
-            let github_last_commit_url = get_last_commit_url(repo);
+            let github_last_commit_url = gh_client.get_last_commit_url(repo);
 
             println!("({}) Making call to {}", repo_num, github_last_commit_url);
 
-            let response: Result<Option<Commit>, HyperError> = hyper.get(
+            let response: Result<Option<Commit>, HyperError> = get(
                 github_last_commit_url.as_str(),
                 ContentType::Json,
                 token.as_str(),
@@ -257,21 +248,22 @@ async fn create_harbor_entities(
 async fn send_to_v1(
     document: &GitHubSbomProviderEntry,
     harbor_config: &GitHubProviderEnvironmentConfig,
+    gh_client: &GitHubClient,
 ) -> Result<SBOMUploadResponse, Error> {
 
-    let clone_path = clone_path(&document.id);
+    let clone_path = gh_client.clone_path(&document.id);
 
-    match clone_repo(&clone_path, &document.id.as_str()) {
+    match gh_client.clone_repo(&clone_path, &document.id.as_str()) {
         Ok(()) => println!("{} Cloned Successfully", document.id),
         Err(err) => panic!("Unable to clone Repo {}, {}", document.id, err)
     }
 
-    let syft_result = match syft(&clone_path) {
+    let syft_result = match gh_client.syft(&clone_path) {
         Ok(map) => map,
         Err(err) => panic!("Unable to Syft the Repo we cloned [{}]??", err)
     };
 
-    match remove_clone(&clone_path) {
+    match gh_client.remove_clone(&clone_path) {
         Ok(()) => println!("Clone removed successfully"),
         Err(err) => panic!("Unable to blow away the clone [{}]??", err)
     };
@@ -361,7 +353,8 @@ async fn create_data_structures(
 async fn process_repo(
     repo: &Repo,
     harbor_config: &GitHubProviderEnvironmentConfig,
-    counter: &mut Counter
+    counter: &mut Counter,
+    gh_client: &GitHubClient,
 ) -> Result<(), Error> {
 
     let ctx = get_default_context();
@@ -419,7 +412,7 @@ async fn process_repo(
         println!("PROCESSING> Hashes are not equal, sending to v1");
 
         // Use the document to construct a request to Harbor v1
-        match send_to_v1(&document, &harbor_config).await {
+        match send_to_v1(&document, &harbor_config, &gh_client).await {
 
             // Upload is OK, update Mongo
             Ok(_) => {
@@ -456,10 +449,6 @@ async fn process_repo(
         println!("PROCESSING> Hashes are equal, skipping sending to v1");
         Ok(())
     }
-}
-
-mock! {
-    Hyper {}
 }
 
 #[tokio::test]

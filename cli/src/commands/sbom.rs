@@ -2,7 +2,6 @@ use std::str::FromStr;
 
 use clap::{Parser, ValueEnum};
 use clap::builder::PossibleValue;
-use harbcore::config::{get_cf_domain, get_cms_team_id, get_cms_team_token, get_v1_password, get_v1_username};
 use harbcore::services::providers::github::GitHubSbomProvider;
 use harbcore::services::providers::SbomProvider;
 
