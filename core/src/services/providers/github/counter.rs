@@ -28,6 +28,9 @@ pub struct Counter {
 
     /// This value will increment if there is a problem communicating with Mongo
     pub store_error: i32,
+
+    /// Error attempting to communicate with GitHub
+    pub github_req_error: i32,
 }
 
 /// Default, completely 0'd out default Counter
@@ -42,6 +45,7 @@ impl Default for Counter {
             hash_matched: 0,
             upload_errors: 0,
             store_error: 0,
+            github_req_error: 0,
         }
     }
 }

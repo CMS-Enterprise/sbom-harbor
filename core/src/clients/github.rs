@@ -30,6 +30,15 @@ impl Client {
 
     /* Private */
 
+    /// Creates the URL one must use in an http request for
+    /// acquiring the latest commit hash from a given branch
+    ///
+    fn get_last_commit_url(&self, repo: &mut Repo) -> String {
+        let repo_name = repo.full_name.as_ref().unwrap();
+        let default_branch = repo.default_branch.as_ref().unwrap();
+        format!("{GH_URL}/repos/{repo_name}/commits/{default_branch}")
+    }
+
     /// Function to get the number of public
     /// repos in the associated organization
     ///
@@ -74,6 +83,46 @@ impl Client {
     }
 
     /* Public */
+
+    /// Get the last commit for a given Repo
+    ///
+    pub async fn get_last_commit(&self, token: &String, repo: &mut Repo)
+        -> Result<Option<String>, Error> {
+
+        let github_last_commit_url = self.get_last_commit_url(repo);
+
+        println!("Making call to {}", github_last_commit_url);
+
+        let response: Result<Option<Commit>, HyperError> = get(
+            github_last_commit_url.as_str(),
+            ContentType::Json,
+            token.as_str(),
+            None::<String>,
+        ).await;
+
+        let gh_commits_rsp = match response {
+            Ok(option) => match option {
+                Some(value) => value,
+                None => panic!("Nothing in here!"),
+            },
+            Err(err) => {
+                if let HyperError::Remote(status, msg) = err {
+                    return Err(
+                        Error::LastCommitHashError(status, msg)
+                    )
+                }
+
+                Commit {
+                    sha: None,
+                }
+            },
+        };
+
+        match gh_commits_rsp.sha {
+            Some(val) => Ok(Some(val)),
+            None => Ok(None),
+        }
+    }
 
     /// Conventional Constructor.
     ///
@@ -197,15 +246,6 @@ impl Client {
                 )
             ),
         }
-    }
-
-    /// Creates the URL one must use in an http request for
-    /// acquiring the latest commit hash from a given branch
-    ///
-    pub fn get_last_commit_url(&self, repo: &mut Repo) -> String {
-        let repo_name = repo.full_name.as_ref().unwrap();
-        let default_branch = repo.default_branch.as_ref().unwrap();
-        format!("{GH_URL}/repos/{repo_name}/commits/{default_branch}")
     }
 
     /// Generates a unique clone path for a repository.

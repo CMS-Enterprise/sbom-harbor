@@ -6,7 +6,7 @@ use harbor_client::client::{
     Client as V1HarborClient,
     SBOMUploadResponse
 };
-use platform::hyper::{ContentType, Error as HyperError, get};
+use platform::hyper::{ContentType, Error as HyperError};
 use platform::mongodb::{
     Service as MongoService,
     Store as MongoStore
@@ -80,7 +80,11 @@ impl SbomProvider<(), Error> for GitHubSbomProvider {
 
         let repos: Vec<Repo> = match get_repos(org_name, &gh_client).await {
             Ok(value) => value,
-            Err(err) => panic!("Panic trying to extract value from Result: {}", err),
+            Err(err) => {
+                println!("Error attempting to get the repos: {}", err);
+                counter.github_req_error += 1;
+                Vec::new()
+            },
         };
 
         for repo in repos.iter() {
@@ -143,43 +147,30 @@ async fn get_repos(org: String, gh_client: &GitHubClient) -> Result<Vec<Repo>, E
             ),
         };
 
-        for (repo_num, repo) in gh_org_rsp.iter_mut().enumerate() {
+        for (repo_num, mut repo) in gh_org_rsp.iter_mut().enumerate() {
 
-            let github_last_commit_url = gh_client.get_last_commit_url(repo);
+            print!("Repo number: {}, ", repo_num);
 
-            println!("({}) Making call to {}", repo_num, github_last_commit_url);
+            let result = gh_client.get_last_commit(&token, &mut repo).await;
 
-            let response: Result<Option<Commit>, HyperError> = get(
-                github_last_commit_url.as_str(),
-                ContentType::Json,
-                token.as_str(),
-                None::<String>,
-            ).await;
+            let repo_name = repo.full_name.clone().unwrap();
 
-            let gh_commits_rsp = match response {
+            match result {
                 Ok(option) => match option {
-                    Some(value) => value,
-                    None => panic!("Nothing in here!"),
+                    Some(last_hash) => repo.add_last_hash(last_hash),
+                    None => println!("No last commit has found for Repo: {}", &repo_name)
                 },
                 Err(err) => {
-                    if let HyperError::Remote(status, _msg) = err {
+                    if let Error::LastCommitHashError(status, _msg) = err {
 
                         if status == 409 {
                             repo.mark_repo_empty();
                         }
 
-                        Commit {
-                            sha: Some(String::from("<empty repo>"))
-                        }
                     } else {
-                        panic!("No matching Error Type: {}", err)
+                        panic!("Unexpected error: {:#?}", err)
                     }
-                },
-            };
-
-            match gh_commits_rsp.sha {
-                Some(val) => repo.add_last_hash(val),
-                None => panic!("No value for commit found!")
+                }
             }
         }
 
