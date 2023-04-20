@@ -33,7 +33,7 @@ pub const V1_HARBOR_USERNAME_KEY: &str = "V1_HARBOR_USERNAME";
 pub const V1_HARBOR_PASSWORD_KEY: &str = "V1_HARBOR_PASSWORD";
 
 /// Key to get Snyk access key from AWS
-pub const SNYK_TOKEN_KEY: &str = "dev-sbom-harbor-snyk-token-use1"; //TODO: This needs to become an env var
+pub const SNYK_TOKEN_KEY: &str = "dev-harbor-snyk-token-use1"; //TODO: This needs to become an env var
 
 /// Returns the Mongo Connection URI as an environment variable.
 /// Defaults to local dev environment if not set.

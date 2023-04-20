@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs, fmt::format};
 
 use async_trait::async_trait;
 use platform::hyper::{ContentType, Error as HyperError, get, post};
 use serde_json::Value;
-use crate::{clients::{ProjectJson, SnykProviderError}, config::get_snyk_access_token};
+use crate::{clients::{OrgProjects, SnykProviderError}, config::get_snyk_access_token};
 
 use super::{SnykData, Org};
 
@@ -18,27 +18,29 @@ const API_V3_VERSION: &'static str = "2023-02-15~beta";
 //Format of SBOMs returned from Snyk
 const SBOM_FORMAT: &'static str = "cyclonedx%2Bjson";
 
-
+//TODO: Finish unit tests
 ///Snyk API trait implementation
-pub struct SnykApiImpl{}
+pub struct SnykRestClientImpl{}
 
 /// SnykAPI trait that contains all methods related to retrieving SBOM data from snyk
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait SnykAPI {
+pub trait SnykRestClient {
     /// Retrieves a list of all Orgs from Snyk and adds them into a new SnykData object
-    async fn get_orgs(snyk_token: String) -> Result<Vec<Org>, SnykProviderError>;
+    async fn get_orgs(&self, snyk_token: String) -> Result<Vec<Org>, SnykProviderError>;
     /// Returns a ProjectJson object that contains a list of all projects for an org
-    async fn get_projects_from_org(snyk_token: String, org_id: String, org_name: String) -> Result<Option<ProjectJson>, SnykProviderError>;
+    async fn get_projects_from_org(&self, snyk_token: String, org_id: String, org_name: String) -> Result<Option<OrgProjects>, SnykProviderError>;
     /// Returns a list of ProjectJson objects that each contain a list of projects for their specific org
-    async fn get_projects_from_org_list(snyk_token: String, orgs: Vec<Org>) -> (Vec<ProjectJson>, Vec<SnykProviderError>);
+    async fn get_projects_from_org_list(&self, snyk_token: String, orgs: Vec<Org>) -> (Vec<OrgProjects>, Vec<SnykProviderError>);
     /// Attempts to get an SBOM from the SNYK Api from a org and project ID
-    async fn get_sbom_from_snyk(snyk_token: String, org_id: String, proj_id: String) -> Result<Option<HashMap<String, Value>>, SnykProviderError>;
+    async fn get_sbom_from_snyk(&self, snyk_token: String, org_id: String, proj_id: String) -> Result<Option<HashMap<String, Value>>, SnykProviderError>;
 }
 
 #[async_trait]
-impl SnykAPI for SnykApiImpl {
-    async fn get_orgs(snyk_token: String) -> Result<Vec<Org>, SnykProviderError>{
+impl SnykRestClient for SnykRestClientImpl {
+
+    // Returns a list of Orgs within CMS Snyk
+    async fn get_orgs(&self, snyk_token: String) -> Result<Vec<Org>, SnykProviderError>{
         println!("Getting list of Orgs from Snyk...");
     
         let url = format!("{}/orgs", API_V1_URL);
@@ -62,13 +64,14 @@ impl SnykAPI for SnykApiImpl {
         }
     }
 
-    async fn get_projects_from_org(snyk_token: String, org_id: String, org_name: String) -> Result<Option<ProjectJson>, SnykProviderError> {
+    // Returns an OrgProjects object that contains an Org and its associated list of Projects
+    async fn get_projects_from_org(&self, snyk_token: String, org_id: String, org_name: String) -> Result<Option<OrgProjects>, SnykProviderError> {
 
         let url = format!("{}/org/{}/projects", API_V1_URL, org_id);
         let display_msg = format!("----------------------\nretrieving project list \nOrg: {}, \nOrg_ID: {}, \nURL: {}", org_name, org_id, url);
 
         println!("{}", display_msg);
-        let response: Result<Option<ProjectJson>, HyperError> = post(
+        let response: Result<Option<OrgProjects>, HyperError> = post(
             url.as_str(),
             ContentType::Json,
             snyk_token.as_str(),
@@ -81,14 +84,15 @@ impl SnykAPI for SnykApiImpl {
         }
     }
 
-    async fn get_projects_from_org_list(snyk_token: String, orgs: Vec<Org>) -> (Vec<ProjectJson>, Vec<SnykProviderError>) {
+    // Returns a tuple that contains a list of OrgProject objects and a list of any errors encountered
+    async fn get_projects_from_org_list(&self, snyk_token: String, orgs: Vec<Org>) -> (Vec<OrgProjects>, Vec<SnykProviderError>) {
 
-        let mut all_projects: Vec<ProjectJson> = Vec::new();
+        let mut all_projects: Vec<OrgProjects> = Vec::new();
         let mut errors: Vec<SnykProviderError> = Vec::new();
         for org in orgs.iter() {
             let org_id = org.id.clone().unwrap_or_else(|| "Missing".to_string());
             let org_name = org.name.clone().unwrap_or_else(|| "Missing".to_string());
-            let results = Self::get_projects_from_org(snyk_token.clone(), org_id.clone(), org_name.clone()).await;
+            let results = self.get_projects_from_org(snyk_token.clone(), org_id.clone(), org_name.clone()).await;
             
             match results {
                 Ok(option_proj_json) => {
@@ -106,7 +110,9 @@ impl SnykAPI for SnykApiImpl {
         return (all_projects, errors);
     }
 
-    async fn get_sbom_from_snyk(snyk_token: String, org_id: String, proj_id: String) -> Result<Option<HashMap<String, Value>>, SnykProviderError> {
+
+    // Returns an sbom from Snyk based 
+    async fn get_sbom_from_snyk(&self, snyk_token: String, org_id: String, proj_id: String) -> Result<Option<HashMap<String, Value>>, SnykProviderError> {
         let sbom_url = format!("{}/orgs/{}/projects/{}/sbom?version={}&format={}", API_V3_URL, org_id, proj_id, API_V3_VERSION, SBOM_FORMAT);
         let display_msg = format!("----------------------\nFetching sbom from Snyk \nproject: {}, \nOrg: {}, \nUrl: {}", proj_id, org_id, sbom_url);
         println!("{}", display_msg);
@@ -128,135 +134,53 @@ impl SnykAPI for SnykApiImpl {
 
 #[tokio::test]
 pub async fn test_get_orgs() {
-    //TODO: Validate results
-    //TODO: Configure mock rest call
+    let snyk_api = SnykRestClientImpl{};
     let snyk_token = get_snyk_access_token().await;
 
-    let orgs = SnykApiImpl::get_orgs(snyk_token).await;
-    println!("{:#?}", orgs);
+    let orgs = snyk_api.get_orgs(snyk_token).await;
+
+    // Validate we have a successfull response
+    assert!(orgs.is_ok(), "Response should be OK");
+
+    // Validate the result has something in it
+    assert!(!orgs.unwrap().is_empty(), "The resulting Vec<Org> should not be empty");
 }
 
 #[tokio::test]
 async fn test_get_projects_from_org() {
-    //TODO: Stub for rest call
-    //TODO: Test for OK results
-    //TODO: Test for Error 
+    let snyk_api = SnykRestClientImpl{};
     let org_id = format!("f288c129-6c28-4b65-aec2-bd753e095b13");
     let org_name= format!("Test Organization");
-    // let org_id = format!("555797d4-7d2b-4588-ba4a-84776b2f9ee8");
-    // let org_name= format!("BatCAVE (ISPG) [AWS]");
     let snyk_token = get_snyk_access_token().await;
-    let projects = SnykApiImpl::get_projects_from_org(snyk_token, org_id, org_name).await;
-    println!("{:#?}", projects);
+    let good_request = snyk_api.get_projects_from_org(snyk_token.clone(), org_id.clone(), org_name.clone()).await;
 
-    // Org {
-    //     id: Some(
-    //         "555797d4-7d2b-4588-ba4a-84776b2f9ee8",
-    //     ),
-    //     name: Some(
-    //         "BatCAVE (ISPG) [AWS]",
-    //     ),
-    // },
-    // Org {
-    //     id: Some(
-    //         "71e3fb2e-696c-426f-9774-5e62fa2ac44a",
-    //     ),
-    //     name: Some(
-    //         "IDDOC|4 Innovation [ACO-OS]",
-    //     ),
-    // },
-    // Org {
-    //     id: Some(
-    //         "00d7ace1-af35-4535-a1bb-c468d22336d0",
-    //     ),
-    //     name: Some(
-    //         "ZONE [ZONE]",
-    //     ),
-    // },
-    // Org {
-    //     id: Some(
-    //         "61163aee-82c0-4183-88a2-7df9470c154a",
-    //     ),
-    //     name: Some(
-    //         "RASS (OIT) [RAS-RAPS]",
-    //     ),
-    // },
-    // Org {
-    //     id: Some(
-    //         "b745377d-e6ac-465f-bc66-b642491805ad",
-    //     ),
-    //     name: Some(
-    //         "CDRAP - FAS [CDRAP]",
-    //     ),
-    // },
-    // Org {
-    //     id: Some(
-    //         "ad46f70d-5139-47cf-b4a1-bfbb4cf42ae4",
-    //     ),
-    //     name: Some(
-    //         "CDRAP - QDAS [CDRAP]",
-    //     ),
-    // },
-    // Org {
-    //     id: Some(
-    //         "0aacbfcb-6a16-4307-b38f-e1ef0cd017ca",
-    //     ),
-    //     name: Some(
-    //         "EQRS - S&F [EQRS]",
-    //     ),
-    // },
-    // Org {
-    //     id: Some(
-    //         "ea7509ec-8d27-45fe-a878-d0c1d4be1751",
-    //     ),
-    //     name: Some(
-    //         "SC QCOR [SC QCOR]",
-    //     ),
-    // },
-    // Org {
-    //     id: Some(
-    //         "7ca8a69a-014b-45b3-8c2a-45f28acfdbb1",
-    //     ),
-    //     name: Some(
-    //         "AMS [AMS]",
-    //     ),
-    // },
-    // Org {
-    //     id: Some(
-    //         "f288c129-6c28-4b65-aec2-bd753e095b13",
-    //     ),
-    //     name: Some(
-    //         "Test Organization",
-    //     ),
-    // },
-    // Org {
-    //     id: Some(
-    //         "a1738e18-1b90-4ee9-b3dc-10a3b7c51953",
-    //     ),
-    //     name: Some(
-    //         "HIOS [HIOS]",
-    //     ),
-    // },
-    // Org {
-    //     id: Some(
-    //         "3957864e-d4a0-4290-bc83-750a2ea495e8",
-    //     ),
-    //     name: Some(
-    //         "MACFIN [MACFIN]",
-    //     ),
-    // },
-    // Org {
-    //     id: Some(
-    //         "230a9cf3-8880-43bb-a8ff-c69f372d4fc3",
-    //     ),
-    //     name: Some(
-    //         "PMPP [PMPP]",
-    //     ),
-    // },
+    // Validate we have a successfull response
+    assert!(good_request.is_ok(), "Response should be OK");
+
+    // Validate Option is not empty
+    assert!(good_request.as_ref().unwrap().is_some(), "Option in response should be SOME");
+
+    let org_projects = good_request.unwrap().clone().unwrap();
+
+    // Validate OrgProjects.projects field is not empty
+    assert!(!org_projects.projects.is_empty(), "The org should have a list of projects");
+
+    // Validate OrgProjects.org.id field
+    assert!(org_projects.org.id.is_some(), "Org ID should not be missing");
+    assert!(org_projects.org.id.unwrap() == org_id, "ID Should match what we used in the request");
+
+    // Validate OrgProjects.org.name field
+    assert!(org_projects.org.name.is_some(), "Org Name should not be missing");
+    assert!(org_projects.org.name.unwrap() == org_name, "Name Should match what we used in the request");
+
+    let bad_request = snyk_api.get_projects_from_org(snyk_token, format!("123-abc"), org_name.clone()).await;
+    assert!(bad_request.is_err(), "We made a bad request and this should produce an error");
+
 }
 
 #[tokio::test]
 async fn test_get_projects_from_org_list() {
+    let snyk_api = SnykRestClientImpl{};
     let org_list: Vec<Org> = vec![
         Org{
             id: Some(format!("230a9cf3-8880-43bb-a8ff-c69f372d4fc3")), 
@@ -272,25 +196,26 @@ async fn test_get_projects_from_org_list() {
         }
     ];
     let snyk_token = get_snyk_access_token().await;
-    let projects = SnykApiImpl::get_projects_from_org_list(snyk_token, org_list).await;
+    let get_proj_results = snyk_api.get_projects_from_org_list(snyk_token, org_list).await;
 
-    for project_json in projects.0 {
-        if project_json.org.id.is_some() {
-            println!("{:#?}", project_json);
-        }
-    }
-
-    for errors in projects.1 {
-        println!("{}", errors)
-    }
+    // Validate we have a successfull response
+    assert!(!get_proj_results.0.is_empty(), "The first part of the tuple should have data in it");
+    assert!(get_proj_results.1.is_empty(), "The second part of the tuple should be empty (no errors found)");
 }
 
 #[tokio::test]
 async fn test_get_sbom_from_snyk() {
-    // let fake_token = format!("123-abc");
-    // let fake_org_id = format!("456-ORG");
-    // let fake_proj_id = format!("789-proj");
-    //TODO: Stub for rest call
-    //TODO: Test for OK results
-    //TODO: Test for Error 
+    let snyk_api = SnykRestClientImpl{};
+    let snyk_token = get_snyk_access_token().await;
+    let result = snyk_api.get_sbom_from_snyk(snyk_token.clone(), format!("a1738e18-1b90-4ee9-b3dc-10a3b7c51953"), format!("b85a413d-b972-4271-9a78-87625c108c59")).await;
+
+    // Validate we have a successfull response
+    assert!(result.is_ok(), "Response should be OK");
+
+    // Validate result is Some
+    assert!(result.as_ref().unwrap().is_some(), "Option in response should be SOME");
+
+    let sbom = result.unwrap().clone().unwrap();
+    // Validate hashmap has something in it
+    assert!(!sbom.is_empty(), "We should have a hashmap with data in it");
 }

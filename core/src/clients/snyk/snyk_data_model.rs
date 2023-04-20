@@ -8,7 +8,7 @@ pub (crate) struct SnykData {
 }
 
 /// This struct represents a subset of the json retrieved from Snyk when requesting a list of Orgs
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Org {
     /// Org ID
     pub id: Option<String>,
@@ -17,8 +17,8 @@ pub struct Org {
 }
 
 /// This struct represents a subset of the json retrieved from Snyk when requesting a list of projects for an Org
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct ProjectJson {
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub struct OrgProjects {
     /// The list of projects and their details for an Org
     #[serde(default = "project_list_default")]
     pub projects: Vec<ProjectDetails>,
@@ -27,7 +27,7 @@ pub struct ProjectJson {
 }
 
 /// This struct represents a subset of the json retrieved from Snyk that describes details of a particular project
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProjectDetails {
     /// Project ID
     pub id: String,
