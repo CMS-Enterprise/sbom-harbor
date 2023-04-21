@@ -120,11 +120,7 @@ async fn get_repos(org: String, gh_client: &GitHubClient) -> Result<Vec<Repo>, E
     let token = match get_gh_token() {
         Ok(value) => value,
         Err(err) => return Err(
-            Error::Configuration(
-                String::from(
-                    format!("GitHub token not in environment {}", err)
-                )
-            )
+            Error::Configuration(err)
         )
     };
 
@@ -133,20 +129,7 @@ async fn get_repos(org: String, gh_client: &GitHubClient) -> Result<Vec<Repo>, E
 
     for (page, per_page) in pages.iter_mut().enumerate() {
 
-        let mut gh_org_rsp = match gh_client.get_page_of_repos(
-            &org,
-            page+1,
-            per_page,
-            &token
-        ).await {
-            Ok(vector) => vector,
-            Err(err) => return Err(
-                Error::GitHubRequest(
-                    format!("Error getting a page of repos: {}", err)
-                )
-            ),
-        };
-
+        let mut gh_org_rsp = gh_client.get_page_of_repos(&org, page+1, per_page, &token).await?;
         for (repo_num, mut repo) in gh_org_rsp.iter_mut().enumerate() {
 
             print!("Repo number: {}, ", repo_num);
@@ -269,9 +252,7 @@ async fn send_to_v1(
     ).await {
         Ok(response) => Ok(response),
         Err(err) => return Err(
-            Error::SbomUpload(
-                String::from(format!("Error uploading SBOM: {}", err))
-            )
+            Error::SbomUpload(err)
         )
     }
 }
@@ -298,7 +279,7 @@ async fn create_document_in_db(
         Ok(result) => result,
         Err(err) => return Err(
             Error::MongoDb(
-                format!("Error inserting into mongo: {}", err)
+                err
             )
         ),
     };
@@ -420,7 +401,7 @@ async fn process_repo(
                     Err(err) => {
                         counter.store_error += 1;
                         println!("PROCESSING> Mongo service error!! {:#?}", err);
-                        Err(Error::MongoDb(String::from(err.to_string())))
+                        Err(Error::MongoDb(err))
                     }
                 }
             },
@@ -429,7 +410,7 @@ async fn process_repo(
             Err(err) => {
                 counter.upload_errors += 1;
                 println!("PROCESSING> Error Uploading SBOM!! {:#?}", err);
-                Err(Error::SbomUpload(String::from(err.to_string())))
+                Err(err)
             }
         }
     }

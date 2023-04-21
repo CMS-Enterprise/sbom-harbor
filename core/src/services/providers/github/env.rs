@@ -38,55 +38,35 @@ impl GitHubProviderEnvironmentConfig {
         let cms_team_id = match get_cms_team_id() {
             Ok(value) => value,
             Err(err) => return Err(
-                Error::Configuration(
-                    String::from(
-                        format!("Missing Team Id of V1 Team: {}", err)
-                    )
-                )
+                Error::Configuration(err)
             )
         };
 
         let cms_team_token = match get_cms_team_token() {
             Ok(value) => value,
             Err(err) => return Err(
-                Error::Configuration(
-                    String::from(
-                        format!("Missing Team token of V1 Team: {}", err)
-                    )
-                )
+                Error::Configuration(err)
             )
         };
 
         let api_url = match get_api_url() {
             Ok(value) => value,
             Err(err) => return Err(
-                Error::Configuration(
-                    String::from(
-                        format!("Missing Cognito Username: {}", err)
-                    )
-                )
+                Error::Configuration(err)
             )
         };
 
         let cognito_username = match get_v1_username() {
             Ok(value) => value,
             Err(err) => return Err(
-                Error::Configuration(
-                    String::from(
-                        format!("Missing Cognito Username: {}", err)
-                    )
-                )
+                Error::Configuration(err)
             )
         };
 
         let cognito_password = match get_v1_password() {
             Ok(value) => value,
             Err(err) => return Err(
-                Error::Configuration(
-                    String::from(
-                        format!("Missing Cognito Password: {}", err)
-                    )
-                )
+                Error::Configuration(err)
             )
         };
 

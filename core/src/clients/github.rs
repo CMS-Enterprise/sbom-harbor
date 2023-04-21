@@ -47,11 +47,7 @@ impl Client {
         let token = match get_gh_token() {
             Ok(value) => value,
             Err(err) => return Err(
-                Error::Configuration(
-                    String::from(
-                        format!("GitHub token not in environment {}", err)
-                    )
-                )
+                Error::Configuration(err)
             )
         };
 
@@ -69,15 +65,13 @@ impl Client {
             Ok(option) => match option {
                 Some(value) => Ok(value.public_repos),
                 None => Err(
-                    Error::GitHubRequest(
+                    Error::GitHubEmptyResponse(
                         format!("Get request from GitHub had an empty response")
                     )
                 ),
             },
             Err(err) => Err(
-                Error::GitHubRequest(
-                    format!("Error in the response: {}", err)
-                )
+                Error::GitHubResponse(err)
             ),
         }
     }
@@ -181,23 +175,9 @@ impl Client {
     ///
     pub async fn get_pages(&self, org: &String) -> Result<Vec<u32>, Error> {
 
-        let num_repos = match self.get_num_pub_repos(org.to_string()).await {
-            Ok(option) => match option {
-                Some(num) => num,
-                None => return Err(
-                    Error::GitHubRequest(
-                        format!("There are no repositories in {}, something is wrong", org)
-                    )
-                ),
-            },
-            Err(err) => return Err(
-                Error::GitHubRequest(
-                    format!("Error Attempting to get num Repos: {}", err)
-                )
-            ),
-        };
+        let num_repos = self.get_num_pub_repos(org.to_string()).await?.unwrap_or(0);
 
-        println!("Number of Repositories in {org}: {num_repos}");
+        println!("Number of Repositories in {org}: {:#?}", num_repos);
 
         let num_calls = ((num_repos/100) as i8) + 1;
         let num_last_call = num_repos % 100;
@@ -235,15 +215,13 @@ impl Client {
             Ok(option) => match option {
                 Some(value) => Ok(value),
                 None => return Err(
-                    Error::GitHubRequest(
+                    Error::GitHubEmptyResponse(
                         format!("Get request from GitHub had an empty response")
                     )
                 ),
             },
             Err(err) => return Err(
-                Error::GitHubRequest(
-                    format!("Error in the response: {}", err)
-                )
+                Error::GitHubResponse(err)
             ),
         }
     }
