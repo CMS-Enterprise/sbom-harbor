@@ -3,6 +3,7 @@ use crate::entities::packages::FindingProviderKind;
 use crate::entities::sboms::SbomProviderKind;
 use crate::Error;
 use async_trait::async_trait;
+use chrono::{DateTime, DurationRound, Utc};
 use platform::mongodb::Service;
 use std::future::Future;
 use tracing::log::debug;
@@ -14,16 +15,27 @@ pub mod snyk;
 pub trait ScanProvider<'a>: Service<Scan> {
     async fn commit_scan(&self, scan: &mut Scan) -> Result<(), Error> {
         match scan.err {
-            None => match scan.ref_errs.iter().any(|scan_ref| !scan_ref.is_empty()) {
-                true => scan.status = ScanStatus::CompleteWithErrors,
-                false => {
-                    scan.status = ScanStatus::Complete;
+            None => {
+                scan.err_total = scan
+                    .ref_errs
+                    .iter()
+                    .filter(|ref_err| !ref_err.is_empty())
+                    .count() as u64;
+
+                match scan.err_total > 0 {
+                    true => scan.status = ScanStatus::CompleteWithErrors,
+                    false => {
+                        scan.status = ScanStatus::Complete;
+                    }
                 }
-            },
+            }
             Some(_) => {
                 scan.status = ScanStatus::Failed;
             }
         }
+
+        scan.finish = Utc::now();
+        scan.duration_seconds = scan.finish.signed_duration_since(scan.start).num_seconds();
 
         match self.update(scan).await {
             Ok(_) => Ok(()),
@@ -60,8 +72,7 @@ pub trait SbomProvider<'a>: ScanProvider<'a> {
     async fn scan(&self, scan: &mut Scan) -> Result<(), Error>;
 
     async fn init_scan(&self, provider: SbomProviderKind) -> Result<Scan, Error> {
-        let mut scan = match Scan::new(ScanKind::Finding, ScanStatus::Started, Some(provider), None)
-        {
+        let mut scan = match Scan::new(ScanKind::Sbom, ScanStatus::Started, Some(provider), None) {
             Ok(scan) => scan,
             Err(e) => {
                 let msg = format!("init_scan::new_failed::{}", e);

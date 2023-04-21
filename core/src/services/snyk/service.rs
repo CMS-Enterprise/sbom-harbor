@@ -10,15 +10,17 @@ use platform::persistence::s3;
 use tracing::debug;
 
 use crate::entities::cyclonedx::models::{Bom, Component};
-use crate::entities::packages::{Dependency, Package, Purl, Unsupported};
+use crate::entities::packages::{Dependency, Finding, Package, Purl, Unsupported};
 use crate::entities::sboms::{CdxFormat, Spec};
+use crate::entities::xrefs::{Xref, XrefKind};
 use crate::services::findings::FindingService;
 use crate::services::snyk::adapters::{Issue, Organization, Project};
 use crate::Error;
 
 use crate::services::sboms::SbomService;
 use crate::services::snyk::client::client::Client;
-use crate::services::snyk::SbomFormat;
+use crate::services::snyk::client::models::CommonIssueModel;
+use crate::services::snyk::{IssueSnyk, SbomFormat};
 
 /// Provides Snyk related data retrieval and analytics capabilities.
 #[derive(Debug)]
@@ -51,7 +53,7 @@ impl SnykService {
     }
 
     /// Retrieves orgs from the Snyk API.
-    pub(crate) async fn orgs(&self) -> Result<Vec<Organization>, Error> {
+    pub(in crate::services) async fn orgs(&self) -> Result<Vec<Organization>, Error> {
         let orgs = match self.client.orgs().await {
             Ok(orgs) => orgs,
             Err(e) => {
@@ -80,7 +82,7 @@ impl SnykService {
     }
 
     /// Gathers all projects across all orgs so that index can be analyzed linearly.
-    pub(crate) async fn projects(&self) -> Result<Vec<Project>, Error> {
+    pub(in crate::services) async fn projects(&self) -> Result<Vec<Project>, Error> {
         let mut projects = vec![];
 
         let mut orgs = match self.orgs().await {
@@ -110,7 +112,7 @@ impl SnykService {
     }
 
     /// Retrieves [Projects] for an [Organization] from the Snyk API.
-    pub(in crate::services::snyk) async fn projects_by_org(
+    pub(in crate::services) async fn projects_by_org(
         &self,
         org: &Organization,
     ) -> Result<Vec<Project>, Error> {
@@ -154,5 +156,70 @@ impl SnykService {
                 Ok(results)
             }
         }
+    }
+
+    /// Get findings for a Package URL.
+    pub(in crate::services) async fn findings(
+        &self,
+        org_id: &str,
+        purl: &str,
+        xrefs: &Option<HashMap<XrefKind, Xref>>,
+    ) -> Result<Option<Vec<Finding>>, Error> {
+        let issues = match self.issues(org_id, purl).await {
+            Ok(issues) => issues,
+            Err(e) => {
+                return Err(Error::Snyk(e.to_string()));
+            }
+        };
+
+        let issues = match issues {
+            None => {
+                return Ok(None);
+            }
+            Some(issues) => issues,
+        };
+
+        if issues.is_empty() {
+            return Ok(None);
+        }
+
+        let mut results = vec![];
+
+        issues.iter().for_each(|issue| {
+            results.push(Finding::from_snyk(
+                purl.to_string(),
+                issue.clone(),
+                xrefs.clone(),
+            ));
+        });
+
+        Ok(Some(results))
+    }
+
+    /// Get native Snyk issues. External callers should most likely use [findings].
+    pub(in crate::services::snyk) async fn issues(
+        &self,
+        org_id: &str,
+        purl: &str,
+    ) -> Result<Option<Vec<IssueSnyk>>, Error> {
+        let issues = match self.client.get_issues(org_id, purl).await {
+            Ok(issues) => issues,
+            Err(e) => {
+                return Err(Error::Snyk(format!("snyk::issues::{}", e)));
+            }
+        };
+
+        let issues = match issues {
+            None => {
+                return Ok(None);
+            }
+            Some(issues) => issues,
+        };
+
+        if issues.is_empty() {
+            return Ok(None);
+        }
+
+        Ok(Some(issues))
     }
 }

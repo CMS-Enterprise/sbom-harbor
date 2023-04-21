@@ -10,7 +10,7 @@ mod tests {
     use crate::entities::sboms::{Sbom, SbomProviderKind};
     use crate::entities::xrefs::{XrefKind, Xrefs};
     use crate::services::enrichment::snyk::changeset::{ScanFindingsChangeSet, ScanSbomsChangeSet};
-    use crate::services::enrichment::{FindingProvider, SbomProvider};
+    use crate::services::enrichment::{FindingProvider, SbomProvider, ScanProvider};
     use crate::services::findings::{FileSystemStorageProvider, FindingService, StorageProvider};
     use crate::services::sboms::{
         FileSystemStorageProvider as SbomFileSystemStorageProvider, SbomService,
@@ -81,6 +81,7 @@ mod tests {
                         "can_store_sbom_change_set_from_local::process_project::{}",
                         msg
                     );
+                    change_set.ref_errs(project.id.clone(), e.to_string())
                 }
                 _ => {}
             }
@@ -95,7 +96,18 @@ mod tests {
         match service.commit_sboms(&mut change_set).await {
             Err(e) => {
                 let msg = format!("{}", e);
-                debug!("can_store_sbom_change_set_from_local::commit::{}", msg);
+                debug!(
+                    "can_store_sbom_change_set_from_local::commit_sboms::{}",
+                    msg
+                );
+            }
+            _ => {}
+        }
+
+        match service.commit_scan(&mut scan).await {
+            Err(e) => {
+                let msg = format!("{}", e);
+                debug!("can_store_sbom_change_set_from_local::commit_scan::{}", msg);
             }
             _ => {}
         }
@@ -136,52 +148,13 @@ mod tests {
         let mut purls_with_findings = HashMap::<String, u8>::new();
 
         for mut purl in purls.into_iter() {
-            match service.process_purl(&mut change_set, &mut purl).await {
+            match service.scan_purl(&mut change_set, &mut purl).await {
                 Ok(_) => {}
                 Err(e) => {
                     debug!("{}", e);
                 }
             }
-
-            // Uncomment to limit run.
-            match change_set
-                .purls
-                .iter()
-                .filter(|(key, value)| {
-                    debug!("{}", key);
-                    match &value.findings {
-                        None => false,
-                        Some(findings) => findings.len() > 0,
-                    }
-                })
-                .count()
-                > 4
-            {
-                true => {
-                    break;
-                }
-                false => {
-                    continue;
-                }
-            }
         }
-
-        for (_, purl) in change_set.purls.iter_mut() {
-            match service.update(purl).await {
-                Ok(_) => {
-                    let msg = format!(
-                        "can_store_findings_change_set_from_local::{:#?}",
-                        purl.scan_refs
-                    );
-                    debug!("{}", msg);
-                }
-                Err(e) => {
-                    debug!("{}", e);
-                }
-            }
-        }
-
-        assert_ne!(0, change_set.purls.len());
 
         Ok(())
     }

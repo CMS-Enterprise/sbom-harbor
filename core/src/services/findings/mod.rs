@@ -1,10 +1,11 @@
 mod service;
 pub use service::*;
 
+use crate::entities::enrichment::ScanRef;
 use async_trait::async_trait;
 use std::fmt::Debug;
 
-use crate::entities::packages::Finding;
+use crate::entities::packages::{Finding, Purl};
 use crate::Error;
 
 // TODO: This could maybe be generalized and combined with Sbom version.
@@ -12,7 +13,12 @@ use crate::Error;
 #[async_trait]
 pub trait StorageProvider: Debug + Send + Sync {
     /// Write findings to storage provider and return output path.
-    async fn write(&self, purl: &str, findings: &Vec<Finding>) -> Result<String, Error>;
+    async fn write(
+        &self,
+        purl: &str,
+        findings: &Vec<Finding>,
+        scan_ref: &ScanRef,
+    ) -> Result<String, Error>;
 }
 
 /// Saves findings results to the local filesystem.
@@ -34,9 +40,12 @@ impl FileSystemStorageProvider {
 
 #[async_trait]
 impl StorageProvider for FileSystemStorageProvider {
-    async fn write(&self, purl: &str, findings: &Vec<Finding>) -> Result<String, Error> {
-        let purl = purl.replace("/", "_");
-
+    async fn write(
+        &self,
+        purl: &str,
+        findings: &Vec<Finding>,
+        scan_ref: &ScanRef,
+    ) -> Result<String, Error> {
         match std::fs::create_dir_all(&self.out_dir) {
             Ok(_) => {}
             Err(e) => {
@@ -47,7 +56,11 @@ impl StorageProvider for FileSystemStorageProvider {
             }
         }
 
-        let file_name = format!("findings-{}", purl);
+        let file_name = format!(
+            "findings-{}-{}",
+            Purl::format_file_name(purl),
+            scan_ref.iteration
+        );
         let file_path = format!("{}/{}", self.out_dir, file_name);
 
         let json_raw = serde_json::to_string(findings)

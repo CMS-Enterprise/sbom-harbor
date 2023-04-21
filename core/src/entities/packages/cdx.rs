@@ -49,7 +49,7 @@ impl PackageCdx {
 
         let purl = match bom.purl() {
             None => return Err(Error::Entity("bom_purl_none".to_string())),
-            Some(purl) => Purl::decode(purl.as_str())?,
+            Some(purl) => purl,
         };
 
         let mut dependencies = vec![];
@@ -61,12 +61,7 @@ impl PackageCdx {
                 .for_each(|component: &Component| match &component.purl {
                     None => {}
                     Some(p) => {
-                        match Purl::decode(p.as_str()) {
-                            Ok(purl) => dependencies.push(purl),
-                            Err(e) => {
-                                debug!("cdx::from_bom::purl:decode::{}::{}", p, e);
-                            }
-                        };
+                        dependencies.push(purl.clone());
                     }
                 }),
         }

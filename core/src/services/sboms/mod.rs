@@ -8,6 +8,7 @@ use std::io::BufReader;
 
 use crate::{config, Error};
 
+use crate::entities::packages::Purl;
 use crate::entities::sboms::Sbom;
 use crate::entities::xrefs;
 use async_trait::async_trait;
@@ -29,7 +30,7 @@ pub struct FileSystemStorageProvider {
 impl FileSystemStorageProvider {
     pub fn new(out_dir: Option<String>) -> FileSystemStorageProvider {
         let out_dir = match out_dir {
-            None => "/tmp/harbor".to_string(),
+            None => "/tmp/harbor/sboms".to_string(),
             Some(out_dir) => out_dir,
         };
 
@@ -41,7 +42,7 @@ impl FileSystemStorageProvider {
 impl StorageProvider<'_> for FileSystemStorageProvider {
     async fn write(&self, raw: &str, sbom: &mut Sbom) -> Result<String, Error> {
         let purl = &sbom.purl()?;
-        let purl = purl.replace("/", "_");
+        let purl = Purl::format_file_name(purl.as_str());
 
         match std::fs::create_dir_all(&self.out_dir) {
             Ok(_) => {}

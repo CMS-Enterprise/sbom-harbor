@@ -112,6 +112,7 @@ impl SnykService {
                 Err(e) => {
                     // TODO: Emit Metric
                     debug!("build_change_set::{}", e);
+                    change_set.scan.ref_errs(project.id.clone(), e.to_string())
                 }
             }
         }

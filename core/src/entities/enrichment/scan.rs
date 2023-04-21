@@ -1,9 +1,11 @@
 use crate::entities::packages::{Finding, FindingProviderKind};
 use crate::entities::sboms::{Sbom, SbomProviderKind};
 use crate::Error;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
+use std::time::Duration;
 
 /// A [Scan] is a value type that contains the results of an enrichment cycle where the SBOM is
 /// assessed for vulnerability [Findings].
@@ -24,8 +26,17 @@ pub struct Scan {
     /// Provider the performed the scan for Sboms.
     pub sbom_provider: Option<SbomProviderKind>,
 
-    /// The unix timestamp for when the Scan was performed.
+    /// The unix timestamp for when the Scan was created.
     pub timestamp: u64,
+
+    /// Human readable start time.
+    pub start: DateTime<Utc>,
+
+    /// Human readable end time.
+    pub finish: DateTime<Utc>,
+
+    /// The duration of the completed [Scan] in seconds.
+    pub duration_seconds: i64,
 
     /// Result of the [Scan].
     pub status: ScanStatus,
@@ -36,6 +47,9 @@ pub struct Scan {
     /// Map of recoverable errors that occurred during the [Scan]. Used to track recoverable
     /// errors and the scan target that produced the error.
     pub ref_errs: Option<HashMap<String, String>>,
+
+    /// The total count of errors encountered during the scan.
+    pub err_total: u64,
 }
 
 impl Scan {
@@ -47,6 +61,7 @@ impl Scan {
         finding_provider: Option<FindingProviderKind>,
     ) -> Result<Scan, Error> {
         let timestamp = platform::time::timestamp().map_err(|e| Error::Runtime(e.to_string()))?;
+        let now = Utc::now();
 
         Ok(Scan {
             id: "".to_string(),
@@ -54,9 +69,13 @@ impl Scan {
             finding_provider,
             sbom_provider,
             timestamp,
+            start: now.clone(),
+            finish: now,
+            duration_seconds: 0,
             status,
             err: None,
             ref_errs: None,
+            err_total: 0,
         })
     }
 

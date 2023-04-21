@@ -49,19 +49,19 @@ pub struct Sbom {
     pub scan_refs: Vec<ScanRef>,
 
     /// CycloneDx JSON spec model of Sbom. Hydrated at runtime.
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     pub(crate) bom: Option<Bom>,
 
     /// [Package] instance that represents this Sbom. Hydrated at runtime.
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     pub package: Option<Package>,
 
     /// [Packages] this Sbom depends on. Hydrated at runtime.
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     pub dependencies: Vec<Dependency>,
 
     /// [Packages] that depend on this Sbom. Hydrated at runtime.
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     pub dependents: Vec<Dependency>,
 }
 
@@ -92,13 +92,6 @@ impl Sbom {
                     return Err(Error::Entity("from_raw_cdx::purl_empty".to_string()));
                 }
                 purl
-            }
-        };
-
-        let purl = match Purl::decode(purl.as_str()) {
-            Ok(purl) => purl,
-            Err(e) => {
-                return Err(Error::Entity(format!("purl::decode::{}", e)));
             }
         };
 

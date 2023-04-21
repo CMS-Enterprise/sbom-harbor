@@ -1,3 +1,4 @@
+use crate::entities::enrichment::ScanRef;
 use crate::entities::packages::Finding;
 use crate::entities::sboms::Sbom;
 use crate::services::findings::StorageProvider;
@@ -27,6 +28,7 @@ impl FindingService {
         &self,
         purl: String,
         findings: Option<Vec<Finding>>,
+        scan_ref: &ScanRef,
     ) -> Result<Option<String>, Error> {
         let findings = match findings {
             None => {
@@ -42,7 +44,7 @@ impl FindingService {
             false => {}
         }
 
-        match self.storage.write(purl.as_str(), &findings).await {
+        match self.storage.write(purl.as_str(), &findings, scan_ref).await {
             Ok(file_path) => Ok(Some(file_path)),
             Err(e) => {
                 return Err(Error::Enrichment(format!(

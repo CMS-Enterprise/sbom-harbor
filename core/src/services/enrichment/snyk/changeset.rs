@@ -1,5 +1,5 @@
 use crate::entities::cyclonedx::Bom;
-use crate::entities::enrichment::Scan;
+use crate::entities::enrichment::{Scan, ScanRef};
 use crate::entities::packages::{
     ComponentKind, Dependency, Finding, Package, PackageCdx, Purl, Unsupported,
 };
@@ -66,6 +66,13 @@ impl ScanSbomsChangeSet<'_> {
             unsupported: HashMap::new(),
             sboms: HashMap::new(),
         }
+    }
+    pub(in crate::services::enrichment::snyk) fn ref_errs(
+        &mut self,
+        target_id: String,
+        err: String,
+    ) {
+        self.scan.ref_errs(target_id, err);
     }
 
     /// Track an SBOM and all it's parts.
@@ -289,56 +296,35 @@ impl ScanSbomsChangeSet<'_> {
 pub(crate) struct ScanFindingsChangeSet<'a> {
     /// The [Scan] instance used to relate all changes in the changeset.
     pub scan: &'a mut Scan,
-
-    /// The set of Purls tracked by the scan.
-    pub purls: HashMap<String, Purl>,
 }
 
 impl ScanFindingsChangeSet<'_> {
     pub(in crate::services::enrichment::snyk) fn new(scan: &mut Scan) -> ScanFindingsChangeSet {
-        ScanFindingsChangeSet {
-            scan,
-            purls: Default::default(),
-        }
+        ScanFindingsChangeSet { scan }
     }
 
     /// Track a Findings Scan.
     pub(in crate::services::enrichment::snyk) fn track(
         &mut self,
         purl: &mut Purl,
-    ) -> Result<(), Error> {
+    ) -> Result<ScanRef, Error> {
         match purl.scan_refs(self.scan, None) {
-            Ok(_) => {}
+            Ok(scan_ref) => Ok(scan_ref),
             Err(e) => {
                 let msg = format!("changeset::error::purl::scan_refs::{}", e);
                 return Err(Error::Enrichment(msg));
             }
         }
-
-        match self.purls.get_mut(purl.purl.as_str()) {
-            None => {
-                self.purls.insert(purl.purl.clone(), purl.clone());
-            }
-            Some(_) => {
-                return Err(Error::Enrichment(
-                    "changeset::track::purl_scan_duplicate".to_string(),
-                ));
-            }
-        }
-
-        Ok(())
     }
 
     pub(in crate::services::enrichment::snyk) fn error(&mut self, purl: &mut Purl, error: String) {
         self.scan.ref_errs(purl.purl.clone(), error.clone());
 
-        match purl.scan_refs(self.scan, Some(error)) {
+        match purl.scan_ref_err(self.scan, Some(error)) {
             Ok(_) => {}
             Err(e) => {
                 debug!("changeset::error::purl::scan_refs::{}", e);
             }
         }
-
-        self.purls.insert(purl.purl.clone(), purl.clone());
     }
 }

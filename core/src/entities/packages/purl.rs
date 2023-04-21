@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
+use std::ops::Deref;
 use tracing::debug;
 
 use crate::entities::cyclonedx::Component;
@@ -61,6 +62,11 @@ impl Purl {
         Ok(result.to_string())
     }
 
+    /// Generates a path safe file name from a Package URL.
+    pub(crate) fn format_file_name(purl: &str) -> String {
+        purl.replace("/", "_")
+    }
+
     pub(crate) fn from_component(
         component: &Component,
         component_kind: ComponentKind,
@@ -75,12 +81,12 @@ impl Purl {
             Some(p) => p,
         };
 
-        let purl = match Self::decode(purl.as_str()) {
-            Ok(p) => p,
-            Err(e) => {
-                return Err(Error::Entity(format!("purl::from_component::{}", e)));
-            }
-        };
+        // let purl = match Self::decode(purl.as_str()) {
+        //     Ok(p) => p,
+        //     Err(e) => {
+        //         return Err(Error::Entity(format!("purl::from_component::{}", e)));
+        //     }
+        // };
 
         let xrefs = match xrefs {
             None => None,
@@ -91,7 +97,7 @@ impl Purl {
 
         Ok(Self {
             id: "".to_string(),
-            purl,
+            purl: purl.clone(),
             name: component.name.clone(),
             version: component.version.clone(),
             component_kind,
@@ -101,7 +107,7 @@ impl Purl {
         })
     }
 
-    pub fn scan_refs(&mut self, mut scan: &Scan, err: Option<String>) -> Result<(), Error> {
+    pub fn scan_refs(&mut self, mut scan: &Scan, err: Option<String>) -> Result<ScanRef, Error> {
         if scan.id.is_empty() {
             return Err(Error::Entity("scan_id_required".to_string()));
         }
@@ -119,9 +125,20 @@ impl Purl {
             _ => 1,
         };
 
+        let result = scan_ref.clone();
         self.scan_refs.push(scan_ref);
 
-        Ok(())
+        Ok(result)
+    }
+
+    pub fn scan_ref_err(&mut self, scan: &Scan, err: Option<String>) -> Result<(), Error> {
+        return match self.scan_refs.iter_mut().find(|e| e.scan_id == scan.id) {
+            None => Err(Error::Entity("scan_ref_none".to_string())),
+            Some(scan_ref) => {
+                scan_ref.err = err;
+                Ok(())
+            }
+        };
     }
 
     pub fn findings(&mut self, findings: Option<Vec<Finding>>) {
