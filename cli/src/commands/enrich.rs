@@ -90,7 +90,7 @@ pub struct SnykArgs {
     #[arg(short, long)]
     pub org_id: Option<String>,
     /// The Snyk Project ID for the enrichment target.
-    #[arg(short, long)]
+    #[arg(long)]
     pub project_id: Option<String>,
 }
 
