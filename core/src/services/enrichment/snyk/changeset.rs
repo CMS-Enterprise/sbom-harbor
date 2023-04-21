@@ -1,24 +1,27 @@
 use crate::entities::cyclonedx::Bom;
+use crate::entities::enrichment::Scan;
 use crate::entities::packages::{
-    ComponentKind, Dependency, Package, PackageCdx, Purl, Unsupported,
+    ComponentKind, Dependency, Finding, Package, PackageCdx, Purl, Unsupported,
 };
 use crate::entities::sboms::{CdxFormat, Sbom, SbomProviderKind, Source, Spec};
 use crate::entities::xrefs::{Xref, XrefKind, Xrefs};
 use crate::services::packages::PackageProvider;
 use crate::services::snyk::adapters::{Organization, Project};
-use crate::services::snyk::client::API_VERSION;
-use crate::services::snyk::service::SUPPORTED_SBOM_PROJECT_TYPES;
-use crate::services::snyk::{SnykRef, SnykService, SNYK_DISCRIMINATOR};
+use crate::services::snyk::{SnykRef, SnykService, API_VERSION, SNYK_DISCRIMINATOR};
 use crate::Error;
 use platform::mongodb::{Context, MongoDocument};
 use std::collections::HashMap;
 use std::default::Default;
+use std::ops::Deref;
 use tracing::log::debug;
 
 // This whole section is a bridge towards an actual UnitOfWork implementation.
 /// Maintains the set of pending changes. Leverages the raw Package URL as the unique key for all
 /// HashMaps.
-pub(crate) struct ChangeSet {
+pub(crate) struct ScanSbomsChangeSet<'a> {
+    /// The [Scan] instance used to relate all changes in the changeset.
+    pub scan: &'a mut Scan,
+
     /// The set of SBOMs tracked by the sync.
     pub sboms: HashMap<String, Sbom>,
 
@@ -35,14 +38,11 @@ pub(crate) struct ChangeSet {
     pub unsupported: HashMap<String, Unsupported>,
 }
 
-struct Change {
-    /// The SBOM proposed for inclusion in the ChangeSet.
-    pub sbom: Sbom,
-
+struct ScanSbomsChange {
     /// The Package proposed for inclusion in the ChangeSet.
     pub package: Package,
 
-    // Purl for the primary package.
+    /// Pre-validated Purl for the primary package.
     pub package_purl: Purl,
 
     /// The set of Purls proposed for inclusion in the ChangeSet.
@@ -55,10 +55,11 @@ struct Change {
     pub unsupported: HashMap<String, Unsupported>,
 }
 
-impl ChangeSet {
+impl ScanSbomsChangeSet<'_> {
     /// Factory method to create new instance of type.
-    pub fn new() -> Self {
-        Self {
+    pub fn new(scan: &'_ mut Scan) -> ScanSbomsChangeSet<'_> {
+        ScanSbomsChangeSet {
+            scan,
             packages: HashMap::new(),
             dependencies: HashMap::new(),
             purls: HashMap::new(),
@@ -68,20 +69,26 @@ impl ChangeSet {
     }
 
     /// Track an SBOM and all it's parts.
-    pub(in crate::services::snyk) fn track(
+    pub(in crate::services::enrichment::snyk) fn track(
         &mut self,
-        sbom: Sbom,
+        sbom: &mut Sbom,
         package_manager: String,
         snyk_ref: SnykRef,
     ) -> Result<(), Error> {
+        match sbom.scan_refs(&self.scan, None) {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(Error::Enrichment(format!("changeset::track::{}", e)));
+            }
+        }
+
         // These should be safe by this point, but adding expect to detect upstream errors.
         let bom = sbom.bom.clone().expect("change_set::sbom::bom_none");
         let purl = sbom.purl.clone().expect("change_set::sbom::purl_none");
         let xref_kind = XrefKind::External(SNYK_DISCRIMINATOR.to_string());
         let xrefs = HashMap::from(snyk_ref);
 
-        let mut change = Change {
-            sbom,
+        let mut change = ScanSbomsChange {
             package: Package::default(),
             package_purl: Purl::default(),
             purls: HashMap::new(),
@@ -95,7 +102,8 @@ impl ChangeSet {
             self.resolve_dependencies(&bom, &purl, &package_manager, &xref_kind, xrefs)?;
 
         // Once all changes have been validated, add them to the ChangeSet.
-        self.sboms.insert(purl.clone(), change.sbom);
+        // TODO: Stop all these clones.
+        self.sboms.insert(purl.clone(), sbom.clone());
         self.package(purl.clone(), change.package)?;
         self.purl(change.package_purl)?;
 
@@ -120,7 +128,7 @@ impl ChangeSet {
         Package::from_bom(
             &bom,
             SbomProviderKind::Snyk {
-                api_version: crate::services::snyk::client::API_VERSION.to_string(),
+                api_version: crate::services::snyk::API_VERSION.to_string(),
             },
             Some(Spec::Cdx(CdxFormat::Json)),
             Some(package_manager.clone()),
@@ -148,6 +156,7 @@ impl ChangeSet {
         let purl = match Purl::from_component(
             &component,
             ComponentKind::Package,
+            &self.scan,
             xref_kind.clone(),
             Some(xrefs.clone()),
         ) {
@@ -182,15 +191,16 @@ impl ChangeSet {
             let purl = Purl::from_component(
                 &component,
                 ComponentKind::Dependency,
+                &self.scan,
                 xref_kind.clone(),
                 Some(xrefs.clone()),
             )?;
 
-            let purl_key = purl.purl.clone();
-            purls.insert(purl_key.clone(), purl);
+            let dependency_purl = purl.purl.clone();
+            self.purl(purl)?;
 
             dependencies.insert(
-                purl_key,
+                dependency_purl,
                 Dependency::from_component(
                     &component,
                     SbomProviderKind::Snyk {
@@ -273,5 +283,62 @@ impl ChangeSet {
         };
 
         Ok(())
+    }
+}
+
+pub(crate) struct ScanFindingsChangeSet<'a> {
+    /// The [Scan] instance used to relate all changes in the changeset.
+    pub scan: &'a mut Scan,
+
+    /// The set of Purls tracked by the scan.
+    pub purls: HashMap<String, Purl>,
+}
+
+impl ScanFindingsChangeSet<'_> {
+    pub(in crate::services::enrichment::snyk) fn new(scan: &mut Scan) -> ScanFindingsChangeSet {
+        ScanFindingsChangeSet {
+            scan,
+            purls: Default::default(),
+        }
+    }
+
+    /// Track a Findings Scan.
+    pub(in crate::services::enrichment::snyk) fn track(
+        &mut self,
+        purl: &mut Purl,
+    ) -> Result<(), Error> {
+        match purl.scan_refs(self.scan, None) {
+            Ok(_) => {}
+            Err(e) => {
+                let msg = format!("changeset::error::purl::scan_refs::{}", e);
+                return Err(Error::Enrichment(msg));
+            }
+        }
+
+        match self.purls.get_mut(purl.purl.as_str()) {
+            None => {
+                self.purls.insert(purl.purl.clone(), purl.clone());
+            }
+            Some(_) => {
+                return Err(Error::Enrichment(
+                    "changeset::track::purl_scan_duplicate".to_string(),
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    pub(in crate::services::enrichment::snyk) fn error(&mut self, purl: &mut Purl, error: String) {
+        self.scan.ref_errs(purl.purl.clone(), error.clone());
+
+        match purl.scan_refs(self.scan, Some(error)) {
+            Ok(_) => {}
+            Err(e) => {
+                debug!("changeset::error::purl::scan_refs::{}", e);
+            }
+        }
+
+        self.purls.insert(purl.purl.clone(), purl.clone());
     }
 }

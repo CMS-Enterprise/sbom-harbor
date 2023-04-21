@@ -1,7 +1,5 @@
 mod service;
 
-use flatten_json_object::ArrayFormatting;
-use flatten_json_object::Flattener;
 use serde_json::json;
 
 pub use service::*;
@@ -15,18 +13,11 @@ use crate::entities::xrefs;
 use async_trait::async_trait;
 use platform::persistence::s3;
 
-/// Service that is capable of synchronizing one or more SBOMs from a dynamic source.
+/// Abstract storage provider for [Sboms].
 #[async_trait]
-pub trait SbomProvider {
-    /// Sync an external SBOM source with Harbor.
-    async fn sync(&self) -> Result<(), Error>;
-    // TODO
-    // async fn sync_one<T>(&self, opts: T) -> Result<(), Error>;
-}
-
-#[async_trait]
-pub trait StorageProvider: Debug + Send + Sync {
-    async fn write(&self, raw: &str, sbom: &mut Sbom) -> Result<(), Error>;
+pub trait StorageProvider<'a>: Debug + Send + Sync {
+    /// Write Sbom to storage provider and return output path.
+    async fn write(&self, raw: &str, sbom: &mut Sbom) -> Result<String, Error>;
 }
 
 /// Saves SBOMs to the local filesystem.
@@ -47,8 +38,8 @@ impl FileSystemStorageProvider {
 }
 
 #[async_trait]
-impl StorageProvider for FileSystemStorageProvider {
-    async fn write(&self, raw: &str, sbom: &mut Sbom) -> Result<(), Error> {
+impl StorageProvider<'_> for FileSystemStorageProvider {
+    async fn write(&self, raw: &str, sbom: &mut Sbom) -> Result<String, Error> {
         let purl = &sbom.purl()?;
         let purl = purl.replace("/", "_");
 
@@ -59,6 +50,7 @@ impl StorageProvider for FileSystemStorageProvider {
             }
         }
 
+        // TODO: This area likely needs to be dynamically invoked when Quinn handles storage.
         let file_name = format!("sbom-{}-{}", purl, sbom.instance);
         let file_path = format!("{}/{}", self.out_dir, file_name);
         match std::fs::write(file_path.as_str(), raw) {
@@ -72,36 +64,7 @@ impl StorageProvider for FileSystemStorageProvider {
         let checksum = platform::encoding::base64::standard_encode(checksum.as_str());
         sbom.checksum_sha256 = checksum;
 
-        // Now flatten it
-        // let file_name = format!("sbom-flat-{}-{}", purl, sbom.instance);
-        // let file_path = format!("{}/{}", self.out_dir, file_name);
-        //
-        // let obj = json!(raw);
-        //
-        // Flattener::new()
-        //     .set_key_separator(".")
-        //     .set_array_formatting(ArrayFormatting::Surrounded {
-        //         start: "[".to_string(),
-        //         end: "]".to_string(),
-        //     })
-        //     .set_preserve_empty_arrays(false)
-        //     .set_preserve_empty_objects(false)
-        //     .flatten(&obj)
-        //     .map_err(|e| Error::Runtime(format!("write::flatten::{}", e.to_string())))?;
-        //
-        // match std::fs::write(file_path.as_str(), raw) {
-        //     Ok(_) => {}
-        //     Err(e) => {
-        //         return Err(Error::Runtime(format!(
-        //             "write:flat_write::{}",
-        //             e.to_string()
-        //         )));
-        //     }
-        // }
-
-        // debug_sbom(&self.out_dir.as_str(), sbom)?;
-
-        Ok(())
+        Ok(file_name)
     }
 }
 
@@ -130,8 +93,8 @@ fn debug_sbom(out_dir: &str, sbom: &Sbom) -> Result<(), Error> {
 pub struct S3StorageProvider {}
 
 #[async_trait]
-impl StorageProvider for S3StorageProvider {
-    async fn write(&self, raw: &str, sbom: &mut Sbom) -> Result<(), Error> {
+impl StorageProvider<'_> for S3StorageProvider {
+    async fn write(&self, raw: &str, sbom: &mut Sbom) -> Result<String, Error> {
         let purl = &sbom.purl()?;
 
         let metadata = match &sbom.xrefs {
@@ -154,13 +117,13 @@ impl StorageProvider for S3StorageProvider {
         s3_store
             .insert(
                 bucket_name,
-                object_key,
+                object_key.clone(),
                 Some(checksum),
                 raw.as_bytes().to_vec(),
                 metadata,
             )
             .await?;
 
-        Ok(())
+        Ok(object_key)
     }
 }

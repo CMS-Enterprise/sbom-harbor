@@ -6,10 +6,11 @@ use std::ops::Deref;
 use tracing::log::debug;
 
 use crate::entities::cyclonedx::Bom;
-use crate::entities::packages::{PackageCdx, Purl};
-use crate::entities::sboms::{SbomProviderKind, Scan};
+use crate::entities::enrichment::{Scan, ScanRef};
+use crate::entities::packages::{Dependency, Package, PackageCdx, Purl};
+use crate::entities::sboms::SbomProviderKind;
 use crate::entities::xrefs::{Xref, XrefKind};
-use crate::services::snyk::SnykRef;
+use crate::services::snyk::{SnykRef, SNYK_DISCRIMINATOR};
 use crate::Error;
 
 /// An SBOM is a snapshot inventory of the components that make up a piece of software at a moment in time.
@@ -41,16 +42,27 @@ pub struct Sbom {
     /// The checksum of the file.
     pub checksum_sha256: String,
 
-    /// The results of each vulnerability [Scan].
-    pub scans: Vec<Scan>,
-
-    // TODO: Define a new interface for types that can only have one Xref per kind.
     /// A map of cross-references to internal and external systems.
     pub xrefs: Option<HashMap<XrefKind, Xref>>,
 
-    /// In-memory struct representation of SBOM based on CycloneDx JSON spec.
+    /// Reference to each [Scan] that was performed against this [Sbom].
+    pub scan_refs: Vec<ScanRef>,
+
+    /// CycloneDx JSON spec model of Sbom. Hydrated at runtime.
     #[serde(skip_serializing)]
     pub(crate) bom: Option<Bom>,
+
+    /// [Package] instance that represents this Sbom. Hydrated at runtime.
+    #[serde(skip_serializing)]
+    pub package: Option<Package>,
+
+    /// [Packages] this Sbom depends on. Hydrated at runtime.
+    #[serde(skip_serializing)]
+    pub dependencies: Vec<Dependency>,
+
+    /// [Packages] that depend on this Sbom. Hydrated at runtime.
+    #[serde(skip_serializing)]
+    pub dependents: Vec<Dependency>,
 }
 
 impl Sbom {
@@ -59,6 +71,7 @@ impl Sbom {
         raw: &str,
         format: CdxFormat,
         source: Source,
+        scan: &Scan,
         xrefs: Option<HashMap<XrefKind, Xref>>,
     ) -> Result<Sbom, Error> {
         let bom: Bom = match Bom::parse(raw, CdxFormat::Json) {
@@ -94,7 +107,7 @@ impl Sbom {
             Source::Vendor(_) => None,
         };
 
-        let sbom = Sbom {
+        let mut sbom = Sbom {
             id: "".to_string(),
             purl: Some(purl),
             instance: 1,
@@ -103,10 +116,15 @@ impl Sbom {
             provider,
             timestamp: platform::time::timestamp()?,
             checksum_sha256: "".to_string(),
-            scans: vec![],
+            scan_refs: vec![],
             xrefs,
             bom: Some(bom),
+            package: Default::default(),
+            dependencies: vec![],
+            dependents: vec![],
         };
+
+        sbom.scan_refs(scan, None)?;
 
         Ok(sbom)
     }
@@ -128,36 +146,28 @@ impl Sbom {
         Ok(purl.clone())
     }
 
-    pub fn scans(&mut self, mut scan: Scan) {
-        scan.iteration = match self
-            .scans
-            .iter()
-            .filter(|scan| scan.provider == provider)
-            .max_by_key(|scan| scan.iteration)
-        {
-            None => 1,
-            Some(scan) => scan.iteration + 1,
+    // TODO: This could/should be a macro.
+    pub fn scan_refs(&mut self, mut scan: &Scan, err: Option<String>) -> Result<(), Error> {
+        if scan.id.is_empty() {
+            return Err(Error::Entity("scan_id_required".to_string()));
+        }
+
+        let mut scan_ref = ScanRef {
+            id: "".to_string(),
+            scan_id: scan.id.clone(),
+            purl: self.purl.clone(),
+            iteration: 1,
+            err,
         };
 
-        self.scans.push(scan);
-    }
-
-    pub fn snyk_ref(&self) -> Result<HashMap<String, String>, Error> {
-        let xrefs = match &self.xrefs {
-            None => {
-                return Err(Error::Entity("sbom_xrefs_none".to_string()));
-            }
-            Some(snyk_refs) => snyk_refs,
+        scan_ref.iteration = match self.scan_refs.iter().max_by_key(|s| s.iteration) {
+            Some(s) => s.iteration + 1,
+            _ => 1,
         };
 
-        let snyk_ref = match xrefs.get(&XrefKind::External(SNYK_DISCRIMINATOR.to_string())) {
-            None => {
-                return Err(Error::Entity("sbom_xrefs_snyk_none".to_string()));
-            }
-            Some(xref) => xref.clone(),
-        };
+        self.scan_refs.push(scan_ref);
 
-        Ok(snyk_ref)
+        Ok(())
     }
 }
 

@@ -9,6 +9,9 @@ pub enum Error {
     /// Entity error.
     #[error("entity error: {0}")]
     Entity(String),
+    /// Enrichment provider error.
+    #[error("enrichment error: {0}")]
+    Enrichment(String),
     /// Invalid format.
     #[error("invalid format: {0}")]
     InvalidFormat(String),

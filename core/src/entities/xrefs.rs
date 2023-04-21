@@ -1,6 +1,8 @@
-use serde::de::{self};
+use serde::de::{Deserialize, Deserializer, IntoDeserializer};
 use serde::ser::Serializer;
-use serde::{ser, Deserialize, Serialize};
+use serde::{ser, Serialize};
+use serde_derive::Deserialize;
+use serde_json::ser::State;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use thiserror::__private::DisplayAsDisplay;
@@ -11,8 +13,9 @@ use thiserror::__private::DisplayAsDisplay;
 pub type Xref = HashMap<String, String>;
 
 #[allow(missing_docs)]
-#[serde(rename_all = "camelCase")]
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+#[serde(remote = "XrefKind")]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
 pub enum XrefKind {
     Codebase,
     Product,
@@ -35,6 +38,21 @@ impl ser::Serialize for XrefKind {
         S: Serializer,
     {
         serializer.serialize_str(self.to_string().as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for XrefKind {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        if s.contains("external::") {
+            let name = s.replace("external::", "");
+            Ok(External(name))
+        } else {
+            XrefKind::deserialize(s.into_deserializer())
+        }
     }
 }
 
@@ -95,5 +113,6 @@ macro_rules! xref {
     };
 }
 
+use crate::entities::xrefs::XrefKind::External;
 use crate::Error;
 pub use xref;

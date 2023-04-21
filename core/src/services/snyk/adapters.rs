@@ -10,13 +10,13 @@ use crate::services::snyk::client::models::{
 };
 use crate::services::snyk::{SnykRef, SNYK_DISCRIMINATOR};
 
-use crate::services::snyk::client::API_VERSION;
+use crate::services::snyk::API_VERSION;
 use platform::mongodb::{mongo_doc, MongoDocument};
 
 mongo_doc!(Project);
 
 /// Adapter over a native Snyk Group.
-pub(in crate::services::snyk) struct Group {
+pub(crate) struct Group {
     pub id: String,
     pub name: String,
 }
@@ -34,7 +34,7 @@ impl Group {
 }
 
 /// Adapter over a native Snyk Org.
-pub(in crate::services::snyk) struct Organization {
+pub(crate) struct Organization {
     pub id: String,
     pub name: String,
     pub(crate) inner: OrgV1,
@@ -64,7 +64,7 @@ impl Organization {
 /// Adapter over a native Snyk Project.
 #[serde(rename_all = "camelCase")]
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub(in crate::services::snyk) struct Project {
+pub(crate) struct Project {
     pub id: String,
     pub project_id: String,
     pub project_name: String,
@@ -156,7 +156,7 @@ impl Project {
 
 /// Adapter over a native Snyk Issue.
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub(in crate::services::snyk) struct Issue {
+pub(crate) struct Issue {
     pub id: String,
     pub purl: String,
     pub title: String,

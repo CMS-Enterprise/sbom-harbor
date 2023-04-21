@@ -1,3 +1,6 @@
+/// The [enrichment] module contains business logic related to running enrichment processes.
+pub mod enrichment;
+
 /// The [packages] module contains business and persistence logic related to the management of
 /// [Packages] and [Dependencies].
 ///

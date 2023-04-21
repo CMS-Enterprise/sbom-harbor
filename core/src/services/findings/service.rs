@@ -1,14 +1,15 @@
-use crate::entities::sboms::{Finding, Sbom};
+use crate::entities::packages::Finding;
+use crate::entities::sboms::Sbom;
 use crate::services::findings::StorageProvider;
 use crate::Error;
 use platform::mongodb::{Context, Service};
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 
 /// Provides Finding related data management capabilities.
 #[derive(Debug)]
 pub struct FindingService {
     cx: Context,
-    storage: Box<dyn StorageProvider>,
+    pub(crate) storage: Box<dyn StorageProvider>,
 }
 
 impl Service<Sbom> for FindingService {
@@ -17,6 +18,38 @@ impl Service<Sbom> for FindingService {
     }
 }
 
-pub fn new(cx: Context, storage: Box<dyn StorageProvider>) -> Self {
-    Self { cx, storage }
+impl FindingService {
+    pub fn new(cx: Context, storage: Box<dyn StorageProvider>) -> Self {
+        Self { cx, storage }
+    }
+
+    pub async fn store_by_purl(
+        &self,
+        purl: String,
+        findings: Option<Vec<Finding>>,
+    ) -> Result<Option<String>, Error> {
+        let findings = match findings {
+            None => {
+                return Ok(None);
+            }
+            Some(findings) => findings,
+        };
+
+        match findings.is_empty() {
+            true => {
+                return Ok(None);
+            }
+            false => {}
+        }
+
+        match self.storage.write(purl.as_str(), &findings).await {
+            Ok(file_path) => Ok(Some(file_path)),
+            Err(e) => {
+                return Err(Error::Enrichment(format!(
+                    "finding::store_by_purl::write::{}",
+                    e.to_string()
+                )));
+            }
+        }
+    }
 }

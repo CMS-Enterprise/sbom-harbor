@@ -1,30 +1,22 @@
 mod service;
 pub use service::*;
 
+use async_trait::async_trait;
 use std::fmt::Debug;
 
-use crate::entities::sboms::{Finding, Sbom};
+use crate::entities::packages::Finding;
 use crate::Error;
-use async_trait::async_trait;
-use flatten_json_object::ArrayFormatting;
-use flatten_json_object::Flattener;
 
-/// Service that is capable of creating and storing one or more SBOMs.
-#[async_trait]
-pub trait FindingProvider {
-    /// Sync an external Findings source with Harbor.
-    async fn sync(&self) -> Result<(), Error>;
-    // TODO
-    // async fn sync_one<T>(&self, opts: T) -> Result<(), Error>;
-}
-
+// TODO: This could maybe be generalized and combined with Sbom version.
+/// Abstract storage provider for findings.
 #[async_trait]
 pub trait StorageProvider: Debug + Send + Sync {
-    async fn write(&self, purl: &str, findings: &Vec<Finding>) -> Result<(), Error>;
+    /// Write findings to storage provider and return output path.
+    async fn write(&self, purl: &str, findings: &Vec<Finding>) -> Result<String, Error>;
 }
 
-/// Saves SBOMs to the local filesystem.
-#[derive(Debug)]
+/// Saves findings results to the local filesystem.
+#[derive(Clone, Debug)]
 pub struct FileSystemStorageProvider {
     out_dir: String,
 }
@@ -42,7 +34,7 @@ impl FileSystemStorageProvider {
 
 #[async_trait]
 impl StorageProvider for FileSystemStorageProvider {
-    async fn write(&self, purl: &str, findings: &Vec<Finding>) -> Result<(), Error> {
+    async fn write(&self, purl: &str, findings: &Vec<Finding>) -> Result<String, Error> {
         let purl = purl.replace("/", "_");
 
         match std::fs::create_dir_all(&self.out_dir) {
@@ -68,41 +60,11 @@ impl StorageProvider for FileSystemStorageProvider {
             }
         }
 
+        // TODO: Add checksum to findings files and relate Sboms to Findings.
         // let checksum = platform::cryptography::sha256::file_checksum(file_path)?;
         // let checksum = platform::encoding::base64::standard_encode(checksum.as_str());
         // sbom.checksum_sha256 = checksum;
 
-        // Now flatten it
-        let file_name = format!("findings-flat-{}", purl);
-        let file_path = format!("{}/{}", self.out_dir, file_name);
-
-        let json_value = serde_json::to_value(findings)
-            .map_err(|e| Error::Serde(format!("write::to_value::{}", e)))?;
-
-        let flattened = Flattener::new()
-            .set_key_separator(".")
-            .set_array_formatting(ArrayFormatting::Surrounded {
-                start: "[".to_string(),
-                end: "]".to_string(),
-            })
-            .set_preserve_empty_arrays(false)
-            .set_preserve_empty_objects(false)
-            .flatten(&json_value)
-            .map_err(|e| Error::Runtime(format!("write::flatten::{}", e.to_string())))?;
-
-        let flattened = serde_json::to_string(&flattened)
-            .map_err(|e| Error::Serde(format!("write::to_string::{}", e)))?;
-
-        match std::fs::write(file_path.as_str(), flattened) {
-            Ok(_) => {}
-            Err(e) => {
-                return Err(Error::Runtime(format!(
-                    "write:flat_write::{}",
-                    e.to_string()
-                )));
-            }
-        }
-
-        Ok(())
+        Ok(file_name)
     }
 }

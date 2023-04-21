@@ -1,27 +1,22 @@
-use crate::entities::cyclonedx::{Bom, Component, Hash};
-use crate::entities::packages::{ComponentKind, Dependency, Package, Purl, Unsupported};
-use crate::entities::sboms::{CdxFormat, Sbom, SbomProviderKind, Source, Spec};
-use crate::services::packages::service::PackageService;
-use crate::services::sboms::{SbomProvider, SbomService};
-use crate::services::snyk::adapters::{Organization, Project};
-use crate::services::snyk::changeset::ChangeSet;
-use crate::services::snyk::client::models::ProjectStatus;
-use crate::services::snyk::service::SUPPORTED_SBOM_PROJECT_TYPES;
-use crate::services::snyk::{SnykRef, SnykService, SNYK_DISCRIMINATOR};
+use crate::entities::packages::{Dependency, Package, Purl, Unsupported};
+use crate::entities::sboms::{CdxFormat, Sbom, SbomProviderKind, Source};
+use crate::services::snyk::adapters::Project;
+use crate::services::snyk::{ProjectStatus, SbomFormat, API_VERSION};
+use crate::services::snyk::{
+    SnykRef, SnykService, SNYK_DISCRIMINATOR, SUPPORTED_SBOM_PROJECT_TYPES,
+};
 use crate::Error;
 
-use crate::entities::xrefs::{Xref, XrefKind};
-use crate::services::snyk::client::client::SbomFormat;
-use crate::services::snyk::client::API_VERSION;
+use crate::entities::enrichment::Scan;
+use crate::entities::xrefs::XrefKind;
+use crate::services::enrichment::snyk::changeset::ScanSbomsChangeSet;
+use crate::services::enrichment::SbomProvider;
 use async_trait::async_trait;
 use platform::mongodb::{Context, Service};
 use std::collections::HashMap;
-use std::future::Future;
-use std::net::ToSocketAddrs;
 use tracing::debug;
 
 // Implement mongo Service with type arg for all the types that this service can persist.
-
 impl Service<Project> for SnykService {
     fn cx(&self) -> &Context {
         &self.cx
@@ -59,24 +54,26 @@ impl Service<Unsupported> for SnykService {
 }
 
 #[async_trait]
-impl SbomProvider for SnykService {
-    /// Synchronizes a Snyk instance with the Harbor [Registry].
-    async fn sync(&self) -> Result<(), Error> {
-        let mut change_set = ChangeSet::new();
+impl SbomProvider<'_> for SnykService {
+    /// Synchronizes a Snyk instance with Harbor.
+    async fn scan(&self, scan: &mut Scan) -> Result<(), Error> {
+        let mut change_set = ScanSbomsChangeSet::new(scan);
 
         // Populate the ChangeSet
-        match self.build_change_set(&mut change_set).await {
+        match self.build_sboms(&mut change_set).await {
             Ok(()) => {}
             Err(e) => {
+                scan.err = Some(e.to_string());
                 return Err(Error::Snyk(
                     format!("snyk_service::sync::{}", e).to_string(),
                 ));
             }
         };
 
-        match self.commit(&mut change_set).await {
+        match self.commit_sboms(&mut change_set).await {
             Ok(()) => {}
             Err(e) => {
+                scan.err = Some(e.to_string());
                 return Err(Error::Snyk(
                     format!("snyk_service::sync::{}", e).to_string(),
                 ));
@@ -89,7 +86,10 @@ impl SbomProvider for SnykService {
 
 impl SnykService {
     /// Builds the Packages and Dependencies from adapters for the native Snyk API types.
-    pub(crate) async fn build_change_set(&self, change_set: &mut ChangeSet) -> Result<(), Error> {
+    pub(crate) async fn build_sboms(
+        &self,
+        change_set: &mut ScanSbomsChangeSet<'_>,
+    ) -> Result<(), Error> {
         let mut projects = match self.projects().await {
             Ok(p) => p,
             Err(e) => {
@@ -121,9 +121,9 @@ impl SnykService {
         Ok(())
     }
 
-    pub(in crate::services::snyk) async fn process_project(
+    pub(crate) async fn process_project(
         &self,
-        change_set: &mut ChangeSet,
+        change_set: &mut ScanSbomsChangeSet<'_>,
         project: &mut Project,
     ) -> Result<(), Error> {
         if project.status == ProjectStatus::Inactive {
@@ -157,6 +157,7 @@ impl SnykService {
             Source::Harbor(SbomProviderKind::Snyk {
                 api_version: API_VERSION.to_string(),
             }),
+            &change_set.scan,
             Some(HashMap::from([(
                 XrefKind::External(SNYK_DISCRIMINATOR.to_string()),
                 HashMap::from(snyk_ref.clone()),
@@ -184,7 +185,7 @@ impl SnykService {
         };
 
         // Don't add the sbom & its components unless it is successfully saved.
-        match change_set.track(sbom, project.package_manager.clone(), snyk_ref.clone()) {
+        match change_set.track(&mut sbom, project.package_manager.clone(), snyk_ref.clone()) {
             Ok(_) => {}
             Err(e) => {
                 let msg = format!("change_set::track::{}", e);
@@ -196,11 +197,12 @@ impl SnykService {
         Ok(())
     }
 
-    /// Transaction script for saving sync results to data store.
-    pub(in crate::services::snyk) async fn commit(
+    /// Transaction script for saving scan results to data store.
+    pub(crate) async fn commit_sboms(
         &self,
-        change_set: &mut ChangeSet,
+        change_set: &mut ScanSbomsChangeSet<'_>,
     ) -> Result<(), Error> {
+        // TODO: Handle ScanRefs on Purls.
         let mut processed = HashMap::<String, u32>::new();
 
         for (key, sbom) in change_set.sboms.iter_mut() {

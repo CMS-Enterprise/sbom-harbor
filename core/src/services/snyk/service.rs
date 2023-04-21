@@ -16,36 +16,21 @@ use crate::services::findings::FindingService;
 use crate::services::snyk::adapters::{Issue, Organization, Project};
 use crate::Error;
 
-use crate::services::sboms::{SbomProvider, SbomService};
+use crate::services::sboms::SbomService;
 use crate::services::snyk::client::client::Client;
-use crate::services::snyk::client::client::SbomFormat;
-
-// TODO: Lazy Static or OnceCell this.
-pub(in crate::services::snyk) const SUPPORTED_SBOM_PROJECT_TYPES: &'static [&'static str] = &[
-    "npm",
-    "swift",
-    "maven",
-    "cocoapods",
-    "composer",
-    "gem",
-    "nuget",
-    "pypi",
-    "hex",
-    "cargo",
-    "generic",
-];
+use crate::services::snyk::SbomFormat;
 
 /// Provides Snyk related data retrieval and analytics capabilities.
 #[derive(Debug)]
 pub struct SnykService {
     /// The Snyk API Client instance.
-    pub(in crate::services::snyk) client: Client,
+    pub(crate) client: Client,
     /// The datastore connection context.
-    pub(in crate::services::snyk) cx: Context,
+    pub(crate) cx: Context,
     /// Allows injecting different persistence behaviors.
-    pub(in crate::services::snyk) sbom_service: SbomService,
+    pub(crate) sbom_service: SbomService,
     /// Allows injecting different persistence behaviors.
-    pub(in crate::services::snyk) finding_service: FindingService,
+    pub(crate) finding_service: FindingService,
 }
 
 impl SnykService {
@@ -66,7 +51,7 @@ impl SnykService {
     }
 
     /// Retrieves orgs from the Snyk API.
-    pub(in crate::services::snyk) async fn orgs(&self) -> Result<Vec<Organization>, Error> {
+    pub(crate) async fn orgs(&self) -> Result<Vec<Organization>, Error> {
         let orgs = match self.client.orgs().await {
             Ok(orgs) => orgs,
             Err(e) => {
@@ -95,7 +80,7 @@ impl SnykService {
     }
 
     /// Gathers all projects across all orgs so that index can be analyzed linearly.
-    pub(in crate::services::snyk) async fn projects(&self) -> Result<Vec<Project>, Error> {
+    pub(crate) async fn projects(&self) -> Result<Vec<Project>, Error> {
         let mut projects = vec![];
 
         let mut orgs = match self.orgs().await {

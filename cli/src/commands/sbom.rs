@@ -1,8 +1,14 @@
 use std::str::FromStr;
 
-use clap::{Parser, ValueEnum};
 use clap::builder::PossibleValue;
-use harbcore::services::{SbomProvider, SnykService};
+use clap::{Parser, ValueEnum};
+use harbcore::entities::packages::FindingProviderKind;
+use harbcore::services::enrichment::FindingProvider;
+use harbcore::services::findings::{
+    FileSystemStorageProvider as FindingStorageProvider, FindingService,
+};
+use harbcore::services::sboms::{FileSystemStorageProvider as SbomStorageProvider, SbomService};
+use harbcore::services::snyk::SnykService;
 use platform::mongodb::Context;
 
 use crate::Error;
@@ -10,15 +16,9 @@ use crate::Error;
 /// The SBOM Command handler.
 pub async fn execute(args: &SbomArgs) -> Result<(), Error> {
     match args.provider {
-        SbomProviderKind::FileSystem => {
-            FileSystemProvider::execute(&args.filesystem_args).await
-        }
-        SbomProviderKind::GitHub => {
-            GithubProvider::execute(&args.github_args).await
-        }
-        SbomProviderKind::Snyk => {
-            SnykProvider::execute(&args.snyk_args).await
-        }
+        SbomProviderKind::FileSystem => FileSystemProvider::execute(&args.filesystem_args).await,
+        SbomProviderKind::GitHub => GithubProvider::execute(&args.github_args).await,
+        SbomProviderKind::Snyk => SnykProvider::execute(&args.snyk_args).await,
     }
 }
 
@@ -40,15 +40,14 @@ impl ValueEnum for SbomProviderKind {
 
     fn to_possible_value(&self) -> Option<PossibleValue> {
         Some(match self {
-            SbomProviderKind::FileSystem => {
-                PossibleValue::new("filesystem").help("Use the default SBOM Provider to generate an SBOM from the local filesystem")
-            }
-            SbomProviderKind::GitHub => {
-                PossibleValue::new("github").help("Use the GitHub SBOM Provider to generate one or more SBOMs from the GitHub API")
-            }
-            SbomProviderKind::Snyk => {
-                PossibleValue::new("github").help("Use the Snyk SBOM Provider to generate one or more SBOMs from the Snyk API")
-            }
+            SbomProviderKind::FileSystem => PossibleValue::new("filesystem").help(
+                "Use the default SBOM Provider to generate an SBOM from the local filesystem",
+            ),
+            SbomProviderKind::GitHub => PossibleValue::new("github").help(
+                "Use the GitHub SBOM Provider to generate one or more SBOMs from the GitHub API",
+            ),
+            SbomProviderKind::Snyk => PossibleValue::new("github")
+                .help("Use the Snyk SBOM Provider to generate one or more SBOMs from the Snyk API"),
         })
     }
 }
@@ -99,14 +98,13 @@ impl FromStr for SbomProviderKind {
         let value = s.to_lowercase();
         let value = value.as_str();
         match value {
-            "filesystem"| "f" => Ok(SbomProviderKind::FileSystem),
-            "github"| "gh" | "g" => Ok(SbomProviderKind::GitHub),
+            "filesystem" | "f" => Ok(SbomProviderKind::FileSystem),
+            "github" | "gh" | "g" => Ok(SbomProviderKind::GitHub),
             "snyk" | "s" => Ok(SbomProviderKind::Snyk),
             _ => Err(()),
         }
     }
 }
-
 
 /// Strategy pattern implementation that handles Snyk SBOM commands.
 struct FileSystemProvider {}
@@ -134,38 +132,41 @@ struct SnykProvider {}
 impl SnykProvider {
     /// Factory method to create new instance of type.
     fn new_service(cx: Context) -> Result<SnykService, Error> {
-        let token = harbcore::config::snyk_token()
+        let token = harbcore::config::snyk_token().map_err(|e| Error::Config(e.to_string()))?;
+
+        let cx = harbcore::config::mongo_context(Some("core-test"))
             .map_err(|e| Error::Config(e.to_string()))?;
 
-       Ok(SnykService::new(token, cx))
+        let sbom_storage = SbomStorageProvider::new(None);
+        let finding_storage = FindingStorageProvider::new(None);
+
+        let sbom_service = SbomService::new(cx.clone(), Box::new(sbom_storage));
+        let finding_service = FindingService::new(cx.clone(), Box::new(finding_storage));
+
+        Ok(SnykService::new(token, cx, sbom_service, finding_service))
     }
 
     async fn execute(args: &Option<SnykArgs>) -> Result<(), Error> {
         match args {
             None => Err(Error::Sbom("snyk args required".to_string())),
             Some(args) => {
-                let cx = harbcore::config::mongo_context(None)
-                    .map_err(|e| Error::Config(e.to_string()))?;
-
-                match args {
-                    None => {
-                        let service = Self::new_service(cx)?;
-                        service.sync().await?;
-                    },
-                    Some(args) => {
-                        todo!() // Handle single project target use case.
-                    }
-                }
+                todo!()
+                // let cx = harbcore::config::mongo_context(None)
+                //     .map_err(|e| Error::Config(e.to_string()))?;
+                //
+                // let service = Self::new_service(cx)?;
+                // SbomService::enrich(&service).await
             }
         }
     }
 }
 
+#[cfg(test)]
 mod tests {
-    use harbcore::config::{Environ, environment};
-    use platform::config::from_env;
     use super::*;
     use crate::Error;
+    use harbcore::config::{environment, Environ};
+    use platform::config::from_env;
 
     #[async_std::test]
     async fn can_sync() -> Result<(), Error> {

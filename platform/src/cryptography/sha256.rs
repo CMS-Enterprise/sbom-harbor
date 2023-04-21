@@ -22,7 +22,7 @@ pub fn sha256_digest<R: Read>(mut reader: R) -> Result<Digest, Error> {
     Ok(context.finish())
 }
 
-pub fn reader_checksum<R: Read>(mut reader: R) -> Result<String, Error> {
+pub fn reader_checksum<R: Read>(reader: R) -> Result<String, Error> {
     let digest: Digest = sha256_digest(reader)
         .map_err(|e| Error::Cryptography(format!("reader_checksum::{}", e)))?;
 

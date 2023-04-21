@@ -4,7 +4,8 @@ use std::collections::HashMap;
 use tracing::debug;
 
 use crate::entities::cyclonedx::Component;
-use crate::entities::sboms::Finding;
+use crate::entities::enrichment::{Scan, ScanRef};
+use crate::entities::packages::Finding;
 use crate::entities::xrefs::{Xref, XrefKind};
 use crate::Error;
 
@@ -28,6 +29,9 @@ pub struct Purl {
     /// Source of the Purl.
     pub component_kind: ComponentKind,
 
+    /// Reference to each [Scan] that was performed against this [Purl].
+    pub scan_refs: Vec<ScanRef>,
+
     /// The list of vulnerability findings associated with this Purl.
     pub findings: Option<Vec<Finding>>,
 
@@ -43,6 +47,7 @@ impl Default for Purl {
             name: "".to_string(),
             version: None,
             component_kind: ComponentKind::Package,
+            scan_refs: vec![],
             findings: None,
             xrefs: None,
         }
@@ -59,6 +64,7 @@ impl Purl {
     pub(crate) fn from_component(
         component: &Component,
         component_kind: ComponentKind,
+        scan: &Scan,
         xref_kind: XrefKind,
         xrefs: Option<Xref>,
     ) -> Result<Self, Error> {
@@ -81,30 +87,63 @@ impl Purl {
             Some(xrefs) => Some(HashMap::from([(xref_kind, xrefs)])),
         };
 
+        let scan_ref = ScanRef::new(scan, Some(purl.clone()));
+
         Ok(Self {
             id: "".to_string(),
             purl,
             name: component.name.clone(),
             version: component.version.clone(),
             component_kind,
+            scan_refs: vec![scan_ref],
             findings: None,
             xrefs,
         })
     }
 
-    pub fn finding(&mut self, finding: Finding) {
-        let mut existing = match self.findings.clone() {
-            None => {
-                self.findings = Some(vec![finding]);
-                return;
-            }
-            Some(existing) => existing,
+    pub fn scan_refs(&mut self, mut scan: &Scan, err: Option<String>) -> Result<(), Error> {
+        if scan.id.is_empty() {
+            return Err(Error::Entity("scan_id_required".to_string()));
+        }
+
+        let mut scan_ref = ScanRef {
+            id: "".to_string(),
+            scan_id: scan.id.clone(),
+            purl: Some(self.purl.clone()),
+            iteration: 1,
+            err,
         };
 
-        let exists = existing.iter().any(|f| f.eq(&finding));
-        if !exists {
-            existing.push(finding);
-            self.findings = Some(existing);
+        scan_ref.iteration = match self.scan_refs.iter().max_by_key(|s| s.iteration) {
+            Some(s) => s.iteration + 1,
+            _ => 1,
+        };
+
+        self.scan_refs.push(scan_ref);
+
+        Ok(())
+    }
+
+    pub fn findings(&mut self, findings: Option<Vec<Finding>>) {
+        let findings = match findings {
+            None => {
+                return;
+            }
+            Some(findings) => findings,
+        };
+
+        if findings.is_empty() {
+            return;
+        }
+
+        match self.findings.clone() {
+            None => {
+                self.findings = Some(findings);
+            }
+            Some(mut existing) => {
+                existing.extend(findings);
+                self.findings = Some(existing);
+            }
         }
     }
 }

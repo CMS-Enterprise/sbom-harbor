@@ -1,12 +1,14 @@
-use std::sync::Arc;
 use harbcore::config::mongo_context;
-use platform::mongodb::{Service, Store};
+use harbcore::entities::teams::Team;
+use harbcore::models::teams::Team;
+use harbcore::services::teams::TeamService;
 use harbcore::services::*;
 use harbcore::Error;
-use harbcore::models::teams::Team;
+use platform::mongodb::{Service, Store};
+use std::sync::Arc;
 
 fn test_team_model(test_name: &str) -> Team {
-    Team{
+    Team {
         id: "".to_string(),
         name: test_name.to_string(),
         members: vec![],
@@ -17,10 +19,10 @@ fn test_team_model(test_name: &str) -> Team {
 
 #[async_std::test]
 async fn can_crud_team() -> Result<(), Error> {
-    let cx = mongo_context()?;
+    let cx = mongo_context(None)?;
     let store = Store::new(&cx).await;
     let store = store.unwrap();
-    let service = TeamService::new(Arc::new(store));
+    let service = TeamService::new(cx);
 
     let mut model = test_team_model("can_crud_team");
     service.insert(&mut model).await?;

@@ -10,49 +10,34 @@ use super::models::{
     CommonIssueModel, Group, IssuesResponse, ListOrgProjects200Response,
     ListOrgProjects200ResponseDataInner, Org, OrgV1, OrgsResponse, SbomResource, SbomResponse,
 };
+use crate::services::snyk::{SbomFormat, API_VERSION};
 use crate::Error;
 
 const V1_URL: &str = "https://snyk.io/api/v1";
 const V3_URL: &str = "https://api.snyk.io/rest";
 const ORGS_ROUTE: &str = "/orgs";
-pub const API_VERSION: &str = "2023-03-08~beta"; // "2023-03-29"
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum SbomFormat {
-    CycloneDxJson,
-    CycloneDxXml,
-    SpdxJson,
-}
-
-impl Display for SbomFormat {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SbomFormat::CycloneDxJson => write!(f, "{}", url_encode("cyclonedx+json")),
-            SbomFormat::CycloneDxXml => write!(f, "{}", url_encode("cyclonedx+xml")),
-            SbomFormat::SpdxJson => write!(f, "{}", url_encode("spdx2.3+json")),
-        }
-    }
-}
 
 #[allow(dead_code)]
 fn orgs_url() -> String {
-    url_encode(format!("{}{}", V1_URL, ORGS_ROUTE).as_str())
+    format!("{}{}", V1_URL, ORGS_ROUTE)
 }
 
 #[allow(dead_code)]
 fn issues_url(org_id: &str, purl: &str) -> String {
     let route = format!(
         "/orgs/{}/packages/{}/issues?version={}",
-        org_id, purl, API_VERSION
+        org_id,
+        url_encode(purl),
+        API_VERSION
     );
 
-    url_encode(format!("{}{}", V3_URL, route).as_str())
+    format!("{}{}", V3_URL, route)
 }
 
 #[allow(dead_code)]
 fn projects_url(org_id: &str) -> String {
     let route = format!("/orgs/{}/projects?version={}", org_id, API_VERSION);
-    url_encode(format!("{}{}", V3_URL, route).as_str())
+    format!("{}{}", V3_URL, route)
 }
 
 #[allow(dead_code)]
@@ -61,7 +46,7 @@ fn sbom_url(org_id: &str, project_id: &str, format: SbomFormat) -> String {
         "/orgs/{}/projects/{}/sbom?version={}&format={}",
         org_id, project_id, API_VERSION, format
     );
-    url_encode(format!("{}{}", V3_URL, route).as_str())
+    format!("{}{}", V3_URL, route)
 }
 
 /// A purpose build Snyk HTTP Client.

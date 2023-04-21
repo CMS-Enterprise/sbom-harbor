@@ -18,6 +18,7 @@ use crate::entities::cyclonedx::{Bom, Component, Metadata};
 use crate::entities::sboms::{CdxFormat, Sbom};
 use crate::entities::xrefs;
 use crate::entities::xrefs::{Xref, XrefKind};
+use crate::services::findings::FindingService;
 use crate::services::sboms::StorageProvider;
 use crate::{config, Error};
 
@@ -43,7 +44,7 @@ pub fn compare(first_path: &str, second_path: &str) -> Result<String, Error> {
 #[derive(Debug)]
 pub struct SbomService {
     cx: Context,
-    storage: Box<dyn StorageProvider>,
+    storage: Box<dyn for<'a> StorageProvider<'a>>,
 }
 
 impl Service<Sbom> for SbomService {
@@ -54,7 +55,7 @@ impl Service<Sbom> for SbomService {
 
 impl SbomService {
     /// Factory method for creating new instance of type.
-    pub fn new(cx: Context, storage: Box<dyn StorageProvider>) -> Self {
+    pub fn new(cx: Context, storage: Box<dyn for<'a> StorageProvider<'a>>) -> Self {
         Self { cx, storage }
     }
 

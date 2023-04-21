@@ -1,11 +1,15 @@
 use std::io::Write;
 use std::str::FromStr;
 
-use clap::{Parser, ValueEnum};
 use clap::builder::PossibleValue;
-use harbcore::entities::packages::Registry;
-use harbcore::models::cyclonedx::{Bom, Issue};
-use harbcore::services::{SbomFormat, SnykService};
+use clap::{Parser, ValueEnum};
+use harbcore::entities::packages::FindingProviderKind;
+use harbcore::services::enrichment::FindingProvider;
+use harbcore::services::findings::{
+    FileSystemStorageProvider as FindingStorageProvider, FindingService,
+};
+use harbcore::services::sboms::{FileSystemStorageProvider as SbomStorageProvider, SbomService};
+use harbcore::services::snyk::SnykService;
 
 use crate::Error;
 
@@ -31,9 +35,7 @@ pub async fn execute(args: &EnrichArgs) -> Result<(), Error> {
         EnrichmentProviderKind::DependencyTrack => {
             todo!()
         }
-        EnrichmentProviderKind::Snyk => {
-            SnykProvider::execute(&args.snyk_args).await
-        }
+        EnrichmentProviderKind::Snyk => SnykProvider::execute(&args.snyk_args).await,
     }
 }
 
@@ -68,7 +70,9 @@ impl FromStr for EnrichmentProviderKind {
         let value = s.to_lowercase();
         let value = value.as_str();
         match value {
-            "dependencytrack"| "dependency-track" | "d" | "dt" => Ok(EnrichmentProviderKind::DependencyTrack),
+            "dependencytrack" | "dependency-track" | "d" | "dt" => {
+                Ok(EnrichmentProviderKind::DependencyTrack)
+            }
             "snyk" | "s" => Ok(EnrichmentProviderKind::Snyk),
             _ => Err(()),
         }
@@ -96,13 +100,18 @@ struct SnykProvider {}
 impl SnykProvider {
     /// Factory method to create new instance of type.
     fn new_service() -> Result<SnykService, Error> {
-        let token = harbcore::config::snyk_token()
+        let token = harbcore::config::snyk_token().map_err(|e| Error::Config(e.to_string()))?;
+
+        let cx = harbcore::config::mongo_context(Some("core-test"))
             .map_err(|e| Error::Config(e.to_string()))?;
 
-        let cx = harbcore::config::db_connection()
-            .map_err(|e| Error::Config(e.to_string()))?;
+        let sbom_storage = SbomStorageProvider::new(None);
+        let finding_storage = FindingStorageProvider::new(None);
 
-       Ok(SnykService::new(token, cx))
+        let sbom_service = SbomService::new(cx.clone(), Box::new(sbom_storage));
+        let finding_service = FindingService::new(cx.clone(), Box::new(finding_storage));
+
+        Ok(SnykService::new(token, cx, sbom_service, finding_service))
     }
 
     /// Concrete implementation of the command handler. Responsible for
@@ -110,10 +119,10 @@ impl SnykProvider {
     async fn execute(args: &Option<SnykArgs>) -> Result<(), Error> {
         match args {
             None => {
-                SnykProvider::sync_registry().await?;
-            },
+                SnykProvider::enrich().await?;
+            }
             Some(a) => {
-                SnykProvider::sync_project(a).await?;
+                SnykProvider::enrich().await?;
             }
         }
 
@@ -121,13 +130,12 @@ impl SnykProvider {
     }
 
     /// If no args are passed, the CLI will scan and sync the entire registry.
-    async fn sync_registry() -> Result<Registry, Error> {
+    async fn enrich() -> Result<(), Error> {
         let service = Self::new_service()?;
-        let registry = service.scan_and_sync_registry(harbcore::services::sync_debug)
+        service
+            .enrich(FindingProviderKind::Snyk)
             .await
-            .map_err(|e| Error::Enrich(e.to_string()))?;
-
-        Ok(registry)
+            .map_err(|e| Error::Enrich(e.to_string()))
     }
 
     // If project args are passed, the CLI will scan and sync a single project.
@@ -153,25 +161,19 @@ impl SnykProvider {
 
 #[cfg(test)]
 mod tests {
-    use platform::config::from_env;
     use super::*;
     use crate::Error;
 
     #[async_std::test]
-    async fn can_sync_registry() -> Result<(), Error> {
-        let registry = SnykProvider::sync_registry().await?;
-
-        let json = serde_json::to_string(&registry)
-            .map_err(|e| Error::Enrich(e.to_string()))?;
-
-        let debug_dir = from_env("DEBUG_DIR").unwrap();
-        let mut file = std::fs::File::create(format!("{}/snyk-registry.json", debug_dir))
-            .map_err(|e| Error::Enrich(e.to_string()))?;
-
-        file.write_all(json.as_ref())
-            .map_err(|e| Error::Enrich(e.to_string()))?;
-
-        Ok(())
+    async fn can_enrich() -> Result<(), Error> {
+        match SnykProvider::enrich().await {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                let msg = format!("{}", e);
+                println!("{}", msg);
+                return Err(Error::Enrich(msg));
+            }
+        }
     }
 
     #[async_std::test]
