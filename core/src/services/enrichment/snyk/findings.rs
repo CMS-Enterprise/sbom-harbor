@@ -8,7 +8,6 @@ use crate::Error;
 use async_trait::async_trait;
 use platform::mongodb::{Context, Service};
 use std::collections::HashMap;
-use tracing::log::debug;
 
 impl ScanProvider<'_> for SnykService {}
 
@@ -63,13 +62,23 @@ impl SnykService {
             }
         };
 
+        println!("processing findings for {} purls...", purls.len());
+        let mut iteration = 1;
+
         for purl in purls.iter_mut() {
+            println!(
+                "==> attempting to process iteration {} for purl {}",
+                iteration, purl.purl
+            );
+            iteration = iteration + 1;
             match self.process_purl(change_set, purl).await {
-                Ok(_) => {}
+                Ok(_) => {
+                    println!("==> iteration {} succeeded", iteration);
+                }
                 Err(e) => {
                     // Don't fail on a single error.  Don't add errors to change_set, it should
                     // have been done by process_purl.
-                    debug!("{}", e.to_string());
+                    println!("==> iteration {} failed with error: {}", iteration, e);
                 }
             }
         }
@@ -89,7 +98,7 @@ impl SnykService {
             }
             Err(e) => {
                 change_set.error(purl, e.to_string());
-                return Ok(());
+                return Err(Error::Enrichment(e.to_string()));
             }
         };
 
@@ -122,12 +131,13 @@ impl SnykService {
         &self,
         change_set: &mut ScanFindingsChangeSet<'_>,
     ) -> Result<(), Error> {
-        for (_, purl) in change_set.purls.iter_mut() {
-            // TODO: Log errors in the change_set Scan.
+        for (key, purl) in change_set.purls.iter_mut() {
             match self.update(purl).await {
                 Ok(_) => {}
                 Err(e) => {
-                    debug!("{}", e);
+                    let msg = format!("commit_findings::update::purl_id::{}::{}", purl.id, e);
+                    println!("{}", msg);
+                    change_set.scan.ref_errs(key.to_string(), msg);
                 }
             }
         }
@@ -165,10 +175,7 @@ impl SnykService {
         let issues = match self.client.get_issues(org_id, purl).await {
             Ok(issues) => issues,
             Err(e) => {
-                return Err(Error::Snyk(format!(
-                    "snyk::issues: purl - {} - {}",
-                    purl, e
-                )));
+                return Err(Error::Snyk(format!("snyk::issues::{}", e)));
             }
         };
 

@@ -202,10 +202,7 @@ impl SnykService {
         &self,
         change_set: &mut ScanSbomsChangeSet<'_>,
     ) -> Result<(), Error> {
-        // TODO: Handle ScanRefs on Purls.
-        let mut processed = HashMap::<String, u32>::new();
-
-        for (key, sbom) in change_set.sboms.iter_mut() {
+        for (_key, sbom) in change_set.sboms.iter_mut() {
             if sbom.id.is_empty() {
                 match self.insert(sbom).await {
                     Ok(_) => {
@@ -225,23 +222,9 @@ impl SnykService {
                     }
                 }
             }
-
-            if processed.contains_key(key) {
-                debug!("change_set contains duplicated sboms");
-                match processed.get(key) {
-                    None => {}
-                    Some(count) => {
-                        processed.insert(key.to_string(), *count + 1);
-                    }
-                }
-            } else {
-                processed.insert(key.to_string(), 1);
-            }
         }
 
-        processed.clear();
-
-        for (key, purl) in change_set.purls.iter_mut() {
+        for (_key, purl) in change_set.purls.iter_mut() {
             if purl.id.is_empty() {
                 match self.insert(purl).await {
                     Ok(_) => {
@@ -261,23 +244,9 @@ impl SnykService {
                     }
                 }
             }
-
-            if processed.contains_key(key) {
-                debug!("change_set contains duplicated purls");
-                match processed.get(key) {
-                    None => {}
-                    Some(count) => {
-                        processed.insert(key.to_string(), *count + 1);
-                    }
-                }
-            } else {
-                processed.insert(key.to_string(), 1);
-            }
         }
 
-        processed.clear();
-
-        for (key, package) in change_set.packages.iter_mut() {
+        for (_key, package) in change_set.packages.iter_mut() {
             if package.id.is_empty() {
                 match self.insert(package).await {
                     Ok(_) => {
@@ -297,21 +266,7 @@ impl SnykService {
                     }
                 }
             }
-
-            if processed.contains_key(key) {
-                debug!("change_set contains duplicated packages");
-                match processed.get(key) {
-                    None => {}
-                    Some(count) => {
-                        processed.insert(key.to_string(), *count + 1);
-                    }
-                }
-            } else {
-                processed.insert(key.to_string(), 1);
-            }
         }
-
-        processed.clear();
 
         for (key, dependency) in change_set.dependencies.iter_mut() {
             if dependency.id.is_empty() {
@@ -333,21 +288,7 @@ impl SnykService {
                     }
                 }
             }
-
-            if processed.contains_key(key) {
-                debug!("change_set contains duplicated dependencies");
-                match processed.get(key) {
-                    None => {}
-                    Some(count) => {
-                        processed.insert(key.to_string(), *count + 1);
-                    }
-                }
-            } else {
-                processed.insert(key.to_string(), 1);
-            }
         }
-
-        processed.clear();
 
         for (key, unsupported) in change_set.unsupported.iter_mut() {
             if unsupported.id.is_empty() {
@@ -368,18 +309,6 @@ impl SnykService {
                         continue;
                     }
                 }
-            }
-
-            if processed.contains_key(key) {
-                debug!("change_set contains duplicated unsupported");
-                match processed.get(key) {
-                    None => {}
-                    Some(count) => {
-                        processed.insert(key.to_string(), *count + 1);
-                    }
-                }
-            } else {
-                processed.insert(key.to_string(), 1);
             }
         }
 
