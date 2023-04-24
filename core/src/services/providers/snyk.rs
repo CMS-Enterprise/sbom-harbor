@@ -135,8 +135,9 @@ impl SbomProvider for SnykProvider {
     }
 }
 
+//TODO: Remove this before merging to main
 #[tokio::test]
-async fn booger() {
+async fn live_test() {
    let provider = SnykProvider::new(); 
    provider.provide_sboms().await;
 }
@@ -176,12 +177,20 @@ async fn test_get_snyk_data() {
     mock_sbom.insert(format!("field2"), "value2".into());
     mock_sbom.insert(format!("field3"), "value3".into());
 
-    mock_snyk_client.expect_get_sbom_from_snyk().returning(move |_, _, _ | Ok(Some(mock_sbom.clone())));
+    let mock_return_sbom = mock_sbom.clone();
+    mock_snyk_client.expect_get_sbom_from_snyk().returning(move |_, _, _ | Ok(Some(mock_return_sbom.clone())));
 
     let provider = SnykProvider{snyk_api: Box::new(mock_snyk_client)};
     
     let sboms = provider.get_valid_sboms(mock_token).await;
-   
-    assert!(sboms.get(0).eq(mock_sbom))
-    //TODO: add validation
+    let sbom_result = sboms.into_iter().nth(0).unwrap();
+
+    assert!(sbom_result.0.eq(&mock_sbom), "Mocked and retruned SBOM should be the same");
+    
+    assert!(sbom_result.1.id.eq(&mock_project_detail.id), "Returned project details id should match mock");
+    assert!(sbom_result.1.name.eq(&mock_project_detail.name), "Returned project details Name should match mock");
+    assert!(sbom_result.1.origin.eq(&mock_project_detail.origin), "Returned project details Origin should match mock");
+    assert!(sbom_result.1.r#type.eq(&mock_project_detail.r#type), "Returned project details Type should match mock");
+    assert!(sbom_result.1.browse_url.eq(&mock_project_detail.browse_url), "Returned project details browse_url should match mock");
+    
 }
