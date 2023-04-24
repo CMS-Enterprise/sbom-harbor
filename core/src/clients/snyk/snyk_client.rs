@@ -153,7 +153,7 @@ async fn test_get_projects_from_org() {
     let org_name= format!("Test Organization");
     let snyk_token = get_snyk_access_token().await;
     let good_request = snyk_api.get_projects_from_org(snyk_token.clone(), org_id.clone(), org_name.clone()).await;
-
+    println!("{:#?}", good_request);
     // Validate we have a successfull response
     assert!(good_request.is_ok(), "Response should be OK");
 
@@ -176,6 +176,8 @@ async fn test_get_projects_from_org() {
     let bad_request = snyk_api.get_projects_from_org(snyk_token, format!("123-abc"), org_name.clone()).await;
     assert!(bad_request.is_err(), "We made a bad request and this should produce an error");
 
+   
+
 }
 
 #[tokio::test]
@@ -197,7 +199,7 @@ async fn test_get_projects_from_org_list() {
     ];
     let snyk_token = get_snyk_access_token().await;
     let get_proj_results = snyk_api.get_projects_from_org_list(snyk_token, org_list).await;
-
+    println!("{:#?}", get_proj_results);
     // Validate we have a successfull response
     assert!(!get_proj_results.0.is_empty(), "The first part of the tuple should have data in it");
     assert!(get_proj_results.1.is_empty(), "The second part of the tuple should be empty (no errors found)");

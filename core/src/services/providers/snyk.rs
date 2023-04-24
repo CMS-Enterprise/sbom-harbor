@@ -79,14 +79,13 @@ impl SnykProvider {
        // return valid_sboms;
     }
     
-    async fn get_valid_sboms(&self) -> Vec<(HashMap<String, Value>, ProjectDetails)>{
+    async fn get_valid_sboms(&self, snyk_token: String) -> Vec<(HashMap<String, Value>, ProjectDetails)>{
 
         let start = Instant::now();
         let mut valid_sboms:  Vec<(HashMap<String, Value>, ProjectDetails)> = Vec::new();
 
         println!("Starting SnykProvider scan...");
         
-        let snyk_token = get_snyk_access_token().await;
         println!("Scanning Snyk for SBOMS...");
 
         let snyk_data = self.snyk_api.get_orgs(snyk_token.clone()).await;
@@ -121,8 +120,11 @@ pub struct SnykProvider{
 impl SbomProvider for SnykProvider {
 
     async fn provide_sboms(&self) {
-        println!("Providing sboms");
-        let valid_sboms = self.get_valid_sboms().await;
+        // Get snyk access token
+        let snyk_token = get_snyk_access_token().await;
+
+        // Get and return all valid sboms found in Snyk
+        let valid_sboms = self.get_valid_sboms(snyk_token).await;
 
         for sbom_results in valid_sboms.iter() {
             //println!("Uploading SBOM to harbor for project: {}, from org: {}", sbom_results.1.id, orgs.org.id.clone().unwrap());
@@ -141,21 +143,45 @@ async fn booger() {
 
 #[tokio::test]
 async fn test_get_snyk_data() {
-    let fake_token = format!("123-abc");
+
+    // Mock token for Snyk access
+    let mock_token = format!("123-abc");
+
+    // Mock of the Snyk Rest Client API
     let mut mock_snyk_client = MockSnykRestClient::new();
-    let orgs = Org{id: Some(format!("123abc")), name: Some(format!("test"))};
-    let orgs_vec = vec![orgs];
+
+    // Mock of Org object
+    let mock_org = Org{id: Some(format!("123abc")), name: Some(format!("test"))};
+
+    // A list that contains mocked Org objects
+    let mock_list_of_orgs = vec![mock_org.clone()];
+
+    // Mock project details object
+    let mock_project_detail = ProjectDetails{id: format!("123"), name: format!("project1"), origin: format!("github"), r#type: format!("npm"), browse_url: format!("")};
 
     // Mock for get_orgs in snyk_client
-    mock_snyk_client.expect_get_orgs().returning(move |_| Ok(orgs_vec.clone()));
+    mock_snyk_client.expect_get_orgs().returning(move |_| Ok(mock_list_of_orgs.clone()));
 
     // Mock for get_projects_from_org in snyk_client
+    let mock_org_projects_1= OrgProjects{projects: vec![mock_project_detail.clone()], org: mock_org.clone()};
+    mock_snyk_client.expect_get_projects_from_org().returning(move |_, _, _| Ok(Some(mock_org_projects_1.clone())));
+    
     // Mock for get_projects_from_org_list in snyk_client
+    let mock_org_projects_2= OrgProjects{projects: vec![mock_project_detail.clone()], org: mock_org.clone()};
+    mock_snyk_client.expect_get_projects_from_org_list().returning(move |_, _| (vec![mock_org_projects_2.clone()], vec![]));
+
     // Mock for get_sbom_from_snyk in snyk_client
+    let mut mock_sbom: HashMap<String, Value> = HashMap::new();
+    mock_sbom.insert(format!("field1"), "value1".into());
+    mock_sbom.insert(format!("field2"), "value2".into());
+    mock_sbom.insert(format!("field3"), "value3".into());
+
+    mock_snyk_client.expect_get_sbom_from_snyk().returning(move |_, _, _ | Ok(Some(mock_sbom.clone())));
 
     let provider = SnykProvider{snyk_api: Box::new(mock_snyk_client)};
     
-    let sboms = provider.get_valid_sboms().await;
-    //let snyk_data = provider.snyk_api.get_orgs(fake_token.clone()).await;
-    println!("{:#?}", sboms);
+    let sboms = provider.get_valid_sboms(mock_token).await;
+   
+    assert!(sboms.get(0).eq(mock_sbom))
+    //TODO: add validation
 }
