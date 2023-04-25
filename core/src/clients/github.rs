@@ -476,6 +476,8 @@ fn test_remove_clone() {
 #[tokio::test]
 async fn test_should_skip_archived() {
 
+    let client = Client::new();
+
     let test_name = String::from("test name, ignore");
     let test_url = String::from("test url, ignore");
 
@@ -492,7 +494,7 @@ async fn test_should_skip_archived() {
 
     let mut test_counter = Counter::default();
 
-    if !should_skip(&test_repo, test_name, test_url, &mut test_counter) {
+    if !client.should_skip(&test_repo, test_name, test_url, &mut test_counter) {
         panic!("should_skip should be true for an archived repo");
     } else {
         if test_counter.archived != 1 {
@@ -503,6 +505,8 @@ async fn test_should_skip_archived() {
 
 #[tokio::test]
 async fn test_should_skip_disabled() {
+
+    let client = Client::new();
 
     let test_name = String::from("test name, ignore");
     let test_url = String::from("test url, ignore");
@@ -520,7 +524,7 @@ async fn test_should_skip_disabled() {
 
     let mut test_counter = Counter::default();
 
-    if !should_skip(&test_repo, test_name, test_url, &mut test_counter) {
+    if !client.should_skip(&test_repo, test_name, test_url, &mut test_counter) {
         panic!("should_skip should be true for an disabled repo");
     } else {
         if test_counter.disabled != 1 {
@@ -531,6 +535,8 @@ async fn test_should_skip_disabled() {
 
 #[tokio::test]
 async fn test_should_skip_empty() {
+
+    let client = Client::new();
 
     let test_name = String::from("test name, ignore");
     let test_url = String::from("test url, ignore");
@@ -548,7 +554,7 @@ async fn test_should_skip_empty() {
 
     let mut test_counter = Counter::default();
 
-    if !should_skip(&test_repo, test_name, test_url, &mut test_counter) {
+    if !client.should_skip(&test_repo, test_name, test_url, &mut test_counter) {
         panic!("should_skip should be true for an empty repo");
     } else {
         if test_counter.empty != 1 {
