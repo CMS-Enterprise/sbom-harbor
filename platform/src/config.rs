@@ -1,33 +1,34 @@
-use std::collections::HashMap;
-use std::env::VarError;
 use aws_config as sdk;
 use sdk::environment::region::EnvironmentVariableRegionProvider;
 use sdk::meta::region::RegionProviderChain;
 use sdk::SdkConfig;
 use serde::Deserialize;
+use std::collections::HashMap;
+use std::env::VarError;
 
 use crate::Error;
 
 fn region_short_codes() -> HashMap<&'static str, &'static str> {
     HashMap::from([
-        ("us-east-1","use1"),
+        ("us-east-1", "use1"),
         ("us-east-2]", "use2"),
         ("us-west-1]", "usw1"),
-        ("us-west-2]", "usw2")
+        ("us-west-2]", "usw2"),
     ])
 }
 
 /// Retrieve an arbitrary value from the environment and cast it to a type.
 pub fn from_env<T>(key: &str) -> Result<T, Error>
-    where for<'a> T: Default + Deserialize<'a> {
-    let raw = std::env::vars()
-        .find(|(k, _)| k == key);
+where
+    for<'a> T: Default + Deserialize<'a>,
+{
+    let raw = std::env::vars().find(|(k, _)| k == key);
 
     match raw {
         None => Ok(T::default()),
         Some(v) => {
-            let result = serde_json::from_str(v.1.as_str())
-                .map_err(|e| Error::Config(e.to_string()))?;
+            let result =
+                serde_json::from_str(v.1.as_str()).map_err(|e| Error::Config(e.to_string()))?;
 
             Ok(result)
         }
@@ -49,13 +50,10 @@ pub fn environize(resource: &str) -> Result<String, Error> {
 
 /// Retrieves the AWS SDK config using the default [RegionProviderChain].
 pub async fn sdk_config_from_env() -> Result<SdkConfig, Error> {
-    let region_provider = RegionProviderChain::default_provider()
-        .or_else(EnvironmentVariableRegionProvider::new());
+    let region_provider =
+        RegionProviderChain::default_provider().or_else(EnvironmentVariableRegionProvider::new());
 
-    let config = sdk::from_env()
-        .region(region_provider)
-        .load()
-        .await;
+    let config = sdk::from_env().region(region_provider).load().await;
 
     Ok(config)
 }
@@ -74,7 +72,6 @@ pub async fn sdk_config_from_env() -> Result<SdkConfig, Error> {
 //     // TODO: Implement algorithm to decide which provider to use.
 //     Ok(providers.next())
 // }
-
 
 impl From<VarError> for Error {
     fn from(err: VarError) -> Self {

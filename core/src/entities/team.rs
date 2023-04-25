@@ -1,9 +1,9 @@
-use core::default::Default;
 use chrono::{DateTime, Utc};
+use core::default::Default;
 use uuid::Uuid;
 
-use crate::Error;
 use crate::models::{Codebase, Member, Project, Team, Token};
+use crate::Error;
 
 impl Team {
     /// Constructor function for creating new [Team] instances.
@@ -96,7 +96,10 @@ impl Token {
 
         match DateTime::parse_from_rfc3339(&self.expires) {
             Ok(expiry) => Ok(Utc::now() >= expiry),
-            Err(e) => Err(Error::InvalidFormat(format!("error parsing token expires: {}", e))),
+            Err(e) => Err(Error::InvalidFormat(format!(
+                "error parsing token expires: {}",
+                e
+            ))),
         }
     }
 }

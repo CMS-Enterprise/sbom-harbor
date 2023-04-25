@@ -1,21 +1,21 @@
 use std::fmt::Debug;
 
-use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 
 pub use service::*;
 pub use store::*;
 
 use crate::auth::*;
 
+/// Provides a row-level authorization mechanism for controlling access to entries in a [Collection].
+pub mod auth;
 /// Provides MongoDB db migrations support.
 pub mod migrations;
 /// Provides a generics-based [Service] trait for handling CRUD based operations against a [Store].
 pub mod service;
 /// Provides a generics-based [Store] trait for handling CRUD based operations against a [Collection].
 pub mod store;
-/// Provides a row-level authorization mechanism for controlling access to entries in a [Collection].
-pub mod auth;
 
 /// Provides connection information and schema conventions for a MongoDB/DocumentDB backed [Store].
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -51,12 +51,17 @@ impl Default for Context {
 impl Context {
     /// Returns a formatted MongoDB compliant URI for the MongoDB instance.
     pub fn connection_uri(&self) -> String {
-        format!("mongodb://{}:{}@{}:{}", self.username, self.password, self.host, self.port)
+        format!(
+            "mongodb://{}:{}@{}:{}",
+            self.username, self.password, self.host, self.port
+        )
     }
 }
 
 /// Opinionated interface for Mongo Documents. Allows callers to avoid a direct dependency on the Mongo Driver.
-pub trait MongoDocument: Clone + Debug + for<'a> Deserialize<'a> + DeserializeOwned + Send + Serialize + Sized + Sync + Unpin {
+pub trait MongoDocument:
+    Clone + Debug + for<'a> Deserialize<'a> + DeserializeOwned + Send + Serialize + Sized + Sync + Unpin
+{
     /// The unique identifier for the document.
     fn id(&self) -> String;
     /// Allows a store to set the id on a document instance.
@@ -89,7 +94,7 @@ macro_rules! mongo_doc {
                 type_name.split(':').next_back().unwrap().to_string()
             }
         }
-    }
+    };
 }
 
 pub use mongo_doc;

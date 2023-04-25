@@ -17,7 +17,6 @@ pub enum Error {
     Runtime(String),
 }
 
-
 impl From<platform::Error> for Error {
     fn from(value: platform::Error) -> Self {
         Error::Runtime(format!("{:?}", value))

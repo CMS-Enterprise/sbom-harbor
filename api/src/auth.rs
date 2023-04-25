@@ -1,7 +1,6 @@
 use axum::{
     async_trait,
     extract::{FromRequestParts, TypedHeader},
-
     headers::{authorization::Bearer, Authorization},
     http::request::Parts,
     RequestPartsExt,
@@ -30,13 +29,17 @@ pub struct Claims {
 
 #[async_trait]
 impl<S> FromRequestParts<S> for Claims
-where S: Send + Sync,
+where
+    S: Send + Sync,
 {
     type Rejection = Error;
 
-    async fn from_request_parts(parts: &mut Parts, _authenticator: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(
+        parts: &mut Parts,
+        _authenticator: &S,
+    ) -> Result<Self, Self::Rejection> {
         let TypedHeader(Authorization(_bearer)) = parts
-            .extract::<TypedHeader::<Authorization<Bearer>>>()
+            .extract::<TypedHeader<Authorization<Bearer>>>()
             .await
             .map_err(|e| Error::InvalidToken(e.to_string()))?;
 
@@ -45,7 +48,7 @@ where S: Send + Sync,
         //     .await
         //     .map_err(|e| Error::InvalidToken(e.to_string()))?;
 
-        Ok(Claims{
+        Ok(Claims {
             kid: "".to_string(),
             aud: "".to_string(),
             iss: "".to_string(),

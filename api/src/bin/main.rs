@@ -1,22 +1,22 @@
+use axum::http::header::{HeaderName, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
+use axum::http::{Method, Request, StatusCode};
+use axum::response::{IntoResponse, Response};
+use axum::{
+    routing::{delete, get, post, put},
+    Router,
+};
+use harbcore::config::db_connection;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
-use axum::{
-    routing::{get, post, put, delete},
-    Router,
-};
-use axum::http::{Method, Request, StatusCode};
-use axum::response::{IntoResponse, Response};
-use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE, HeaderName};
-use tracing::{info, trace};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
 use tracing::Span;
-use harbcore::config::db_connection;
+use tracing::{info, trace};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use platform::mongodb::Store;
 use harbor_api::controllers;
+use platform::mongodb::Store;
 // use harbcore::config::sdk_config_from_env;
 
 const X_API_KEY: &str = "x-api-key";
@@ -36,13 +36,7 @@ async fn main() {
 
     let cors = CorsLayer::new()
         .allow_origin(Any)
-        .allow_headers([
-            AUTHORIZATION,
-            ACCEPT,
-            CONTENT_TYPE,
-            api_key,
-            amz_date,
-        ])
+        .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE, api_key, amz_date])
         .allow_methods([
             Method::GET,
             Method::POST,
@@ -50,26 +44,33 @@ async fn main() {
             Method::DELETE,
             Method::HEAD,
             Method::OPTIONS,
-            Method::PATCH
+            Method::PATCH,
         ]);
 
     let tracer = TraceLayer::new_for_http()
         .on_request(|request: &Request<_>, span: &Span| {
-            trace!("request:\n\tspan: {:?}\n\turi: {}",
+            trace!(
+                "request:\n\tspan: {:?}\n\turi: {}",
                 span.id(),
-                request.uri())
+                request.uri()
+            )
         })
         .on_response(|response: &Response, latency: Duration, span: &Span| {
-            trace!("response:\n\tspan: {:?}\n\tstatus: {}\n\tlatency: {}ms",
+            trace!(
+                "response:\n\tspan: {:?}\n\tstatus: {}\n\tlatency: {}ms",
                 span.id(),
                 response.status(),
-                latency.as_millis())
+                latency.as_millis()
+            )
         })
-        .on_failure(|error: ServerErrorsFailureClass, latency: Duration, span: &Span| {
-            trace!("failure:\n\tspan: {:?}\n\terror: {}\n\tlatency: {}ms",
-                span.id(),
-                error,
-                latency.as_millis())
+        .on_failure(
+            |error: ServerErrorsFailureClass, latency: Duration, span: &Span| {
+                trace!(
+                    "failure:\n\tspan: {:?}\n\terror: {}\n\tlatency: {}ms",
+                    span.id(),
+                    error,
+                    latency.as_millis()
+                )
             },
         );
 
@@ -79,7 +80,10 @@ async fn main() {
     let cx = db_connection();
 
     if cx.is_err() {
-        trace!("unable to retrieve connection config: {}", cx.err().unwrap());
+        trace!(
+            "unable to retrieve connection config: {}",
+            cx.err().unwrap()
+        );
         return;
     }
 
@@ -98,7 +102,7 @@ async fn main() {
         .layer(cors)
         .layer(tracer);
 
-    let addr = SocketAddr::from(([127,0,0,1],3000));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     info!("harbor listening on {}", addr);
 
     axum::Server::bind(&addr)

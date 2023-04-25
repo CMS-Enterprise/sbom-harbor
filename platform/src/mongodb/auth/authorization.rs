@@ -6,8 +6,8 @@ use async_trait::async_trait;
 use tracing::instrument;
 
 use crate::auth::{Action, Authorizer, Effect, Group, Policy, Resource, Role, User};
-use crate::Error;
 use crate::mongodb::Store;
+use crate::Error;
 
 /// Allows quick categorization of an assertion effect. Useful for exiting early when explicit
 /// deny-all or allow-all policies apply.
@@ -29,7 +29,12 @@ pub struct DefaultAuthorizer {
 #[async_trait]
 impl Authorizer for DefaultAuthorizer {
     #[instrument]
-    async fn assert(&self, user: User, resource: Resource, action: Action) -> Result<Effect, Error> {
+    async fn assert(
+        &self,
+        user: User,
+        resource: Resource,
+        action: Action,
+    ) -> Result<Effect, Error> {
         let groups = self.groups_by_user(user).await?;
         let roles = self.roles_by_user_groups(groups).await?;
         let policies = self.policies_by_resource(resource).await?;
@@ -65,15 +70,11 @@ impl DefaultAuthorizer {
     async fn roles_by_user_groups(&self, groups: Vec<Group>) -> Result<Vec<Role>, Error> {
         let mut filter = HashMap::new();
 
-        groups
-            .iter()
-            .for_each(|group| {
-                group.roles
-                    .iter()
-                    .for_each(|role_id| {
-                        filter.insert("id", role_id.as_str());
-                    });
+        groups.iter().for_each(|group| {
+            group.roles.iter().for_each(|role_id| {
+                filter.insert("id", role_id.as_str());
             });
+        });
 
         self.store.query::<Role>(filter).await
     }
@@ -95,7 +96,11 @@ pub fn profile(_roles: &[Role], _policies: &[Policy]) -> Profile {
 }
 
 /// Calculates the authorization [Effect] for an [Action].
-pub fn assert_role_policy(roles: Vec<Role>, policies: Vec<Policy>, action: Action) -> Result<Effect, Error> {
+pub fn assert_role_policy(
+    roles: Vec<Role>,
+    policies: Vec<Policy>,
+    action: Action,
+) -> Result<Effect, Error> {
     let policies = policies_for_roles(policies, roles);
     println!("policies for roles: {:#?}", policies);
 
@@ -118,9 +123,7 @@ pub fn assert_role_policy(roles: Vec<Role>, policies: Vec<Policy>, action: Actio
 pub fn explicitly_denied(policies: &[Policy]) -> bool {
     !policies
         .iter()
-        .filter(|policy| {
-            policy.effect == Effect::Deny
-        })
+        .filter(|policy| policy.effect == Effect::Deny)
         .collect::<Vec<&Policy>>()
         .is_empty()
 }
@@ -140,9 +143,7 @@ pub fn policies_for_roles(policies: Vec<Policy>, roles: Vec<Role>) -> Vec<Policy
         .into_iter()
         .filter(|policy| {
             // this filter determines whether this role pertains to this policy.
-            roles
-                .iter()
-                .any(|role| role.policies.contains(&policy.id))
+            roles.iter().any(|role| role.policies.contains(&policy.id))
         })
         .collect()
 }

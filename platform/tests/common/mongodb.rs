@@ -1,13 +1,13 @@
+use mongodb::Client as MongoClient;
 use std::collections::HashMap;
 use std::sync::Arc;
-use mongodb::Client as MongoClient;
 use uuid::Uuid;
 
-use platform::Error;
-use platform::mongodb::{Context, MongoDocument, Store};
 use platform::auth::*;
 use platform::config::from_env;
 use platform::mongodb::auth::DefaultAuthorizer;
+use platform::mongodb::{Context, MongoDocument, Store};
+use platform::Error;
 
 pub const DB_IDENTIFIER: &str = "harbor";
 pub const KEY_NAME: &str = "id";
@@ -24,14 +24,20 @@ pub async fn local_context() -> Result<Context, Error> {
     let dbs = client.list_database_names(None, None).await?;
 
     if !dbs.contains(&DB_IDENTIFIER.to_string()) {
-        return Err(Error::Mongo(format!("{} db does not exist", DB_IDENTIFIER.to_string())))
+        return Err(Error::Mongo(format!(
+            "{} db does not exist",
+            DB_IDENTIFIER.to_string()
+        )));
     }
 
     let db = client.database(DB_IDENTIFIER);
     let collections = db.list_collection_names(None).await?;
 
     if !collections.contains(&COLLECTION.to_string()) {
-        return Err(Error::Mongo(format!("{} collection does not exist", COLLECTION.to_string())));
+        return Err(Error::Mongo(format!(
+            "{} collection does not exist",
+            COLLECTION.to_string()
+        )));
     }
 
     Ok(cx)
@@ -61,7 +67,10 @@ impl AuthScenario {
                 name: name.clone(),
                 policies: vec![],
             },
-            user: User { id: Uuid::new_v4().to_string(), email: "".to_string() },
+            user: User {
+                id: Uuid::new_v4().to_string(),
+                email: "".to_string(),
+            },
             store,
         };
 
@@ -108,21 +117,21 @@ impl AuthScenario {
         };
         scenario.with::<Group>(&admin_group).await?;
 
-        let resource = Resource{
+        let resource = Resource {
             id: Uuid::new_v4().to_string(),
             name: name.clone(),
             kind: ANY_RESOURCE_KIND.to_string(),
         };
         scenario.with::<Resource>(&resource).await?;
 
-        let role = Role{
+        let role = Role {
             id: Uuid::new_v4().to_string(),
             name: name.clone(),
             policies: vec![],
         };
         scenario.with::<Role>(&role).await?;
 
-        let user = User{
+        let user = User {
             id: Uuid::new_v4().to_string(),
             email: name.clone(),
         };
@@ -145,7 +154,9 @@ impl AuthScenario {
 
     #[allow(dead_code)]
     pub async fn with<T>(&self, d: &T) -> Result<(), Error>
-    where T: MongoDocument {
+    where
+        T: MongoDocument,
+    {
         self.store.insert::<T>(d).await?;
 
         Ok(())
@@ -153,7 +164,7 @@ impl AuthScenario {
 
     #[allow(dead_code)]
     pub async fn with_policy(&mut self, action: Action, effect: Effect) -> Result<(), Error> {
-        let policy = Policy{
+        let policy = Policy {
             id: Uuid::new_v4().to_string(),
             name: self.name.clone(),
             resource_id: self.resource.id.clone(),
@@ -169,7 +180,9 @@ impl AuthScenario {
     #[allow(dead_code)]
     pub async fn assert(&self, action: Action) -> Result<Effect, Error> {
         let authorizer = DefaultAuthorizer::new(self.store.clone());
-        authorizer.assert(self.user.clone(), self.resource.clone(), action).await
+        authorizer
+            .assert(self.user.clone(), self.resource.clone(), action)
+            .await
     }
 
     #[allow(dead_code)]
@@ -184,24 +197,24 @@ impl AuthScenario {
         let policies = self.store.query::<Policy>(filter.clone()).await?;
         for policy in policies {
             self.store.delete::<Policy>(policy.id.as_str()).await?;
-        };
+        }
 
         let resources = self.store.query::<Resource>(filter.clone()).await?;
         for resource in resources {
             self.store.delete::<Resource>(resource.id.as_str()).await?;
-        };
+        }
 
         let roles = self.store.query::<Role>(filter.clone()).await?;
         for role in roles {
             self.store.delete::<Role>(role.id.as_str()).await?
-        };
+        }
 
         // Users have emails not names.
         let filter = HashMap::from([("email", self.name.as_str())]);
         let users = self.store.query::<User>(filter).await?;
         for user in users {
             self.store.delete::<User>(user.id.as_str()).await?
-        };
+        }
 
         Ok(())
     }
@@ -212,7 +225,8 @@ impl AuthScenario {
 
         let groups = self.store.query::<Group>(filter.clone()).await?;
         for mut group in groups {
-            group.users = group.users
+            group.users = group
+                .users
                 .into_iter()
                 .filter(|user_id: &String| self.user.id.eq(user_id))
                 .collect();

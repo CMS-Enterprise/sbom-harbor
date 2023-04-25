@@ -1,16 +1,19 @@
-use std::collections::HashMap;
 use async_trait::async_trait;
+use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::Error;
+use crate::auth::{Action, Effect, Group, Policy, Resource, Role, ANY_RESOURCE_KIND};
+use crate::mongodb::migrations::{
+    Effect as MigrationEffect, LogEntry, Migration, MigrationService,
+};
 use crate::mongodb::Store;
-use crate::auth::{Action, ANY_RESOURCE_KIND, Effect, Group, Policy, Resource, Role};
-use crate::mongodb::migrations::{Effect as MigrationEffect, LogEntry, Migration, MigrationService};
+use crate::Error;
 
 /// Applies the default set of migrations.
 pub async fn apply_all(service: &MigrationService) -> Result<LogEntry, Error> {
     let migration = InitDefaultAuth {};
-    service.apply(&migration, MigrationEffect::Commit)
+    service
+        .apply(&migration, MigrationEffect::Commit)
         .await
         .map_err(|e| Error::Migration(e.to_string()))
 }
@@ -25,7 +28,7 @@ impl Migration for InitDefaultAuth {
     }
 
     async fn commit(&self, service: &MigrationService) -> Result<LogEntry, Error> {
-        let store =Store::new(&service.ctx).await?;
+        let store = Store::new(&service.ctx).await?;
 
         // Build the minimal require authentication data.
 
@@ -79,16 +82,23 @@ impl InitDefaultAuth {
     }
 
     // The allow any policy allows any action on any resource
-    async fn ensure_allow_any_policy(store: &Store, any_resource: &Resource) -> Result<Policy, Error> {
+    async fn ensure_allow_any_policy(
+        store: &Store,
+        any_resource: &Resource,
+    ) -> Result<Policy, Error> {
         let filter = HashMap::from([("name", "allow any")]);
         let existing = store.query::<Policy>(filter).await?;
         if !existing.is_empty() {
             if existing.len() > 1 {
-                return Err(Error::Migration("invalid db state: allow any policy".to_string()));
+                return Err(Error::Migration(
+                    "invalid db state: allow any policy".to_string(),
+                ));
             }
             let existing = existing.first().unwrap();
             if !existing.resource_id.eq(&any_resource.id) {
-                return Err(Error::Migration("invalid id state: allow any policy".to_string()));
+                return Err(Error::Migration(
+                    "invalid id state: allow any policy".to_string(),
+                ));
             }
             return Ok(existing.clone());
         }
@@ -130,16 +140,20 @@ impl InitDefaultAuth {
         Ok(admin_role)
     }
 
-    async fn ensure_admin_group(store: &Store, admin_role: &Role) -> Result<(), Error>{
+    async fn ensure_admin_group(store: &Store, admin_role: &Role) -> Result<(), Error> {
         let filter = HashMap::from([("name", "Administrators")]);
         let existing = store.query::<Group>(filter).await?;
         if !existing.is_empty() {
             if existing.len() > 1 {
-                return Err(Error::Migration("invalid db state: admin group".to_string()));
+                return Err(Error::Migration(
+                    "invalid db state: admin group".to_string(),
+                ));
             }
             let existing = existing.first().unwrap();
             if !existing.roles.contains(&admin_role.id) {
-                return Err(Error::Migration("invalid id state: admin group".to_string()));
+                return Err(Error::Migration(
+                    "invalid id state: admin group".to_string(),
+                ));
             }
 
             return Ok(());
@@ -160,16 +174,23 @@ impl InitDefaultAuth {
     // The disabled policy allows for disabling users without deleting them.
     // This can even be applied to admins. Useful when an account should be
     // denied access, but retained for audit purposes.
-    async fn ensure_disabled_policy(store: &Store, any_resource: &Resource) -> Result<Policy, Error> {
+    async fn ensure_disabled_policy(
+        store: &Store,
+        any_resource: &Resource,
+    ) -> Result<Policy, Error> {
         let filter = HashMap::from([("name", "disabled")]);
         let existing = store.query::<Policy>(filter).await?;
         if !existing.is_empty() {
             if existing.len() > 1 {
-                return Err(Error::Migration("invalid db state: disabled policy".to_string()));
+                return Err(Error::Migration(
+                    "invalid db state: disabled policy".to_string(),
+                ));
             }
             let existing = existing.first().unwrap();
             if !existing.resource_id.eq(&any_resource.id) {
-                return Err(Error::Migration("invalid id state: disabled policy".to_string()));
+                return Err(Error::Migration(
+                    "invalid id state: disabled policy".to_string(),
+                ));
             }
 
             return Ok(existing.clone());
@@ -193,11 +214,15 @@ impl InitDefaultAuth {
         let existing = store.query::<Role>(filter).await?;
         if !existing.is_empty() {
             if existing.len() > 1 {
-                return Err(Error::Migration("invalid db state: disabled role".to_string()));
+                return Err(Error::Migration(
+                    "invalid db state: disabled role".to_string(),
+                ));
             }
             let existing = existing.first().unwrap();
             if !existing.policies.contains(&disabled_policy.id) {
-                return Err(Error::Migration("invalid id state: disabled role".to_string()));
+                return Err(Error::Migration(
+                    "invalid id state: disabled role".to_string(),
+                ));
             }
 
             return Ok(existing.clone());
@@ -213,16 +238,20 @@ impl InitDefaultAuth {
         Ok(disabled_role)
     }
 
-    async fn ensure_disabled_group(store: &Store, disabled_role: &Role) -> Result<(), Error>{
+    async fn ensure_disabled_group(store: &Store, disabled_role: &Role) -> Result<(), Error> {
         let filter = HashMap::from([("name", "disabled")]);
         let existing = store.query::<Group>(filter).await?;
         if !existing.is_empty() {
             if existing.len() > 1 {
-                return Err(Error::Migration("invalid db state: disabled group".to_string()));
+                return Err(Error::Migration(
+                    "invalid db state: disabled group".to_string(),
+                ));
             }
             let existing = existing.first().unwrap();
             if !existing.roles.contains(&disabled_role.id) {
-                return Err(Error::Migration("invalid id state: disabled group".to_string()));
+                return Err(Error::Migration(
+                    "invalid id state: disabled group".to_string(),
+                ));
             }
 
             return Ok(());

@@ -4,8 +4,8 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::Error;
 use crate::mongodb::Context;
+use crate::Error;
 
 /// LogEntry represents an applied DB Migration operation.
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -23,7 +23,7 @@ pub struct LogEntry {
 impl LogEntry {
     /// Factory method for creating a new LogEntry instance.
     pub fn new(name: String, effect: Effect) -> Self {
-        Self{
+        Self {
             id: Uuid::new_v4().to_string(),
             name,
             effect,
@@ -76,7 +76,11 @@ impl MigrationService {
     }
 
     /// Applies a migration with the specified effect.
-    pub async fn apply(&self, migration: &impl Migration, effect: Effect) -> Result<LogEntry, Error> {
+    pub async fn apply(
+        &self,
+        migration: &impl Migration,
+        effect: Effect,
+    ) -> Result<LogEntry, Error> {
         match effect {
             Effect::Commit => migration.commit(self).await,
             Effect::Rollback => migration.rollback(self).await,

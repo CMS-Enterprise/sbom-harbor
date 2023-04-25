@@ -6,8 +6,8 @@ use async_trait::async_trait;
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::Error;
 use crate::mongodb::{MongoDocument, Store};
+use crate::Error;
 
 /// [Service] provides consistent, generic persistence capabilities for types that implement the
 /// [MongoDocument] trait. It is specialized to the opinionated conventions defined in this crate.
@@ -16,8 +16,8 @@ use crate::mongodb::{MongoDocument, Store};
 /// instead leverage a [Service].
 #[async_trait]
 pub trait Service<D>: Debug + Send + Sync
-    where
-        D: MongoDocument,
+where
+    D: MongoDocument,
 {
     // TODO: Refactor this away with a [Context].
     /// Provides access to the [Store] instance for the [Service].
@@ -37,10 +37,12 @@ pub trait Service<D>: Debug + Send + Sync
 
     /// Insert a document into a [Collection].
     #[instrument]
-    async fn insert<'a>(&self, doc: & mut D) -> Result<(), Error> {
+    async fn insert<'a>(&self, doc: &mut D) -> Result<(), Error> {
         let id = doc.id();
         if !id.is_empty() {
-            return Err(Error::Insert("client generated ids not supported".to_string()));
+            return Err(Error::Insert(
+                "client generated ids not supported".to_string(),
+            ));
         }
 
         let id = Uuid::new_v4().to_string();

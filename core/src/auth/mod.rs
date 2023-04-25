@@ -1,7 +1,7 @@
 mod authenticator;
 
-use std::fmt::{Display, Formatter};
 pub use authenticator::*;
+use std::fmt::{Display, Formatter};
 
 /// Enumerates the kinds of resources for which policies can be defined.
 pub enum ResourceKind {
