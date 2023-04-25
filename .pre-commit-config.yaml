@@ -2,7 +2,7 @@
 
 repos:
 
-- repo: https://github.com/sbolel/pre-commit-rust
+- repo: https://github.com/aquia-inc/pre-commit-rust
   rev: v1.0.0
   hooks:
   - id: fmt
