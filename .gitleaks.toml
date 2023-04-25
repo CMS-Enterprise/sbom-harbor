@@ -1,14 +1,10 @@
 # Title for the gitleaks configuration file.
 title = "Gitleaks Rules"
 
-# Extend the base (this) configuration.
 [extend]
-# useDefault will extend the base configuration with the default gitleaks config:
-# https://github.com/zricethezav/gitleaks/blob/master/config/gitleaks.toml
 useDefault = true
 
 [[rules]]
-
 id = "sbom-api-token"
 description = "Harbor SBOM API Tokens"
 regex = '''sbom-api-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[8|9aA|bB][0-9a-f]{3}-[0-9a-f]{12}'''
@@ -21,9 +17,20 @@ keywords = [
   "token",
 ]
 
+[[rules]]
+id = "generic-uuid-v4"
+description = "Generic UUID v4"
+regex = '''[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[8|9aA|bB][0-9a-f]{3}-[0-9a-f]{12}'''
+tags = ["credentials","hardcoded","uuid"]
+keywords = [
+  "uuid",
+  "token",
+]
+
 [allowlist]
-  description = "global allowlist. whitelisting paths"
-  paths = [
-    '''test/*''',
-    '''.yarn/*'''
-  ]
+description = "global allowlist. whitelisting paths"
+paths = [
+  '''test/*''',
+  '''.yarn/*'''
+]
+stopwords = ['''EXAMPLE''']

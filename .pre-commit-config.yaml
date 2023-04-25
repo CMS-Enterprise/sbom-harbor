@@ -27,6 +27,11 @@ repos:
     rev: v8.16.3
     hooks:
       - id: gitleaks
+        args:
+          - '--config'
+          - '.gitleaks.toml'
+          - '--staged'
+          - '--verbose'
 
   - repo: local
     hooks:
