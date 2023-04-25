@@ -43,10 +43,13 @@ pub struct Sbom {
     pub checksum_sha256: String,
 
     /// A map of cross-references to internal and external systems.
-    pub xrefs: Option<HashMap<XrefKind, Xref>>,
+    pub xrefs: Option<Vec<Xref>>,
 
     /// Reference to each [Scan] that was performed against this [Sbom].
     pub scan_refs: Vec<ScanRef>,
+
+    /// Denormalized list of dependency refs.
+    pub dependency_refs: Option<Vec<String>>,
 
     /// CycloneDx JSON spec model of Sbom. Hydrated at runtime.
     #[serde(skip)]
@@ -72,7 +75,8 @@ impl Sbom {
         format: CdxFormat,
         source: Source,
         scan: &Scan,
-        xrefs: Option<HashMap<XrefKind, Xref>>,
+        iteration: u32,
+        xrefs: Option<Vec<Xref>>,
     ) -> Result<Sbom, Error> {
         let bom: Bom = match Bom::parse(raw, CdxFormat::Json) {
             Ok(bom) => bom,
@@ -97,8 +101,26 @@ impl Sbom {
 
         let provider = match source.clone() {
             Source::Harbor(provider) => Some(provider),
-            Source::Vendor(_) => None,
+            Source::Vendor(name) => Some(SbomProviderKind::Vendor(name)),
         };
+
+        let dependency_refs = match &bom.components {
+            None => None,
+            Some(dependencies) => {
+                let mut dependency_refs = vec![];
+
+                dependencies
+                    .iter()
+                    .for_each(|dependency| match &dependency.purl {
+                        None => {}
+                        Some(purl) => {
+                            dependency_refs.push(purl.clone());
+                        }
+                    })
+            }
+        };
+
+        let scan_ref = ScanRef::new(scan, iteration);
 
         let mut sbom = Sbom {
             id: "".to_string(),
@@ -109,12 +131,13 @@ impl Sbom {
             provider,
             timestamp: platform::time::timestamp()?,
             checksum_sha256: "".to_string(),
-            scan_refs: vec![],
+            scan_refs: vec![scan_ref],
             xrefs,
             bom: Some(bom),
             package: Default::default(),
             dependencies: vec![],
             dependents: vec![],
+            dependency_refs,
         };
 
         sbom.scan_refs(scan, None)?;
@@ -146,9 +169,7 @@ impl Sbom {
         }
 
         let mut scan_ref = ScanRef {
-            id: "".to_string(),
             scan_id: scan.id.clone(),
-            purl: self.purl.clone(),
             iteration: 1,
             err,
         };

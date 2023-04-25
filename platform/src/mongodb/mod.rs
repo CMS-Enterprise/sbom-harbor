@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
-use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 
 pub use service::*;
 pub use store::*;
@@ -9,14 +9,14 @@ pub use store::*;
 use crate::auth::*;
 use crate::Error;
 
+/// Provides a row-level authorization mechanism for controlling access to entries in a [Collection].
+pub mod auth;
 /// Provides MongoDB db migrations support.
 pub mod migrations;
 /// Provides a generics-based [Service] trait for handling CRUD based operations against a [Store].
 pub mod service;
 /// Provides a generics-based [Store] trait for handling CRUD based operations against a [Collection].
 pub mod store;
-/// Provides a row-level authorization mechanism for controlling access to entries in a [Collection].
-pub mod auth;
 
 /// Specifies the backend data store for the [Context].
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -27,14 +27,23 @@ pub enum ContextKind {
     DocumentDB,
     /// Specifies the data store is a native MongoDB instance.
     Mongo,
+    /// Specifies that the data store uses an injected custom connection uri provider.
+    Custom,
+}
+
+/// Trait to implement when injecting a custom uri provider.
+pub trait ConnectionUriProvider {
+    fn connection_uri(&self) -> Result<String, Error>;
 }
 
 // TODO: Make Context a trait and split these up in to purpose build contexts instead of a single type.
 /// Provides connection information and schema conventions for a MongoDB/DocumentDB backed [Store].
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Context {
-    /// Backend provider for the [Context].
+    /// Kind of backend provider for the [Context].
     pub kind: ContextKind,
+    /// Optionally injected custom [ConnectionUriProvider].
+    pub connection_uri_provider: Option<Box<dyn ConnectionUriProvider>>,
     /// Instance host name which must be a resolvable DNS name.
     pub host: String,
     /// MongoDB username.
@@ -56,42 +65,68 @@ pub struct Context {
 }
 
 impl Context {
+    pub fn new_custom(custom: Box<dyn ConnectionUriProvider>) -> Self {
+        Self {
+            kind: ContextKind::Custom,
+            connection_uri_provider: Some(custom),
+            host: "".to_string(),
+            username: "".to_string(),
+            password: "".to_string(),
+            port: 0,
+            db_name: "".to_string(),
+            key_name: "".to_string(),
+            region: None,
+            cluster_name: None,
+            account_name: None,
+        }
+    }
+
     /// Returns a formatted MongoDB compliant URI for the MongoDB instance.
     pub fn connection_uri(&self) -> Result<String, Error> {
         match self.kind {
-            ContextKind::CosmosDB => {
-                match &self.account_name {
-                    None => Err(Error::Config("account name required".to_string())),
-                    Some(account_name) => {
-                        Ok(format!("mongodb://{}:{}@{}.documents.azure.com:10255/?ssl=true", self.username, self.password, account_name))
-                    }
-                }
-            }
+            ContextKind::CosmosDB => match &self.account_name {
+                None => Err(Error::Config("account name required".to_string())),
+                Some(account_name) => Ok(format!(
+                    "mongodb://{}:{}@{}.documents.azure.com:10255/?ssl=true",
+                    self.username, self.password, account_name
+                )),
+            },
             ContextKind::DocumentDB => {
                 let cluster_name = match &self.cluster_name {
                     None => {
                         return Err(Error::Config("cluster name required".to_string()));
                     }
-                    Some(c) => c
+                    Some(c) => c,
                 };
                 let region = match &self.region {
                     None => {
                         return Err(Error::Config("region required".to_string()));
                     }
-                    Some(r) => r
+                    Some(r) => r,
                 };
 
                 Ok(format!("mongodb://{}:{}@{}.node.{}.docdb.amazonaws.com:27017/?tls=true&tlsCAFile=global-bundle.pem", self.username, self.password, cluster_name, region))
             }
-            ContextKind::Mongo => {
-                Ok(format!("mongodb://{}:{}@{}:{}", self.username, self.password, self.host, self.port))
-            }
+            ContextKind::Mongo => Ok(format!(
+                "mongodb://{}:{}@{}:{}",
+                self.username, self.password, self.host, self.port
+            )),
+            ContextKind::Custom => match *self.connection_uri_provider {
+                None => {
+                    return Err(Error::Config(
+                        "provider required for custom context".to_string(),
+                    ));
+                }
+                Some(provider) => provider.connection_uri(),
+            },
         }
     }
 }
 
 /// Opinionated interface for Mongo Documents. Allows callers to avoid a direct dependency on the Mongo Driver.
-pub trait MongoDocument: Clone + Debug + for<'a> Deserialize<'a> + DeserializeOwned + Send + Serialize + Sized + Sync + Unpin {
+pub trait MongoDocument:
+    Clone + Debug + for<'a> Deserialize<'a> + DeserializeOwned + Send + Serialize + Sized + Sync + Unpin
+{
     /// The unique identifier for the document.
     fn id(&self) -> String;
     /// Allows a store to set the id on a document instance.
@@ -124,7 +159,7 @@ macro_rules! mongo_doc {
                 type_name.split(':').next_back().unwrap().to_string()
             }
         }
-    }
+    };
 }
 
 pub use mongo_doc;

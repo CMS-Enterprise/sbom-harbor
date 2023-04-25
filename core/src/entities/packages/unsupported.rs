@@ -32,5 +32,5 @@ pub struct Unsupported {
     pub provider: SbomProviderKind,
 
     /// A map of cross-references to internal and external systems.
-    pub xrefs: Option<HashMap<XrefKind, Xref>>,
+    pub xrefs: Option<Vec<Xref>>,
 }

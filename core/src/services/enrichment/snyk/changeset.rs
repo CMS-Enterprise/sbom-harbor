@@ -92,8 +92,6 @@ impl ScanSbomsChangeSet<'_> {
         // These should be safe by this point, but adding expect to detect upstream errors.
         let bom = sbom.bom.clone().expect("change_set::sbom::bom_none");
         let purl = sbom.purl.clone().expect("change_set::sbom::purl_none");
-        let xref_kind = XrefKind::External(SNYK_DISCRIMINATOR.to_string());
-        let xrefs = HashMap::from(snyk_ref);
 
         let mut change = ScanSbomsChange {
             package: Package::default(),
@@ -103,7 +101,7 @@ impl ScanSbomsChangeSet<'_> {
             unsupported: HashMap::new(),
         };
 
-        change.package = self.resolve_package(&package_manager, &bom, &xref_kind, &xrefs)?;
+        change.package = self.resolve_package(&bom,, &package_manager, &snyk_ref)?;
         change.package_purl = self.resolve_package_purl(&bom, &xref_kind, &xrefs)?;
         (change.purls, change.dependencies) =
             self.resolve_dependencies(&bom, &purl, &package_manager, &xref_kind, xrefs)?;
@@ -127,20 +125,14 @@ impl ScanSbomsChangeSet<'_> {
 
     fn resolve_package(
         &self,
-        package_manager: &String,
         bom: &Bom,
-        xref_kind: &XrefKind,
-        xrefs: &Xref,
+        package_manager: &String,
+        xref: Xref,
     ) -> Result<Package, Error> {
         Package::from_bom(
             &bom,
-            SbomProviderKind::Snyk {
-                api_version: crate::services::snyk::API_VERSION.to_string(),
-            },
-            Some(Spec::Cdx(CdxFormat::Json)),
             Some(package_manager.clone()),
-            xref_kind.clone(),
-            Some(xrefs.clone()),
+            Some(xref.clone()),
         )
     }
 

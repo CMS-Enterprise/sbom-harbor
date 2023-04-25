@@ -1,4 +1,4 @@
-use crate::entities::cyclonedx::Issue;
+use crate::entities::cyclonedx::{Dependency, Issue};
 use crate::entities::xrefs::{Xref, XrefKind};
 use crate::services::snyk::IssueSnyk;
 use serde::{Deserialize, Serialize};
@@ -23,29 +23,15 @@ pub struct Finding {
     /// Encapsulates CycloneDx specific model.
     pub cdx: Option<IssueCdx>,
 
+    // TODO: Hard-coding an external dependency like this is a code-smell.
     /// Encapsulates Snyk specific model.
     pub snyk_issue: Option<IssueSnyk>,
 
     /// A map of cross-references to internal and external systems.
-    pub xrefs: Option<HashMap<XrefKind, Xref>>,
+    pub xrefs: Option<Vec<Xref>>,
 }
 
 impl Finding {
-    pub(crate) fn from_snyk(
-        purl: String,
-        issue: IssueSnyk,
-        xrefs: Option<HashMap<XrefKind, Xref>>,
-    ) -> Self {
-        Self {
-            id: "".to_string(),
-            provider: FindingProviderKind::Snyk,
-            purl: Some(purl),
-            cdx: None,
-            snyk_issue: Some(issue),
-            xrefs,
-        }
-    }
-
     /// Compares the current finding with another to determine if they are functionally equal.
     /// Not an instance equality comparator.
     pub fn eq(&self, other: &Finding) -> bool {
@@ -72,11 +58,12 @@ pub struct IssueCdx {
     /// The denormalized raw Package URL from the CdxComponent.
     pub purl: String,
 
-    pub issue: Issue,
+    /// The CycloneDx native model for the Issue.
+    pub inner: Issue,
 }
 
 impl IssueCdx {
     fn from(purl: String, issue: Issue) -> Self {
-        IssueCdx { purl, issue }
+        IssueCdx { purl, inner: issue }
     }
 }

@@ -19,12 +19,8 @@ pub struct Scan {
     /// Discriminator indicating the type of scan operation performed.
     pub kind: ScanKind,
 
-    // TODO: This is a code smell. Feels like we need separate scan types.
-    /// Provider that performed the scan for Findings.
-    pub finding_provider: Option<FindingProviderKind>,
-
-    /// Provider the performed the scan for Sboms.
-    pub sbom_provider: Option<SbomProviderKind>,
+    /// The total number of items to be processed by the [Scan].
+    pub count: u64,
 
     /// The unix timestamp for when the Scan was created.
     pub timestamp: u64,
@@ -54,20 +50,14 @@ pub struct Scan {
 
 impl Scan {
     /// Factory method to create new instance of type.
-    pub fn new(
-        kind: ScanKind,
-        status: ScanStatus,
-        sbom_provider: Option<SbomProviderKind>,
-        finding_provider: Option<FindingProviderKind>,
-    ) -> Result<Scan, Error> {
+    pub fn new(kind: ScanKind, status: ScanStatus, count: u64) -> Result<Scan, Error> {
         let timestamp = platform::time::timestamp().map_err(|e| Error::Runtime(e.to_string()))?;
         let now = Utc::now();
 
         Ok(Scan {
             id: "".to_string(),
             kind,
-            finding_provider,
-            sbom_provider,
+            count,
             timestamp,
             start: now.clone(),
             finish: now,
@@ -99,9 +89,9 @@ impl Scan {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum ScanKind {
     /// Scan was performed to assess Findings.
-    Finding,
+    Finding(FindingProviderKind),
     /// Scan was performed to assess Sboms.
-    Sbom,
+    Sbom(SbomProviderKind),
 }
 
 /// Reference to an instance of a [Scan]
@@ -109,13 +99,7 @@ pub enum ScanKind {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ScanRef {
     /// The unique identifier for the [Scan] batch.
-    pub id: String,
-
-    /// The unique identifier for the [Scan] batch.
     pub scan_id: String,
-
-    /// The Purl for the Scan target. Optional because Spdx won't have a Purl,
-    pub purl: Option<String>,
 
     /// The Scan iteration for the target being scanned instance. Forward-only incrementing counter.
     pub iteration: u32,
@@ -125,12 +109,10 @@ pub struct ScanRef {
 }
 
 impl ScanRef {
-    pub fn new(scan: &Scan, purl: Option<String>) -> Self {
+    pub fn new(scan: &Scan, iteration: u32) -> Self {
         Self {
-            id: "".to_string(),
             scan_id: scan.id.clone(),
-            purl,
-            iteration: 0,
+            iteration,
             err: None,
         }
     }

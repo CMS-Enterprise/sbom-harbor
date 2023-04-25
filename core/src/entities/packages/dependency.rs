@@ -33,7 +33,7 @@ pub struct Dependency {
     pub cdx: Option<PackageCdx>,
 
     /// A map of cross-references to internal and external systems.
-    pub xrefs: Option<HashMap<XrefKind, Xref>>,
+    pub xrefs: Option<Vec<Xref>>,
 }
 
 impl Dependency {
@@ -42,14 +42,13 @@ impl Dependency {
         source: SbomProviderKind,
         package_ref: String,
         package_manager: Option<String>,
-        xref_kind: XrefKind,
-        xrefs: Option<Xref>,
+        xref: Option<Xref>,
     ) -> Dependency {
         let cdx = PackageCdx::from_component(component, package_manager);
 
-        let xrefs = match xrefs {
+        let xrefs = match xref {
             None => None,
-            Some(xrefs) => Some(HashMap::from([(xref_kind, xrefs)])),
+            Some(xref) => Some(vec![xref]),
         };
 
         Dependency {

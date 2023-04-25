@@ -37,22 +37,7 @@ pub struct Purl {
     pub findings: Option<Vec<Finding>>,
 
     /// A map of cross-references to internal and external systems.
-    pub xrefs: Option<HashMap<XrefKind, Xref>>,
-}
-
-impl Default for Purl {
-    fn default() -> Self {
-        Self {
-            id: "".to_string(),
-            purl: "".to_string(),
-            name: "".to_string(),
-            version: None,
-            component_kind: ComponentKind::Package,
-            scan_refs: vec![],
-            findings: None,
-            xrefs: None,
-        }
-    }
+    pub xrefs: Option<Vec<Xref>>,
 }
 
 impl Purl {
@@ -71,8 +56,8 @@ impl Purl {
         component: &Component,
         component_kind: ComponentKind,
         scan: &Scan,
-        xref_kind: XrefKind,
-        xrefs: Option<Xref>,
+        iteration: u32,
+        xref: Option<Xref>,
     ) -> Result<Self, Error> {
         let purl = match &component.purl {
             None => {
@@ -81,19 +66,12 @@ impl Purl {
             Some(p) => p,
         };
 
-        // let purl = match Self::decode(purl.as_str()) {
-        //     Ok(p) => p,
-        //     Err(e) => {
-        //         return Err(Error::Entity(format!("purl::from_component::{}", e)));
-        //     }
-        // };
-
-        let xrefs = match xrefs {
+        let xrefs = match xref {
             None => None,
-            Some(xrefs) => Some(HashMap::from([(xref_kind, xrefs)])),
+            Some(xref) => Some(vec![xref]),
         };
 
-        let scan_ref = ScanRef::new(scan, Some(purl.clone()));
+        let scan_ref = ScanRef::new(scan, iteration);
 
         Ok(Self {
             id: "".to_string(),
@@ -113,9 +91,7 @@ impl Purl {
         }
 
         let mut scan_ref = ScanRef {
-            id: "".to_string(),
             scan_id: scan.id.clone(),
-            purl: Some(self.purl.clone()),
             iteration: 1,
             err,
         };

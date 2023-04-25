@@ -186,7 +186,7 @@ impl SnykService {
         let mut results = vec![];
 
         issues.iter().for_each(|issue| {
-            results.push(Finding::from_snyk(
+            results.push(Issue::from_snyk(
                 purl.to_string(),
                 issue.clone(),
                 xrefs.clone(),

@@ -60,6 +60,7 @@ mod tests {
             SbomProviderKind::Snyk {
                 api_version: API_VERSION.to_string(),
             },
+            projects.len() as u64,
         )
         .await
         {

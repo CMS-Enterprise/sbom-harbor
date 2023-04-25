@@ -1,3 +1,4 @@
+use crate::Error;
 use serde::de::{Deserialize, Deserializer, IntoDeserializer};
 use serde::ser::Serializer;
 use serde::{ser, Serialize};
@@ -5,12 +6,38 @@ use serde_derive::Deserialize;
 use serde_json::ser::State;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use thiserror::__private::DisplayAsDisplay;
 
 /// An [Xref] is a dynamic way to track cross-references to internal and external systems.
-/// Fundamentally, it is just a [HashMap] of one or more id names to id value. By aliasing the
-/// type we are able to more clearly communicate the domain and add extension convenience functions.
-pub type Xref = HashMap<String, String>;
+pub struct Xref {
+    /// Discriminator indicating which internal or external system being referenced.
+    pub(crate) kind: XrefKind,
+    /// The HashMap of key-value pairs that are used to cross-reference the entity in the other
+    /// system.
+    pub(crate) map: HashMap<String, String>,
+}
+
+impl PartialEq<Self> for Xref {
+    fn eq(&self, other: &Self) -> bool {
+        if self.kind != other.kind {
+            return false;
+        }
+
+        for (key, other_value) in other.map.iter() {
+            match self.map.get(key) {
+                None => {
+                    return false;
+                }
+                Some(self_value) => {
+                    if !self_value.eq(other_value) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+}
 
 #[allow(missing_docs)]
 #[serde(rename_all = "lowercase")]
@@ -49,28 +76,25 @@ impl<'de> Deserialize<'de> for XrefKind {
         let s = String::deserialize(deserializer)?;
         if s.contains("external::") {
             let name = s.replace("external::", "");
-            Ok(External(name))
+            Ok(XrefKind::External(name))
         } else {
             XrefKind::deserialize(s.into_deserializer())
         }
     }
 }
 
-pub fn flatten(xrefs: HashMap<XrefKind, Xref>) -> HashMap<String, String> {
+pub fn flatten(xref: Xref) -> HashMap<String, String> {
     let mut results = HashMap::new();
 
-    for (kind, xref) in xrefs.into_iter() {
-        for (key, value) in xref.into_iter() {
-            results.insert(format!("{}::{}", kind, key), value);
-        }
+    for x in xref.map.into_iter() {
+        results.insert(format!("{}::{}", xref.kind, key), value);
     }
 
     results
 }
 
 pub trait Xrefs {
-    fn inner(&self) -> &Option<HashMap<XrefKind, Xref>>;
-    fn xrefs(&mut self, xrefs: Option<HashMap<XrefKind, Xref>>);
+    fn xrefs(&mut self, xrefs: Option<Vec<Xref>>);
 }
 
 /// Macro to expand a struct so that it can be use to track cross-references.
@@ -78,11 +102,7 @@ pub trait Xrefs {
 macro_rules! xref {
     ($t:ty) => {
         impl Xrefs for $t {
-            fn inner(&self) -> &Option<HashMap<XrefKind, Xref>> {
-                &self.xrefs
-            }
-
-            fn xrefs(&mut self, xrefs: Option<HashMap<XrefKind, Xref>>) {
+            fn xrefs(&mut self, xrefs: &Option<Vec<Xref>>) {
                 let xrefs = match xrefs {
                     None => {
                         return;
@@ -90,21 +110,19 @@ macro_rules! xref {
                     Some(xrefs) => xrefs,
                 };
 
-                let mut inner = match self.inner().clone() {
+                let mut existing = match self.xrefs {
                     None => {
-                        self.xrefs = Some(xrefs);
+                        self.xrefs = xrefs.clone();
                         return;
                     }
-                    Some(refs) => refs,
+                    Some(refs) => refs.clone(),
                 };
 
-                for (kind, xref) in xrefs.into_iter() {
-                    match inner.get_mut(&kind) {
-                        None => {
-                            inner.insert(kind, xref);
-                        }
-                        Some(existing) => {
-                            existing.extend(xref.into_iter().map(|(k, v)| (k.clone(), v.clone())))
+                for xref in xrefs.into_iter() {
+                    match existing.iter().any(|x| x.eq(xref)) {
+                        true {},
+                        false {
+                            existing.append(xref);
                         }
                     }
                 }
@@ -113,6 +131,4 @@ macro_rules! xref {
     };
 }
 
-use crate::entities::xrefs::XrefKind::External;
-use crate::Error;
 pub use xref;

@@ -11,6 +11,7 @@ use crate::{config, Error};
 use crate::entities::packages::Purl;
 use crate::entities::sboms::Sbom;
 use crate::entities::xrefs;
+use crate::entities::xrefs::Xref;
 use async_trait::async_trait;
 use platform::persistence::s3;
 
@@ -18,7 +19,8 @@ use platform::persistence::s3;
 #[async_trait]
 pub trait StorageProvider<'a>: Debug + Send + Sync {
     /// Write Sbom to storage provider and return output path.
-    async fn write(&self, raw: &str, sbom: &mut Sbom) -> Result<String, Error>;
+    async fn write(&self, raw: &str, sbom: &mut Sbom, xref: &Option<Xref>)
+        -> Result<String, Error>;
 }
 
 /// Saves SBOMs to the local filesystem.
@@ -40,7 +42,12 @@ impl FileSystemStorageProvider {
 
 #[async_trait]
 impl StorageProvider<'_> for FileSystemStorageProvider {
-    async fn write(&self, raw: &str, sbom: &mut Sbom) -> Result<String, Error> {
+    async fn write(
+        &self,
+        raw: &str,
+        sbom: &mut Sbom,
+        xref: &Option<Xref>,
+    ) -> Result<String, Error> {
         let purl = &sbom.purl()?;
         let purl = Purl::format_file_name(purl.as_str());
 
@@ -95,12 +102,17 @@ pub struct S3StorageProvider {}
 
 #[async_trait]
 impl StorageProvider<'_> for S3StorageProvider {
-    async fn write(&self, raw: &str, sbom: &mut Sbom) -> Result<String, Error> {
+    async fn write(
+        &self,
+        raw: &str,
+        sbom: &mut Sbom,
+        xref: &Option<Xref>,
+    ) -> Result<String, Error> {
         let purl = &sbom.purl()?;
 
-        let metadata = match &sbom.xrefs {
+        let metadata = match xref {
             None => None,
-            Some(xrefs) => Some(xrefs::flatten(xrefs.clone())),
+            Some(xrefs) => Some(xrefs::flatten(xref.map.clone())),
         };
 
         // TODO: Probably want to inject these values.

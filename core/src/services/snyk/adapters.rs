@@ -2,13 +2,13 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::entities::cyclonedx::Bom;
-use crate::entities::packages::Unsupported;
+use crate::entities::packages::{Finding, FindingProviderKind, Unsupported};
 use crate::entities::sboms::{CdxFormat, SbomProviderKind, Spec};
 use crate::entities::xrefs::{Xref, XrefKind};
 use crate::services::snyk::client::models::{
     CommonIssueModel, ListOrgProjects200ResponseDataInner, OrgV1, ProjectStatus, Severity,
 };
-use crate::services::snyk::{SnykRef, SNYK_DISCRIMINATOR};
+use crate::services::snyk::{IssueSnyk, SnykRef, SNYK_DISCRIMINATOR};
 
 use crate::services::snyk::API_VERSION;
 use platform::mongodb::{mongo_doc, MongoDocument};
@@ -156,79 +156,17 @@ impl Project {
 
 /// Adapter over a native Snyk Issue.
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub(crate) struct Issue {
-    pub id: String,
-    pub purl: String,
-    pub title: String,
-    pub description: String,
-    pub versions: Vec<String>,
-    pub effective_security_level: String,
-    pub severities: Vec<Severity>,
-    pub(crate) inner: CommonIssueModel,
-}
+pub(crate) struct Issue {}
 
-impl Issue {
-    pub fn new(purl: String, inner: CommonIssueModel) -> Self {
-        let id = inner
-            .id
-            .clone()
-            .unwrap_or("issue id not set".to_string())
-            .clone();
-        let mut title = "".to_string(); // from attributes.title
-        let mut description = "".to_string(); // from attributes
-        let mut versions = vec![]; // from attributes.coordinates.representation
-        let mut effective_security_level = "".to_string(); // attributes.effective_security_level
-        let mut severities = vec![]; // from attributes.severities
-
-        match inner.clone().attributes {
-            None => {}
-            Some(attrs) => {
-                let attrs = *attrs;
-
-                match attrs.title.clone() {
-                    None => {}
-                    Some(t) => title = t,
-                }
-
-                match attrs.description.clone() {
-                    None => {}
-                    Some(d) => description = d,
-                }
-
-                match attrs.coordinates.clone() {
-                    None => {}
-                    Some(c) => {
-                        c.iter()
-                            .for_each(|coord| match coord.clone().representation {
-                                None => {}
-                                Some(r) => {
-                                    r.iter().for_each(|r| versions.push(r.to_string()));
-                                }
-                            });
-                    }
-                }
-
-                match attrs.effective_severity_level {
-                    None => {}
-                    Some(efs) => effective_security_level = format!("{:?}", efs),
-                }
-
-                match attrs.severities {
-                    None => {}
-                    Some(sevs) => sevs.iter().for_each(|sev| severities.push(sev.clone())),
-                }
-            }
-        }
-
-        Self {
-            id,
-            purl,
-            title,
-            description,
-            versions,
-            effective_security_level,
-            severities,
-            inner,
+impl IssueSnyk {
+    pub(crate) fn to_finding(&self, purl: String, xrefs: Option<Vec<Xref>>) -> Finding {
+        Finding {
+            id: "".to_string(),
+            provider: FindingProviderKind::Snyk,
+            purl: Some(purl),
+            cdx: None,
+            snyk_issue: Some(issue),
+            xrefs,
         }
     }
 }

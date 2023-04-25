@@ -5,6 +5,7 @@ use crate::Error;
 use async_trait::async_trait;
 use chrono::{DateTime, DurationRound, Utc};
 use platform::mongodb::Service;
+use std::collections::HashMap;
 use std::future::Future;
 use tracing::log::debug;
 
@@ -13,6 +14,18 @@ pub mod snyk;
 
 #[async_trait]
 pub trait ScanProvider<'a>: Service<Scan> {
+    // async fn scan(&self, scan: &mut Scan) -> Result<(), Error>;
+    //
+    // fn scan_kind(&self) -> ScanKind;
+    //
+    // fn targets(&self) -> HashMap<String, T>;
+    //
+    // async fn load_targets(&self) -> Result<(), Error>;
+    //
+    // fn target_count(&self) -> u32;
+    //
+    // fn process_target(&self, scan_target: T) -> Result<(), Error>;
+
     async fn commit_scan(&self, scan: &mut Scan) -> Result<(), Error> {
         match scan.err {
             None => {
@@ -71,8 +84,8 @@ pub trait SbomProvider<'a>: ScanProvider<'a> {
 
     async fn scan(&self, scan: &mut Scan) -> Result<(), Error>;
 
-    async fn init_scan(&self, provider: SbomProviderKind) -> Result<Scan, Error> {
-        let mut scan = match Scan::new(ScanKind::Sbom, ScanStatus::Started, Some(provider), None) {
+    async fn init_scan(&self, provider: SbomProviderKind, count: u64) -> Result<Scan, Error> {
+        let mut scan = match Scan::new(ScanKind::Sbom(provider), ScanStatus::Started, count) {
             Ok(scan) => scan,
             Err(e) => {
                 let msg = format!("init_scan::new_failed::{}", e);
@@ -116,9 +129,8 @@ pub trait FindingProvider<'a>: ScanProvider<'a> {
 
     async fn scan(&self, scan: &mut Scan) -> Result<(), Error>;
 
-    async fn init_scan(&self, provider: FindingProviderKind) -> Result<Scan, Error> {
-        let mut scan = match Scan::new(ScanKind::Finding, ScanStatus::Started, None, Some(provider))
-        {
+    async fn init_scan(&self, provider: FindingProviderKind, count: u64) -> Result<Scan, Error> {
+        let mut scan = match Scan::new(ScanKind::Finding(provider), ScanStatus::Started, count) {
             Ok(scan) => scan,
             Err(e) => {
                 let msg = format!("init_scan::new_failed::{}", e);

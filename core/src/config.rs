@@ -36,6 +36,7 @@ pub fn mongo_context(db_name: Option<&str>) -> Result<Context, Error> {
 
     let mut cx = Context {
         kind: ContextKind::Mongo,
+        connection_uri_provider: None,
         host: "".to_string(),
         username: "".to_string(),
         password: "".to_string(),
@@ -55,7 +56,7 @@ pub fn mongo_context(db_name: Option<&str>) -> Result<Context, Error> {
 fn build_context(cx: &mut Context) -> Result<(), Error> {
     let environ = environment();
 
-    let cx = match environ {
+    match environ {
         Environ::Local => {
             cx.host = "localhost".to_string();
             cx.port = 27017;

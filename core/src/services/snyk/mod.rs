@@ -62,14 +62,17 @@ pub struct SnykRef {
 
 impl From<SnykRef> for Xref {
     fn from(snyk_ref: SnykRef) -> Self {
-        HashMap::from([
-            ("group_id".to_string(), snyk_ref.group_id.clone()),
-            ("group_name".to_string(), snyk_ref.group_name.clone()),
-            ("org_id".to_string(), snyk_ref.org_id.clone()),
-            ("org_name".to_string(), snyk_ref.org_name.clone()),
-            ("project_id".to_string(), snyk_ref.project_id.clone()),
-            ("project_name".to_string(), snyk_ref.project_name.clone()),
-        ])
+        Xref {
+            kind: XrefKind::External(SNYK_DISCRIMINATOR.to_string()),
+            map: HashMap::from([
+                ("group_id".to_string(), snyk_ref.group_id.clone()),
+                ("group_name".to_string(), snyk_ref.group_name.clone()),
+                ("org_id".to_string(), snyk_ref.org_id.clone()),
+                ("org_name".to_string(), snyk_ref.org_name.clone()),
+                ("project_id".to_string(), snyk_ref.project_id.clone()),
+                ("project_name".to_string(), snyk_ref.project_name.clone()),
+            ]),
+        }
     }
 }
 
@@ -85,9 +88,5 @@ impl SnykRef {
             None => None,
             Some(xrefs) => xrefs.get(&XrefKind::External(SNYK_DISCRIMINATOR.to_string())),
         }
-    }
-
-    pub fn org_id(xrefs: &Option<HashMap<XrefKind, Xref>>) -> Option<&String> {
-        SnykRef::from(xrefs)?.get("org_id")
     }
 }
