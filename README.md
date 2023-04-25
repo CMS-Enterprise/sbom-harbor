@@ -14,6 +14,8 @@ but at this time all features are not yet operational, and the usage documentati
 - [Protobuf](https://grpc.io/docs/protoc-installation/)
 - [docker](https://docs.docker.com/get-docker/) (optional - used for tests)
 - [docker compose](https://docs.docker.com/compose/install/) (optional - used for local environment)
+- [GitLeaks](https://github.com/gitleaks/gitleaks/tree/master#installing)
+- [pre-commit](https://pre-commit.com/index.html#install)
 
 ## Environment
 
@@ -32,6 +34,16 @@ Expects a JSON document with the following schema:
   "password": "<password>",
   "port": "<TCP port number>"
 }
+```
+
+## Getting Started
+
+1. `git clone git@github.com:cms-enterprise/sbom-harbor` - clone repository
+2. `cd sbom-harbor`
+3. `pre-commit install` - install git pre-commit hooks
+
+```shell
+pre-commit install
 ```
 
 ## Crate Documentation
