@@ -7,7 +7,8 @@ use crate::Error;
 #[async_trait]
 pub trait Authorizer {
     /// Determines the authorization [Effect] for the [Resource] (e.g. [Allow], [Deny]).
-    async fn assert(&self, user: User, resource: Resource, action: Action) -> Result<Effect, Error>;
+    async fn assert(&self, user: User, resource: Resource, action: Action)
+        -> Result<Effect, Error>;
 }
 
 /// Uniquely identifiable user of the system.
@@ -96,7 +97,7 @@ pub enum Effect {
     /// [User] [Action] is allowed for the [Resource].
     Allow,
     /// [User] [Action] is denied for the [Resource].
-    Deny
+    Deny,
 }
 
 /// List of actions a user can perform against a [Resource].

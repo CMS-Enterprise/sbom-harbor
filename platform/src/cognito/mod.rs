@@ -1,6 +1,8 @@
 use aws_config::SdkConfig;
 use aws_sdk_cognitoidentityprovider as cognitoidp;
-use aws_sdk_cognitoidentityprovider::model::{ProviderDescription, UserPoolDescriptionType, UserType};
+use aws_sdk_cognitoidentityprovider::model::{
+    ProviderDescription, UserPoolDescriptionType, UserType,
+};
 use cognitoidp::Client;
 use tracing::instrument;
 
@@ -49,7 +51,10 @@ impl Provider {
 
     /// List identity providers associated with the specified user pool.
     #[instrument]
-    pub async fn list_identity_providers(&self, user_pool_id: Option<String>) -> Result<Vec<ProviderDescription>, Error> {
+    pub async fn list_identity_providers(
+        &self,
+        user_pool_id: Option<String>,
+    ) -> Result<Vec<ProviderDescription>, Error> {
         let client = Client::new(&self.config);
 
         let output = client

@@ -1,5 +1,5 @@
 use clap::Parser;
-use harbor_cli::{Cli, commands, Commands, Error};
+use harbor_cli::{commands, Cli, Commands, Error};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

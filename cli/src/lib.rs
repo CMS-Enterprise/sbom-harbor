@@ -4,8 +4,8 @@
 //! formatting of output for stdout. They should contain no business logic, and instead invoke
 //! [Services] from the [Harbcore] crate.
 
-use clap::{Parser, Subcommand, ValueEnum};
 use clap::builder::PossibleValue;
+use clap::{Parser, Subcommand, ValueEnum};
 
 /// Commands supported by the [CLI].
 pub mod commands;
@@ -52,9 +52,7 @@ impl ValueEnum for OutputFormat {
 
     fn to_possible_value(&self) -> Option<PossibleValue> {
         Some(match self {
-            OutputFormat::Json => {
-                PossibleValue::new("json").help("print output as json to stdout")
-            }
+            OutputFormat::Json => PossibleValue::new("json").help("print output as json to stdout"),
             OutputFormat::Text => {
                 PossibleValue::new("text").help("print output as plain text to stdout")
             }

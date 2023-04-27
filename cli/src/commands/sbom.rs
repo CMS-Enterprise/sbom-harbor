@@ -1,22 +1,16 @@
 use std::str::FromStr;
 
-use clap::{Parser, ValueEnum};
 use clap::builder::PossibleValue;
+use clap::{Parser, ValueEnum};
 
 use crate::Error;
 
 /// The SBOM Command handler.
 pub async fn execute(args: &SbomArgs) -> Result<(), Error> {
     match args.provider {
-        SbomProviderKind::FileSystem => {
-            FileSystemProvider::execute(&args.filesystem_args).await
-        }
-        SbomProviderKind::GitHub => {
-            GithubProvider::execute(&args.github_args).await
-        }
-        SbomProviderKind::Snyk => {
-            SnykProvider::execute(&args.snyk_args).await
-        }
+        SbomProviderKind::FileSystem => FileSystemProvider::execute(&args.filesystem_args).await,
+        SbomProviderKind::GitHub => GithubProvider::execute(&args.github_args).await,
+        SbomProviderKind::Snyk => SnykProvider::execute(&args.snyk_args).await,
     }
 }
 
@@ -38,15 +32,14 @@ impl ValueEnum for SbomProviderKind {
 
     fn to_possible_value(&self) -> Option<PossibleValue> {
         Some(match self {
-            SbomProviderKind::FileSystem => {
-                PossibleValue::new("filesystem").help("Use the default SBOM Provider to generate an SBOM from the local filesystem")
-            }
-            SbomProviderKind::GitHub => {
-                PossibleValue::new("github").help("Use the GitHub SBOM Provider to generate one or more SBOMs from the GitHub API")
-            }
-            SbomProviderKind::Snyk => {
-                PossibleValue::new("github").help("Use the Snyk SBOM Provider to generate one or more SBOMs from the Snyk API")
-            }
+            SbomProviderKind::FileSystem => PossibleValue::new("filesystem").help(
+                "Use the default SBOM Provider to generate an SBOM from the local filesystem",
+            ),
+            SbomProviderKind::GitHub => PossibleValue::new("github").help(
+                "Use the GitHub SBOM Provider to generate one or more SBOMs from the GitHub API",
+            ),
+            SbomProviderKind::Snyk => PossibleValue::new("github")
+                .help("Use the Snyk SBOM Provider to generate one or more SBOMs from the Snyk API"),
         })
     }
 }
@@ -90,14 +83,13 @@ impl FromStr for SbomProviderKind {
         let value = s.to_lowercase();
         let value = value.as_str();
         match value {
-            "filesystem"| "f" => Ok(SbomProviderKind::FileSystem),
-            "github"| "gh" | "g" => Ok(SbomProviderKind::GitHub),
+            "filesystem" | "f" => Ok(SbomProviderKind::FileSystem),
+            "github" | "gh" | "g" => Ok(SbomProviderKind::GitHub),
             "snyk" | "s" => Ok(SbomProviderKind::Snyk),
             _ => Err(()),
         }
     }
 }
-
 
 /// Strategy pattern implementation that handles Snyk SBOM commands.
 struct FileSystemProvider {}

@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
-use clap::{Parser, ValueEnum};
 use clap::builder::PossibleValue;
+use clap::{Parser, ValueEnum};
 
 use crate::Error;
 
@@ -27,9 +27,7 @@ pub async fn execute(args: &EnrichArgs) -> Result<(), Error> {
         EnrichmentProviderKind::DependencyTrack => {
             todo!()
         }
-        EnrichmentProviderKind::Snyk => {
-            SnykProvider::execute(&args.snyk_args).await
-        }
+        EnrichmentProviderKind::Snyk => SnykProvider::execute(&args.snyk_args).await,
     }
 }
 
@@ -64,7 +62,9 @@ impl FromStr for EnrichmentProviderKind {
         let value = s.to_lowercase();
         let value = value.as_str();
         match value {
-            "dependencytrack"| "dependency-track" | "d" | "dt" => Ok(EnrichmentProviderKind::DependencyTrack),
+            "dependencytrack" | "dependency-track" | "d" | "dt" => {
+                Ok(EnrichmentProviderKind::DependencyTrack)
+            }
             "snyk" | "s" => Ok(EnrichmentProviderKind::Snyk),
             _ => Err(()),
         }
@@ -96,10 +96,10 @@ impl SnykProvider {
         match args {
             None => {
                 SnykProvider::sync_registry().await?;
-            },
+            }
             Some(a) => {
                 SnykProvider::sync_project(a).await?;
-            },
+            }
         }
 
         Ok(())

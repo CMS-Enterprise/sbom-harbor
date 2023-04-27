@@ -1,5 +1,5 @@
-use platform::Error;
 use platform::auth::{Action, Effect};
+use platform::Error;
 
 mod common;
 use crate::common::mongodb::{local_context, AuthScenario};
@@ -41,7 +41,6 @@ async fn can_assert_implicit_deny_no_policy() -> Result<(), Error> {
 
     Ok(())
 }
-
 
 // Tests that if a user has an explicit deny, as well as an allow, the explicit deny takes precedence.
 #[async_std::test]

@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
 use platform::auth::User;
-use platform::mongodb::{MongoDocument, mongo_doc};
+use platform::mongodb::{mongo_doc, MongoDocument};
+use serde::{Deserialize, Serialize};
 
 mongo_doc!(Codebase);
 mongo_doc!(Member);
@@ -40,7 +40,7 @@ pub struct Member {
 
 impl From<User> for Member {
     fn from(value: User) -> Self {
-        Self{
+        Self {
             id: value.id,
             email: value.email,
         }

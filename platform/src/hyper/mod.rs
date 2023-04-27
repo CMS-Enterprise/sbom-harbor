@@ -1,10 +1,10 @@
-use std::fmt::{Display, Formatter};
-use hyper::{Body, Client, Method, Request, StatusCode, Uri};
 use hyper::header::InvalidHeaderValue;
 use hyper::http::uri::InvalidUri;
+use hyper::{Body, Client, Method, Request, StatusCode, Uri};
 use hyper_rustls::HttpsConnectorBuilder;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::fmt::{Display, Formatter};
 use thiserror::Error;
 
 const CONTENT_TYPE: &str = "content-type";
@@ -47,7 +47,14 @@ pub async fn post<T: Serialize, U: DeserializeOwned>(
     token: &str,
     payload: Option<T>,
 ) -> Result<Option<U>, Error> {
-    request(Method::POST, url, content_type, String::from(token), payload).await
+    request(
+        Method::POST,
+        url,
+        content_type,
+        String::from(token),
+        payload,
+    )
+    .await
 }
 
 /// Performs a DELETE request to the specified URL.
@@ -59,7 +66,14 @@ pub async fn delete<T: Serialize, U: DeserializeOwned>(
     token: &str,
     payload: Option<T>,
 ) -> Result<Option<U>, Error> {
-    request(Method::DELETE, url, content_type, String::from(token), payload).await
+    request(
+        Method::DELETE,
+        url,
+        content_type,
+        String::from(token),
+        payload,
+    )
+    .await
 }
 
 /// Performs an HTTP request with the specified HTTP Method.
