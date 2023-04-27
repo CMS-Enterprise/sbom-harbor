@@ -5,7 +5,7 @@ use harbor_client::client::simple_upload_sbom;
 use platform::auth::get_secret;
 use serde_json::Value;
 
-use crate::{clients::{self, SnykRestClientImpl, SnykRestClient, Org, ProjectDetails}, config::{get_cf_domain, get_cms_team_token, get_cms_team_id, get_snyk_access_token}};
+use crate::{clients::{self, SnykRestClientImpl, SnykRestClient, Org, ProjectDetails, SnykProviderError}, config::get_snyk_access_token};
 
 use super::SbomProvider;
 
@@ -117,9 +117,9 @@ pub struct SnykProvider{
 }
 
 #[async_trait]
-impl SbomProvider for SnykProvider {
+impl SbomProvider<(), SnykProviderError> for SnykProvider {
 
-    async fn provide_sboms(&self) {
+    async fn provide_sboms(&self) -> Result<(), SnykProviderError> {
         // Get snyk access token
         let snyk_token = get_snyk_access_token().await;
 
@@ -132,6 +132,8 @@ impl SbomProvider for SnykProvider {
             //TODO: Re-enable the next line
             //simple_upload_sbom(cloud_front_domain.clone(), sbom_token.clone(), team_id.clone(), sbom_results.1.browse_url.clone(), sbom_results.1.r#type.clone(), sbom_results.0).await;
         }
+
+        return Ok(());
     }
 }
 
@@ -139,7 +141,7 @@ impl SbomProvider for SnykProvider {
 #[tokio::test]
 async fn live_test() {
    let provider = SnykProvider::new(); 
-   provider.provide_sboms().await;
+   let _ = provider.provide_sboms().await;
 }
 
 #[tokio::test]
