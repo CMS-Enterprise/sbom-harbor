@@ -1,10 +1,27 @@
 repos:
-  - repo: https://github.com/aquia-inc/pre-commit-rust
-    rev: v1.0.0
+  - repo: local
     hooks:
-      - id: fmt
-      - id: cargo-check
-      - id: clippy
+    -   id: fmt
+        name: fmt
+        description: Format files with cargo fmt.
+        entry: bash ./bin/rustfmt.sh
+        language: system
+        files: \.rs$
+        pass_filenames: false
+    -   id: cargo-clippy
+        name: cargo clippy
+        description: Run the Clippy linter on the package.
+        entry: bash ./bin/clippy.sh
+        language: system
+        files: \.rs$
+        pass_filenames: false
+    -   id: cargo-check
+        name: cargo check
+        description: Check the package for errors.
+        entry: bash ./bin/check.sh
+        language: system
+        files: \.rs$
+        pass_filenames: false
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
