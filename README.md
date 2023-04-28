@@ -38,9 +38,15 @@ Expects a JSON document with the following schema:
 
 ## Getting Started
 
-1. `git clone git@github.com:cms-enterprise/sbom-harbor` - clone repository
-2. `cd sbom-harbor`
-3. `pre-commit install` - install git pre-commit hooks
+1. Clone the repository and `cd` into its directory.
+
+```shell
+git clone git@github.com:cms-enterprise/sbom-harbor`
+
+cd sbom-harbor
+```
+
+2. Install git pre-commit hooks.
 
 ```shell
 pre-commit install
