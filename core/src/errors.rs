@@ -10,8 +10,11 @@ pub enum Error {
     #[error("entity error: {0}")]
     Entity(String),
     /// Enrichment provider error.
-    #[error("enrichment error: {0}")]
+    #[error("enrichment provider error: {0}")]
     Enrichment(String),
+    /// Finding provider error.
+    #[error("finding provider error: {0}")]
+    Finding(String),
     /// Invalid format.
     #[error("invalid format: {0}")]
     InvalidFormat(String),
@@ -24,6 +27,11 @@ pub enum Error {
     /// Runtime error.
     #[error("runtime error: {0}")]
     Runtime(String),
+    /// Sbom provider error.
+    #[error("sbom provider error: {0}")]
+    Sbom(String),
+    #[error("scan provider error: {0}")]
+    Scan(String),
     /// Serialization error.
     #[error("serialization error: {0}")]
     Serde(String),

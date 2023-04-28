@@ -1,4 +1,5 @@
 mod service;
+mod snyk;
 
 use serde_json::json;
 
@@ -9,18 +10,75 @@ use std::io::BufReader;
 use crate::{config, Error};
 
 use crate::entities::packages::Purl;
-use crate::entities::sboms::Sbom;
+use crate::entities::sboms::{Sbom, SbomProviderKind};
+use crate::entities::scans::{Scan, ScanKind, ScanStatus};
 use crate::entities::xrefs;
 use crate::entities::xrefs::Xref;
+use crate::services::packages::PackageService;
+use crate::services::scans::ScanProvider;
 use async_trait::async_trait;
 use platform::persistence::s3;
+use tracing::log::debug;
+
+/// Service that is capable of synchronizing one or more SBOMs from a dynamic source.
+#[async_trait]
+pub trait SbomProvider<'a>: ScanProvider<'a> {
+    /// Sync an external Sbom source with Harbor.
+    async fn sync(&self, provider: SbomProviderKind) -> Result<(), Error> {
+        let mut scan = match self.init_scan(provider, None).await {
+            Ok(scan) => scan,
+            Err(e) => {
+                return Err(Error::Sbom(format!("sbom::init_scan::{}", e)));
+            }
+        };
+
+        match self.scan(&mut scan).await {
+            Ok(_) => {}
+            Err(e) => {
+                scan.err = Some(e.to_string());
+            }
+        }
+
+        self.commit_scan(&mut scan).await
+    }
+
+    async fn scan(&self, scan: &mut Scan) -> Result<(), Error>;
+
+    async fn init_scan(
+        &self,
+        provider: SbomProviderKind,
+        count: Option<u64>,
+    ) -> Result<Scan, Error> {
+        let mut scan = match Scan::new(ScanKind::Sbom(provider), ScanStatus::Started, count) {
+            Ok(scan) => scan,
+            Err(e) => {
+                let msg = format!("init_scan::new_failed::{}", e);
+                debug!("{}", msg);
+                return Err(Error::Sbom(msg));
+            }
+        };
+
+        match self.insert(&mut scan).await {
+            Ok(_) => Ok(scan),
+            Err(e) => {
+                let msg = format!("init_scan::store_failed::{}", e);
+                debug!("{}", msg);
+                return Err(Error::Sbom(msg));
+            }
+        }
+    }
+}
 
 /// Abstract storage provider for [Sboms].
 #[async_trait]
 pub trait StorageProvider<'a>: Debug + Send + Sync {
     /// Write Sbom to storage provider and return output path.
-    async fn write(&self, raw: &str, sbom: &mut Sbom, xref: &Option<Xref>)
-        -> Result<String, Error>;
+    async fn write(
+        &self,
+        raw: Vec<u8>,
+        sbom: &mut Sbom,
+        xref: &Option<Xref>,
+    ) -> Result<String, Error>;
 }
 
 /// Saves SBOMs to the local filesystem.
@@ -30,12 +88,11 @@ pub struct FileSystemStorageProvider {
 }
 
 impl FileSystemStorageProvider {
-    pub fn new(out_dir: Option<String>) -> FileSystemStorageProvider {
-        let out_dir = match out_dir {
-            None => "/tmp/harbor/sboms".to_string(),
-            Some(out_dir) => out_dir,
+    pub fn new(out_dir: String) -> FileSystemStorageProvider {
+        let out_dir = match out_dir.is_empty() {
+            true => "/tmp/harbor/sboms".to_string(),
+            false => out_dir,
         };
-
         FileSystemStorageProvider { out_dir }
     }
 }
@@ -44,9 +101,9 @@ impl FileSystemStorageProvider {
 impl StorageProvider<'_> for FileSystemStorageProvider {
     async fn write(
         &self,
-        raw: &str,
+        raw: Vec<u8>,
         sbom: &mut Sbom,
-        xref: &Option<Xref>,
+        _xref: &Option<Xref>,
     ) -> Result<String, Error> {
         let purl = &sbom.purl()?;
         let purl = Purl::format_file_name(purl.as_str());
@@ -104,7 +161,7 @@ pub struct S3StorageProvider {}
 impl StorageProvider<'_> for S3StorageProvider {
     async fn write(
         &self,
-        raw: &str,
+        raw: Vec<u8>,
         sbom: &mut Sbom,
         xref: &Option<Xref>,
     ) -> Result<String, Error> {
@@ -112,7 +169,7 @@ impl StorageProvider<'_> for S3StorageProvider {
 
         let metadata = match xref {
             None => None,
-            Some(xrefs) => Some(xrefs::flatten(xref.map.clone())),
+            Some(xref) => Some(xrefs::flatten(xref)),
         };
 
         // TODO: Probably want to inject these values.
@@ -120,7 +177,7 @@ impl StorageProvider<'_> for S3StorageProvider {
         let bucket_name = config::sbom_upload_bucket()?;
         let object_key = format!("sbom-{}-{}", purl, sbom.instance);
 
-        let mut reader = BufReader::new(raw.clone().as_bytes());
+        let mut reader = BufReader::new(raw.as_slice());
 
         let checksum = platform::cryptography::sha256::reader_checksum(reader)?;
         let checksum = platform::encoding::base64::standard_encode(checksum.as_str());
@@ -132,7 +189,7 @@ impl StorageProvider<'_> for S3StorageProvider {
                 bucket_name,
                 object_key.clone(),
                 Some(checksum),
-                raw.as_bytes().to_vec(),
+                raw,
                 metadata,
             )
             .await?;

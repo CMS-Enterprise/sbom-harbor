@@ -50,9 +50,14 @@ pub struct Scan {
 
 impl Scan {
     /// Factory method to create new instance of type.
-    pub fn new(kind: ScanKind, status: ScanStatus, count: u64) -> Result<Scan, Error> {
+    pub fn new(kind: ScanKind, status: ScanStatus, count: Option<u64>) -> Result<Scan, Error> {
         let timestamp = platform::time::timestamp().map_err(|e| Error::Runtime(e.to_string()))?;
         let now = Utc::now();
+
+        let count = match count {
+            None => 0,
+            Some(count) => count,
+        };
 
         Ok(Scan {
             id: "".to_string(),
@@ -101,6 +106,9 @@ pub struct ScanRef {
     /// The unique identifier for the [Scan] batch.
     pub scan_id: String,
 
+    /// The unique identifier for the [Scan] target.
+    pub target_id: String,
+
     /// The Scan iteration for the target being scanned instance. Forward-only incrementing counter.
     pub iteration: u32,
 
@@ -109,12 +117,19 @@ pub struct ScanRef {
 }
 
 impl ScanRef {
-    pub fn new(scan: &Scan, iteration: u32) -> Self {
+    pub fn new(scan: &Scan, target_id: String, iteration: u32) -> Self {
         Self {
             scan_id: scan.id.clone(),
+            target_id,
             iteration,
             err: None,
         }
+    }
+
+    pub fn eq(&self, other: &ScanRef) -> bool {
+        self.scan_id.eq(&other.scan_id)
+            && self.target_id == other.target_id
+            && self.iteration == other.iteration
     }
 }
 

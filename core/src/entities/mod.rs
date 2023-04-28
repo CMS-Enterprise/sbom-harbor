@@ -2,15 +2,16 @@
 /// support working with CycloneDx documents.
 pub mod cyclonedx;
 
-/// Persistence and domain models that support running enrichment operations over time.
-pub mod enrichment;
-
 /// Persistence models that support storing, analyzing, and tracking software packages over time and
 /// across system and organizational boundaries.
 pub mod packages;
 
 /// Persistence models that support storing, analyzing, and tracking SBOMs over time.
 pub mod sboms;
+
+/// Persistence and domain models that support running batch processing tasks that match the
+/// idiom of a [Scan].
+pub mod scans;
 
 /// Persistence models that support storing and managing groups of people that produce and manage
 /// SBOMs.

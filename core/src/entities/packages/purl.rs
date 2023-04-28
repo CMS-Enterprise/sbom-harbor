@@ -1,13 +1,10 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use std::collections::HashMap;
-use std::ops::Deref;
-use tracing::debug;
 
 use crate::entities::cyclonedx::Component;
-use crate::entities::enrichment::{Scan, ScanRef};
 use crate::entities::packages::Finding;
-use crate::entities::xrefs::{Xref, XrefKind};
+use crate::entities::scans::{Scan, ScanRef};
+use crate::entities::xrefs::Xref;
 use crate::Error;
 
 /// Purl is a derived type that facilitates analysis of a Package across the entire enterprise.
@@ -17,6 +14,9 @@ use crate::Error;
 pub struct Purl {
     /// Unique identifier for the Package URL.
     pub id: String,
+
+    /// The package manager for the [Purl].
+    pub package_manager: Option<String>,
 
     /// The raw Package URL.
     pub purl: String,
@@ -33,11 +33,11 @@ pub struct Purl {
     /// Reference to each [Scan] that was performed against this [Purl].
     pub scan_refs: Vec<ScanRef>,
 
+    /// A map of cross-references to internal and external systems.
+    pub xrefs: Vec<Xref>,
+
     /// The list of vulnerability findings associated with this Purl.
     pub findings: Option<Vec<Finding>>,
-
-    /// A map of cross-references to internal and external systems.
-    pub xrefs: Option<Vec<Xref>>,
 }
 
 impl Purl {
@@ -57,7 +57,7 @@ impl Purl {
         component_kind: ComponentKind,
         scan: &Scan,
         iteration: u32,
-        xref: Option<Xref>,
+        xref: Xref,
     ) -> Result<Self, Error> {
         let purl = match &component.purl {
             None => {
@@ -66,35 +66,27 @@ impl Purl {
             Some(p) => p,
         };
 
-        let xrefs = match xref {
-            None => None,
-            Some(xref) => Some(vec![xref]),
-        };
-
-        let scan_ref = ScanRef::new(scan, iteration);
+        let scan_ref = ScanRef::new(scan, purl.clone(), iteration);
 
         Ok(Self {
             id: "".to_string(),
+            package_manager: None,
             purl: purl.clone(),
             name: component.name.clone(),
             version: component.version.clone(),
             component_kind,
             scan_refs: vec![scan_ref],
             findings: None,
-            xrefs,
+            xrefs: vec![xref],
         })
     }
 
-    pub fn scan_refs(&mut self, mut scan: &Scan, err: Option<String>) -> Result<ScanRef, Error> {
+    pub fn scan_refs(&mut self, mut scan: &Scan) -> Result<ScanRef, Error> {
         if scan.id.is_empty() {
             return Err(Error::Entity("scan_id_required".to_string()));
         }
 
-        let mut scan_ref = ScanRef {
-            scan_id: scan.id.clone(),
-            iteration: 1,
-            err,
-        };
+        let mut scan_ref = ScanRef::new(scan, self.purl.clone(), 0);
 
         scan_ref.iteration = match self.scan_refs.iter().max_by_key(|s| s.iteration) {
             Some(s) => s.iteration + 1,

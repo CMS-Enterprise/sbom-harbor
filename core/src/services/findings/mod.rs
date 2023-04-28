@@ -1,13 +1,65 @@
 mod service;
+pub mod snyk;
+
 pub use service::*;
 
-use crate::entities::enrichment::ScanRef;
 use async_trait::async_trait;
 use std::fmt::Debug;
+use tracing::log::debug;
 
-use crate::entities::packages::{Finding, Purl};
+use crate::entities::packages::{Finding, FindingProviderKind, Purl};
+use crate::entities::scans::{Scan, ScanKind, ScanRef, ScanStatus};
+use crate::services::scans::ScanProvider;
 use crate::Error;
 
+/// Service that is capable of synchronizing one or more SBOMs from a dynamic source.
+#[async_trait]
+pub trait FindingProvider<'a>: ScanProvider<'a> {
+    /// Sync an external Sbom source with Harbor.
+    async fn sync(&self, provider: FindingProviderKind) -> Result<(), Error> {
+        let mut scan = match self.init_scan(provider, None).await {
+            Ok(scan) => scan,
+            Err(e) => {
+                return Err(Error::Finding(format!("finding::init_scan::{}", e)));
+            }
+        };
+
+        match self.scan(&mut scan).await {
+            Ok(_) => {}
+            Err(e) => {
+                scan.err = Some(e.to_string());
+            }
+        }
+
+        self.commit_scan(&mut scan).await
+    }
+
+    async fn scan(&self, scan: &mut Scan) -> Result<(), Error>;
+
+    async fn init_scan(
+        &self,
+        provider: FindingProviderKind,
+        count: Option<u64>,
+    ) -> Result<Scan, Error> {
+        let mut scan = match Scan::new(ScanKind::Finding(provider), ScanStatus::Started, count) {
+            Ok(scan) => scan,
+            Err(e) => {
+                let msg = format!("init_scan::new_failed::{}", e);
+                debug!("{}", msg);
+                return Err(Error::Finding(msg));
+            }
+        };
+
+        match self.insert(&mut scan).await {
+            Ok(_) => Ok(scan),
+            Err(e) => {
+                let msg = format!("init_scan::store_failed::{}", e);
+                debug!("{}", msg);
+                return Err(Error::Finding(msg));
+            }
+        }
+    }
+}
 // TODO: This could maybe be generalized and combined with Sbom version.
 /// Abstract storage provider for findings.
 #[async_trait]
@@ -28,10 +80,10 @@ pub struct FileSystemStorageProvider {
 }
 
 impl FileSystemStorageProvider {
-    pub fn new(out_dir: Option<String>) -> FileSystemStorageProvider {
-        let out_dir = match out_dir {
-            None => "/tmp/harbor/findings".to_string(),
-            Some(out_dir) => out_dir,
+    pub fn new(out_dir: String) -> FileSystemStorageProvider {
+        let out_dir = match out_dir.is_empty() {
+            true => "/tmp/harbor/findings".to_string(),
+            false => out_dir,
         };
 
         FileSystemStorageProvider { out_dir }

@@ -20,7 +20,7 @@ pub struct Unsupported {
 
     /// The unique identifier from the external system. Since a Purl cannot be determined, there
     /// needs to be a unique key present before insert for changeset tracking.
-    pub external_id: Option<String>,
+    pub external_id: String,
 
     /// The name of the item.
     pub name: String,
@@ -32,5 +32,5 @@ pub struct Unsupported {
     pub provider: SbomProviderKind,
 
     /// A map of cross-references to internal and external systems.
-    pub xrefs: Option<Vec<Xref>>,
+    pub xrefs: Vec<Xref>,
 }

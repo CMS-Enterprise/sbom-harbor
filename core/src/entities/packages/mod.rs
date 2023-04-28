@@ -20,7 +20,6 @@ use platform::mongodb::{mongo_doc, MongoDocument};
 use std::collections::HashMap;
 
 mongo_doc!(Dependency);
-mongo_doc!(Finding);
 mongo_doc!(Package);
 mongo_doc!(Purl);
 mongo_doc!(Unsupported);

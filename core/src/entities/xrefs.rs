@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
 /// An [Xref] is a dynamic way to track cross-references to internal and external systems.
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Xref {
     /// Discriminator indicating which internal or external system being referenced.
     pub(crate) kind: XrefKind,
@@ -83,18 +84,23 @@ impl<'de> Deserialize<'de> for XrefKind {
     }
 }
 
-pub fn flatten(xref: Xref) -> HashMap<String, String> {
+pub fn flatten(xref: &Xref) -> HashMap<String, String> {
     let mut results = HashMap::new();
 
-    for x in xref.map.into_iter() {
-        results.insert(format!("{}::{}", xref.kind, key), value);
+    for x in xref.map.iter() {
+        results.insert(
+            format!("{}::{}", xref.kind, x.0.to_string()),
+            x.1.to_string(),
+        );
     }
 
     results
 }
 
+/// Allows a consistent means of appending Xrefs to a type that has Xrefs.
 pub trait Xrefs {
-    fn xrefs(&mut self, xrefs: Option<Vec<Xref>>);
+    /// Append an Xref. Returns false if Xref already existed or the operation was a noop.
+    fn xrefs(&mut self, xref: &Xref) -> bool;
 }
 
 /// Macro to expand a struct so that it can be use to track cross-references.
@@ -102,29 +108,12 @@ pub trait Xrefs {
 macro_rules! xref {
     ($t:ty) => {
         impl Xrefs for $t {
-            fn xrefs(&mut self, xrefs: &Option<Vec<Xref>>) {
-                let xrefs = match xrefs {
-                    None => {
-                        return;
-                    }
-                    Some(xrefs) => xrefs,
-                };
-
-                let mut existing = match self.xrefs {
-                    None => {
-                        self.xrefs = xrefs.clone();
-                        return;
-                    }
-                    Some(refs) => refs.clone(),
-                };
-
-                for xref in xrefs.into_iter() {
-                    match existing.iter().any(|x| x.eq(xref)) {
-                        true {},
-                        false {
-                            existing.append(xref);
-                        }
-                    }
+            fn xrefs(&mut self, xref: &Xref) -> bool {
+                if self.xrefs.iter().any(|x| x.eq(xref)) {
+                    return false;
+                } else {
+                    self.xrefs.push(xref.clone());
+                    return true;
                 }
             }
         }

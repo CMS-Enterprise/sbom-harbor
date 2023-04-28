@@ -69,6 +69,22 @@ where
         store.update::<D>(doc).await
     }
 
+    // TODO: Constrain to a set of known supported/tested operations.
+    /// Update a document within a [Collection] using ad hoc expressions and filters.
+    #[instrument]
+    async fn update_ad_hoc(
+        &self,
+        key: &str,
+        key_name: Option<&str>,
+        operator: &str,
+        expression: HashMap<&str, &str>,
+    ) -> Result<(), Error> {
+        let store = self.store().await?;
+        store
+            .update_ad_hoc::<D>(key, key_name, operator, expression)
+            .await
+    }
+
     /// Delete a document from a [Collection].
     #[instrument]
     async fn delete(&self, id: &str) -> Result<(), Error> {

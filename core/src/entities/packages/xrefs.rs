@@ -1,4 +1,4 @@
-use crate::entities::xrefs::Xref;
+use crate::entities::xrefs::{Xref, XrefKind};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -12,12 +12,17 @@ pub struct CodebaseRef {
 }
 
 impl From<CodebaseRef> for Xref {
-    fn from(codebase_ref: CodebaseRef) -> Self {
-        HashMap::from([
-            ("team_id".to_string(), codebase_ref.team_id.clone()),
-            ("project_id".to_string(), codebase_ref.project_id.clone()),
-            ("codebase_id".to_string(), codebase_ref.codebase_id.clone()),
-        ])
+    fn from(codebase_ref: CodebaseRef) -> Xref {
+        Xref {
+            kind: XrefKind::Codebase,
+            map: {
+                HashMap::from([
+                    ("team_id".to_string(), codebase_ref.team_id.clone()),
+                    ("project_id".to_string(), codebase_ref.project_id.clone()),
+                    ("codebase_id".to_string(), codebase_ref.codebase_id.clone()),
+                ])
+            },
+        }
     }
 }
 
@@ -31,9 +36,14 @@ pub struct ProductRef {
 
 impl From<ProductRef> for Xref {
     fn from(product_ref: ProductRef) -> Self {
-        HashMap::from([
-            ("vendor_id".to_string(), product_ref.vendor_id.clone()),
-            ("product_id".to_string(), product_ref.product_id.clone()),
-        ])
+        Xref {
+            kind: XrefKind::Product,
+            map: {
+                HashMap::from([
+                    ("vendor_id".to_string(), product_ref.vendor_id.clone()),
+                    ("product_id".to_string(), product_ref.product_id.clone()),
+                ])
+            },
+        }
     }
 }

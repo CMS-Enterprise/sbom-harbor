@@ -20,6 +20,7 @@ use crate::entities::xrefs;
 use crate::entities::xrefs::{Xref, XrefKind};
 use crate::services::findings::FindingService;
 use crate::services::sboms::StorageProvider;
+use crate::services::xrefs::XrefService;
 use crate::{config, Error};
 
 /// Invoke [sbom-scorecard](https://github.com/eBay/sbom-scorecard) and return the results.
@@ -39,6 +40,9 @@ pub fn compare(first_path: &str, second_path: &str) -> Result<String, Error> {
 
     Ok(result)
 }
+
+// Implement Xref Service so that xrefs can be managed for Sboms.
+impl XrefService<Sbom> for SbomService {}
 
 /// Provides SBOM related capabilities.
 #[derive(Debug)]
@@ -61,25 +65,22 @@ impl SbomService {
 
     /// Stores the SBOM to the configured persistence provider using the Purl as the unique
     /// identifier.
-    pub async fn store_by_purl(&self, raw: &str, sbom: &mut Sbom) -> Result<(), Error> {
-        let purl = sbom.purl()?;
-
-        // Ensure the timestamp is set.
-        sbom.timestamp = platform::time::timestamp()?;
-
-        // Set the instance counter.
-        self.set_instance_by_purl(sbom, purl).await?;
-
+    pub async fn write_to_storage(
+        &self,
+        raw: Vec<u8>,
+        sbom: &mut Sbom,
+        xref: Option<Xref>,
+    ) -> Result<(), Error> {
         // Persist to some sort of permanent storage.
-        self.storage.write(raw, sbom).await?;
+        self.storage.write(raw, sbom, &xref).await?;
 
         Ok(())
     }
 
     /// Sets the forward only instance counter using the Purl as the unique identifier.
-    async fn set_instance_by_purl(&self, sbom: &mut Sbom, purl: String) -> Result<(), Error> {
-        // TODO: As more enrichment sources are added this will need to constrain by Xref too.
-        let existing = self.query(HashMap::from([("purl", purl.as_str())])).await?;
+    pub async fn set_instance_by_purl(&self, sbom: &mut Sbom) -> Result<(), Error> {
+        // TODO: As more enrichment sources are added this may need to constrain by Xref too.
+        let existing = self.find_by_purl(&sbom.purl).await?;
 
         sbom.instance = match existing.iter().max_by_key(|s| s.instance) {
             None => 1,
@@ -87,6 +88,19 @@ impl SbomService {
         };
 
         Ok(())
+    }
+
+    /// Find an [Sbom] by it's Package URL.
+    pub async fn find_by_purl(&self, purl: &Option<String>) -> Result<Vec<Sbom>, Error> {
+        match purl {
+            None => {
+                return Err(Error::Entity("sbom_purl_none".to_string()));
+            }
+            Some(purl) => self
+                .query(HashMap::from([("purl", purl.as_str())]))
+                .await
+                .map_err(|e| Error::Entity(e.to_string())),
+        }
     }
 }
 

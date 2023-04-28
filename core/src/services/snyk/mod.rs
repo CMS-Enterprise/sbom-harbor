@@ -60,17 +60,18 @@ pub struct SnykRef {
     pub project_name: String,
 }
 
+// TODO: See if we live without this.
 impl From<SnykRef> for Xref {
     fn from(snyk_ref: SnykRef) -> Self {
         Xref {
             kind: XrefKind::External(SNYK_DISCRIMINATOR.to_string()),
             map: HashMap::from([
-                ("group_id".to_string(), snyk_ref.group_id.clone()),
-                ("group_name".to_string(), snyk_ref.group_name.clone()),
-                ("org_id".to_string(), snyk_ref.org_id.clone()),
-                ("org_name".to_string(), snyk_ref.org_name.clone()),
-                ("project_id".to_string(), snyk_ref.project_id.clone()),
-                ("project_name".to_string(), snyk_ref.project_name.clone()),
+                ("groupId".to_string(), snyk_ref.group_id.clone()),
+                ("groupName".to_string(), snyk_ref.group_name.clone()),
+                ("orgId".to_string(), snyk_ref.org_id.clone()),
+                ("orgName".to_string(), snyk_ref.org_name.clone()),
+                ("projectId".to_string(), snyk_ref.project_id.clone()),
+                ("projectName".to_string(), snyk_ref.project_name.clone()),
             ]),
         }
     }

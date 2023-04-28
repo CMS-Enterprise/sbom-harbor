@@ -3,7 +3,6 @@ use sdk::environment::region::EnvironmentVariableRegionProvider;
 use sdk::meta::region::RegionProviderChain;
 use sdk::SdkConfig;
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::env::VarError;
 
 use crate::Error;

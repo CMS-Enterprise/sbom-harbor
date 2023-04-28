@@ -20,36 +20,25 @@ use crate::Error;
 use crate::services::sboms::SbomService;
 use crate::services::snyk::client::client::Client;
 use crate::services::snyk::client::models::CommonIssueModel;
-use crate::services::snyk::{IssueSnyk, SbomFormat};
+use crate::services::snyk::{IssueSnyk, SbomFormat, SnykRef};
+use crate::services::xrefs::XrefService;
 
-/// Provides Snyk related data retrieval and analytics capabilities.
+/// Provides Snyk related data retrieval and analytics capabilities. This service is used by
+/// other domain specific services when they need to access the Snyk API. The Snyk API should not
+/// be exposed directly.
 #[derive(Debug)]
-pub struct SnykService {
+pub(crate) struct SnykService {
     /// The Snyk API Client instance.
-    pub(crate) client: Client,
+    client: Client,
     /// The datastore connection context.
-    pub(crate) cx: Context,
-    /// Allows injecting different persistence behaviors.
-    pub(crate) sbom_service: SbomService,
-    /// Allows injecting different persistence behaviors.
-    pub(crate) finding_service: FindingService,
+    cx: Context,
 }
 
 impl SnykService {
     /// Factory method to create new instance of type.
-    pub fn new(
-        token: String,
-        cx: Context,
-        sbom_service: SbomService,
-        finding_service: FindingService,
-    ) -> Self {
+    pub fn new(token: String, cx: Context) -> Self {
         let client = Client::new(token);
-        Self {
-            client,
-            cx,
-            sbom_service,
-            finding_service,
-        }
+        Self { client, cx }
     }
 
     /// Retrieves orgs from the Snyk API.
@@ -158,12 +147,51 @@ impl SnykService {
         }
     }
 
+    /// Retrieves raw native Snyk [Sbom] JSON from the Snyk API.
+    pub(in crate::services) async fn sbom_raw(&self, snyk_ref: &SnykRef) -> Result<String, Error> {
+        let raw = match self
+            .client
+            .sbom_raw(
+                snyk_ref.org_id.as_str(),
+                snyk_ref.project_id.as_str(),
+                SbomFormat::CycloneDxJson,
+            )
+            .await
+        {
+            Ok(raw) => raw,
+            Err(e) => {
+                let msg = format!("sbom_raw::{}", e);
+                debug!(msg);
+                return Err(Error::Snyk(msg));
+            }
+        };
+
+        let raw = match raw {
+            None => {
+                // TODO: Emit Metric.
+                let msg = "sbom_raw::sbom::none";
+                debug!(msg);
+                return Err(Error::Snyk(msg.to_string()));
+            }
+            Some(raw) => {
+                if raw.is_empty() {
+                    let msg = "sbom_raw::sbom::empty";
+                    debug!(msg);
+                    return Err(Error::Snyk(msg.to_string()));
+                }
+                raw
+            }
+        };
+
+        Ok(raw)
+    }
+
     /// Get findings for a Package URL.
     pub(in crate::services) async fn findings(
         &self,
         org_id: &str,
         purl: &str,
-        xrefs: &Option<HashMap<XrefKind, Xref>>,
+        xrefs: Vec<Xref>,
     ) -> Result<Option<Vec<Finding>>, Error> {
         let issues = match self.issues(org_id, purl).await {
             Ok(issues) => issues,
@@ -186,11 +214,7 @@ impl SnykService {
         let mut results = vec![];
 
         issues.iter().for_each(|issue| {
-            results.push(Issue::from_snyk(
-                purl.to_string(),
-                issue.clone(),
-                xrefs.clone(),
-            ));
+            results.push(issue.to_finding(purl.to_string(), xrefs.clone()));
         });
 
         Ok(Some(results))

@@ -4,8 +4,8 @@ use std::time::Duration;
 use opentelemetry::runtime;
 use opentelemetry::sdk::export::metrics::aggregation::cumulative_temporality_selector;
 use opentelemetry::sdk::metrics::controllers::BasicController;
-use opentelemetry_api::{Context, global, KeyValue};
 use opentelemetry_api::metrics::{Counter, Meter};
+use opentelemetry_api::{global, Context, KeyValue};
 use opentelemetry_otlp::{ExportConfig, WithExportConfig};
 use opentelemetry_sdk::Resource;
 use tonic::metadata::{MetadataKey, MetadataMap, MetadataValue};
@@ -14,7 +14,8 @@ use crate::Error;
 
 // Default to local OpenTelemetry Collector instance provided by devenv.
 const DEFAULT_ENDPOINT: &str = "http://localhost:4317";
-static BATCH_EXPORT_CONTROLLER: once_cell::sync::OnceCell<BasicController> = once_cell::sync::OnceCell::new();
+static BATCH_EXPORT_CONTROLLER: once_cell::sync::OnceCell<BasicController> =
+    once_cell::sync::OnceCell::new();
 
 /// A value that communicates a characteristic of the system under load.
 pub trait Metric {
@@ -72,10 +73,10 @@ impl BatchExporter {
         let controller = exporter.init_controller()?;
 
         match BATCH_EXPORT_CONTROLLER.set(controller) {
-            Ok(_) => {
-                Ok(exporter)
-            }
-            Err(_) => Err(Error::OpenTelemetry("batch exporter already initialized".to_string()))
+            Ok(_) => Ok(exporter),
+            Err(_) => Err(Error::OpenTelemetry(
+                "batch exporter already initialized".to_string(),
+            )),
         }
     }
 
@@ -115,10 +116,7 @@ impl BatchExporter {
 
     /// Used by unit tests to ensure a controller instance has been initialized.
     pub(crate) fn running(&self) -> bool {
-        BATCH_EXPORT_CONTROLLER
-            .get()
-            .unwrap()
-            .is_running()
+        BATCH_EXPORT_CONTROLLER.get().unwrap().is_running()
     }
 
     /// Used by unit tests to force a metrics collection.
@@ -127,7 +125,9 @@ impl BatchExporter {
             .get()
             .unwrap()
             .collect(&self.config.cx)
-            .map_err(|e| Error::OpenTelemetry(format!("BatchExporter::collect - {}", e.to_string())))
+            .map_err(|e| {
+                Error::OpenTelemetry(format!("BatchExporter::collect - {}", e.to_string()))
+            })
     }
 
     /// Stops the metrics controller.
@@ -150,7 +150,12 @@ impl BatchExporter {
         let counter = global::meter(self.config.meter_name)
             .u64_counter(name.clone())
             .try_init()
-            .map_err(|e| Error::OpenTelemetry(format!("BatchExporter::with_u64_counter - {}", e.to_string())))?;
+            .map_err(|e| {
+                Error::OpenTelemetry(format!(
+                    "BatchExporter::with_u64_counter - {}",
+                    e.to_string()
+                ))
+            })?;
 
         self.u64_counters.insert(name, counter);
 
@@ -162,15 +167,29 @@ impl BatchExporter {
         match value {
             MetricValue::F64(metric, val) => {
                 if !self.f64_counters.contains_key(metric.name()) {
-                    return Err(Error::OpenTelemetry(format!("BatchExporter::add_u64 - invalid key {}", metric.name())));
+                    return Err(Error::OpenTelemetry(format!(
+                        "BatchExporter::add_u64 - invalid key {}",
+                        metric.name()
+                    )));
                 }
-                self.f64_counters.get(metric.name()).unwrap().add(&self.config.cx, val, &self.resource_attrs);
-            },
+                self.f64_counters.get(metric.name()).unwrap().add(
+                    &self.config.cx,
+                    val,
+                    &self.resource_attrs,
+                );
+            }
             MetricValue::U64(metric, val) => {
                 if !self.u64_counters.contains_key(metric.name()) {
-                    return Err(Error::OpenTelemetry(format!("BatchExporter::add_u64 - invalid key {}", metric.name())));
+                    return Err(Error::OpenTelemetry(format!(
+                        "BatchExporter::add_u64 - invalid key {}",
+                        metric.name()
+                    )));
                 }
-                self.u64_counters.get(metric.name()).unwrap().add(&self.config.cx, val, &self.resource_attrs);
+                self.u64_counters.get(metric.name()).unwrap().add(
+                    &self.config.cx,
+                    val,
+                    &self.resource_attrs,
+                );
             }
         }
         Ok(())
@@ -187,7 +206,12 @@ impl BatchExporter {
         let counter = global::meter(self.config.meter_name)
             .f64_counter(name.clone())
             .try_init()
-            .map_err(|e| Error::OpenTelemetry(format!("BatchExporter::with_f64_counter - {}", e.to_string())))?;
+            .map_err(|e| {
+                Error::OpenTelemetry(format!(
+                    "BatchExporter::with_f64_counter - {}",
+                    e.to_string()
+                ))
+            })?;
 
         self.f64_counters.insert(name, counter);
 
@@ -206,16 +230,19 @@ fn metadata_map(hash_map: &Option<HashMap<String, String>>) -> Result<MetadataMa
                 .iter()
                 .map(|(k, v)| {
                     let key = k.clone();
-                    let key = MetadataKey::from_bytes(key.as_bytes())
-                        .map_err(|e| Error::OpenTelemetry(format! {"metrics::metadata_map::key - {}", e}))?;
+                    let key = MetadataKey::from_bytes(key.as_bytes()).map_err(|e| {
+                        Error::OpenTelemetry(format! {"metrics::metadata_map::key - {}", e})
+                    })?;
 
                     let val = v.clone();
-                    let val = MetadataValue::try_from(val.as_bytes())
-                        .map_err(|e| Error::OpenTelemetry(format! {"metrics::metadata_map::key - {}", e}))?;
+                    let val = MetadataValue::try_from(val.as_bytes()).map_err(|e| {
+                        Error::OpenTelemetry(format! {"metrics::metadata_map::key - {}", e})
+                    })?;
 
                     map.insert(key, val);
                     Ok(())
-                }).collect::<Result<(), Error>>()?;
+                })
+                .collect::<Result<(), Error>>()?;
         }
     }
 
@@ -226,11 +253,9 @@ fn metadata_map(hash_map: &Option<HashMap<String, String>>) -> Result<MetadataMa
 fn key_value(hash_map: &HashMap<String, String>) -> Vec<KeyValue> {
     let mut kvs = vec![];
 
-    hash_map
-        .iter()
-        .for_each(|(k, v)| {
-            kvs.push(KeyValue::new(k.clone(), v.clone()));
-        });
+    hash_map.iter().for_each(|(k, v)| {
+        kvs.push(KeyValue::new(k.clone(), v.clone()));
+    });
 
     kvs
 }
@@ -240,18 +265,12 @@ mod tests {
     use std::collections::HashMap;
     use std::time::Duration;
 
-    use opentelemetry::metrics::Counter;
-    use opentelemetry_api::{Context, global, KeyValue};
-    use opentelemetry_api::global::Error::Metric;
-    use opentelemetry_sdk::export::metrics::aggregation::{cumulative_temporality_selector, Sum};
-    use opentelemetry_sdk::export::metrics::InstrumentationLibraryReader;
-    use opentelemetry_sdk::metrics::aggregators::{Aggregator, SumAggregator};
-    use opentelemetry_sdk::metrics::sdk_api::NumberKind;
+    use opentelemetry_api::Context;
 
-    use crate::Error;
-    use crate::opentelemetry::metrics::MetricValue;
-    use crate::opentelemetry::metrics::prometheus::validate_metric_name;
     use super::{BatchExportConfig, BatchExporter};
+    use crate::opentelemetry::metrics::prometheus::validate_metric_name;
+    use crate::opentelemetry::metrics::MetricValue;
+    use crate::Error;
 
     fn prometheus_test_config(test_name: String) -> BatchExportConfig {
         BatchExportConfig {
@@ -285,10 +304,12 @@ mod tests {
 
         assert!(exporter.running());
 
-        exporter.with_u64_counter("metrics_test_total".to_string()).expect("unable to add u64_counter");
+        exporter
+            .with_u64_counter("metrics_test_total".to_string())
+            .expect("unable to add u64_counter");
 
         for _ in 0..100 {
-            let metric = super::super::prometheus::Metric{
+            let metric = super::super::prometheus::Metric {
                 name: "metrics_test_total".to_string(),
                 description: "Metrics for unit tests".to_string(),
                 label: "unit_tests".to_string(),
@@ -303,7 +324,6 @@ mod tests {
         //rate(
         //   harbor_metrics_test_total{exported_job="unit_tests"}[5m]
         // )
-
 
         // let mut results:Vec<(String, u64)> = Vec::new();
         // BATCH_EXPORT_CONTROLLER.get().unwrap().try_for_each(&mut |_library, reader| {

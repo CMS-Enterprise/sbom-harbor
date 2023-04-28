@@ -1,32 +1,22 @@
-mod changeset;
-pub mod findings;
-pub mod sboms;
+pub mod provider;
 
 #[cfg(test)]
 mod tests {
-    use crate::config::mongo_context;
-    use crate::entities::enrichment::{Scan, ScanRef};
-    use crate::entities::packages::{Finding, FindingProviderKind, Purl};
+    use crate::config::{mongo_context, snyk_token};
+    use crate::entities::packages::Purl;
     use crate::entities::sboms::{Sbom, SbomProviderKind};
-    use crate::entities::xrefs::{XrefKind, Xrefs};
-    use crate::services::enrichment::snyk::changeset::{ScanFindingsChangeSet, ScanSbomsChangeSet};
-    use crate::services::enrichment::{FindingProvider, SbomProvider, ScanProvider};
-    use crate::services::findings::{FileSystemStorageProvider, FindingService, StorageProvider};
-    use crate::services::sboms::{
-        FileSystemStorageProvider as SbomFileSystemStorageProvider, SbomService,
-    };
+    use crate::entities::scans::Scan;
+    use crate::services::packages::PackageService;
+    use crate::services::sboms::snyk::provider::SbomScanProvider;
+    use crate::services::sboms::SbomProvider;
+    use crate::services::sboms::{FileSystemStorageProvider, SbomService};
     use crate::services::snyk::adapters::Project;
-    use crate::services::snyk::{ProjectStatus, API_VERSION};
-    use crate::services::snyk::{SnykService, SNYK_DISCRIMINATOR};
+    use crate::services::snyk::SnykService;
+    use crate::services::snyk::API_VERSION;
     use crate::Error;
     use platform::mongodb::{Context, Service};
-    use std::collections::hash_map::Iter;
-    use std::collections::HashMap;
-    use std::fmt::{Debug, Formatter};
-    use std::iter::Filter;
-    use std::ops::Deref;
+    use std::fmt::Debug;
     use tracing::log::debug;
-    use tracing::log::kv::Source;
 
     #[async_std::test]
     #[ignore = "used to load projects from Snyk to local Mongo for debugging"]
@@ -47,7 +37,7 @@ mod tests {
 
     #[async_std::test]
     #[ignore = "used to debug building changesets from local mongo instance"]
-    async fn can_store_sbom_change_set_from_local() -> Result<(), Error> {
+    async fn can_scan_sboms_from_local() -> Result<(), Error> {
         let debug_service = debug_service()?;
         let mut projects = debug_service.projects().await?;
 
@@ -60,7 +50,7 @@ mod tests {
             SbomProviderKind::Snyk {
                 api_version: API_VERSION.to_string(),
             },
-            projects.len() as u64,
+            None,
         )
         .await
         {
@@ -72,97 +62,26 @@ mod tests {
             }
         };
 
-        let mut change_set = ScanSbomsChangeSet::new(&mut scan);
-
         for project in projects.iter_mut() {
-            match service.process_project(&mut change_set, project).await {
+            match service.scan_target(&mut scan, project).await {
                 Err(e) => {
                     let msg = format!("{}", e);
                     debug!(
                         "can_store_sbom_change_set_from_local::process_project::{}",
                         msg
                     );
-                    change_set.ref_errs(project.id.clone(), e.to_string())
+                    scan.ref_errs(project.id.clone(), e.to_string())
                 }
                 _ => {}
             }
         }
 
-        assert_ne!(0, change_set.sboms.len());
-        assert_ne!(0, change_set.packages.len());
-        assert_ne!(0, change_set.purls.len());
-        assert_ne!(0, change_set.dependencies.len());
-        assert_ne!(0, change_set.unsupported.len());
-
-        match service.commit_sboms(&mut change_set).await {
-            Err(e) => {
-                let msg = format!("{}", e);
-                debug!(
-                    "can_store_sbom_change_set_from_local::commit_sboms::{}",
-                    msg
-                );
-            }
-            _ => {}
-        }
-
-        match service.commit_scan(&mut scan).await {
-            Err(e) => {
-                let msg = format!("{}", e);
-                debug!("can_store_sbom_change_set_from_local::commit_scan::{}", msg);
-            }
-            _ => {}
-        }
-
         Ok(())
     }
 
     #[async_std::test]
-    async fn can_enrich_from_local() -> Result<(), Error> {
-        let service = test_service()?;
-        match FindingProvider::enrich(&service, FindingProviderKind::Snyk).await {
-            Ok(()) => Ok(()),
-            Err(e) => {
-                let msg = format!("can_store_findings_change_set_from_local::{}", e);
-                debug!("{}", msg);
-                return Err(Error::Enrichment(msg));
-            }
-        }
-    }
-
-    #[async_std::test]
-    async fn can_store_findings_change_set_from_local() -> Result<(), Error> {
-        let service = test_service()?;
-        let mut scan = match FindingProvider::init_scan(&service, FindingProviderKind::Snyk).await {
-            Ok(scan) => scan,
-            Err(e) => {
-                let msg = format!("can_store_findings_change_set_from_local::{}", e);
-                debug!("{}", msg);
-                return Err(Error::Enrichment(msg));
-            }
-        };
-
-        let mut change_set = ScanFindingsChangeSet::new(&mut scan);
-        let snyk_kind = XrefKind::External(SNYK_DISCRIMINATOR.to_string());
-        let mut with_findings = 0;
-
-        let purls = service.list().await?;
-        let mut purls_with_findings = HashMap::<String, u8>::new();
-
-        for mut purl in purls.into_iter() {
-            match service.scan_purl(&mut change_set, &mut purl).await {
-                Ok(_) => {}
-                Err(e) => {
-                    debug!("{}", e);
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    #[async_std::test]
-    #[ignore = "manual run only"]
-    async fn can_build_sbom_change_set() -> Result<(), Error> {
+    #[ignore = "manual_debug_test"]
+    async fn can_scan_sboms() -> Result<(), Error> {
         let service = test_service()?;
 
         let mut scan = match SbomProvider::init_scan(
@@ -170,6 +89,7 @@ mod tests {
             SbomProviderKind::Snyk {
                 api_version: API_VERSION.to_string(),
             },
+            None,
         )
         .await
         {
@@ -181,10 +101,8 @@ mod tests {
             }
         };
 
-        let mut change_set = ScanSbomsChangeSet::new(&mut scan);
-
         // Populate the ChangeSet
-        match service.build_sboms(&mut change_set).await {
+        match service.scan_targets(&mut scan).await {
             Ok(()) => {}
             Err(e) => {
                 return Err(Error::Snyk(
@@ -193,42 +111,32 @@ mod tests {
             }
         };
 
-        assert_ne!(0, change_set.sboms.len());
-        assert_ne!(0, change_set.packages.len());
-        assert_ne!(0, change_set.purls.len());
-        assert_ne!(0, change_set.dependencies.len());
-        assert_ne!(0, change_set.unsupported.len());
-
         Ok(())
     }
 
     fn debug_service() -> Result<DebugService, Error> {
-        let token = std::env::var("SNYK_API_TOKEN")
-            .map_err(|e| Error::Config(e.to_string()))
-            .unwrap();
-
+        let token = snyk_token()?;
         let cx = mongo_context(Some("core-test"))?;
 
         let service = DebugService::new(token, cx);
         Ok(service)
     }
 
-    fn test_service() -> Result<SnykService, Error> {
-        let token = std::env::var("SNYK_API_TOKEN")
-            .map_err(|e| Error::Config(e.to_string()))
-            .unwrap();
-
+    fn test_service() -> Result<SbomScanProvider, Error> {
+        let token = snyk_token()?;
         let cx = mongo_context(Some("core-test"))?;
 
-        let finding_service =
-            FindingService::new(cx.clone(), Box::new(FileSystemStorageProvider::new(None)));
-
-        let sbom_service = SbomService::new(
+        let service = SbomScanProvider::new(
             cx.clone(),
-            Box::new(SbomFileSystemStorageProvider::new(None)),
+            SnykService::new(token, cx.clone()),
+            PackageService::new(cx.clone()),
+            SbomService::new(
+                cx.clone(),
+                Box::new(FileSystemStorageProvider::new(
+                    "/tmp/harbor/sboms".to_string(),
+                )),
+            ),
         );
-
-        let service = SnykService::new(token, cx.clone(), sbom_service, finding_service);
 
         Ok(service)
     }
@@ -264,12 +172,6 @@ mod tests {
         }
     }
 
-    impl Service<ScanRef> for DebugService {
-        fn cx(&self) -> &Context {
-            &self.cx
-        }
-    }
-
     impl DebugService {
         fn new(token: String, cx: Context) -> DebugService {
             DebugService { cx, token }
@@ -294,7 +196,7 @@ mod tests {
         async fn load_projects_from_snyk(&self) -> Result<(), Error> {
             let snyk_service = test_service()?;
 
-            let mut projects = match snyk_service.projects().await {
+            let mut projects = match snyk_service.snyk.projects().await {
                 Ok(p) => p,
                 Err(e) => {
                     let msg = format!("debug_service::load_projects_from_snyk::{}", e);

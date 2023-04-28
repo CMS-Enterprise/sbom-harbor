@@ -11,9 +11,6 @@ use std::fmt::Display;
 #[skip_serializing_none]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Finding {
-    /// Unique identifier for the Finding.
-    pub id: String,
-
     /// Indicates which enrichment provider reported the vulnerability.
     pub provider: FindingProviderKind,
 
@@ -28,7 +25,7 @@ pub struct Finding {
     pub snyk_issue: Option<IssueSnyk>,
 
     /// A map of cross-references to internal and external systems.
-    pub xrefs: Option<Vec<Xref>>,
+    pub xrefs: Vec<Xref>,
 }
 
 impl Finding {

@@ -1,6 +1,6 @@
-use crate::entities::enrichment::ScanRef;
 use crate::entities::packages::Finding;
 use crate::entities::sboms::Sbom;
+use crate::entities::scans::ScanRef;
 use crate::services::findings::StorageProvider;
 use crate::Error;
 use platform::mongodb::{Context, Service};

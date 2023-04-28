@@ -18,6 +18,9 @@ pub struct Package {
     /// The unique identifier for the Package.
     pub id: String,
 
+    /// The package manager for the [Package].
+    pub manager: Option<String>,
+
     /// Optional denormalized Package URL if the Package is associated with a Purl.
     pub purl: Option<String>,
 
@@ -25,29 +28,25 @@ pub struct Package {
     pub cdx: Option<PackageCdx>,
 
     /// A map of cross-references to internal and external systems.
-    pub xrefs: Option<Vec<Xref>>,
+    pub xrefs: Vec<Xref>,
 }
 
 impl Package {
     pub fn from_bom(
         bom: &Bom,
         package_manager: Option<String>,
-        xref: Option<Xref>,
+        xref: Xref,
     ) -> Result<Package, Error> {
-        let cdx = PackageCdx::from_bom(bom, package_manager)?;
+        let cdx = PackageCdx::from_bom(bom, package_manager.clone())?;
         let purl = cdx.purl.clone();
         let cdx = Some(cdx);
 
-        let xrefs = match xref {
-            None => None,
-            Some(xref) => Some(vec![xref]),
-        };
-
         Ok(Self {
             id: "".to_string(),
+            manager: package_manager,
             purl,
             cdx,
-            xrefs,
+            xrefs: vec![xref],
         })
     }
 }

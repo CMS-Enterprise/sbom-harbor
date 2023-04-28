@@ -129,16 +129,13 @@ impl Project {
     pub fn to_unsupported(&self) -> Unsupported {
         Unsupported {
             id: "".to_string(),
-            external_id: Some(self.project_id.clone()),
+            external_id: self.project_id.clone(),
             name: self.project_name.clone(),
             package_manager: Some(self.package_manager.clone()),
             provider: SbomProviderKind::Snyk {
                 api_version: API_VERSION.to_string(),
             },
-            xrefs: Some(HashMap::from([(
-                XrefKind::External(SNYK_DISCRIMINATOR.to_string()),
-                HashMap::from(self.to_snyk_ref()),
-            )])),
+            xrefs: vec![Xref::from(self.to_snyk_ref())],
         }
     }
 
@@ -159,13 +156,12 @@ impl Project {
 pub(crate) struct Issue {}
 
 impl IssueSnyk {
-    pub(crate) fn to_finding(&self, purl: String, xrefs: Option<Vec<Xref>>) -> Finding {
+    pub(crate) fn to_finding(&self, purl: String, xrefs: Vec<Xref>) -> Finding {
         Finding {
-            id: "".to_string(),
             provider: FindingProviderKind::Snyk,
             purl: Some(purl),
             cdx: None,
-            snyk_issue: Some(issue),
+            snyk_issue: Some(self.clone()),
             xrefs,
         }
     }

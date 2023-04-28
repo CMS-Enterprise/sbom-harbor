@@ -33,31 +33,33 @@ pub struct Dependency {
     pub cdx: Option<PackageCdx>,
 
     /// A map of cross-references to internal and external systems.
-    pub xrefs: Option<Vec<Xref>>,
+    pub xrefs: Vec<Xref>,
 }
 
 impl Dependency {
     pub(crate) fn from_component(
         component: &Component,
-        source: SbomProviderKind,
+        provider: SbomProviderKind,
         package_ref: String,
         package_manager: Option<String>,
-        xref: Option<Xref>,
+        xref: Xref,
     ) -> Dependency {
         let cdx = PackageCdx::from_component(component, package_manager);
 
-        let xrefs = match xref {
-            None => None,
-            Some(xref) => Some(vec![xref]),
-        };
-
         Dependency {
             id: "".to_string(),
-            provider: source,
+            provider,
             package_ref,
             spec: Some(Spec::Cdx(CdxFormat::Json)),
             cdx: Some(cdx),
-            xrefs,
+            xrefs: vec![xref],
+        }
+    }
+
+    pub fn purl(&self) -> Option<String> {
+        match &self.cdx {
+            None => None,
+            Some(cdx) => cdx.purl.clone(),
         }
     }
 }

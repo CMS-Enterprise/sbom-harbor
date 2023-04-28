@@ -27,12 +27,12 @@ pub enum ContextKind {
     DocumentDB,
     /// Specifies the data store is a native MongoDB instance.
     Mongo,
-    /// Specifies that the data store uses an injected custom connection uri provider.
-    Custom,
+    // /// Specifies that the data store uses an injected custom connection uri provider.
+    // Custom,
 }
 
 /// Trait to implement when injecting a custom uri provider.
-pub trait ConnectionUriProvider {
+pub trait ConnectionUriProvider: Debug + Send + Sync + Sized {
     fn connection_uri(&self) -> Result<String, Error>;
 }
 
@@ -43,7 +43,7 @@ pub struct Context {
     /// Kind of backend provider for the [Context].
     pub kind: ContextKind,
     /// Optionally injected custom [ConnectionUriProvider].
-    pub connection_uri_provider: Option<Box<dyn ConnectionUriProvider>>,
+    // pub connection_uri_provider: Option<Box<dyn ConnectionUriProvider>>,
     /// Instance host name which must be a resolvable DNS name.
     pub host: String,
     /// MongoDB username.
@@ -65,21 +65,21 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn new_custom(custom: Box<dyn ConnectionUriProvider>) -> Self {
-        Self {
-            kind: ContextKind::Custom,
-            connection_uri_provider: Some(custom),
-            host: "".to_string(),
-            username: "".to_string(),
-            password: "".to_string(),
-            port: 0,
-            db_name: "".to_string(),
-            key_name: "".to_string(),
-            region: None,
-            cluster_name: None,
-            account_name: None,
-        }
-    }
+    // pub fn new_custom(custom: Box<dyn ConnectionUriProvider>) -> Self {
+    //     Self {
+    //         kind: ContextKind::Custom,
+    //         connection_uri_provider: Some(custom),
+    //         host: "".to_string(),
+    //         username: "".to_string(),
+    //         password: "".to_string(),
+    //         port: 0,
+    //         db_name: "".to_string(),
+    //         key_name: "".to_string(),
+    //         region: None,
+    //         cluster_name: None,
+    //         account_name: None,
+    //     }
+    // }
 
     /// Returns a formatted MongoDB compliant URI for the MongoDB instance.
     pub fn connection_uri(&self) -> Result<String, Error> {
@@ -111,14 +111,14 @@ impl Context {
                 "mongodb://{}:{}@{}:{}",
                 self.username, self.password, self.host, self.port
             )),
-            ContextKind::Custom => match *self.connection_uri_provider {
-                None => {
-                    return Err(Error::Config(
-                        "provider required for custom context".to_string(),
-                    ));
-                }
-                Some(provider) => provider.connection_uri(),
-            },
+            // ContextKind::Custom => match *self.connection_uri_provider {
+            //     None => {
+            //         return Err(Error::Config(
+            //             "provider required for custom context".to_string(),
+            //         ));
+            //     }
+            //     Some(provider) => provider.connection_uri(),
+            // },
         }
     }
 }
@@ -170,3 +170,103 @@ mongo_doc!(Policy);
 mongo_doc!(Role);
 mongo_doc!(Resource);
 mongo_doc!(migrations::LogEntry);
+
+#[cfg(test)]
+mod tests {
+    use crate::auth::Group;
+    use crate::mongodb::{Context, ContextKind, Store};
+    use crate::Error;
+    use std::collections::HashMap;
+    use uuid::Uuid;
+
+    fn context() -> Context {
+        Context {
+            kind: ContextKind::Mongo,
+            // connection_uri_provider: None,
+            host: "localhost".to_string(),
+            username: "root".to_string(),
+            password: "harbor".to_string(),
+            port: 27017,
+            db_name: "platform".to_string(),
+            key_name: "id".to_string(),
+            region: None,
+            cluster_name: None,
+            account_name: None,
+        }
+    }
+
+    #[async_std::test]
+    async fn can_push_embedded_array_member() -> Result<(), Error> {
+        let cx = context();
+        let store = Store::new(&cx).await?;
+
+        let group = Group {
+            id: Uuid::new_v4().to_string(),
+            name: "embedded_users".to_string(),
+            users: vec!["existing_value".to_string()],
+            roles: vec![],
+        };
+
+        store.insert(&group).await?;
+
+        let persisted = store.find::<Group>(group.id.as_str()).await?;
+        let persisted = persisted.unwrap();
+        assert_eq!(group.id, persisted.id);
+
+        store
+            .update_ad_hoc::<Group>(
+                group.id.as_str(),
+                None,
+                "$push",
+                HashMap::from([("users", "new_value")]),
+            )
+            .await?;
+
+        let persisted = store.find::<Group>(group.id.as_str()).await?;
+        let persisted = persisted.unwrap();
+
+        assert!(persisted.users.contains(&"existing_value".to_string()));
+        assert!(persisted.users.contains(&"new_value".to_string()));
+
+        store.delete::<Group>(group.id.as_str()).await?;
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn cannot_update_ad_hoc_by_non_unique_field() -> Result<(), Error> {
+        let cx = context();
+        let store = Store::new(&cx).await?;
+
+        let group = Group {
+            id: Uuid::new_v4().to_string(),
+            name: "duplicate_name".to_string(),
+            users: vec!["existing_value".to_string()],
+            roles: vec![],
+        };
+        store.insert(&group).await?;
+
+        let duplicate_name = Group {
+            id: Uuid::new_v4().to_string(),
+            name: "duplicate_name".to_string(),
+            users: vec!["existing_value".to_string()],
+            roles: vec![],
+        };
+        store.insert(&duplicate_name).await?;
+
+        assert!(store
+            .update_ad_hoc::<Group>(
+                group.name.as_str(),
+                Some("name"),
+                "$push",
+                HashMap::from([("users", "new_value")]),
+            )
+            .await
+            .is_err());
+
+        store.delete::<Group>(group.id.as_str()).await?;
+        store.delete::<Group>(duplicate_name.id.as_str()).await?;
+
+        Ok(())
+    }
+}

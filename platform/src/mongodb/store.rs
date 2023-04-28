@@ -1,12 +1,12 @@
+use futures_util::TryStreamExt;
+use mongodb::bson::{doc, Bson, Document, SerializerOptions};
+use mongodb::{bson, Client, Collection, Database};
 use std::collections::HashMap;
 use std::fmt::Debug;
-use futures_util::TryStreamExt;
-use mongodb::{bson, Client, Collection, Database};
-use mongodb::bson::{Bson, doc, Document, SerializerOptions};
 use tracing::instrument;
 
-use crate::Error;
 use crate::mongodb::{Context, MongoDocument};
+use crate::Error;
 
 /// Default client factory method. Allows callers to avoid a direct dependency on the Mongo Driver.
 pub async fn client_from_context(cx: &Context) -> Result<Client, Error> {
@@ -52,7 +52,8 @@ impl Store {
     }
 
     fn collection<D>(&self) -> Collection<D>
-        where D: MongoDocument
+    where
+        D: MongoDocument,
     {
         let database = self.database();
         database.collection::<D>(D::collection().as_str())
@@ -61,9 +62,13 @@ impl Store {
     /// Find the first item that matches the id and is allowed.
     #[instrument]
     pub async fn find<D>(&self, id: &str) -> Result<Option<D>, Error>
-        where D: MongoDocument {
+    where
+        D: MongoDocument,
+    {
         let collection = self.collection();
-        let result = collection.find_one(doc! { self.key_name.clone(): id }, None).await?;
+        let result = collection
+            .find_one(doc! { self.key_name.clone(): id }, None)
+            .await?;
 
         Ok(result)
     }
@@ -83,7 +88,9 @@ impl Store {
     /// List the items from the collection
     #[instrument]
     pub async fn list<D>(&self) -> Result<Vec<D>, Error>
-        where D: MongoDocument {
+    where
+        D: MongoDocument,
+    {
         let collection = self.collection();
         let mut cursor = collection.find(None, None).await?;
 
@@ -99,32 +106,93 @@ impl Store {
     /// Insert an item in Mongo.
     #[instrument]
     pub async fn insert<D>(&self, doc: &D) -> Result<(), Error>
-        where D: MongoDocument {
+    where
+        D: MongoDocument,
+    {
         let collection = self.collection::<D>();
         let result = collection.insert_one(doc, None).await?;
 
         match result.inserted_id {
             Bson::ObjectId(_) => Ok(()),
-            _ => Err(Error::Insert("invalid result id format".to_string()))
+            _ => Err(Error::Insert("invalid result id format".to_string())),
         }
     }
 
     /// Update an item in Mongo.
     #[instrument]
     pub async fn update<D>(&self, doc: &D) -> Result<(), Error>
-        where D: MongoDocument {
-
+    where
+        D: MongoDocument,
+    {
         let collection = self.collection::<D>();
         let id = doc.id();
-        let opts = SerializerOptions::builder()
-            .human_readable(false)
-            .build();
+        let opts = SerializerOptions::builder().human_readable(false).build();
 
         let doc = bson::to_document_with_options(&doc, opts)
             .map_err(|e| Error::Mongo(format!("error generating document for update: {}", e)))
             .unwrap();
 
-        collection.update_one(doc! {self.key_name.clone(): id }, doc! { "$set": doc }, None).await?;
+        collection
+            .update_one(
+                doc! {self.key_name.clone(): id },
+                doc! { "$set": doc },
+                None,
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    /// Update an embedded document.
+    #[instrument]
+    pub async fn update_ad_hoc<D>(
+        &self,
+        key: &str,
+        key_name: Option<&str>,
+        operator: &str,
+        expression: HashMap<&str, &str>,
+    ) -> Result<(), Error>
+    where
+        D: MongoDocument,
+    {
+        let collection = self.collection::<D>();
+
+        let key_name = match key_name {
+            None => self.key_name.as_str(),
+            Some(key_name) => key_name,
+        };
+
+        match key_name.is_empty() {
+            true => {
+                return Err(Error::Mongo("key_name_empty".to_string()));
+            }
+            _ => {}
+        }
+
+        let query = doc! { key_name: key };
+
+        // TODO: Documentation says to use estimated_document_count in most cases but that has no
+        // filter.
+        let doc_count = collection.count_documents(query.clone(), None).await?;
+        match doc_count {
+            0 => {
+                return Err(Error::Mongo("update_ad_hoc_invalid_key".to_string()));
+            }
+            1 => {}
+            _ => {
+                return Err(Error::Mongo("update_ad_hoc_duplicate_key".to_string()));
+            }
+        }
+
+        let mut modifications = Document::new();
+
+        for e in expression {
+            modifications.insert(e.0, e.1);
+        }
+
+        collection
+            .update_one(query, doc! { operator: modifications }, None)
+            .await?;
 
         Ok(())
     }
@@ -132,9 +200,13 @@ impl Store {
     /// Delete an item from Mongo.
     #[instrument]
     pub async fn delete<D>(&self, id: &str) -> Result<(), Error>
-        where D: MongoDocument {
+    where
+        D: MongoDocument,
+    {
         let collection = self.collection::<D>();
-        let result = collection.delete_one(doc! {self.key_name.clone(): id }, None).await?;
+        let result = collection
+            .delete_one(doc! {self.key_name.clone(): id }, None)
+            .await?;
 
         if result.deleted_count != 1 {
             return Err(Error::Delete(format!("failed to delete document: {}", id)));
@@ -146,7 +218,9 @@ impl Store {
     /// Query the items that match the filter expression.
     #[instrument]
     pub async fn query<D>(&self, filter_map: HashMap<&str, &str>) -> Result<Vec<D>, Error>
-        where D: MongoDocument {
+    where
+        D: MongoDocument,
+    {
         let collection = self.collection();
 
         let mut filter = Document::new();

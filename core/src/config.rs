@@ -15,8 +15,8 @@ impl FromStr for Environ {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let environ = s.to_lowercase().as_str();
-        match s {
+        let environ = s.to_lowercase();
+        match environ.as_str() {
             "local" => Ok(Self::Local),
             "ci" => Ok(Self::CI),
             "dev" => Ok(Self::Dev),
@@ -36,7 +36,6 @@ pub fn mongo_context(db_name: Option<&str>) -> Result<Context, Error> {
 
     let mut cx = Context {
         kind: ContextKind::Mongo,
-        connection_uri_provider: None,
         host: "".to_string(),
         username: "".to_string(),
         password: "".to_string(),
@@ -94,7 +93,7 @@ pub fn environment() -> Environ {
 
 /// Returns the Snyk API token from an environment variable.
 pub fn snyk_token() -> Result<String, Error> {
-    match from_env("SNYK_API_TOKEN") {
+    match from_env("SNYK_TOKEN") {
         None => Err(Error::Config("Snyk token not set".to_string())),
         Some(v) => Ok(v),
     }
