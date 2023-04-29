@@ -3,11 +3,14 @@ use std::str::FromStr;
 use clap::builder::PossibleValue;
 use clap::{Parser, ValueEnum};
 use harbcore::entities::packages::FindingProviderKind;
-use harbcore::services::enrichment::FindingProvider;
 use harbcore::services::findings::{
     FileSystemStorageProvider as FindingStorageProvider, FindingService,
 };
-use harbcore::services::sboms::{FileSystemStorageProvider as SbomStorageProvider, SbomService};
+use harbcore::services::packages::PackageService;
+use harbcore::services::sboms::snyk::SbomScanProvider;
+use harbcore::services::sboms::{
+    FileSystemStorageProvider as SbomStorageProvider, FileSystemStorageProvider, SbomService,
+};
 use harbcore::services::snyk::SnykService;
 use platform::mongodb::Context;
 
@@ -131,19 +134,25 @@ struct SnykProvider {}
 
 impl SnykProvider {
     /// Factory method to create new instance of type.
-    fn new_service(cx: Context) -> Result<SnykService, Error> {
+    fn new_service(cx: Context) -> Result<SbomScanProvider, Error> {
         let token = harbcore::config::snyk_token().map_err(|e| Error::Config(e.to_string()))?;
 
         let cx = harbcore::config::mongo_context(Some("core-test"))
             .map_err(|e| Error::Config(e.to_string()))?;
 
-        let sbom_storage = SbomStorageProvider::new(None);
-        let finding_storage = FindingStorageProvider::new(None);
+        let service = SbomScanProvider::new(
+            cx.clone(),
+            SnykService::new(token, cx.clone()),
+            PackageService::new(cx.clone()),
+            SbomService::new(
+                cx.clone(),
+                Box::new(FileSystemStorageProvider::new(
+                    "/tmp/harbor/sboms".to_string(),
+                )),
+            ),
+        );
 
-        let sbom_service = SbomService::new(cx.clone(), Box::new(sbom_storage));
-        let finding_service = FindingService::new(cx.clone(), Box::new(finding_storage));
-
-        Ok(SnykService::new(token, cx, sbom_service, finding_service))
+        Ok(service)
     }
 
     async fn execute(args: &Option<SnykArgs>) -> Result<(), Error> {
