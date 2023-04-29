@@ -1,5 +1,3 @@
-use serde::{Deserialize, Serialize};
-use std::fmt::{Display, Formatter};
 use tracing::debug;
 
 use platform::encoding::url_encode;
@@ -7,8 +5,8 @@ use platform::hyper;
 use platform::hyper::ContentType;
 
 use super::models::{
-    CommonIssueModel, Group, IssuesResponse, ListOrgProjects200Response,
-    ListOrgProjects200ResponseDataInner, Org, OrgV1, OrgsResponse, SbomResource, SbomResponse,
+    CommonIssueModel, IssuesResponse, ListOrgProjects200Response,
+    ListOrgProjects200ResponseDataInner, OrgV1, OrgsResponse,
 };
 use crate::services::snyk::{SbomFormat, API_VERSION};
 use crate::Error;
@@ -53,12 +51,14 @@ fn sbom_url(org_id: &str, project_id: &str, format: SbomFormat) -> String {
 #[derive(Debug)]
 pub(crate) struct Client {
     token: String,
+    inner: hyper::Client,
 }
 
 impl Client {
     /// Factory method for creating new instances of a Client.
     pub fn new(token: String) -> Self {
-        Self { token }
+        let inner = hyper::Client::new();
+        Self { token, inner }
     }
 
     fn token(&self) -> String {
@@ -67,13 +67,15 @@ impl Client {
 
     #[allow(dead_code)]
     pub async fn orgs(&self) -> Result<Option<Vec<OrgV1>>, Error> {
-        let response: Option<OrgsResponse> = hyper::get(
-            &orgs_url(),
-            ContentType::Json,
-            &self.token(),
-            None::<OrgsResponse>,
-        )
-        .await?;
+        let response: Option<OrgsResponse> = self
+            .inner
+            .get(
+                &orgs_url(),
+                ContentType::Json,
+                &self.token(),
+                None::<OrgsResponse>,
+            )
+            .await?;
 
         match response {
             None => Err(Error::Runtime("snyk failed to list orgs".to_string())),
@@ -86,13 +88,15 @@ impl Client {
         &self,
         org_id: &str,
     ) -> Result<Option<Vec<ListOrgProjects200ResponseDataInner>>, Error> {
-        let response: Option<ListOrgProjects200Response> = hyper::get(
-            &projects_url(org_id),
-            ContentType::Json,
-            &self.token(),
-            None::<ListOrgProjects200Response>,
-        )
-        .await?;
+        let response: Option<ListOrgProjects200Response> = self
+            .inner
+            .get(
+                &projects_url(org_id),
+                ContentType::Json,
+                &self.token(),
+                None::<ListOrgProjects200Response>,
+            )
+            .await?;
 
         match response {
             None => Err(Error::Runtime("snyk failed to list projects".to_string())),
@@ -109,14 +113,16 @@ impl Client {
     ) -> Result<Option<String>, Error> {
         let url = &sbom_url(org_id, project_id, format.clone());
         debug!(url);
-        let response = hyper::raw(
-            hyper::Method::GET,
-            &sbom_url(org_id, project_id, format),
-            ContentType::Json,
-            self.token(),
-            None::<String>,
-        )
-        .await?;
+        let response = self
+            .inner
+            .raw(
+                hyper::Method::GET,
+                &sbom_url(org_id, project_id, format),
+                ContentType::Json,
+                self.token(),
+                None::<String>,
+            )
+            .await?;
 
         if response.0 != hyper::StatusCode::OK {
             return Err(Error::Runtime(format!(
@@ -140,13 +146,15 @@ impl Client {
     ) -> Result<Option<Vec<CommonIssueModel>>, Error> {
         // println!("getting issues for purl: {}", purl);
 
-        let response: Option<IssuesResponse> = hyper::get(
-            &issues_url(org_id, purl),
-            ContentType::Json,
-            &self.token(),
-            None::<IssuesResponse>,
-        )
-        .await?;
+        let response: Option<IssuesResponse> = self
+            .inner
+            .get(
+                &issues_url(org_id, purl),
+                ContentType::Json,
+                &self.token(),
+                None::<IssuesResponse>,
+            )
+            .await?;
 
         match response {
             None => Err(Error::Runtime("snyk failed to return issues".to_string())),

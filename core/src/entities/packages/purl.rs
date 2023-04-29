@@ -2,9 +2,10 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use crate::entities::cyclonedx::Component;
-use crate::entities::packages::Finding;
+use crate::entities::packages::{Finding, FindingProviderKind};
 use crate::entities::scans::{Scan, ScanRef};
 use crate::entities::xrefs::Xref;
+use crate::services::snyk::IssueSnyk;
 use crate::Error;
 
 /// Purl is a derived type that facilitates analysis of a Package across the entire enterprise.
@@ -81,7 +82,7 @@ impl Purl {
         })
     }
 
-    pub fn scan_refs(&mut self, mut scan: &Scan) -> Result<ScanRef, Error> {
+    pub fn init_scan(&mut self, mut scan: &Scan) -> Result<ScanRef, Error> {
         if scan.id.is_empty() {
             return Err(Error::Entity("scan_id_required".to_string()));
         }
@@ -99,7 +100,7 @@ impl Purl {
         Ok(result)
     }
 
-    pub fn scan_ref_err(&mut self, scan: &Scan, err: Option<String>) -> Result<(), Error> {
+    pub fn scan_err(&mut self, scan: &Scan, err: Option<String>) -> Result<(), Error> {
         return match self.scan_refs.iter_mut().find(|e| e.scan_id == scan.id) {
             None => Err(Error::Entity("scan_ref_none".to_string())),
             Some(scan_ref) => {
@@ -109,27 +110,64 @@ impl Purl {
         };
     }
 
-    pub fn findings(&mut self, findings: Option<Vec<Finding>>) {
-        let findings = match findings {
-            None => {
-                return;
-            }
-            Some(findings) => findings,
-        };
+    pub fn scan_refs(&mut self, scan_ref: &ScanRef) {
+        if !self.scan_refs.iter().any(|s| s.scan_id == scan_ref.scan_id) {
+            self.scan_refs.push(scan_ref.clone());
+        }
+    }
 
-        if findings.is_empty() {
+    /// Appends Findings to the Purl.
+    pub fn findings(&mut self, new: &Vec<Finding>) {
+        if new.is_empty() {
             return;
         }
 
-        match self.findings.clone() {
+        let mut current = match &self.findings {
             None => {
-                self.findings = Some(findings);
+                self.findings = Some(new.clone());
+                return;
             }
-            Some(mut existing) => {
-                existing.extend(findings);
-                self.findings = Some(existing);
+            Some(existing) => existing.clone(),
+        };
+
+        if current.is_empty() {
+            self.findings = Some(new.clone());
+            return;
+        }
+
+        for new_finding in new {
+            match new_finding.provider {
+                FindingProviderKind::DependencyTrack => {}
+                FindingProviderKind::IonChannel => {}
+                FindingProviderKind::Custom(_) => {}
+                FindingProviderKind::Snyk => {
+                    // TODO: Inlining this is a code smell and couples the domain to providers.
+                    // This needs to ultimately be handled differently and is confirmation that
+                    // putting the snyk_issue ref here was a bad design.
+                    if !current.iter().any(|existing_finding| {
+                        if existing_finding.provider != FindingProviderKind::Snyk {
+                            return false;
+                        }
+
+                        if let Some(existing_issue) = &existing_finding.snyk_issue {
+                            if let Some(existing_issue_id) = &existing_issue.id {
+                                if let Some(new_issue) = &new_finding.snyk_issue {
+                                    if let Some(new_issue_id) = &new_issue.id {
+                                        return existing_issue_id.eq(new_issue_id);
+                                    }
+                                }
+                            }
+                        }
+
+                        false
+                    }) {
+                        current.push(new_finding.clone());
+                    }
+                }
             }
         }
+
+        self.findings = Some(current);
     }
 }
 
@@ -149,5 +187,56 @@ impl ToString for ComponentKind {
             ComponentKind::Package => "package".to_string(),
             ComponentKind::Dependency => "dependency".to_string(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::entities::packages::{ComponentKind, Finding, FindingProviderKind, Purl};
+    use crate::services::snyk::IssueSnyk;
+    use crate::Error;
+
+    #[async_std::test]
+    #[ignore = "used to load projects from Snyk to local Mongo for debugging"]
+    async fn can_prevent_duplicate_issues_from_snyk() -> Result<(), Error> {
+        struct TestCase {
+            existing: Purl,
+        }
+
+        let test_cases = vec![
+            // Snyk Case
+            TestCase {
+                existing: Purl {
+                    id: "".to_string(),
+                    package_manager: None,
+                    purl: "pkg:npm/xml2js@0.4.19".to_string(), // Known to have issues
+                    name: "".to_string(),
+                    version: None,
+                    component_kind: ComponentKind::Package,
+                    scan_refs: vec![],
+                    xrefs: vec![],
+                    findings: Some(vec![Finding {
+                        provider: FindingProviderKind::Snyk,
+                        purl: None,
+                        cdx: None,
+                        snyk_issue: Some(IssueSnyk {
+                            attributes: None,
+                            id: Some("duplicate_id".to_string()),
+                            r#type: None,
+                        }),
+                        xrefs: vec![],
+                    }]),
+                },
+            },
+            // TODO: Add more as other providers are added.
+        ];
+
+        for case in test_cases {
+            let mut new = case.existing.clone();
+            new.findings(&case.existing.findings.unwrap());
+            assert_eq!(1, new.findings.unwrap().len());
+        }
+
+        Ok(())
     }
 }

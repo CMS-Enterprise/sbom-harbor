@@ -1,7 +1,6 @@
 use crate::entities::packages::{Finding, Purl};
 use crate::entities::scans::Scan;
 use crate::entities::xrefs::{Xref, XrefKind};
-use crate::services::findings::snyk::changeset::ChangeSet;
 use crate::services::findings::{FindingProvider, FindingService};
 use crate::services::packages::PackageService;
 use crate::services::scans::ScanProvider;
@@ -37,10 +36,8 @@ impl Service<Scan> for FindingScanProvider {
 #[async_trait]
 impl FindingProvider<'_> for FindingScanProvider {
     async fn scan(&self, scan: &mut Scan) -> Result<(), Error> {
-        let mut change_set = ChangeSet::new(scan);
-
         // Populate the ChangeSet
-        match self.scan_targets(&mut change_set).await {
+        match self.scan_targets(scan).await {
             Ok(()) => {}
             Err(e) => {
                 scan.err = Some(e.to_string());
@@ -54,7 +51,7 @@ impl FindingProvider<'_> for FindingScanProvider {
 
 impl FindingScanProvider {
     /// Factory method to create new instance of type.
-    pub(crate) fn new(
+    pub fn new(
         cx: Context,
         snyk: SnykService,
         packages: PackageService,
@@ -71,12 +68,12 @@ impl FindingScanProvider {
     /// Builds the Scan and Finding results.
     pub(in crate::services::findings::snyk) async fn scan_targets(
         &self,
-        change_set: &mut ChangeSet<'_>,
+        scan: &mut Scan,
     ) -> Result<(), Error> {
         let mut purls: Vec<Purl> = match self.list().await {
             Ok(purls) => purls,
             Err(e) => {
-                return Err(Error::Enrichment(format!("scan_purls::{}", e)));
+                return Err(Error::Finding(format!("scan_purls::{}", e)));
             }
         };
 
@@ -85,11 +82,11 @@ impl FindingScanProvider {
 
         for purl in purls.iter_mut() {
             println!(
-                "==> attempting to process iteration {} for purl {}",
+                "==> processing iteration {} for purl {}",
                 iteration, purl.purl
             );
             iteration = iteration + 1;
-            match self.scan_purl(change_set, purl).await {
+            match self.scan_target(scan, purl).await {
                 Ok(_) => {
                     println!("==> iteration {} succeeded", iteration);
                 }
@@ -104,50 +101,55 @@ impl FindingScanProvider {
         Ok(())
     }
 
-    pub(in crate::services::findings::snyk) async fn scan_purl(
+    pub(in crate::services::findings::snyk) async fn scan_target(
         &self,
-        change_set: &mut ChangeSet<'_>,
+        scan: &mut Scan,
         purl: &mut Purl,
     ) -> Result<(), Error> {
-        let scan_ref = match change_set.track(purl) {
+        let scan_ref = match purl.init_scan(scan) {
             Ok(scan_ref) => scan_ref,
             Err(e) => {
-                change_set.error(purl, e.to_string());
-                return Err(Error::Enrichment(e.to_string()));
+                let msg = format!("purl::scan_refs::{}", e);
+                self.error(scan, purl, msg.clone());
+                return Err(Error::Finding(msg));
             }
         };
 
         let findings = match self.findings_by_purl(purl).await {
-            Ok(findings) => {
-                purl.findings(findings.clone());
-                findings
-            }
+            Ok(findings) => findings,
             Err(e) => {
-                change_set.error(purl, e.to_string());
-                return Err(Error::Enrichment(e.to_string()));
+                self.error(scan, purl, e.to_string());
+                return Err(Error::Finding(e.to_string()));
             }
         };
 
+        match findings {
+            None => {
+                println!("no findings for {}", purl.purl);
+                return Ok(());
+            }
+            Some(findings) => {
+                println!("==> found {} findings", findings.len());
+                purl.findings(&findings);
+            }
+        }
+
         // TODO: Store file_path somewhere?
-        let _file_path = match self
-            .findings
-            .store_by_purl(purl.purl.clone(), findings, &scan_ref)
-            .await
-        {
+        let _file_path = match self.findings.store_by_purl(purl, &scan_ref).await {
             Ok(file_path) => file_path,
             Err(e) => {
-                change_set.error(purl, e.to_string());
+                self.error(scan, purl, e.to_string());
                 return Ok(());
             }
         };
 
-        self.commit_findings(change_set, purl).await
+        self.commit_target(scan, purl).await
     }
 
     /// Transaction script for saving scan results to data store.
-    pub(in crate::services::findings::snyk) async fn commit_findings(
+    pub(in crate::services::findings::snyk) async fn commit_target(
         &self,
-        change_set: &mut ChangeSet<'_>,
+        scan: &mut Scan,
         purl: &mut Purl,
     ) -> Result<(), Error> {
         match self.packages.upsert_purl(purl).await {
@@ -155,47 +157,52 @@ impl FindingScanProvider {
             Err(e) => {
                 let msg = format!("commit_findings::update::purl_id::{}::{}", purl.id, e);
                 println!("{}", msg);
-                change_set.error(purl, msg);
+                self.error(scan, purl, msg);
             }
         }
 
         Ok(())
     }
 
-    pub async fn findings_by_purl(&self, purl: &mut Purl) -> Result<Option<Vec<Finding>>, Error> {
-        // Make this a HashMap so we don't process the same org multiple times.
-        let mut org_ids = HashMap::<String, bool>::new();
-        purl.xrefs.iter().for_each(|x| {
-            if x.kind == XrefKind::External(SNYK_DISCRIMINATOR.to_string()) {
-                match x.map.get("orgId") {
-                    None => {}
-                    Some(org_id) => {
-                        org_ids.insert(org_id.to_owned(), true);
-                    }
-                }
+    fn error(&self, scan: &mut Scan, purl: &mut Purl, error: String) {
+        println!("==> error processing {}: {}", purl.purl, error);
+
+        scan.ref_errs(purl.purl.clone(), error.clone());
+
+        match purl.scan_err(scan, Some(error)) {
+            Ok(_) => {}
+            Err(e) => {
+                debug!("scan_ref_none::{}", purl.purl);
             }
+        }
+    }
+
+    pub async fn findings_by_purl(&self, purl: &mut Purl) -> Result<Option<Vec<Finding>>, Error> {
+        // TODO: Validate getting this for a single org is good enough. We seem to get dupes.
+        let xref = purl.xrefs.iter().find(|x| {
+            x.kind == XrefKind::External(SNYK_DISCRIMINATOR.to_string())
+                && x.map.get("orgId").is_some()
         });
 
-        let mut findings = vec![];
-        for org_id in org_ids {
-            match self
-                .snyk
-                .findings(org_id.0.as_str(), purl.purl.as_str(), purl.xrefs.clone())
-                .await
-            {
-                Ok(f) => match f {
-                    Some(f) => {
-                        let mut f = f;
-                        findings.append(&mut f);
-                    }
-                    _ => {}
-                },
-                Err(e) => {
-                    // TODO: This error gets lost.
-                    debug!("findings_by_purl::{}", e);
-                }
-            };
-        }
+        let org_id = xref.unwrap().map.get("orgId").unwrap();
+
+        let findings = match self
+            .snyk
+            .findings(org_id.as_str(), purl.purl.as_str(), purl.xrefs.clone())
+            .await
+        {
+            Ok(f) => f,
+            Err(e) => {
+                return Err(Error::Snyk(format!("findings_by_purl::{}", e)));
+            }
+        };
+
+        let findings = match findings {
+            None => {
+                return Ok(None);
+            }
+            Some(findings) => findings,
+        };
 
         if findings.is_empty() {
             return Ok(None);

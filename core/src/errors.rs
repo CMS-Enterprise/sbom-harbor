@@ -30,6 +30,7 @@ pub enum Error {
     /// Sbom provider error.
     #[error("sbom provider error: {0}")]
     Sbom(String),
+    /// Scan provider error.
     #[error("scan provider error: {0}")]
     Scan(String),
     /// Serialization error.

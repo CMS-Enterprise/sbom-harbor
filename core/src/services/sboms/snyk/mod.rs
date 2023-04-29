@@ -1,4 +1,5 @@
 pub mod provider;
+pub use provider::*;
 
 #[cfg(test)]
 mod tests {

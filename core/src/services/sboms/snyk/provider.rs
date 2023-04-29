@@ -53,7 +53,7 @@ impl SbomProvider<'_> for SbomScanProvider {
 
 impl SbomScanProvider {
     /// Factory method to create new instance of type.
-    pub(crate) fn new(
+    pub fn new(
         cx: Context,
         snyk: SnykService,
         packages: PackageService,
@@ -238,7 +238,7 @@ impl SbomScanProvider {
                     ComponentKind::Package,
                     scan,
                     sbom.iteration(),
-                    xref,
+                    xref.clone(),
                 ) {
                     Ok(mut purl) => match self.packages.upsert_purl(&mut purl).await {
                         Ok(_) => {}
@@ -255,15 +255,46 @@ impl SbomScanProvider {
         };
 
         for dependency in sbom.dependencies.iter_mut() {
+            let key = match dependency.purl() {
+                None => "unset".to_string(),
+                Some(purl) => format!("dependency::{}", purl),
+            };
+
             match self.packages.upsert_dependency_by_purl(dependency).await {
                 Ok(_) => {}
                 Err(e) => {
-                    let key = match dependency.purl() {
-                        None => "unset".to_string(),
-                        Some(purl) => format!("dependency::{}", purl),
+                    errs.insert(key.clone(), e.to_string());
+                }
+            }
+
+            match &dependency.component {
+                None => {
+                    errs.insert(key, "dependency_component_none".to_string());
+                }
+                Some(component) => {
+                    let mut purl = match Purl::from_component(
+                        component,
+                        ComponentKind::Dependency,
+                        scan,
+                        0,
+                        xref.clone(),
+                    ) {
+                        Ok(purl) => purl,
+                        Err(e) => {
+                            errs.insert(key.clone(), e.to_string());
+                            continue;
+                        }
                     };
-                    let err = e.to_string();
-                    errs.insert(key, err);
+
+                    match self.packages.upsert_purl(&mut purl).await {
+                        Ok(_) => {}
+                        Err(e) => {
+                            errs.insert(
+                                key.clone(),
+                                format!("upsert_dependency_purl::{}", e.to_string()),
+                            );
+                        }
+                    }
                 }
             }
         }

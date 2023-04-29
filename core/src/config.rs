@@ -1,7 +1,6 @@
 use crate::Error;
-use platform::config::{from_env, type_from_env};
+use platform::config::from_env;
 use platform::mongodb::{Context, ContextKind};
-use serde::__private::de::IdentifierDeserializer;
 use std::str::FromStr;
 
 pub enum Environ {
@@ -86,7 +85,7 @@ pub fn environment() -> Environ {
         None => Environ::Local,
         Some(environ) => match Environ::from_str(environ.as_str()) {
             Ok(e) => e,
-            Err(e) => Environ::Local,
+            Err(_) => Environ::Local,
         },
     }
 }

@@ -1,15 +1,11 @@
 use crate::entities::cyclonedx::component::ComponentType;
-use crate::entities::cyclonedx::{Bom, Component, Issue};
-use crate::entities::packages::Purl;
+use crate::entities::cyclonedx::{Bom, Component};
 use crate::Error;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
-use std::string::FromUtf8Error;
-use tracing::log::debug;
 
 /// A subset of the full CycloneDx Component suitable for tracking packages and dependencies.
-#[serde(rename_all = "camelCase")]
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PackageCdx {
     /// The denormalized raw Package URL from the CdxComponent.
     pub purl: Option<String>,
@@ -60,7 +56,7 @@ impl PackageCdx {
                 .iter()
                 .for_each(|component: &Component| match &component.purl {
                     None => {}
-                    Some(p) => {
+                    Some(purl) => {
                         dependencies.push(purl.clone());
                     }
                 }),

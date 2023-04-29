@@ -1,4 +1,4 @@
-use crate::entities::packages::Finding;
+use crate::entities::packages::{Finding, Purl};
 use crate::entities::sboms::Sbom;
 use crate::entities::scans::ScanRef;
 use crate::services::findings::StorageProvider;
@@ -26,25 +26,25 @@ impl FindingService {
 
     pub async fn store_by_purl(
         &self,
-        purl: String,
-        findings: Option<Vec<Finding>>,
+        purl: &Purl,
         scan_ref: &ScanRef,
     ) -> Result<Option<String>, Error> {
-        let findings = match findings {
+        let findings = match &purl.findings {
             None => {
                 return Ok(None);
             }
             Some(findings) => findings,
         };
 
-        match findings.is_empty() {
-            true => {
-                return Ok(None);
-            }
-            false => {}
+        if findings.is_empty() {
+            return Ok(None);
         }
 
-        match self.storage.write(purl.as_str(), &findings, scan_ref).await {
+        match self
+            .storage
+            .write(purl.purl.as_str(), findings, scan_ref)
+            .await
+        {
             Ok(file_path) => Ok(Some(file_path)),
             Err(e) => {
                 return Err(Error::Enrichment(format!(

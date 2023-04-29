@@ -1,17 +1,18 @@
-use std::fmt::{Display, Formatter};
-use hyper::{Body, Client, Request, Uri};
+pub mod client;
+pub use client::Client;
 use hyper::header::InvalidHeaderValue;
 use hyper::http::uri::InvalidUri;
+use hyper::{Body, Client as NativeClient, Request, Uri};
 use hyper_rustls::HttpsConnectorBuilder;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::fmt::{Display, Formatter};
 use thiserror::Error;
 
 const CONTENT_TYPE: &str = "content-type";
 
 /// Re-exports hyper Method and StatusCode so clients can make raw requests.
 pub use hyper::{Method, StatusCode};
-
 
 /// HTTP Content Types.
 pub enum ContentType {
@@ -51,7 +52,14 @@ pub async fn post<T: Serialize, U: DeserializeOwned>(
     token: &str,
     payload: Option<T>,
 ) -> Result<Option<U>, Error> {
-    request(Method::POST, url, content_type, String::from(token), payload).await
+    request(
+        Method::POST,
+        url,
+        content_type,
+        String::from(token),
+        payload,
+    )
+    .await
 }
 
 /// Performs a DELETE request to the specified URL.
@@ -63,7 +71,14 @@ pub async fn delete<T: Serialize, U: DeserializeOwned>(
     token: &str,
     payload: Option<T>,
 ) -> Result<Option<U>, Error> {
-    request(Method::DELETE, url, content_type, String::from(token), payload).await
+    request(
+        Method::DELETE,
+        url,
+        content_type,
+        String::from(token),
+        payload,
+    )
+    .await
 }
 
 /// Performs an HTTP request with the specified HTTP Method.
@@ -78,11 +93,9 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
     token: String,
     payload: Option<T>,
 ) -> Result<Option<U>, Error> {
-
     let result = raw(method, url, content_type, token, payload).await?;
     let resp_status = result.0;
     let resp_body = result.1;
-
 
     if resp_status != StatusCode::OK {
         return Err(Error::Remote(resp_body));
@@ -110,7 +123,6 @@ pub async fn raw<T: Serialize>(
     token: String,
     payload: Option<T>,
 ) -> Result<(StatusCode, String), Error> {
-
     let uri: Uri = Uri::try_from(url)?;
     let req_body: Body = match payload {
         Some(p) => {
@@ -139,7 +151,7 @@ pub async fn raw<T: Serialize>(
         .enable_http2()
         .build();
 
-    let client: Client<_, hyper::Body> = Client::builder().build(https);
+    let client: NativeClient<_, hyper::Body> = NativeClient::builder().build(https);
 
     let resp = match client.request(req).await {
         Ok(r) => r,

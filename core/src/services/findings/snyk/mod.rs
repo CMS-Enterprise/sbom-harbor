@@ -1,5 +1,5 @@
-mod changeset;
-mod provider;
+pub mod provider;
+pub use provider::*;
 
 #[cfg(test)]
 mod tests {
@@ -8,7 +8,6 @@ mod tests {
     use crate::entities::sboms::{Sbom, SbomProviderKind};
     use crate::entities::scans::{Scan, ScanKind, ScanRef};
     use crate::entities::xrefs::{XrefKind, Xrefs};
-    use crate::services::findings::snyk::changeset::ChangeSet;
     use crate::services::findings::snyk::provider::FindingScanProvider;
     use crate::services::findings::{
         FileSystemStorageProvider, FindingProvider, FindingService, StorageProvider,
@@ -33,7 +32,7 @@ mod tests {
         let mut scan = match service.init_scan(FindingProviderKind::Snyk, None).await {
             Ok(scan) => scan,
             Err(e) => {
-                let msg = format!("can_store_findings_change_set_from_local::{}", e);
+                let msg = format!("can_scan_from_local::{}", e);
                 debug!("{}", msg);
                 return Err(Error::Enrichment(msg));
             }
@@ -43,18 +42,17 @@ mod tests {
     }
 
     #[async_std::test]
-    async fn can_store_findings_change_set_from_local() -> Result<(), Error> {
+    async fn can_store_findings_from_local() -> Result<(), Error> {
         let service = test_service()?;
         let mut scan = match service.init_scan(FindingProviderKind::Snyk, None).await {
             Ok(scan) => scan,
             Err(e) => {
-                let msg = format!("can_store_findings_change_set_from_local::{}", e);
+                let msg = format!("can_store_findings_from_local::{}", e);
                 debug!("{}", msg);
                 return Err(Error::Enrichment(msg));
             }
         };
 
-        let mut change_set = ChangeSet::new(&mut scan);
         let snyk_kind = XrefKind::External(SNYK_DISCRIMINATOR.to_string());
         let mut with_findings = 0;
 
@@ -62,7 +60,7 @@ mod tests {
         let mut purls_with_findings = HashMap::<String, u8>::new();
 
         for mut purl in purls.into_iter() {
-            match service.scan_purl(&mut change_set, &mut purl).await {
+            match service.scan_target(&mut scan, &mut purl).await {
                 Ok(_) => {}
                 Err(e) => {
                     debug!("{}", e);

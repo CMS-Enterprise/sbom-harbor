@@ -27,7 +27,7 @@ use crate::services::xrefs::XrefService;
 /// other domain specific services when they need to access the Snyk API. The Snyk API should not
 /// be exposed directly.
 #[derive(Debug)]
-pub(crate) struct SnykService {
+pub struct SnykService {
     /// The Snyk API Client instance.
     client: Client,
     /// The datastore connection context.

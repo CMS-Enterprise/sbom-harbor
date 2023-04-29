@@ -1,18 +1,15 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
 
 use crate::entities::cyclonedx::Component;
 use crate::entities::packages::PackageCdx;
 use crate::entities::sboms::{CdxFormat, SbomProviderKind, Spec};
-use crate::entities::xrefs::{Xref, XrefKind};
-use crate::Error;
+use crate::entities::xrefs::Xref;
 
 /// A dependency identified for a Package.
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 #[skip_serializing_none]
-#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Dependency {
     /// The unique identifier for the Package.
     pub id: String,
@@ -34,6 +31,10 @@ pub struct Dependency {
 
     /// A map of cross-references to internal and external systems.
     pub xrefs: Vec<Xref>,
+
+    /// CycloneDx JSON spec model of Sbom. Hydrated at runtime.
+    #[serde(skip)]
+    pub(crate) component: Option<Component>,
 }
 
 impl Dependency {
@@ -52,10 +53,12 @@ impl Dependency {
             package_ref,
             spec: Some(Spec::Cdx(CdxFormat::Json)),
             cdx: Some(cdx),
+            component: Some(component.clone()),
             xrefs: vec![xref],
         }
     }
 
+    /// Utility method for extracting the purl from the CycloneDx Component.
     pub fn purl(&self) -> Option<String> {
         match &self.cdx {
             None => None,

@@ -13,6 +13,7 @@ pub enum Error {
     /// Invalid configuration.
     #[error("invalid configuration: {0}")]
     Config(String),
+    /// Error in cryptography provider.
     #[error("error in cryptography provider: {0}")]
     Cryptography(String),
     /// Error executing delete.

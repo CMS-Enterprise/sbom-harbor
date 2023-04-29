@@ -1,4 +1,5 @@
-use crate::entities::packages::{Dependency, Package, Purl, Unsupported};
+use crate::entities::cyclonedx::Component;
+use crate::entities::packages::{ComponentKind, Dependency, Finding, Package, Purl, Unsupported};
 use crate::entities::xrefs::Xrefs;
 use crate::Error;
 use platform::mongodb::{Context, Service};
@@ -171,10 +172,21 @@ impl PackageService {
         // Replace previously saved instance with newly parsed instance by setting the new
         // instance id to existing instance id.
         new.id = existing.id.clone();
-        new.findings = existing.findings.clone();
-        new.scan_refs.append(&mut existing.scan_refs.clone());
 
-        // Copy existing xrefs
+        // Merge the findings if there existing findings.
+        match &existing.findings {
+            None => {}
+            Some(findings) => {
+                new.findings(findings);
+            }
+        }
+
+        // // Copy existing scan_refs.
+        for scan_ref in &existing.scan_refs {
+            new.scan_refs(scan_ref);
+        }
+
+        // Copy existing xrefs.
         for xref in &existing.xrefs {
             new.xrefs(xref);
         }

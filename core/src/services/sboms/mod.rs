@@ -1,5 +1,5 @@
 mod service;
-mod snyk;
+pub mod snyk;
 
 use serde_json::json;
 

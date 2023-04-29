@@ -1,14 +1,12 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
-use crate::entities::cyclonedx::Bom;
 use crate::entities::packages::{Finding, FindingProviderKind, Unsupported};
-use crate::entities::sboms::{CdxFormat, SbomProviderKind, Spec};
-use crate::entities::xrefs::{Xref, XrefKind};
+use crate::entities::sboms::SbomProviderKind;
+use crate::entities::xrefs::Xref;
 use crate::services::snyk::client::models::{
-    CommonIssueModel, ListOrgProjects200ResponseDataInner, OrgV1, ProjectStatus, Severity,
+    ListOrgProjects200ResponseDataInner, OrgV1, ProjectStatus,
 };
-use crate::services::snyk::{IssueSnyk, SnykRef, SNYK_DISCRIMINATOR};
+use crate::services::snyk::{IssueSnyk, SnykRef};
 
 use crate::services::snyk::API_VERSION;
 use platform::mongodb::{mongo_doc, MongoDocument};
@@ -62,8 +60,8 @@ impl Organization {
 }
 
 /// Adapter over a native Snyk Project.
-#[serde(rename_all = "camelCase")]
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct Project {
     pub id: String,
     pub project_id: String,

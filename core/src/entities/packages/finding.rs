@@ -1,15 +1,13 @@
-use crate::entities::cyclonedx::{Dependency, Issue};
-use crate::entities::xrefs::{Xref, XrefKind};
+use crate::entities::cyclonedx::Issue;
+use crate::entities::xrefs::Xref;
 use crate::services::snyk::IssueSnyk;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use std::collections::HashMap;
-use std::fmt::Display;
 
 /// Identified security issue for a [Package].
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 #[skip_serializing_none]
-#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Finding {
     /// Indicates which enrichment provider reported the vulnerability.
     pub provider: FindingProviderKind,
@@ -49,8 +47,8 @@ pub enum FindingProviderKind {
 }
 
 /// A subset of the full CycloneDx Issue suitable for tracking findings.
-#[serde(rename_all = "camelCase")]
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct IssueCdx {
     /// The denormalized raw Package URL from the CdxComponent.
     pub purl: String,
