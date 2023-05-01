@@ -50,24 +50,20 @@ pub struct Scan {
 
 impl Scan {
     /// Factory method to create new instance of type.
-    pub fn new(kind: ScanKind, status: ScanStatus, count: Option<u64>) -> Result<Scan, Error> {
+    pub fn new(kind: ScanKind) -> Result<Scan, Error> {
         let timestamp = platform::time::timestamp().map_err(|e| Error::Runtime(e.to_string()))?;
-        let now = Utc::now();
 
-        let count = match count {
-            None => 0,
-            Some(count) => count,
-        };
+        let now = Utc::now();
 
         Ok(Scan {
             id: "".to_string(),
             kind,
-            count,
+            count: 0,
             timestamp,
             start: now.clone(),
             finish: now,
             duration_seconds: 0,
-            status,
+            status: ScanStatus::Started,
             err: None,
             ref_errs: None,
             err_total: 0,
@@ -117,9 +113,9 @@ pub struct ScanRef {
 }
 
 impl ScanRef {
-    pub fn new(scan: &Scan, target_id: String, iteration: u32) -> Self {
+    pub fn new(scan_id: &str, target_id: String, iteration: u32) -> Self {
         Self {
-            scan_id: scan.id.clone(),
+            scan_id: scan_id.to_string(),
             target_id,
             iteration,
             err: None,

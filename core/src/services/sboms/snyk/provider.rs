@@ -4,50 +4,104 @@ use crate::services::snyk::{ProjectStatus, API_VERSION};
 use crate::services::snyk::{SnykService, SUPPORTED_SBOM_PROJECT_TYPES};
 use crate::Error;
 
-use crate::entities::cyclonedx::Component;
-use crate::entities::packages::{ComponentKind, Package, Purl};
-use crate::entities::scans::Scan;
+use crate::entities::packages::{ComponentKind, Purl};
+use crate::entities::scans::{Scan, ScanKind};
 use crate::entities::xrefs::Xref;
 use crate::services::packages::PackageService;
-use crate::services::sboms::{SbomProvider, SbomService};
+use crate::services::sboms::SbomService;
 use crate::services::scans::ScanProvider;
+use async_std::stream;
 use async_trait::async_trait;
-use platform::mongodb::{Context, MongoDocument, Service};
+use futures::stream::StreamExt;
+use platform::mongodb::{Context, Service};
 use std::collections::HashMap;
-use tracing::debug;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug)]
 pub struct SbomScanProvider {
+    scan: Arc<Mutex<Scan>>,
     cx: Context,
     pub(in crate::services::sboms::snyk) snyk: SnykService,
     packages: PackageService,
     sboms: SbomService,
+    pub(in crate::services::sboms::snyk) targets: Vec<Project>,
 }
 
-impl ScanProvider<'_> for SbomScanProvider {}
+#[async_trait]
+impl ScanProvider for SbomScanProvider {
+    fn current(&self) -> Arc<Mutex<Scan>> {
+        self.scan.clone()
+    }
+
+    /// Builds the Packages Dependencies, Purls, and Unsupported from the Snyk API.
+    async fn scan_targets(&self) -> Result<HashMap<String, String>, Error> {
+        println!("processing sboms for {} projects...", self.targets.len());
+        let scan_id = self.current().lock().unwrap().id.clone();
+        let mut project_scanner = Arc::new(Mutex::new(ProjectScanner::new(scan_id)));
+
+        //for project in self.targets.iter_mut() {
+        stream::from_iter(&self.targets)
+            .for_each_concurrent(8, |project| async move {
+                let mut project = project.clone();
+                let mut scanner = Arc::clone(&project_scanner);
+                let mut iteration = scanner.lock().unwrap().iteration;
+                iteration += 1;
+                scanner.lock().unwrap().iteration = iteration;
+
+                println!(
+                    "==> processing iteration {} for project {}",
+                    iteration, project.project_name
+                );
+
+                let result = scanner
+                    .lock()
+                    .unwrap()
+                    .scan_target(&mut project, &self.snyk, &self.packages, &self.sboms)
+                    .await;
+
+                match result {
+                    Ok(()) => {
+                        // TODO: Emit Metric
+                        println!("==> iteration {} succeeded", iteration);
+                    }
+                    Err(e) => {
+                        // TODO: Emit Metric
+                        println!("==> iteration {} failed with error: {}", iteration, e);
+                    }
+                }
+            })
+            .await;
+        //}
+
+        // TODO: Emit Metric for errors
+        let results = Arc::clone(&project_scanner).lock().unwrap().errors.clone();
+
+        Ok(results)
+    }
+
+    async fn load_targets(&mut self) -> Result<(), Error> {
+        self.targets = match self.snyk.projects().await {
+            Ok(p) => p,
+            Err(e) => {
+                return Err(Error::Snyk(e.to_string()));
+            }
+        };
+
+        if self.targets.is_empty() {
+            return Err(Error::Snyk("no_projects".to_string()));
+        }
+
+        Ok(())
+    }
+
+    fn target_count(&self) -> u64 {
+        self.targets.len() as u64
+    }
+}
 
 impl Service<Scan> for SbomScanProvider {
     fn cx(&self) -> &Context {
         &self.cx
-    }
-}
-
-#[async_trait]
-impl SbomProvider<'_> for SbomScanProvider {
-    /// Synchronizes a Snyk instance with Harbor.
-    async fn scan(&self, scan: &mut Scan) -> Result<(), Error> {
-        // Scan the targets and capture any unrecoverable error.
-        match self.scan_targets(scan).await {
-            Ok(()) => {}
-            Err(e) => {
-                scan.err = Some(e.to_string());
-                return Err(Error::Snyk(
-                    format!("snyk_service::sync::{}", e).to_string(),
-                ));
-            }
-        };
-
-        Ok(())
     }
 }
 
@@ -58,54 +112,47 @@ impl SbomScanProvider {
         snyk: SnykService,
         packages: PackageService,
         sboms: SbomService,
-    ) -> Self {
-        Self {
+    ) -> Result<SbomScanProvider, Error> {
+        let scan = Scan::new(ScanKind::Sbom(SbomProviderKind::Snyk {
+            api_version: API_VERSION.to_string(),
+        }))?;
+
+        Ok(SbomScanProvider {
             cx,
             snyk,
             packages,
             sboms,
-        }
+            scan: Arc::new(Mutex::new(scan)),
+            targets: vec![],
+        })
     }
+}
 
-    /// Builds the Packages Dependencies, Purls, and Unsupported from the Snyk API.
-    pub(crate) async fn scan_targets(&self, scan: &mut Scan) -> Result<(), Error> {
-        let mut projects = match self.snyk.projects().await {
-            Ok(p) => p,
-            Err(e) => {
-                let msg = format!("scan_targets::projects::{}", e);
-                debug!(msg);
-                return Err(Error::Snyk(msg));
-            }
-        };
+// ProjectScanner is a flyweight that processes
+struct ProjectScanner {
+    iteration: u64,
+    scan_id: String,
+    errors: HashMap<String, String>,
+}
 
-        if projects.is_empty() {
-            return Err(Error::Snyk("scan_targets::no_projects".to_string()));
+impl ProjectScanner {
+    pub fn new(scan_id: String) -> Self {
+        let errors: HashMap<String, String> = HashMap::new();
+
+        Self {
+            iteration: 0,
+            scan_id,
+            errors,
         }
-
-        for project in projects.iter_mut() {
-            match self.scan_target(scan, project).await {
-                Ok(()) => {
-                    // TODO: Emit Metric
-                    debug!("scan_targets::success");
-                }
-                Err(e) => {
-                    // TODO: Emit Metric
-                    debug!("scan_targets::{}", e);
-                    scan.ref_errs(project.id.clone(), e.to_string());
-                }
-            }
-        }
-
-        // TODO: Emit Metric for changeset totals.
-
-        Ok(())
     }
 
     /// Generates an [Sbom] and associated types from a Snyk [Project].
     pub(crate) async fn scan_target(
-        &self,
-        scan: &mut Scan,
+        &mut self,
         project: &mut Project,
+        snyk: &SnykService,
+        packages: &PackageService,
+        sboms: &SbomService,
     ) -> Result<(), Error> {
         if project.status == ProjectStatus::Inactive {
             self.handle_inactive(project)?;
@@ -114,9 +161,15 @@ impl SbomScanProvider {
 
         if !SUPPORTED_SBOM_PROJECT_TYPES.contains(&project.package_manager.as_str()) {
             let mut unsupported = project.to_unsupported();
-            self.packages
+            match packages
                 .upsert_unsupported_by_external_id(&mut unsupported)
-                .await?;
+                .await
+            {
+                Ok(_) => {}
+                Err(e) => {
+                    self.errors.insert(unsupported.external_id, e.to_string());
+                }
+            }
             return Ok(());
         }
 
@@ -124,12 +177,13 @@ impl SbomScanProvider {
         let snyk_ref = project.to_snyk_ref();
 
         // Get the raw Sbom result from the API.
-        let raw = match self.snyk.sbom_raw(&snyk_ref).await {
+        let raw = match snyk.sbom_raw(&snyk_ref).await {
             Ok(raw) => raw,
             Err(e) => {
                 let msg = format!("scan_target::sbom_raw::{}", e);
-                debug!("{}", msg);
-                return Err(Error::Sbom(msg.to_string()));
+                println!("{}", msg);
+                self.errors.insert(project.id.clone(), msg.clone());
+                return Ok(());
             }
         };
 
@@ -146,24 +200,35 @@ impl SbomScanProvider {
             Ok(sbom) => sbom,
             Err(e) => {
                 let msg = format!("scan_target::from_raw_cdx::{}", e);
-                debug!("{}", msg);
-                return Err(Error::Sbom(msg.to_string()));
+                println!("{}", msg);
+                self.errors.insert(project.id.clone(), msg.clone());
+                return Ok(());
+            }
+        };
+
+        let raw_purl = match sbom.purl() {
+            Ok(raw_purl) => raw_purl,
+            Err(e) => {
+                let msg = format!("scan_target::sbom_purl_none::{}", e);
+                println!("{}", msg);
+                self.errors.insert(project.id.clone(), msg.clone());
+                return Ok(());
             }
         };
 
         // Determine how many times this Sbom has been scanned/synced.
-        match self.sboms.set_instance_by_purl(&mut sbom).await {
+        match sboms.set_instance_by_purl(&mut sbom).await {
             Ok(_) => {}
             Err(e) => {
                 let msg = format!("scan_target::from_raw_cdx::{}", e);
-                debug!("{}", msg);
-                return Err(Error::Sbom(msg.to_string()));
+                println!("{}", msg);
+                self.errors.insert(raw_purl, msg.clone());
+                return Ok(());
             }
         }
 
         // Write the sbom to the storage provider.
-        match self
-            .sboms
+        match sboms
             .write_to_storage(
                 raw.as_bytes().to_vec(),
                 &mut sbom,
@@ -173,13 +238,14 @@ impl SbomScanProvider {
         {
             Ok(()) => {
                 // TODO: Emit Metric.
-                debug!("scan_target::write_to_storage::success");
+                println!("scan_target::write_to_storage::success");
             }
             Err(e) => {
                 // TODO: Emit Metric.
                 let msg = format!("scan_target::write_to_storage::{}", e);
-                debug!("{}", msg);
-                return Err(Error::Sbom(msg.to_string()));
+                println!("{}", msg);
+                self.errors.insert(raw_purl, msg.clone());
+                return Ok(());
             }
         };
 
@@ -187,8 +253,15 @@ impl SbomScanProvider {
         sbom.timestamp = platform::time::timestamp()?;
 
         // Commit the Sbom.
-        self.commit_target(scan, &mut sbom, Xref::from(snyk_ref))
-            .await?;
+        match self
+            .commit_target(&mut sbom, &packages, &sboms, Xref::from(snyk_ref))
+            .await
+        {
+            Ok(errs) => {}
+            Err(e) => {
+                return Err(Error::Scan(e.to_string()));
+            }
+        }
 
         Ok(())
     }
@@ -196,7 +269,7 @@ impl SbomScanProvider {
     fn handle_inactive(&self, project: &mut Project) -> Result<(), Error> {
         // TODO: Track if a project went from Active to Inactive.
         let msg = "handle_inactive::inactive";
-        debug!("{}::{}", msg, project.project_name);
+        println!("{}::{}", msg, project.project_name);
         // TODO: Track inactive?
         Ok(())
     }
@@ -204,29 +277,29 @@ impl SbomScanProvider {
     /// Transaction script for saving Sbom results to data store. If change_set None, indicates Sbom
     /// has errors and dependent entities should not be committed.
     pub(crate) async fn commit_target(
-        &self,
-        scan: &Scan,
+        &mut self,
         sbom: &mut Sbom,
+        packages: &PackageService,
+        sboms: &SbomService,
         xref: Xref,
     ) -> Result<(), Error> {
-        let mut errs = HashMap::<String, String>::new();
-
         // Should always insert Sbom. It should never be a duplicate, but a new instance from scan.
-        match self.sboms.insert(sbom).await {
+        match sboms.insert(sbom).await {
             Ok(_) => {}
             Err(e) => {
-                errs.insert("sbom".to_string(), e.to_string());
+                self.errors.insert("sbom".to_string(), e.to_string());
             }
         }
 
         match sbom.package.clone() {
             None => {
-                errs.insert("package".to_string(), "sbom_package_none".to_string());
+                self.errors
+                    .insert("package".to_string(), "sbom_package_none".to_string());
             }
-            Some(mut package) => match self.packages.upsert_package_by_purl(&mut package).await {
+            Some(mut package) => match packages.upsert_package_by_purl(&mut package).await {
                 Ok(_) => {}
                 Err(e) => {
-                    errs.insert("package".to_string(), e.to_string());
+                    self.errors.insert("package".to_string(), e.to_string());
                 }
             },
         }
@@ -236,18 +309,18 @@ impl SbomScanProvider {
                 match Purl::from_component(
                     &component,
                     ComponentKind::Package,
-                    scan,
+                    self.scan_id.as_str(),
                     sbom.iteration(),
                     xref.clone(),
                 ) {
-                    Ok(mut purl) => match self.packages.upsert_purl(&mut purl).await {
+                    Ok(mut purl) => match packages.upsert_purl(&mut purl).await {
                         Ok(_) => {}
                         Err(e) => {
-                            errs.insert("purl".to_string(), e.to_string());
+                            self.errors.insert("purl".to_string(), e.to_string());
                         }
                     },
                     Err(e) => {
-                        errs.insert("purl".to_string(), e.to_string());
+                        self.errors.insert("purl".to_string(), e.to_string());
                     }
                 }
             }
@@ -260,36 +333,37 @@ impl SbomScanProvider {
                 Some(purl) => format!("dependency::{}", purl),
             };
 
-            match self.packages.upsert_dependency_by_purl(dependency).await {
+            match packages.upsert_dependency_by_purl(dependency).await {
                 Ok(_) => {}
                 Err(e) => {
-                    errs.insert(key.clone(), e.to_string());
+                    self.errors.insert(key.clone(), e.to_string());
                 }
             }
 
             match &dependency.component {
                 None => {
-                    errs.insert(key, "dependency_component_none".to_string());
+                    self.errors
+                        .insert(key, "dependency_component_none".to_string());
                 }
                 Some(component) => {
                     let mut purl = match Purl::from_component(
                         component,
                         ComponentKind::Dependency,
-                        scan,
+                        self.scan_id.as_str(),
                         0,
                         xref.clone(),
                     ) {
                         Ok(purl) => purl,
                         Err(e) => {
-                            errs.insert(key.clone(), e.to_string());
+                            self.errors.insert(key.clone(), e.to_string());
                             continue;
                         }
                     };
 
-                    match self.packages.upsert_purl(&mut purl).await {
+                    match packages.upsert_purl(&mut purl).await {
                         Ok(_) => {}
                         Err(e) => {
-                            errs.insert(
+                            self.errors.insert(
                                 key.clone(),
                                 format!("upsert_dependency_purl::{}", e.to_string()),
                             );
@@ -297,14 +371,6 @@ impl SbomScanProvider {
                     }
                 }
             }
-        }
-
-        if !errs.is_empty() {
-            let errs = match serde_json::to_string(&errs) {
-                Ok(errs) => errs,
-                Err(e) => format!("error serializing errs {}", e),
-            };
-            return Err(Error::Sbom(errs.to_string()));
         }
 
         Ok(())

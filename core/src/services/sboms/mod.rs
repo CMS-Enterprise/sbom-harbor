@@ -20,55 +20,6 @@ use async_trait::async_trait;
 use platform::persistence::s3;
 use tracing::log::debug;
 
-/// Service that is capable of synchronizing one or more SBOMs from a dynamic source.
-#[async_trait]
-pub trait SbomProvider<'a>: ScanProvider<'a> {
-    /// Sync an external Sbom source with Harbor.
-    async fn sync(&self, provider: SbomProviderKind) -> Result<(), Error> {
-        let mut scan = match self.init_scan(provider, None).await {
-            Ok(scan) => scan,
-            Err(e) => {
-                return Err(Error::Sbom(format!("sbom::init_scan::{}", e)));
-            }
-        };
-
-        match self.scan(&mut scan).await {
-            Ok(_) => {}
-            Err(e) => {
-                scan.err = Some(e.to_string());
-            }
-        }
-
-        self.commit_scan(&mut scan).await
-    }
-
-    async fn scan(&self, scan: &mut Scan) -> Result<(), Error>;
-
-    async fn init_scan(
-        &self,
-        provider: SbomProviderKind,
-        count: Option<u64>,
-    ) -> Result<Scan, Error> {
-        let mut scan = match Scan::new(ScanKind::Sbom(provider), ScanStatus::Started, count) {
-            Ok(scan) => scan,
-            Err(e) => {
-                let msg = format!("init_scan::new_failed::{}", e);
-                debug!("{}", msg);
-                return Err(Error::Sbom(msg));
-            }
-        };
-
-        match self.insert(&mut scan).await {
-            Ok(_) => Ok(scan),
-            Err(e) => {
-                let msg = format!("init_scan::store_failed::{}", e);
-                debug!("{}", msg);
-                return Err(Error::Sbom(msg));
-            }
-        }
-    }
-}
-
 /// Abstract storage provider for [Sboms].
 #[async_trait]
 pub trait StorageProvider<'a>: Debug + Send + Sync {

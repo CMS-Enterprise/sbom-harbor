@@ -56,7 +56,7 @@ impl Purl {
     pub(crate) fn from_component(
         component: &Component,
         component_kind: ComponentKind,
-        scan: &Scan,
+        scan_id: &str,
         iteration: u32,
         xref: Xref,
     ) -> Result<Self, Error> {
@@ -67,7 +67,7 @@ impl Purl {
             Some(p) => p,
         };
 
-        let scan_ref = ScanRef::new(scan, purl.clone(), iteration);
+        let scan_ref = ScanRef::new(scan_id, purl.clone(), iteration);
 
         Ok(Self {
             id: "".to_string(),
@@ -82,12 +82,12 @@ impl Purl {
         })
     }
 
-    pub fn init_scan(&mut self, mut scan: &Scan) -> Result<ScanRef, Error> {
-        if scan.id.is_empty() {
+    pub fn join_scan(&mut self, mut scan_id: &str) -> Result<ScanRef, Error> {
+        if scan_id.is_empty() {
             return Err(Error::Entity("scan_id_required".to_string()));
         }
 
-        let mut scan_ref = ScanRef::new(scan, self.purl.clone(), 0);
+        let mut scan_ref = ScanRef::new(scan_id, self.purl.clone(), 0);
 
         scan_ref.iteration = match self.scan_refs.iter().max_by_key(|s| s.iteration) {
             Some(s) => s.iteration + 1,
@@ -100,8 +100,8 @@ impl Purl {
         Ok(result)
     }
 
-    pub fn scan_err(&mut self, scan: &Scan, err: Option<String>) -> Result<(), Error> {
-        return match self.scan_refs.iter_mut().find(|e| e.scan_id == scan.id) {
+    pub fn scan_err(&mut self, scan_id: &str, err: Option<String>) -> Result<(), Error> {
+        return match self.scan_refs.iter_mut().find(|e| e.scan_id.eq(scan_id)) {
             None => Err(Error::Entity("scan_ref_none".to_string())),
             Some(scan_ref) => {
                 scan_ref.err = err;
