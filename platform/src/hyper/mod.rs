@@ -1,11 +1,15 @@
 use hyper::header::InvalidHeaderValue;
 use hyper::http::uri::InvalidUri;
-use hyper::{Body, Client, Method, Request, StatusCode, Uri};
+use hyper::{Body, Client as NativeClient, Request, Uri};
 use hyper_rustls::HttpsConnectorBuilder;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fmt::{Display, Formatter};
 use thiserror::Error;
+
+mod client;
+pub use client::Client;
+pub use hyper::{Method, StatusCode};
 
 const CONTENT_TYPE: &str = "content-type";
 
@@ -117,7 +121,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
         .enable_http2()
         .build();
 
-    let client: Client<_, hyper::Body> = Client::builder().build(https);
+    let client: NativeClient<_, hyper::Body> = NativeClient::builder().build(https);
 
     let resp = match client.request(req).await {
         Ok(r) => r,
