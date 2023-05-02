@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::sync::Arc;
 
 use async_trait::async_trait;
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::mongodb::{MongoDocument, Store};
+use crate::mongodb::{Context, MongoDocument, Store};
 use crate::Error;
 
 /// [Service] provides consistent, generic persistence capabilities for types that implement the
@@ -19,20 +18,27 @@ pub trait Service<D>: Debug + Send + Sync
 where
     D: MongoDocument,
 {
-    // TODO: Refactor this away with a [Context].
+    /// Provides access to the configured MongoDB connection [Context].
+    fn cx(&self) -> &Context;
+
     /// Provides access to the [Store] instance for the [Service].
-    fn store(&self) -> Arc<Store>;
+    #[instrument]
+    async fn store(&self) -> Result<Store, Error> {
+        Store::new(self.cx()).await
+    }
 
     /// Find a document within a [Collection] by its id.
     #[instrument]
     async fn find(&self, id: &str) -> Result<Option<D>, Error> {
-        self.store().find::<D>(id).await
+        let store = self.store().await?;
+        store.find::<D>(id).await
     }
 
     /// List all documents within a [Collection].
     #[instrument]
     async fn list(&self) -> Result<Vec<D>, Error> {
-        self.store().list::<D>().await
+        let store = self.store().await?;
+        store.list::<D>().await
     }
 
     /// Insert a document into a [Collection].
@@ -48,30 +54,49 @@ where
         let id = Uuid::new_v4().to_string();
         doc.set_id(id);
 
-        self.store().insert::<D>(doc).await?;
-        Ok(())
+        let store = self.store().await?;
+        store.insert::<D>(doc).await
     }
 
     /// Update a document within a [Collection].
     #[instrument]
     async fn update(&self, doc: &D) -> Result<(), Error> {
-        let existing = self.store().find::<D>(doc.id().as_str()).await?;
+        let store = self.store().await?;
+        let existing = store.find::<D>(doc.id().as_str()).await?;
         if existing.is_none() {
             return Err(Error::Update("item does not exists".to_string()));
         }
 
-        self.store().update::<D>(doc).await
+        store.update::<D>(doc).await
+    }
+
+    // TODO: Constrain to a set of known supported/tested operations.
+    /// Update a document within a [Collection] using ad hoc expressions and filters.
+    #[instrument]
+    async fn update_ad_hoc(
+        &self,
+        key: &str,
+        key_name: Option<&str>,
+        operator: &str,
+        expression: HashMap<&str, &str>,
+    ) -> Result<(), Error> {
+        let store = self.store().await?;
+        store
+            .update_ad_hoc::<D>(key, key_name, operator, expression)
+            .await
     }
 
     /// Delete a document from a [Collection].
     #[instrument]
     async fn delete(&self, id: &str) -> Result<(), Error> {
-        self.store().delete::<D>(id).await
+        let store = self.store().await?;
+        store.delete::<D>(id).await
     }
 
-    /// Perform and ad-hoc query against all documents within a [Collection].
+    /// Perform an ad-hoc query against all documents within a [Collection].
     #[instrument]
     async fn query(&self, filter: HashMap<&str, &str>) -> Result<Vec<D>, Error> {
-        self.store().query::<D>(filter).await
+        let store = self.store().await?;
+        store.query::<D>(filter).await
     }
 }
