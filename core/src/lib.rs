@@ -4,6 +4,20 @@
 //! translating user input from the wire protocol or stdin to native types and then invoking
 //! the corresponding [Service] type found in this crate.
 
+//! ## Terminology
+//! - **Provider**: a software service that is capable of generating an SBOM given a Package
+//! - **Package**: a component for which an SBOM can be created. In the case of Harbor, this is usually a code repository like git, svn or mercurial.
+//! - **Report**: in this context, a report is a Json document. Machine readable, but with text so humans can read it as well.
+//! - **Dependency**: a library that a **Package** needs to function.
+//! - **Store**: A storage location.  This can be a:
+//!     - Document,
+//!     - File System,
+//!     - Relational, Object or Graph Database
+//!     - Cloud Storage Solution (S3, Glacier)
+//! - **Transitive Dependency**: A library that one of a given **Package**’s library needs to function.
+//!   This term is recursively accurate for any dependency of a dependency.
+//! - **Diff**: Data that represents only the changes or differences between two files.
+
 /// The [Models] module contains the schema types defined by the OpenAPI specification for this API.
 /// [Models] are data transfer objects.
 pub mod models;
