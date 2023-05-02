@@ -1,0 +1,9 @@
+generatorName: rust
+gitUserId: CMS-Enterprise
+gitRepoId: cms-enterprise/sbom-harbor/core
+inputSpec: /local/snyk.json
+outputDir: /local/generated/snyk
+packageName: clients::snyk::models # the module path in the core crate
+packageVersion: 0.2.0
+useSingleRequestParameter: true
+library: hyper
