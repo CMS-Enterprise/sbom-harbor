@@ -5,9 +5,8 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use harbcore::config::db_connection;
+use harbcore::config::mongo_context;
 use std::net::SocketAddr;
-use std::sync::Arc;
 use std::time::Duration;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
@@ -16,7 +15,6 @@ use tracing::{info, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use harbor_api::controllers;
-use platform::mongodb::Store;
 // use harbcore::config::sdk_config_from_env;
 
 const X_API_KEY: &str = "x-api-key";
@@ -77,19 +75,17 @@ async fn main() {
     // Load injectable types.
     // let config = sdk_config_from_env().await.expect("failed to load config from environment");
     // let authorizer = Authorizer::new(&config).unwrap().expect("failed to load authorizer");
-    let cx = db_connection();
+    let cx = match mongo_context(None) {
+        Ok(cx) => cx,
+        Err(e) => {
+            trace!("unable to retrieve connection config: {}", e);
+            return;
+        }
+    };
 
-    if cx.is_err() {
-        trace!(
-            "unable to retrieve connection config: {}",
-            cx.err().unwrap()
-        );
-        return;
-    }
+    // let store = Store::new(&cx.unwrap()).await.unwrap();
 
-    let store = Store::new(&cx.unwrap()).await.unwrap();
-
-    let team_service = controllers::team::new_service(Arc::new(store));
+    let team_service = controllers::team::new_service(cx);
 
     let harbor = Router::new()
         .fallback(handler_404)
