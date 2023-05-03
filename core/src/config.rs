@@ -1,5 +1,6 @@
 use crate::Error;
 use platform::config::from_env;
+use platform::encoding::url_encode;
 use platform::mongodb::Context;
 use serde::{Deserialize, Serialize};
 
@@ -59,7 +60,7 @@ struct DocDbConfig {
     engine: String,
     port: u32,
     host: String,
-    tls: bool,
+    ssl: bool,
     #[serde(rename = "dbInstanceIdentifier")]
     db_instance_identifier: String,
 }
@@ -67,13 +68,13 @@ struct DocDbConfig {
 impl DocDbConfig {
     fn to_context(&self) -> Context {
         let connection_uri = format!(
-            "mongodb://{}:{}@{}.{}:{}/?tls={}&tlsCAFile=global-bundle.pem",
-            self.username,
-            self.password,
-            self.db_instance_identifier,
+            "mongodb://{}:{}@{}:{}/?ssl={}&tlsCAFile=rds-combined-ca-bundle.pem&retryWrites=false",
+            url_encode(self.username.as_str()),
+            url_encode(self.password.as_str()),
+            //self.db_instance_identifier,
             self.host,
             self.port,
-            self.tls
+            self.ssl
         );
 
         Context {

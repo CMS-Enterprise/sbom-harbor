@@ -46,7 +46,7 @@ impl ValueEnum for SbomProviderKind {
             SbomProviderKind::GitHub => PossibleValue::new("github").help(
                 "Use the GitHub SBOM Provider to generate one or more SBOMs from the GitHub API",
             ),
-            SbomProviderKind::Snyk => PossibleValue::new("github")
+            SbomProviderKind::Snyk => PossibleValue::new("snyk")
                 .help("Use the Snyk SBOM Provider to generate one or more SBOMs from the Snyk API"),
         })
     }
@@ -91,7 +91,7 @@ pub struct SnykArgs {
     #[arg(short, long)]
     pub org_id: Option<String>,
     /// The Snyk Project ID for the SBOM target.
-    #[arg(short, long)]
+    #[arg(long)]
     pub project_id: Option<String>,
 }
 
@@ -170,17 +170,16 @@ impl SnykProvider {
         };
 
         match &args.snyk_args {
-            None => Err(Error::Sbom("snyk args required".to_string())),
+            None => {
+                let provider = SnykProvider::new_provider(cx, storage)?;
+                provider
+                    .execute(entities::sboms::SbomProviderKind::Snyk {
+                        api_version: API_VERSION.to_string(),
+                    })
+                    .await
+                    .map_err(|e| Error::Sbom(e.to_string()))
+            }
             Some(args) => match (&args.org_id, &args.project_id) {
-                (None, None) => {
-                    let provider = SnykProvider::new_provider(cx, storage)?;
-                    provider
-                        .execute(entities::sboms::SbomProviderKind::Snyk {
-                            api_version: API_VERSION.to_string(),
-                        })
-                        .await
-                        .map_err(|e| Error::Sbom(e.to_string()))
-                }
                 (_, _) => Err(Error::Sbom(
                     "individual project scans not yet implemented".to_string(),
                 )),

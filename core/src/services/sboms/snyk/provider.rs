@@ -81,14 +81,15 @@ impl SbomScanProvider {
         }
 
         for project in projects.iter_mut() {
+            println!("===> processing project {}", project.id);
             match self.scan_target(scan, project).await {
                 Ok(()) => {
                     // TODO: Emit Metric
-                    debug!("scan_targets::success");
+                    println!("===> project success {}", project.id);
                 }
                 Err(e) => {
                     // TODO: Emit Metric
-                    debug!("scan_targets::{}", e);
+                    println!("===> project error {} {}", project.id, e);
                     scan.ref_errs(project.id.clone(), e.to_string());
                 }
             }
