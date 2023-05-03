@@ -2,6 +2,14 @@ use std::str::FromStr;
 
 use clap::builder::PossibleValue;
 use clap::{Parser, ValueEnum};
+use harbcore::entities;
+use harbcore::services::findings::snyk::FindingScanProvider;
+use harbcore::services::findings::{
+    FileSystemStorageProvider, FindingProvider, FindingService, S3StorageProvider, StorageProvider,
+};
+use harbcore::services::packages::PackageService;
+use harbcore::services::snyk::SnykService;
+use platform::mongodb::Context;
 
 use crate::Error;
 
@@ -11,6 +19,10 @@ pub struct EnrichArgs {
     /// Specifies with Enrichment Provider to invoke.
     #[arg(short, long)]
     pub provider: EnrichmentProviderKind,
+
+    /// Specifies to run the command against the local debug environment.
+    #[arg(long)]
+    debug: bool,
 
     /// Flattened args for use with the Snyk enrichment provider.
     #[command(flatten)]
@@ -27,7 +39,7 @@ pub async fn execute(args: &EnrichArgs) -> Result<(), Error> {
         EnrichmentProviderKind::DependencyTrack => {
             todo!()
         }
-        EnrichmentProviderKind::Snyk => SnykProvider::execute(&args.snyk_args).await,
+        EnrichmentProviderKind::Snyk => SnykProvider::execute(args).await,
     }
 }
 
@@ -82,7 +94,7 @@ pub struct SnykArgs {
     #[arg(short, long)]
     pub org_id: Option<String>,
     /// The Snyk Project ID for the enrichment target.
-    #[arg(short, long)]
+    #[arg(long)]
     pub project_id: Option<String>,
 }
 
@@ -90,45 +102,83 @@ pub struct SnykArgs {
 struct SnykProvider {}
 
 impl SnykProvider {
+    /// Factory method to create new instance of type.
+    fn new_provider(
+        cx: Context,
+        storage: Box<dyn StorageProvider>,
+    ) -> Result<FindingScanProvider, Error> {
+        let token = harbcore::config::snyk_token().map_err(|e| Error::Config(e.to_string()))?;
+
+        let provider = FindingScanProvider::new(
+            cx.clone(),
+            SnykService::new(token),
+            PackageService::new(cx.clone()),
+            FindingService::new(cx, storage),
+        );
+
+        Ok(provider)
+    }
+
     /// Concrete implementation of the command handler. Responsible for
     /// dispatching command to the correct logic handler based on args passed.
-    async fn execute(args: &Option<SnykArgs>) -> Result<(), Error> {
-        match args {
+    async fn execute(args: &EnrichArgs) -> Result<(), Error> {
+        let storage: Box<dyn StorageProvider>;
+
+        let cx = match &args.debug {
+            false => {
+                storage = Box::new(S3StorageProvider {});
+                harbcore::config::harbor_context().map_err(|e| Error::Config(e.to_string()))?
+            }
+            true => {
+                storage = Box::new(FileSystemStorageProvider::new(
+                    "/tmp/harbor-debug/sboms".to_string(),
+                ));
+                harbcore::config::dev_context(None).map_err(|e| Error::Config(e.to_string()))?
+            }
+        };
+
+        match &args.snyk_args {
             None => {
-                SnykProvider::sync_registry().await?;
+                let provider = SnykProvider::new_provider(cx, storage)?;
+                provider
+                    .execute(entities::packages::FindingProviderKind::Snyk)
+                    .await
+                    .map_err(|e| Error::Sbom(e.to_string()))
             }
-            Some(a) => {
-                SnykProvider::sync_project(a).await?;
-            }
+            Some(_a) => Err(Error::Sbom(
+                "individual project scans not yet implemented".to_string(),
+            )),
         }
-
-        Ok(())
-    }
-
-    /// If no args are passed, the CLI will scan and sync the entire registry.
-    async fn sync_registry() -> Result<(), Error> {
-        // Construct and invoke Core Services here.
-        todo!()
-    }
-
-    // If project args are passed, the CLI will scan and sync a single project.
-    async fn sync_project(_args: &SnykArgs) -> Result<(), Error> {
-        // Construct and invoke Core Services here.
-        todo!()
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::Error;
+    use harbcore::config::dev_context;
+    use harbcore::entities;
+    use harbcore::services::findings::{FileSystemStorageProvider, StorageProvider};
 
     #[async_std::test]
-    async fn can_sync_registry() -> Result<(), Error> {
-        Ok(())
-    }
+    #[ignore = "debug manual only"]
+    async fn can_execute() -> Result<(), Error> {
+        let cx = dev_context(Some("core-test")).map_err(|e| Error::Config(e.to_string()))?;
+        let storage: Box<dyn StorageProvider> = Box::new(FileSystemStorageProvider::new(
+            "/tmp/harbor-debug/findings".to_string(),
+        ));
 
-    #[async_std::test]
-    async fn can_sync_project() -> Result<(), Error> {
-        Ok(())
+        let provider = SnykProvider::new_provider(cx, storage)?;
+
+        match provider
+            .execute(entities::packages::FindingProviderKind::Snyk)
+            .await
+        {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                let msg = e.to_string();
+                Err(Error::Sbom(msg))
+            }
+        }
     }
 }

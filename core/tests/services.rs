@@ -1,4 +1,4 @@
-use harbcore::config::mongo_context;
+use harbcore::config::dev_context;
 use harbcore::entities::teams::*;
 use harbcore::services::teams::TeamService;
 use harbcore::Error;
@@ -16,7 +16,7 @@ fn test_team_model(test_name: &str) -> Team {
 
 #[async_std::test]
 async fn can_crud_team() -> Result<(), Error> {
-    let cx = mongo_context(Some("core-test"))?;
+    let cx = dev_context(Some("core-test"))?;
     let service = TeamService::new(cx);
 
     let mut model = test_team_model("can_crud_team");

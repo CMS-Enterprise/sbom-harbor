@@ -3,7 +3,7 @@ pub use provider::*;
 
 #[cfg(test)]
 mod tests {
-    use crate::config::{mongo_context, snyk_token};
+    use crate::config::{dev_context, snyk_token};
     use crate::entities::sboms::SbomProviderKind;
     use crate::services::packages::PackageService;
     use crate::services::sboms::snyk::provider::SbomScanProvider;
@@ -114,7 +114,7 @@ mod tests {
     }
 
     fn debug_service() -> Result<DebugService, Error> {
-        let cx = mongo_context(Some("core-test"))?;
+        let cx = dev_context(Some("core-test"))?;
 
         let service = DebugService::new(cx);
         Ok(service)
@@ -122,7 +122,7 @@ mod tests {
 
     fn test_service() -> Result<SbomScanProvider, Error> {
         let token = snyk_token()?;
-        let cx = mongo_context(Some("core-test"))?;
+        let cx = dev_context(Some("core-test"))?;
 
         let service = SbomScanProvider::new(
             cx.clone(),

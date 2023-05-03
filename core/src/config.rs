@@ -1,94 +1,7 @@
 use crate::Error;
 use platform::config::from_env;
-use platform::mongodb::{Context, ContextKind};
-use std::str::FromStr;
-
-enum Environ {
-    Local,
-    CI,
-    Dev,
-    Prod,
-}
-
-impl FromStr for Environ {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let environ = s.to_lowercase();
-        match environ.as_str() {
-            "local" => Ok(Self::Local),
-            "ci" => Ok(Self::CI),
-            "dev" => Ok(Self::Dev),
-            "prod" => Ok(Self::Prod),
-            _ => Ok(Self::Local),
-        }
-    }
-}
-
-/// Returns a Mongo Context based on environment. Defaults to local dev environment if not set.
-/// Optionally accepts a DB name. Defaults to `harbor`. Useful for overriding in tests.
-pub fn mongo_context(db_name: Option<&str>) -> Result<Context, Error> {
-    let db_name = match db_name {
-        None => "harbor",
-        Some(db_name) => db_name,
-    };
-
-    let mut cx = Context {
-        kind: ContextKind::Mongo,
-        host: "".to_string(),
-        username: "".to_string(),
-        password: "".to_string(),
-        port: 0,
-        db_name: db_name.to_string(),
-        key_name: "id".to_string(),
-        region: None,
-        cluster_name: None,
-        account_name: None,
-    };
-
-    build_context(&mut cx)?;
-
-    Ok(cx)
-}
-
-fn build_context(cx: &mut Context) -> Result<(), Error> {
-    let environ = environment();
-
-    match environ {
-        Environ::Local => {
-            cx.host = "localhost".to_string();
-            cx.port = 27017;
-            cx.username = "root".to_string();
-            cx.password = "harbor".to_string();
-        }
-        Environ::CI => {
-            cx.host = "mongo".to_string();
-            cx.port = 27017;
-            cx.username = "root".to_string();
-            cx.password = "harbor".to_string();
-        }
-        Environ::Dev | Environ::Prod => {
-            cx.port = 27017;
-            cx.username = from_env("DOCDB_USERNAME").expect("username required");
-            cx.password = from_env("DOCDB_PASSWORD").expect("password required");
-            cx.cluster_name = Some(from_env("DOCDB_CLUSTER_NAME").expect("cluster name required"));
-            cx.region = Some(from_env("DOCDB_REGION").expect("region required"));
-        }
-    };
-
-    Ok(())
-}
-
-/// Returns the runtime environment from environment variables. Defaults to [Environ::Local].
-fn environment() -> Environ {
-    match from_env("ENVIRONMENT") {
-        None => Environ::Local,
-        Some(environ) => match Environ::from_str(environ.as_str()) {
-            Ok(e) => e,
-            Err(_) => Environ::Local,
-        },
-    }
-}
+use platform::mongodb::Context;
+use serde::{Deserialize, Serialize};
 
 /// Returns the Snyk API token from an environment variable.
 pub fn snyk_token() -> Result<String, Error> {
@@ -103,5 +16,74 @@ pub fn harbor_bucket() -> Result<String, Error> {
     match from_env("HARBOR_FILE_STORE") {
         None => Err(Error::Config("Harbor bucket not set".to_string())),
         Some(v) => Ok(v),
+    }
+}
+
+/// Returns a Mongo Context for used with the local devenv. Used by tests or for local development.
+pub fn dev_context(db_name: Option<&str>) -> Result<Context, Error> {
+    let db_name = match db_name {
+        None => "harbor",
+        Some(db_name) => db_name,
+    };
+
+    Ok(Context {
+        host: "localhost".to_string(),
+        username: "root".to_string(),
+        password: "harbor".to_string(),
+        port: 27017,
+        db_name: db_name.to_string(),
+        key_name: "id".to_string(),
+        connection_uri: None,
+    })
+}
+
+/// Returns a Context specific to the Harbor teams deployment environment.
+pub fn harbor_context() -> Result<Context, Error> {
+    let raw_config = match from_env("DOCDB_CONFIG") {
+        None => {
+            return Err(Error::Config("DocumentDB config not set".to_string()));
+        }
+        Some(raw_config) => raw_config,
+    };
+
+    let cfg: DocDbConfig = serde_json::from_str(raw_config.as_str())
+        .map_err(|e| Error::Serde(format!("invalid DocumentDB config::{}", e)))?;
+
+    Ok(cfg.to_context())
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct DocDbConfig {
+    username: String,
+    password: String,
+    engine: String,
+    port: u32,
+    host: String,
+    tls: bool,
+    #[serde(rename = "dbInstanceIdentifier")]
+    db_instance_identifier: String,
+}
+
+impl DocDbConfig {
+    fn to_context(&self) -> Context {
+        let connection_uri = format!(
+            "mongodb://{}:{}@{}.{}:{}/?tls={}&tlsCAFile=global-bundle.pem",
+            self.username,
+            self.password,
+            self.db_instance_identifier,
+            self.host,
+            self.port,
+            self.tls
+        );
+
+        Context {
+            host: "".to_string(),
+            username: "".to_string(),
+            password: "".to_string(),
+            port: 0,
+            db_name: "harbor".to_string(),
+            key_name: "id".to_string(),
+            connection_uri: Some(connection_uri),
+        }
     }
 }

@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use platform::auth::*;
 use platform::mongodb::auth::DefaultAuthorizer;
-use platform::mongodb::{Context, ContextKind, MongoDocument, Store};
+use platform::mongodb::{Context, MongoDocument, Store};
 use platform::Error;
 
 pub const DB_IDENTIFIER: &str = "platform";
@@ -15,16 +15,13 @@ pub const COLLECTION: &str = "Group";
 #[allow(dead_code)]
 pub async fn local_context() -> Result<Context, Error> {
     let cx: Context = Context {
-        kind: ContextKind::Mongo,
         host: "localhost".to_string(),
         username: "root".to_string(),
         password: "harbor".to_string(),
         port: 27017,
         db_name: DB_IDENTIFIER.to_string(),
         key_name: KEY_NAME.to_string(),
-        region: None,
-        cluster_name: None,
-        account_name: None,
+        connection_uri: None,
     };
 
     let client = MongoClient::with_uri_str(cx.connection_uri()?).await?;

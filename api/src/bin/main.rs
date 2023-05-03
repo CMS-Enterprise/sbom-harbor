@@ -5,7 +5,7 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use harbcore::config::mongo_context;
+use harbcore::config::dev_context;
 use std::net::SocketAddr;
 use std::time::Duration;
 use tower_http::cors::{Any, CorsLayer};
@@ -75,7 +75,9 @@ async fn main() {
     // Load injectable types.
     // let config = sdk_config_from_env().await.expect("failed to load config from environment");
     // let authorizer = Authorizer::new(&config).unwrap().expect("failed to load authorizer");
-    let cx = match mongo_context(None) {
+
+    // TODO: Figure out how to dynamically swap between debug vs. production context.
+    let cx = match dev_context(None) {
         Ok(cx) => cx,
         Err(e) => {
             trace!("unable to retrieve connection config: {}", e);

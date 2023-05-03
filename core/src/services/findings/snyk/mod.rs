@@ -3,7 +3,7 @@ pub use provider::*;
 
 #[cfg(test)]
 mod tests {
-    use crate::config::{mongo_context, snyk_token};
+    use crate::config::{dev_context, snyk_token};
     use crate::entities::packages::FindingProviderKind;
     use crate::services::findings::snyk::provider::FindingScanProvider;
     use crate::services::findings::{FileSystemStorageProvider, FindingProvider, FindingService};
@@ -30,7 +30,7 @@ mod tests {
 
     fn test_service() -> Result<FindingScanProvider, Error> {
         let token = snyk_token()?;
-        let cx = mongo_context(Some("core-test"))?;
+        let cx = dev_context(Some("core-test"))?;
         let service = FindingScanProvider::new(
             cx.clone(),
             SnykService::new(token),
