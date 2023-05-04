@@ -48,13 +48,14 @@ impl Store {
             .set_key(Some(key.clone()))
             .set_body(body)
             .set_metadata(metadata)
-            .set_bucket(Some(bucket_name))
+            .set_bucket(Some(bucket_name.clone()))
             //.set_checksum_sha256(checksum_256.clone())
             .send()
             .await
         {
             Ok(_result) => Ok(()),
             Err(e) => {
+                println!("s3_error::{}::{}", bucket_name, e);
                 let raw = e.to_string();
                 let msg = e.into_service_error();
                 let msg = match msg.message() {
