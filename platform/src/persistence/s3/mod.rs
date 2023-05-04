@@ -42,40 +42,41 @@ impl Store {
         let client = Client::new(&self.config);
         let body = Some(ByteStream::from(body));
 
-        let result = match client
+        // TODO: Come back to checksum handling.
+        return match client
             .put_object()
             .set_key(Some(key.clone()))
             .set_body(body)
             .set_metadata(metadata)
             .set_bucket(Some(bucket_name))
-            .set_checksum_sha256(checksum_256.clone())
+            //.set_checksum_sha256(checksum_256.clone())
             .send()
             .await
         {
-            Ok(result) => result,
+            Ok(_result) => Ok(()),
             Err(e) => {
                 let msg = e.into_service_error();
                 let msg = msg.message().unwrap();
                 println!("{}", msg);
-                return Err(Error::S3(msg.to_string()));
+                Err(Error::S3(msg.to_string()))
             }
         };
 
-        match checksum_256 {
-            None => {}
-            Some(checksum_256) => match result.checksum_sha256() {
-                None => {
-                    return Err(Error::S3("checksum_failure".to_string()));
-                }
-                Some(checksum) => {
-                    if !checksum_256.as_str().eq(checksum) {
-                        return Err(Error::S3("checksum_mismatch".to_string()));
-                    }
-                }
-            },
-        }
+        // match checksum_256 {
+        //     None => {}
+        //     Some(checksum_256) => match result.checksum_sha256() {
+        //         None => {
+        //             return Err(Error::S3("checksum_failure".to_string()));
+        //         }
+        //         Some(checksum) => {
+        //             if !checksum_256.as_str().eq(checksum) {
+        //                 return Err(Error::S3("checksum_mismatch".to_string()));
+        //             }
+        //         }
+        //     },
+        // }
 
-        Ok(())
+        // Ok(())
     }
 
     /// Inserts an object to S3. If checksum is passed, it must be base64 encoded. Returns the

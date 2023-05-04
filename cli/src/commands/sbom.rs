@@ -179,11 +179,12 @@ impl SnykProvider {
                     .await
                     .map_err(|e| Error::Sbom(e.to_string()))
             }
-            Some(args) => match (&args.org_id, &args.project_id) {
-                (_, _) => Err(Error::Sbom(
+            Some(args) => {
+                let (_, _) = (&args.org_id, &args.project_id);
+                Err(Error::Sbom(
                     "individual project scans not yet implemented".to_string(),
-                )),
-            },
+                ))
+            }
         }
     }
 }
