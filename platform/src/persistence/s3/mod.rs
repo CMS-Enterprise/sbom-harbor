@@ -68,6 +68,23 @@ impl Store {
         body: Vec<u8>,
         metadata: Option<HashMap<String, String>>,
     ) -> Result<(), Error> {
+        println!("config::{:#?}", self.config);
+
+        let raw_body = match String::from_utf8(body.clone()) {
+            Ok(r) => r,
+            Err(e) => {
+                format!("body_err::{}", e)
+            }
+        };
+        println!("body::{}", raw_body);
+
+        match metadata.clone() {
+            None => {}
+            Some(m) => {
+                println!("{:#?}", m)
+            }
+        }
+
         let client = Client::new(&self.config);
         // let body = Some(ByteStream::from(body));
         let body = ByteStream::from(body);
