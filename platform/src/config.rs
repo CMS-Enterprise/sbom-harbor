@@ -1,6 +1,6 @@
 use aws_config as sdk;
-use sdk::environment::region::EnvironmentVariableRegionProvider;
-use sdk::meta::region::RegionProviderChain;
+// use sdk::environment::region::EnvironmentVariableRegionProvider;
+// use sdk::meta::region::RegionProviderChain;
 use sdk::SdkConfig;
 use serde::Deserialize;
 use std::env::VarError;
@@ -32,11 +32,12 @@ pub fn from_env(key: &str) -> Option<String> {
 
 /// Retrieves the AWS SDK config using the default [RegionProviderChain].
 pub async fn sdk_config_from_env() -> Result<SdkConfig, Error> {
-    let region_provider =
-        RegionProviderChain::default_provider().or_else(EnvironmentVariableRegionProvider::new());
+    // let region_provider =
+    //     RegionProviderChain::default_provider().or_else(EnvironmentVariableRegionProvider::new());
+    //
+    // let config = sdk::from_env().region(region_provider).load().await;
 
-    let config = sdk::from_env().region(region_provider).load().await;
-
+    let config = aws_config::load_from_env().await;
     Ok(config)
 }
 

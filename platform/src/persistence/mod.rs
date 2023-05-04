@@ -32,9 +32,9 @@ mod tests {
             )
             .await?;
 
-        // store
-        //     .delete(bucket_name, "can-store-file-to-s3".to_string())
-        //     .await?;
+        store
+            .delete(bucket_name, "can-store-file-to-s3".to_string())
+            .await?;
 
         Ok(())
     }
