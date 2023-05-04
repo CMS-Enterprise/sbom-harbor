@@ -55,10 +55,14 @@ impl Store {
         {
             Ok(_result) => Ok(()),
             Err(e) => {
+                let raw = e.to_string();
                 let msg = e.into_service_error();
-                let msg = msg.message().unwrap();
+                let msg = match msg.message() {
+                    None => format!("service_error_none::{}", raw),
+                    Some(msg) => msg.to_string(),
+                };
                 println!("{}", msg);
-                Err(Error::S3(msg.to_string()))
+                Err(Error::S3(msg))
             }
         };
 
