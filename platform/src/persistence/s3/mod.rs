@@ -1,13 +1,8 @@
 use crate::config::sdk_config_from_env;
-// use aws_sdk_cognitoidentityprovider::types::SdkError;
-// use aws_sdk_s3::error::PutObjectError;
 use aws_sdk_s3::types::ByteStream;
 use aws_sdk_s3::Client;
 use aws_types::SdkConfig;
-// use core::error::Source;
 use std::collections::HashMap;
-// use std::error::Error;
-// use thiserror::__private::AsDynError;
 use tracing::instrument;
 
 use crate::Error;
@@ -61,17 +56,7 @@ impl Store {
         {
             Ok(_result) => Ok(()),
             Err(e) => {
-                println!("s3_error_raw::{}::{}", bucket_name, e);
-                // match e.into_source() {
-                //     Ok(source_err) => match source_err.as_ref()..source() {
-                //         None => {}
-                //         Some(err) => {}
-                //     },
-                //     Err(e) => {
-                //         println!("source_conversion_err::{}", e);
-                //     }
-                // };
-
+                println!("s3_error_raw::{}::{}::{}", bucket_name, key, e);
                 let raw = e.to_string();
                 let msg = e.into_service_error();
                 let msg = match msg.message() {
