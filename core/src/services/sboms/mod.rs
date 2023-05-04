@@ -147,6 +147,7 @@ impl StorageProvider for S3StorageProvider {
         xref: &Option<Xref>,
     ) -> Result<String, Error> {
         let purl = &sbom.purl()?;
+        let purl = Purl::format_file_name(purl.as_str());
 
         let metadata = xref.as_ref().map(xrefs::flatten);
 

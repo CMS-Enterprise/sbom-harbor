@@ -50,7 +50,7 @@ impl Purl {
 
     /// Generates a path safe file name from a Package URL.
     pub(crate) fn format_file_name(purl: &str) -> String {
-        purl.replace('/', "_")
+        purl.replace(['@', '/'], "_")
     }
 
     pub(crate) fn from_component(

@@ -1,4 +1,5 @@
 use crate::config::sdk_config_from_env;
+use aws_sdk_s3::error::PutObjectError;
 use aws_sdk_s3::types::ByteStream;
 use aws_sdk_s3::Client;
 use aws_types::SdkConfig;
@@ -11,6 +12,34 @@ use crate::Error;
 #[derive(Debug)]
 pub struct Store {
     config: SdkConfig,
+}
+
+/// Custom S3Error type.
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct S3Error {
+    message: String,
+    code: String,
+    request_id: String,
+}
+
+impl From<PutObjectError> for S3Error {
+    fn from(error: PutObjectError) -> Self {
+        Self {
+            message: match error.message() {
+                None => "not_set".to_string(),
+                Some(m) => m.to_string(),
+            },
+            code: match error.code() {
+                None => "not_set".to_string(),
+                Some(c) => c.to_string(),
+            },
+            request_id: match error.request_id() {
+                None => "not_set".to_string(),
+                Some(r) => r.to_string(),
+            },
+        }
+    }
 }
 
 impl Store {
@@ -44,7 +73,7 @@ impl Store {
         let body = ByteStream::from(body);
 
         // TODO: Come back to checksum handling.
-        return match client
+        match client
             .put_object()
             .bucket(bucket_name.clone())
             .key(key.clone())
@@ -58,15 +87,19 @@ impl Store {
             Err(e) => {
                 println!("s3_error_raw::{}::{}::{}", bucket_name, key, e);
                 let raw = e.to_string();
+                println!("{}", raw);
                 let msg = e.into_service_error();
-                let msg = match msg.message() {
-                    None => format!("service_error_none::{}", raw),
-                    Some(msg) => msg.to_string(),
-                };
-                println!("{}", msg);
-                Err(Error::S3(msg))
+                let custom = S3Error::from(msg);
+                println!("{:#?}", custom);
+
+                // let msg = match msg.message() {
+                //     None => format!("service_error_none::{}", raw),
+                //     Some(msg) => msg.to_string(),
+                // };
+                // println!("{}", msg);
+                Err(Error::S3(format!("{:#?}", custom)))
             }
-        };
+        }
 
         // match checksum_256 {
         //     None => {}
