@@ -1,6 +1,6 @@
 use crate::config::sdk_config_from_env;
 use aws_sdk_s3::error::PutObjectError;
-use aws_sdk_s3::types::ByteStream;
+use aws_sdk_s3::types::{ByteStream, DisplayErrorContext};
 use aws_sdk_s3::Client;
 use aws_types::SdkConfig;
 use std::collections::HashMap;
@@ -70,21 +70,6 @@ impl Store {
     ) -> Result<(), Error> {
         println!("config::{:#?}", self.config);
 
-        let raw_body = match String::from_utf8(body.clone()) {
-            Ok(r) => r,
-            Err(e) => {
-                format!("body_err::{}", e)
-            }
-        };
-        println!("body::{}", raw_body);
-
-        match metadata.clone() {
-            None => {}
-            Some(m) => {
-                println!("{:#?}", m)
-            }
-        }
-
         let client = Client::new(&self.config);
         // let body = Some(ByteStream::from(body));
         let body = ByteStream::from(body);
@@ -102,6 +87,8 @@ impl Store {
         {
             Ok(_result) => Ok(()),
             Err(e) => {
+                println!("{}", DisplayErrorContext(&e));
+
                 println!("s3_error_raw::{}::{}::{}", bucket_name, key, e);
                 let raw = e.to_string();
                 println!("{}", raw);
