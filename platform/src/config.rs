@@ -1,6 +1,4 @@
 use aws_config as sdk;
-// use sdk::environment::region::EnvironmentVariableRegionProvider;
-// use sdk::meta::region::RegionProviderChain;
 use sdk::SdkConfig;
 use serde::Deserialize;
 use std::env::VarError;

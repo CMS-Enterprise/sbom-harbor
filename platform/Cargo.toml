@@ -21,6 +21,7 @@ futures-util = "0.3.19"
 hyper = { version = "0.14", features = ["full"] }
 hyper-rustls = { version = "0.23.1", features =["http2"] }
 mongodb = { version = "2.3.1", features = ["aws-auth", "tokio-runtime"] }
+regex = "1.7.3"
 ring = "0.16.20"
 serde = "1.0.147"
 serde_derive = "1.0.147"

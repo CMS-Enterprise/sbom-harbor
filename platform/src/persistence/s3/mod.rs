@@ -6,6 +6,7 @@ use aws_types::SdkConfig;
 use std::collections::HashMap;
 use tracing::instrument;
 
+use crate::hyper::format_header_name;
 use crate::Error;
 
 /// Provides a coarse-grained abstraction over S3 that conforms to the conventions of this crate.
@@ -69,6 +70,19 @@ impl Store {
         metadata: Option<HashMap<String, String>>,
     ) -> Result<(), Error> {
         println!("config::{:#?}", self.config);
+
+        let metadata = match metadata {
+            Some(incoming) => {
+                let mut result = HashMap::<String, String>::new();
+
+                for (k, v) in incoming.iter() {
+                    result.insert(format_header_name(k), v.to_string());
+                }
+
+                Some(result)
+            }
+            None => None,
+        };
 
         let client = Client::new(&self.config);
         // let body = Some(ByteStream::from(body));
