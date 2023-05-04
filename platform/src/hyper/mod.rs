@@ -127,7 +127,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
         .enable_http2()
         .build();
 
-    let client: NativeClient<_, hyper::Body> = NativeClient::builder().build(https);
+    let client: NativeClient<_, Body> = NativeClient::builder().build(https);
 
     let resp = match client.request(req).await {
         Ok(r) => r,

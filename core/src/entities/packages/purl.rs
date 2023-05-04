@@ -52,8 +52,7 @@ impl Purl {
     /// Generates a path safe file name from a Package URL.
     pub(crate) fn format_file_name(purl: &str) -> String {
         let re = Regex::new(r"[^A-Za-z0-9]").unwrap();
-        re.replace_all(purl, "_").to_string()
-        // purl.replace(['@', '/', ':', '/'], "_")
+        re.replace_all(purl, "-").to_string()
     }
 
     pub(crate) fn from_component(

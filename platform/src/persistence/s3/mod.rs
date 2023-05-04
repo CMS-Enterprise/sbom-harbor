@@ -69,8 +69,6 @@ impl Store {
         body: Vec<u8>,
         metadata: Option<HashMap<String, String>>,
     ) -> Result<(), Error> {
-        println!("config::{:#?}", self.config);
-
         let metadata = match metadata {
             Some(incoming) => {
                 let mut result = HashMap::<String, String>::new();
@@ -85,7 +83,6 @@ impl Store {
         };
 
         let client = Client::new(&self.config);
-        // let body = Some(ByteStream::from(body));
         let body = ByteStream::from(body);
 
         // TODO: Come back to checksum handling.
@@ -101,21 +98,9 @@ impl Store {
         {
             Ok(_result) => Ok(()),
             Err(e) => {
-                println!("{}", DisplayErrorContext(&e));
-
-                println!("s3_error_raw::{}::{}::{}", bucket_name, key, e);
-                let raw = e.to_string();
-                println!("{}", raw);
-                let msg = e.into_service_error();
-                let custom = S3Error::from(msg);
-                println!("{:#?}", custom);
-
-                // let msg = match msg.message() {
-                //     None => format!("service_error_none::{}", raw),
-                //     Some(msg) => msg.to_string(),
-                // };
-                // println!("{}", msg);
-                Err(Error::S3(format!("{:#?}", custom)))
+                let msg = DisplayErrorContext(&e);
+                println!("{}", msg);
+                Err(Error::S3(format!("{:#?}", msg)))
             }
         }
 
