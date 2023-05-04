@@ -35,20 +35,21 @@ impl Store {
         &self,
         bucket_name: String,
         key: String,
-        checksum_256: Option<String>,
+        _checksum_256: Option<String>,
         body: Vec<u8>,
         metadata: Option<HashMap<String, String>>,
     ) -> Result<(), Error> {
         let client = Client::new(&self.config);
-        let body = Some(ByteStream::from(body));
+        // let body = Some(ByteStream::from(body));
+        let body = ByteStream::from(body);
 
         // TODO: Come back to checksum handling.
         return match client
             .put_object()
-            .set_key(Some(key.clone()))
-            .set_body(body)
+            .key(key.clone())
+            .body(body)
             .set_metadata(metadata)
-            .set_bucket(Some(bucket_name.clone()))
+            .bucket(bucket_name.clone())
             //.set_checksum_sha256(checksum_256.clone())
             .send()
             .await

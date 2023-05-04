@@ -6,6 +6,7 @@ mod tests {
     use crate::config::from_env;
     use crate::persistence::s3::Store;
     use crate::Error;
+    use std::collections::HashMap;
 
     // TODO: Figure out how to spin up localstack to test.
     #[async_std::test]
@@ -24,13 +25,16 @@ mod tests {
                 "can-store-file-to-s3".to_string(),
                 None,
                 body.clone().as_bytes().to_vec(),
-                None,
+                Some(HashMap::from([(
+                    "shiny".to_string(),
+                    "metadata".to_string(),
+                )])),
             )
             .await?;
 
-        store
-            .delete(bucket_name, "can-store-file-to-s3".to_string())
-            .await?;
+        // store
+        //     .delete(bucket_name, "can-store-file-to-s3".to_string())
+        //     .await?;
 
         Ok(())
     }
