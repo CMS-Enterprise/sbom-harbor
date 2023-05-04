@@ -1,3 +1,4 @@
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -50,7 +51,9 @@ impl Purl {
 
     /// Generates a path safe file name from a Package URL.
     pub(crate) fn format_file_name(purl: &str) -> String {
-        purl.replace(['@', '/'], "_")
+        let re = Regex::new(r"[^A-Za-z0-9]").unwrap();
+        re.replace_all(purl, "_").to_string()
+        // purl.replace(['@', '/', ':', '/'], "_")
     }
 
     pub(crate) fn from_component(
