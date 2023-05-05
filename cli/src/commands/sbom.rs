@@ -198,7 +198,7 @@ mod tests {
 
     #[async_std::test]
     #[ignore = "debug manual only"]
-    async fn can_execute() -> Result<(), Error> {
+    async fn can_execute_snyk() -> Result<(), Error> {
         let cx = dev_context(Some("core-test")).map_err(|e| Error::Config(e.to_string()))?;
 
         let storage: Box<dyn StorageProvider> = Box::new(FileSystemStorageProvider::new(

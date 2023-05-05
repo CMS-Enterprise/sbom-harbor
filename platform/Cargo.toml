@@ -5,6 +5,10 @@ rust-version.workspace = true
 authors.workspace = true
 edition.workspace = true
 documentation.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+readme.workspace = true
 
 [dependencies]
 async-trait = "0.1.63"

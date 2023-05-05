@@ -70,6 +70,7 @@ impl FindingScanProvider {
         &self,
         scan: &mut Scan,
     ) -> Result<(), Error> {
+        println!("==> fetching purls");
         // TODO: This needs to actually constrain on Purls that have a Snyk Ref once other
         // Providers start writing to the data store.
         let mut purls: Vec<Purl> = match self.list().await {
@@ -79,7 +80,7 @@ impl FindingScanProvider {
             }
         };
 
-        println!("processing findings for {} purls...", purls.len());
+        println!("==> processing findings for {} purls...", purls.len());
         let mut iteration = 1;
 
         for purl in purls.iter_mut() {
@@ -87,7 +88,9 @@ impl FindingScanProvider {
                 "==> processing iteration {} for purl {}",
                 iteration, purl.purl
             );
+
             iteration += 1;
+
             match self.scan_target(scan, purl).await {
                 Ok(_) => {
                     println!("==> iteration {} succeeded", iteration);
@@ -96,6 +99,7 @@ impl FindingScanProvider {
                     // Don't fail on a single error.  Don't add errors to change_set, it should
                     // have been done by process_purl.
                     println!("==> iteration {} failed with error: {}", iteration, e);
+                    scan.ref_errs(purl.purl.clone(), e.to_string());
                 }
             }
         }

@@ -69,7 +69,7 @@ mod tests {
                         "can_store_sbom_change_set_from_local::process_project::{}",
                         msg
                     );
-                    scan.ref_errs(project.id.clone(), e.to_string())
+                    scan.ref_errs(project.project_id.clone(), e.to_string())
                 }
                 _ => {}
             }

@@ -67,6 +67,7 @@ impl SbomScanProvider {
 
     /// Builds the Packages Dependencies, Purls, and Unsupported from the Snyk API.
     pub(crate) async fn scan_targets(&self, scan: &mut Scan) -> Result<(), Error> {
+        println!("==> fetching projects");
         let mut projects = match self.snyk.projects().await {
             Ok(p) => p,
             Err(e) => {
@@ -80,17 +81,26 @@ impl SbomScanProvider {
             return Err(Error::Snyk("scan_targets::no_projects".to_string()));
         }
 
+        println!("==> found {} projects", projects.len());
+        let mut iteration = 1;
+
         for project in projects.iter_mut() {
-            println!("===> processing project {}", project.id);
+            println!(
+                "==> processing iteration {} for project {}",
+                iteration, project.project_name
+            );
+
+            iteration += 1;
+
             match self.scan_target(scan, project).await {
                 Ok(()) => {
                     // TODO: Emit Metric
-                    println!("===> project success {}", project.id);
+                    println!("==> iteration {} succeeded", iteration);
                 }
                 Err(e) => {
                     // TODO: Emit Metric
-                    println!("===> project error {} {}", project.id, e);
-                    scan.ref_errs(project.id.clone(), e.to_string());
+                    println!("==> iteration {} failed with error: {}", iteration, e);
+                    scan.ref_errs(project.project_id.clone(), e.to_string());
                 }
             }
         }
