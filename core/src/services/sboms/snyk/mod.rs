@@ -13,14 +13,15 @@ mod tests {
     use crate::services::snyk::SnykService;
     use crate::services::snyk::API_VERSION;
     use crate::Error;
-    use platform::mongodb::{Context, Service};
+    use platform::mongodb::{Service, Store};
     use std::fmt::Debug;
+    use std::sync::Arc;
     use tracing::log::debug;
 
     #[async_std::test]
     #[ignore = "used to load projects from Snyk to local Mongo for debugging"]
     async fn load_projects_from_snyk() -> Result<(), Error> {
-        let debug_service = debug_service()?;
+        let debug_service = debug_service().await?;
 
         match debug_service.load_projects_from_snyk().await {
             Ok(()) => {}
@@ -37,13 +38,13 @@ mod tests {
     #[async_std::test]
     #[ignore = "used to debug building changesets from local mongo instance"]
     async fn can_scan_sboms_from_local() -> Result<(), Error> {
-        let debug_service = debug_service()?;
+        let debug_service = debug_service().await?;
         let mut projects = debug_service.projects().await?;
 
         // Take a subset
         //let mut projects = &mut projects[0..5];
 
-        let service = test_service()?;
+        let service = test_service().await?;
         let mut scan = match SbomProvider::init_scan(
             &service,
             SbomProviderKind::Snyk {
@@ -81,7 +82,7 @@ mod tests {
     #[async_std::test]
     #[ignore = "manual_debug_test"]
     async fn can_scan_sboms() -> Result<(), Error> {
-        let service = test_service()?;
+        let service = test_service().await?;
 
         let mut scan = match SbomProvider::init_scan(
             &service,
@@ -113,23 +114,25 @@ mod tests {
         Ok(())
     }
 
-    fn debug_service() -> Result<DebugService, Error> {
+    async fn debug_service() -> Result<DebugService, Error> {
         let cx = dev_context(Some("core-test"))?;
+        let store = Arc::new(Store::new(&cx).await?);
 
-        let service = DebugService::new(cx);
+        let service = DebugService::new(store);
         Ok(service)
     }
 
-    fn test_service() -> Result<SbomScanProvider, Error> {
+    async fn test_service() -> Result<SbomScanProvider, Error> {
         let token = snyk_token()?;
         let cx = dev_context(Some("core-test"))?;
+        let store = Arc::new(Store::new(&cx).await?);
 
         let service = SbomScanProvider::new(
-            cx.clone(),
+            store.clone(),
             SnykService::new(token),
-            PackageService::new(cx.clone()),
+            PackageService::new(store.clone()),
             SbomService::new(
-                cx.clone(),
+                store,
                 Box::new(FileSystemStorageProvider::new(
                     "/tmp/harbor/sboms".to_string(),
                 )),
@@ -142,18 +145,18 @@ mod tests {
     /// Used for manual local debugging.
     #[derive(Debug)]
     struct DebugService {
-        cx: Context,
+        store: Arc<Store>,
     }
 
     impl Service<Project> for DebugService {
-        fn cx(&self) -> &Context {
-            &self.cx
+        fn store(&self) -> Arc<Store> {
+            self.store.clone()
         }
     }
 
     impl DebugService {
-        fn new(cx: Context) -> DebugService {
-            DebugService { cx }
+        fn new(store: Arc<Store>) -> DebugService {
+            DebugService { store }
         }
 
         // Use this to load projects that have already been stored. Speeds up testing dramatically.
@@ -163,7 +166,7 @@ mod tests {
 
         // Use this when you need to reload the projects to the local mongo instance.
         async fn load_projects_from_snyk(&self) -> Result<(), Error> {
-            let snyk_service = test_service()?;
+            let snyk_service = test_service().await?;
 
             let mut projects = match snyk_service.snyk.projects().await {
                 Ok(p) => p,

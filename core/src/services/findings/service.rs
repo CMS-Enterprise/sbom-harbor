@@ -3,26 +3,27 @@ use crate::entities::sboms::Sbom;
 use crate::entities::scans::ScanRef;
 use crate::services::findings::StorageProvider;
 use crate::Error;
-use platform::mongodb::{Context, Service};
+use platform::mongodb::{Service, Store};
 use std::fmt::Debug;
+use std::sync::Arc;
 
 /// Provides Finding related data management capabilities.
 #[derive(Debug)]
 pub struct FindingService {
-    cx: Context,
+    store: Arc<Store>,
     pub(crate) storage: Box<dyn StorageProvider>,
 }
 
 impl Service<Sbom> for FindingService {
-    fn cx(&self) -> &Context {
-        &self.cx
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
     }
 }
 
 impl FindingService {
     /// Factory method to create new instances of type.
-    pub fn new(cx: Context, storage: Box<dyn StorageProvider>) -> Self {
-        Self { cx, storage }
+    pub fn new(store: Arc<Store>, storage: Box<dyn StorageProvider>) -> Self {
+        Self { store, storage }
     }
 
     /// Stores the set of [Finding] instances for a [Purl] using the configured [StorageProvider].

@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use crate::entities::packages::{Finding, Purl};
 use crate::entities::scans::Scan;
 use crate::entities::xrefs::XrefKind;
@@ -7,34 +8,34 @@ use crate::services::scans::ScanProvider;
 use crate::services::snyk::{SnykService, SNYK_DISCRIMINATOR};
 use crate::Error;
 use async_trait::async_trait;
-use platform::mongodb::{Context, Service};
+use platform::mongodb::{Service, Store};
 use tracing::log::debug;
 
 /// Analyzes the full set of [Purl] entities that have a Snyk [Xref] for new [Finding]s.
 #[derive(Debug)]
 pub struct FindingScanProvider {
-    cx: Context,
+    store: Arc<Store>,
     snyk: SnykService,
     pub(in crate::services::findings::snyk) packages: PackageService,
     findings: FindingService,
 }
 
-impl ScanProvider<'_> for FindingScanProvider {}
+impl ScanProvider for FindingScanProvider {}
 
 impl Service<Purl> for FindingScanProvider {
-    fn cx(&self) -> &Context {
-        &self.cx
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
     }
 }
 
 impl Service<Scan> for FindingScanProvider {
-    fn cx(&self) -> &Context {
-        &self.cx
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
     }
 }
 
 #[async_trait]
-impl FindingProvider<'_> for FindingScanProvider {
+impl FindingProvider for FindingScanProvider {
     async fn scan(&self, scan: &mut Scan) -> Result<(), Error> {
         // Populate the ChangeSet
         match self.scan_targets(scan).await {
@@ -52,13 +53,13 @@ impl FindingProvider<'_> for FindingScanProvider {
 impl FindingScanProvider {
     /// Factory method to create new instance of type.
     pub fn new(
-        cx: Context,
+        store: Arc<Store>,
         snyk: SnykService,
         packages: PackageService,
         findings: FindingService,
     ) -> Self {
         Self {
-            cx,
+            store,
             snyk,
             packages,
             findings,

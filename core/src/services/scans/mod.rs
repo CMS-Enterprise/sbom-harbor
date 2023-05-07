@@ -9,7 +9,7 @@ use tracing::log::debug;
 // TODO: Review with the team if Batch is a better model concept than Scan.
 /// Trait that indicates a type supports scanning a set of data.
 #[async_trait]
-pub trait ScanProvider<'a>: Service<Scan> {
+pub trait ScanProvider: Service<Scan> {
     // TODO: This has been further abstracted and generalized in the concurrency feature branch.
 
     /// Performs summary statistics calculations and updates the [Scan] instance in the data store.
@@ -40,7 +40,15 @@ pub trait ScanProvider<'a>: Service<Scan> {
         match self.update(scan).await {
             Ok(_) => Ok(()),
             Err(e) => {
-                let msg = format!("commit_scan::store_failed::{}", e);
+                let scan_raw = match serde_json::to_string(&scan) {
+                    Ok(raw) => raw,
+                    Err(serde_err) => {
+                        println!("error serializing scan: {}", serde_err);
+                        "{ err: null }".to_string()
+                    }
+                };
+
+                let msg = format!("commit_scan::store_failed::{} - {}", e, scan_raw);
                 debug!("{}", msg);
                 return Err(Error::Scan(msg));
             }

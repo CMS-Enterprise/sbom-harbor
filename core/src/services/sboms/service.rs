@@ -1,6 +1,7 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
-use platform::mongodb::{Context, Service};
+use platform::mongodb::{Service, Store};
 
 use crate::entities::sboms::Sbom;
 use crate::entities::xrefs::Xref;
@@ -32,20 +33,20 @@ impl XrefService<Sbom> for SbomService {}
 /// Provides SBOM related capabilities.
 #[derive(Debug)]
 pub struct SbomService {
-    cx: Context,
+    store: Arc<Store>,
     storage: Box<dyn StorageProvider>,
 }
 
 impl Service<Sbom> for SbomService {
-    fn cx(&self) -> &Context {
-        &self.cx
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
     }
 }
 
 impl SbomService {
     /// Factory method for creating new instance of type.
-    pub fn new(cx: Context, storage: Box<dyn StorageProvider>) -> Self {
-        Self { cx, storage }
+    pub fn new(store: Arc<Store>, storage: Box<dyn StorageProvider>) -> Self {
+        Self { store, storage }
     }
 
     /// Stores the SBOM to the configured persistence provider using the Purl as the unique
@@ -75,7 +76,7 @@ impl SbomService {
         Ok(())
     }
 
-    /// Find an [Sbom] by it's Package URL.
+    /// Find an [Sbom] by its Package URL.
     pub async fn find_by_purl(&self, purl: &Option<String>) -> Result<Vec<Sbom>, Error> {
         match purl {
             None => Err(Error::Entity("sbom_purl_none".to_string())),

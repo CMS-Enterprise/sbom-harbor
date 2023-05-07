@@ -1,22 +1,23 @@
-use platform::mongodb::{Context, Service};
+use platform::mongodb::{Service, Store};
+use std::sync::Arc;
 
 use crate::entities::teams::Team;
 
 /// Contains all domain and transaction logic related to [Teams] and their subordinate entities.
 #[derive(Debug)]
 pub struct TeamService {
-    cx: Context,
+    store: Arc<Store>,
 }
 
 impl TeamService {
     /// Factory method to create new instance of type.
-    pub fn new(cx: Context) -> TeamService {
-        TeamService { cx }
+    pub fn new(store: Arc<Store>) -> TeamService {
+        TeamService { store }
     }
 }
 
 impl Service<Team> for TeamService {
-    fn cx(&self) -> &Context {
-        &self.cx
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
     }
 }

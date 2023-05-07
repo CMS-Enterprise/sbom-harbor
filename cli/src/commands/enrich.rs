@@ -1,15 +1,14 @@
 use std::str::FromStr;
+use std::sync::Arc;
 
 use clap::builder::PossibleValue;
 use clap::{Parser, ValueEnum};
 use harbcore::entities;
 use harbcore::services::findings::snyk::FindingScanProvider;
-use harbcore::services::findings::{
-    FileSystemStorageProvider, FindingProvider, FindingService, S3StorageProvider, StorageProvider,
-};
+use harbcore::services::findings::{FileSystemStorageProvider, FindingProvider, FindingService, S3StorageProvider, StorageProvider};
 use harbcore::services::packages::PackageService;
 use harbcore::services::snyk::SnykService;
-use platform::mongodb::Context;
+use platform::mongodb::{Context, Store};
 
 use crate::Error;
 
@@ -103,17 +102,18 @@ struct SnykProvider {}
 
 impl SnykProvider {
     /// Factory method to create new instance of type.
-    fn new_provider(
+    async fn new_provider(
         cx: Context,
         storage: Box<dyn StorageProvider>,
     ) -> Result<FindingScanProvider, Error> {
         let token = harbcore::config::snyk_token().map_err(|e| Error::Config(e.to_string()))?;
+        let store = Arc::new(Store::new(&cx).await.map_err(|e|Error::Sbom(e.to_string()))?);
 
         let provider = FindingScanProvider::new(
-            cx.clone(),
+            store.clone(),
             SnykService::new(token),
-            PackageService::new(cx.clone()),
-            FindingService::new(cx, storage),
+            PackageService::new(store.clone()),
+            FindingService::new(store, storage),
         );
 
         Ok(provider)
@@ -139,7 +139,7 @@ impl SnykProvider {
 
         match &args.snyk_args {
             None => {
-                let provider = SnykProvider::new_provider(cx, storage)?;
+                let provider = SnykProvider::new_provider(cx, storage).await?;
                 provider
                     .execute(entities::packages::FindingProviderKind::Snyk)
                     .await
@@ -168,7 +168,7 @@ mod tests {
             "/tmp/harbor-debug/findings".to_string(),
         ));
 
-        let provider = SnykProvider::new_provider(cx, storage)?;
+        let provider = SnykProvider::new_provider(cx, storage).await?;
 
         match provider
             .execute(entities::packages::FindingProviderKind::Snyk)

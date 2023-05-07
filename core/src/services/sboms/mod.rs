@@ -20,7 +20,7 @@ use tracing::log::debug;
 
 /// Service that is capable of synchronizing one or more SBOMs from a dynamic source.
 #[async_trait]
-pub trait SbomProvider<'a>: ScanProvider<'a> {
+pub trait SbomProvider: ScanProvider {
     /// Perform the [Scan] operation.
     async fn execute(&self, provider: SbomProviderKind) -> Result<(), Error> {
         let mut scan = match self.init_scan(provider, None).await {

@@ -14,7 +14,6 @@ readme.workspace = true
 async-std = "1.12.0"
 async-trait = "0.1.63"
 chrono = { version = "0.4.5", features = ["serde"] }
-futures = "0.3.28"
 git2 = "0.16.1"
 jsonwebtoken = "8.2.0"
 regex = "1.7.3"

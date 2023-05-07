@@ -5,7 +5,7 @@ use tracing::instrument;
 
 use harbcore::entities::teams::Team;
 use harbcore::services::teams::TeamService;
-use platform::mongodb::{Context, Service};
+use platform::mongodb::{Service, Store};
 
 use crate::auth::Claims;
 use crate::Error;
@@ -14,8 +14,8 @@ use crate::Error;
 pub type DynTeamService = Arc<TeamService>;
 
 /// Factory method for a new instance of a TeamService.
-pub fn new_service(cx: Context) -> Arc<TeamService> {
-    Arc::new(TeamService::new(cx))
+pub fn new_service(store: Arc<Store>) -> Arc<TeamService> {
+    Arc::new(TeamService::new(store))
 }
 
 // WATCH: Trying to get by without a custom extractor.

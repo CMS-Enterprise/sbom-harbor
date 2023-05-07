@@ -1,44 +1,45 @@
 use crate::entities::packages::{Dependency, Package, Purl, Unsupported};
 use crate::entities::xrefs::Xrefs;
 use crate::Error;
-use platform::mongodb::{Context, Service};
+use platform::mongodb::{Service, Store};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 /// Service that is capable of creating, storing, and managing relationships between one or more
 /// types from the [package] module.
 #[derive(Debug)]
 pub struct PackageService {
-    cx: Context,
+    store: Arc<Store>,
 }
 
 impl Service<Package> for PackageService {
-    fn cx(&self) -> &Context {
-        &self.cx
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
     }
 }
 
 impl Service<Dependency> for PackageService {
-    fn cx(&self) -> &Context {
-        &self.cx
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
     }
 }
 
 impl Service<Purl> for PackageService {
-    fn cx(&self) -> &Context {
-        &self.cx
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
     }
 }
 
 impl Service<Unsupported> for PackageService {
-    fn cx(&self) -> &Context {
-        &self.cx
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
     }
 }
 
 impl PackageService {
     /// Factory method for new instance of type.
-    pub fn new(cx: Context) -> Self {
-        Self { cx }
+    pub fn new(store: Arc<Store>) -> Self {
+        Self { store }
     }
 
     /// Transaction logic for upserting a detected [Package].

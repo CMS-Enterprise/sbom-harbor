@@ -21,7 +21,7 @@ use crate::{config, Error};
 
 /// Service that is capable of synchronizing findings from a dynamic source.
 #[async_trait]
-pub trait FindingProvider<'a>: ScanProvider<'a> {
+pub trait FindingProvider: ScanProvider {
     /// Perform the [Scan] operation.
     async fn execute(&self, provider: FindingProviderKind) -> Result<(), Error> {
         let mut scan = match self.init_scan(provider, None).await {

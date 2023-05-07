@@ -7,6 +7,7 @@ use axum::{
 };
 use harbcore::config::dev_context;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use std::time::Duration;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
@@ -15,6 +16,7 @@ use tracing::{info, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use harbor_api::controllers;
+use platform::mongodb::Store;
 // use harbcore::config::sdk_config_from_env;
 
 const X_API_KEY: &str = "x-api-key";
@@ -85,9 +87,8 @@ async fn main() {
         }
     };
 
-    // let store = Store::new(&cx.unwrap()).await.unwrap();
-
-    let team_service = controllers::team::new_service(cx);
+    let store = Store::new(&cx).await.unwrap();
+    let team_service = controllers::team::new_service(Arc::new(store));
 
     let harbor = Router::new()
         .fallback(handler_404)

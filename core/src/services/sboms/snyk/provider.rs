@@ -11,29 +11,30 @@ use crate::services::packages::PackageService;
 use crate::services::sboms::{SbomProvider, SbomService};
 use crate::services::scans::ScanProvider;
 use async_trait::async_trait;
-use platform::mongodb::{Context, Service};
+use platform::mongodb::{Service, Store};
 use std::collections::HashMap;
+use std::sync::Arc;
 use tracing::debug;
 
 /// Synchronizes a Snyk Group with Harbor.
 #[derive(Debug)]
 pub struct SbomScanProvider {
-    cx: Context,
+    store: Arc<Store>,
     pub(in crate::services::sboms::snyk) snyk: SnykService,
     packages: PackageService,
     sboms: SbomService,
 }
 
-impl ScanProvider<'_> for SbomScanProvider {}
+impl ScanProvider for SbomScanProvider {}
 
 impl Service<Scan> for SbomScanProvider {
-    fn cx(&self) -> &Context {
-        &self.cx
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
     }
 }
 
 #[async_trait]
-impl SbomProvider<'_> for SbomScanProvider {
+impl SbomProvider for SbomScanProvider {
     /// Synchronizes a Snyk Group with Harbor.
     async fn scan(&self, scan: &mut Scan) -> Result<(), Error> {
         // Scan the targets and capture any unrecoverable error.
@@ -52,13 +53,14 @@ impl SbomProvider<'_> for SbomScanProvider {
 impl SbomScanProvider {
     /// Factory method to create new instance of type.
     pub fn new(
-        cx: Context,
+        store: Arc<Store>,
         snyk: SnykService,
         packages: PackageService,
         sboms: SbomService,
     ) -> Self {
+
         Self {
-            cx,
+            store,
             snyk,
             packages,
             sboms,
@@ -122,6 +124,10 @@ impl SbomScanProvider {
         }
 
         if !SUPPORTED_SBOM_PROJECT_TYPES.contains(&project.package_manager.as_str()) {
+            println!(
+                "skipping unsupported project {} for manager {}",
+                project.project_name, project.package_manager
+            );
             let mut unsupported = project.to_unsupported();
             self.packages
                 .upsert_unsupported_by_external_id(&mut unsupported)

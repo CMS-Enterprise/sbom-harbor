@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use std::sync::Arc;
 
 use clap::builder::PossibleValue;
 use clap::{Parser, ValueEnum};
@@ -9,7 +10,7 @@ use harbcore::services::sboms::{
     FileSystemStorageProvider, S3StorageProvider, SbomProvider, SbomService, StorageProvider,
 };
 use harbcore::services::snyk::{SnykService, API_VERSION};
-use platform::mongodb::Context;
+use platform::mongodb::{Context, Store};
 
 use crate::Error;
 
@@ -135,17 +136,17 @@ struct SnykProvider {}
 
 impl SnykProvider {
     /// Factory method to create new instance of type.
-    fn new_provider(
+    async fn new_provider(
         cx: Context,
         storage: Box<dyn StorageProvider>,
     ) -> Result<SbomScanProvider, Error> {
         let token = harbcore::config::snyk_token().map_err(|e| Error::Config(e.to_string()))?;
-
+        let store = Arc::new(Store::new(&cx).await.map_err(|e|Error::Sbom(e.to_string()))?);
         let provider = SbomScanProvider::new(
-            cx.clone(),
+            store.clone(),
             SnykService::new(token),
-            PackageService::new(cx.clone()),
-            SbomService::new(cx, storage),
+            PackageService::new(store.clone()),
+            SbomService::new(store, storage),
         );
 
         Ok(provider)
@@ -171,7 +172,7 @@ impl SnykProvider {
 
         match &args.snyk_args {
             None => {
-                let provider = SnykProvider::new_provider(cx, storage)?;
+                let provider = SnykProvider::new_provider(cx, storage).await?;
                 provider
                     .execute(entities::sboms::SbomProviderKind::Snyk {
                         api_version: API_VERSION.to_string(),
@@ -205,7 +206,7 @@ mod tests {
             "/tmp/harbor-debug/sboms".to_string(),
         ));
 
-        let provider = SnykProvider::new_provider(cx, storage)?;
+        let provider = SnykProvider::new_provider(cx, storage).await?;
 
         match provider
             .execute(entities::sboms::SbomProviderKind::Snyk {
