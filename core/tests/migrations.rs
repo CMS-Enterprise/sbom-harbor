@@ -1,11 +1,11 @@
-use harbcore::config::db_connection;
+use harbcore::config::dev_context;
 use platform::mongodb::auth::init_default_auth::apply_all;
 use platform::mongodb::migrations::{Effect, MigrationService};
 use platform::Error;
 
 #[async_std::test]
 async fn can_init_auth() -> Result<(), Error> {
-    let cx = db_connection().map_err(|e| Error::Config(e.to_string()))?;
+    let cx = dev_context(Some("core-test")).map_err(|e| Error::Config(e.to_string()))?;
 
     // TODO: Assert clean DB.
     let service = MigrationService::new(&cx).await?;

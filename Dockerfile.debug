@@ -1,0 +1,5 @@
+FROM public.ecr.aws/docker/library/rust:1.68.0-slim-bullseye as builder
+WORKDIR /usr/src/harbor
+COPY . .
+
+RUN cargo build
