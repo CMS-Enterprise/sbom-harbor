@@ -137,7 +137,7 @@ mod tests {
         let json_raw = match serde_json::to_string(sbom) {
             Ok(j) => j,
             Err(e) => {
-                let msg = format!("debug_sbom::{}", e.to_string());
+                let msg = format!("debug_sbom::{}", e);
                 return Err(Error::Runtime(msg));
             }
         };
@@ -145,7 +145,7 @@ mod tests {
         match std::fs::write(file_path.as_str(), json_raw) {
             Ok(()) => Ok(()),
             Err(e) => {
-                return Err(Error::Runtime(format!("debug_sbom::{}", e.to_string())));
+                Err(Error::Runtime(format!("debug_sbom::{}", e)))
             }
         }
     }

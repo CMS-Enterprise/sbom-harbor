@@ -5,7 +5,7 @@ use platform::Error;
 
 #[async_std::test]
 async fn can_init_auth() -> Result<(), Error> {
-    let cx = dev_context(Some("core-test")).map_err(|e| Error::Config(e.to_string()))?;
+    let cx = dev_context(None).map_err(|e| Error::Config(e.to_string()))?;
 
     // TODO: Assert clean DB.
     let service = MigrationService::new(&cx).await?;

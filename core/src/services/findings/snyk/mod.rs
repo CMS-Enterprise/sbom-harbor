@@ -26,7 +26,7 @@ mod tests {
         match provider.execute(&mut scan).await {
             Ok(()) => {}
             Err(e) => {
-                return Err(Error::Snyk(format!("can_scan_purls::{}", e).to_string()));
+                return Err(Error::Snyk(format!("can_scan_purls::{}", e)));
             }
         };
 
@@ -35,14 +35,14 @@ mod tests {
 
     async fn test_provider() -> Result<FindingScanProvider, Error> {
         let token = snyk_token()?;
-        let cx = dev_context(Some("core-test"))?;
+        let cx = dev_context(None)?;
         let store = Arc::new(Store::new(&cx).await?);
         let provider = FindingScanProvider::new(
             store.clone(),
             SnykService::new(token),
             PackageService::new(store.clone()),
             FindingService::new(
-                store.clone(),
+                store,
                 Box::new(FileSystemStorageProvider::new(
                     "/tmp/harbor/findings".to_string(),
                 )),

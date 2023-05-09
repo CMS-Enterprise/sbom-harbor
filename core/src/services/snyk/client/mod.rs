@@ -184,7 +184,7 @@ mod tests {
         assert!(orgs.is_some());
 
         let orgs = orgs.unwrap();
-        assert!(orgs.len() > 0);
+        assert!(!orgs.is_empty());
 
         Ok(())
     }

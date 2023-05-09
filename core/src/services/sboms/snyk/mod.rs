@@ -26,7 +26,7 @@ mod tests {
         match provider.execute(&mut scan).await {
             Ok(()) => {}
             Err(e) => {
-                return Err(Error::Snyk(format!("can_scan_sboms::{}", e).to_string()));
+                return Err(Error::Snyk(format!("can_scan_sboms::{}", e)));
             }
         };
 
@@ -35,7 +35,7 @@ mod tests {
 
     async fn test_provider() -> Result<SbomScanProvider, Error> {
         let token = snyk_token()?;
-        let cx = dev_context(Some("core-test"))?;
+        let cx = dev_context(None)?;
         let store = Arc::new(Store::new(&cx).await?);
 
         let provider = SbomScanProvider::new(
