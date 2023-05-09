@@ -11,8 +11,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::Error;
 
-// use harbcore::auth::Authenticator;
-
 // TODO: Figure out how to move the JWT aspect of the Authenticator to this crate.
 /// Represents an OIDC claim appropriate for runtime authentication and authorization.
 #[derive(Debug, Serialize, Deserialize)]
