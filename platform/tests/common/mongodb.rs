@@ -4,30 +4,31 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use platform::auth::*;
-use platform::config::from_env;
 use platform::mongodb::auth::DefaultAuthorizer;
 use platform::mongodb::{Context, MongoDocument, Store};
 use platform::Error;
 
-pub const DB_IDENTIFIER: &str = "harbor";
+pub const DB_IDENTIFIER: &str = "platform";
 pub const KEY_NAME: &str = "id";
 pub const COLLECTION: &str = "Group";
 
 #[allow(dead_code)]
 pub async fn local_context() -> Result<Context, Error> {
-    let mut cx: Context = from_env("DB_CONNECTION")?;
+    let cx: Context = Context {
+        host: "localhost".to_string(),
+        username: "root".to_string(),
+        password: "harbor".to_string(),
+        port: 27017,
+        db_name: DB_IDENTIFIER.to_string(),
+        key_name: KEY_NAME.to_string(),
+        connection_uri: None,
+    };
 
-    cx.db_name = DB_IDENTIFIER.to_string();
-    cx.key_name = KEY_NAME.to_string();
-
-    let client = MongoClient::with_uri_str(cx.connection_uri()).await?;
+    let client = MongoClient::with_uri_str(cx.connection_uri()?).await?;
     let dbs = client.list_database_names(None, None).await?;
 
     if !dbs.contains(&DB_IDENTIFIER.to_string()) {
-        return Err(Error::Mongo(format!(
-            "{} db does not exist",
-            DB_IDENTIFIER.to_string()
-        )));
+        return Err(Error::Mongo(format!("{} db does not exist", DB_IDENTIFIER)));
     }
 
     let db = client.database(DB_IDENTIFIER);
@@ -36,7 +37,7 @@ pub async fn local_context() -> Result<Context, Error> {
     if !collections.contains(&COLLECTION.to_string()) {
         return Err(Error::Mongo(format!(
             "{} collection does not exist",
-            COLLECTION.to_string()
+            COLLECTION
         )));
     }
 
@@ -54,7 +55,7 @@ pub struct AuthScenario {
 impl AuthScenario {
     #[allow(dead_code)]
     pub async fn new(name: String, ctx: &Context) -> Result<AuthScenario, Error> {
-        let store = Arc::new(Store::new(&ctx).await?);
+        let store = Arc::new(Store::new(ctx).await?);
         let mut scenario = AuthScenario {
             name: name.clone(),
             resource: Resource {
@@ -225,11 +226,7 @@ impl AuthScenario {
 
         let groups = self.store.query::<Group>(filter.clone()).await?;
         for mut group in groups {
-            group.users = group
-                .users
-                .into_iter()
-                .filter(|user_id: &String| self.user.id.eq(user_id))
-                .collect();
+            group.users.retain(|user_id| self.user.id.eq(user_id));
             self.store.update::<Group>(&group).await?;
         }
 

@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
-
 use async_trait::async_trait;
 use tracing::instrument;
 use uuid::Uuid;
@@ -19,7 +18,6 @@ pub trait Service<D>: Debug + Send + Sync
 where
     D: MongoDocument,
 {
-    // TODO: Refactor this away with a [Context].
     /// Provides access to the [Store] instance for the [Service].
     fn store(&self) -> Arc<Store>;
 
@@ -48,19 +46,34 @@ where
         let id = Uuid::new_v4().to_string();
         doc.set_id(id);
 
-        self.store().insert::<D>(doc).await?;
-        Ok(())
+        self.store().insert::<D>(doc).await
     }
 
     /// Update a document within a [Collection].
     #[instrument]
     async fn update(&self, doc: &D) -> Result<(), Error> {
-        let existing = self.store().find::<D>(doc.id().as_str()).await?;
+        let store = self.store();
+        let existing = store.find::<D>(doc.id().as_str()).await?;
         if existing.is_none() {
             return Err(Error::Update("item does not exists".to_string()));
         }
 
-        self.store().update::<D>(doc).await
+        store.update::<D>(doc).await
+    }
+
+    // TODO: Constrain to a set of known supported/tested operations.
+    /// Update a document within a [Collection] using ad hoc expressions and filters.
+    #[instrument]
+    async fn update_ad_hoc(
+        &self,
+        key: &str,
+        key_name: Option<&str>,
+        operator: &str,
+        expression: HashMap<&str, &str>,
+    ) -> Result<(), Error> {
+        self.store()
+            .update_ad_hoc::<D>(key, key_name, operator, expression)
+            .await
     }
 
     /// Delete a document from a [Collection].
@@ -69,7 +82,7 @@ where
         self.store().delete::<D>(id).await
     }
 
-    /// Perform and ad-hoc query against all documents within a [Collection].
+    /// Perform an ad-hoc query against all documents within a [Collection].
     #[instrument]
     async fn query(&self, filter: HashMap<&str, &str>) -> Result<Vec<D>, Error> {
         self.store().query::<D>(filter).await

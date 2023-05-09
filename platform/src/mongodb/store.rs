@@ -10,7 +10,8 @@ use crate::Error;
 
 /// Default client factory method. Allows callers to avoid a direct dependency on the Mongo Driver.
 pub async fn client_from_context(cx: &Context) -> Result<Client, Error> {
-    Ok(Client::with_uri_str(cx.connection_uri()).await?)
+    let connection_uri = cx.connection_uri()?;
+    Ok(Client::with_uri_str(connection_uri.as_str()).await?)
 }
 
 /// Facade that provides access to a MongoDB compliant data store.
@@ -137,6 +138,57 @@ impl Store {
                 doc! { "$set": doc },
                 None,
             )
+            .await?;
+
+        Ok(())
+    }
+
+    /// Update an embedded document.
+    #[instrument]
+    pub async fn update_ad_hoc<D>(
+        &self,
+        key: &str,
+        key_name: Option<&str>,
+        operator: &str,
+        expression: HashMap<&str, &str>,
+    ) -> Result<(), Error>
+    where
+        D: MongoDocument,
+    {
+        let collection = self.collection::<D>();
+
+        let key_name = match key_name {
+            None => self.key_name.as_str(),
+            Some(key_name) => key_name,
+        };
+
+        if let true = key_name.is_empty() {
+            return Err(Error::Mongo("key_name_empty".to_string()));
+        }
+
+        let query = doc! { key_name: key };
+
+        // TODO: Documentation says to use estimated_document_count in most cases but that has no
+        // filter.
+        let doc_count = collection.count_documents(query.clone(), None).await?;
+        match doc_count {
+            0 => {
+                return Err(Error::Mongo("update_ad_hoc_invalid_key".to_string()));
+            }
+            1 => {}
+            _ => {
+                return Err(Error::Mongo("update_ad_hoc_duplicate_key".to_string()));
+            }
+        }
+
+        let mut modifications = Document::new();
+
+        for e in expression {
+            modifications.insert(e.0, e.1);
+        }
+
+        collection
+            .update_one(query, doc! { operator: modifications }, None)
             .await?;
 
         Ok(())
