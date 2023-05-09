@@ -1,13 +1,23 @@
 use hyper::header::InvalidHeaderValue;
 use hyper::http::uri::InvalidUri;
-use hyper::{Body, Client, Method, Request, StatusCode, Uri};
+use hyper::{Body, Client as NativeClient, Request, Uri};
 use hyper_rustls::HttpsConnectorBuilder;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fmt::{Display, Formatter};
 use thiserror::Error;
 
+mod client;
+pub use client::Client;
+pub use hyper::{Method, StatusCode};
+
 const CONTENT_TYPE: &str = "content-type";
+
+/// Replaces invalid header name characters with hyphens.
+pub fn format_header_name(name: &str) -> String {
+    let re = regex::Regex::new(r"[^A-Za-z0-9]").unwrap();
+    re.replace_all(name, "-").to_string()
+}
 
 /// HTTP Content Types.
 pub enum ContentType {
@@ -117,7 +127,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
         .enable_http2()
         .build();
 
-    let client: Client<_, hyper::Body> = Client::builder().build(https);
+    let client: NativeClient<_, Body> = NativeClient::builder().build(https);
 
     let resp = match client.request(req).await {
         Ok(r) => r,
@@ -210,5 +220,23 @@ impl From<InvalidHeaderValue> for Error {
 impl From<InvalidUri> for Error {
     fn from(err: InvalidUri) -> Self {
         Error::InvalidUri(err.to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Error;
+
+    #[async_std::test]
+    async fn can_format_header_name() -> Result<(), Error> {
+        let invalid = "some::invalid";
+        let valid = format_header_name(invalid);
+
+        assert_ne!(true, valid.contains(":"));
+        assert_eq!(true, valid.contains("-"));
+        println!("{}", valid);
+
+        Ok(())
     }
 }
