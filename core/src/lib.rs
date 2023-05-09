@@ -4,11 +4,24 @@
 //! translating user input from the wire protocol or stdin to native types and then invoking
 //! the corresponding [Service] type found in this crate.
 
-/// The [Entities] module extends the [Models] and contains domain logic relevant to managing
-/// entity relationships.
+//! ## Terminology
+//! - **Provider**: a software service that is capable of generating an SBOM given a Package
+//! - **Package**: a component for which an SBOM can be created. In the case of Harbor, this is usually a code repository like git, svn or mercurial.
+//! - **Report**: in this context, a report is a Json document. Machine readable, but with text so humans can read it as well.
+//! - **Dependency**: a library that a **Package** needs to function.
+//! - **Store**: A storage location.  This can be a:
+//!     - Document,
+//!     - File System,
+//!     - Relational, Object or Graph Database
+//!     - Cloud Storage Solution (S3, Glacier)
+//! - **Transitive Dependency**: A library that one of a given **Package**’s library needs to function.
+//!   This term is recursively accurate for any dependency of a dependency.
+//! - **Diff**: Data that represents only the changes or differences between two files.
+
+/// The [Entities] module contains data types and logic related to the Harbor problem domain.
 ///
-/// Entities are the things that the Service Layer manages. Some entities, on the server side,
-/// may be persisted as entries in a database. Some entities are materialized at runtime only for the
+/// [Entities] are managed by one or more [Service] types. Some entities, on the server side,
+/// may be persisted as entries in a data store. Some entities are materialized at runtime only for the
 /// purpose of executing business logic, and are never serialized or persisted.
 ///
 /// An Entity can be a standalone thing that represents and manages only itself, or it
@@ -22,6 +35,8 @@
 /// are subordinate to [Teams], they are the Aggregate Root of [Codebases]. A [Codebase] has no meaning
 /// without a [Project], so likewise the domain model requires you to create or manage a [Codebase]
 /// through its [Project] Aggregate Root.
+///
+/// Entities may also contain validation or helper functions. Consider the [Token] example below.
 ///
 /// Example
 /// ```rust
@@ -58,6 +73,7 @@ pub mod services;
 
 /// Errors exposed by this crate.
 pub mod errors;
+
 /// The Error type for this crate.
 pub use errors::Error;
 
