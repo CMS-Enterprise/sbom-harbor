@@ -173,6 +173,7 @@ mod tests {
     use crate::Error;
 
     #[async_std::test]
+    #[ignore = "manual_debug_test"]
     async fn can_list_orgs() -> Result<(), Error> {
         let token = std::env::var("SNYK_TOKEN")
             .map_err(|e| Error::Config(e.to_string()))
@@ -189,6 +190,7 @@ mod tests {
     }
 
     #[async_std::test]
+    #[ignore = "manual_debug_test"]
     async fn can_list_projects() -> Result<(), Error> {
         let token = std::env::var("SNYK_TOKEN")
             .map_err(|e| Error::Config(e.to_string()))
