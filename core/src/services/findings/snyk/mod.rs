@@ -21,7 +21,7 @@ mod tests {
 
         let mut scan = Scan::new(ScanKind::Finding(
             entities::packages::FindingProviderKind::Snyk,
-        )?)?;
+        ))?;
 
         match provider.execute(&mut scan).await {
             Ok(()) => {}
