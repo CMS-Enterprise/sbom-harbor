@@ -4,15 +4,36 @@ pub use provider::*;
 #[cfg(test)]
 mod tests {
     use crate::config::{dev_context, snyk_token};
+    use crate::entities::scans::{Scan, ScanKind};
     use crate::services::findings::snyk::provider::FindingScanProvider;
     use crate::services::findings::{FileSystemStorageProvider, FindingService};
     use crate::services::packages::PackageService;
+    use crate::services::scans::ScanProvider;
     use crate::services::snyk::SnykService;
-    use crate::Error;
+    use crate::{entities, Error};
     use platform::mongodb::Store;
     use std::sync::Arc;
 
-    async fn test_service<'a>() -> Result<FindingScanProvider, Error> {
+    #[async_std::test]
+    #[ignore = "manual_debug_test"]
+    async fn can_scan_purls() -> Result<(), Error> {
+        let provider = test_provider().await?;
+
+        let mut scan = Scan::new(ScanKind::Finding(
+            entities::packages::FindingProviderKind::Snyk,
+        )?)?;
+
+        match provider.execute(&mut scan).await {
+            Ok(()) => {}
+            Err(e) => {
+                return Err(Error::Snyk(format!("can_scan_purls::{}", e).to_string()));
+            }
+        };
+
+        Ok(())
+    }
+
+    async fn test_provider() -> Result<FindingScanProvider, Error> {
         let token = snyk_token()?;
         let cx = dev_context(Some("core-test"))?;
         let store = Arc::new(Store::new(&cx).await?);
