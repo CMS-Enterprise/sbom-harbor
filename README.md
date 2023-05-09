@@ -118,7 +118,7 @@ cd devenv && docker compose up
 For organizations that use Snyk, Harbor can import SBOMs using the Snyk API. Make sure all environment
 variables are set and then run the following command.
 
-**Note** this assumes you are running the command from the root directory of the repository and
+**Note:** this assumes you are running the command from the root directory of the repository and
 that you have run a `release` build as described above.
 
 ```shell
