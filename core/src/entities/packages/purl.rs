@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use crate::entities::cyclonedx::Component;
-use crate::entities::packages::{Finding, FindingProviderKind};
+use crate::entities::enrichments::Vulnerability;
 use crate::entities::scans::{Scan, ScanRef};
 use crate::entities::xrefs::Xref;
 use crate::Error;
@@ -37,8 +37,8 @@ pub struct Purl {
     /// A map of cross-references to internal and external systems.
     pub xrefs: Vec<Xref>,
 
-    /// The list of vulnerability findings associated with this Purl.
-    pub findings: Option<Vec<Finding>>,
+    /// The list of vulnerability associated with this Purl.
+    pub vulnerabilities: Option<Vec<Vulnerability>>,
 }
 
 impl Purl {
@@ -79,7 +79,7 @@ impl Purl {
             version: component.version.clone(),
             component_kind,
             scan_refs: vec![scan_ref],
-            findings: None,
+            vulnerabilities: None,
             xrefs: vec![xref],
         })
     }
@@ -122,58 +122,38 @@ impl Purl {
         }
     }
 
-    /// Appends Findings to the Purl.
-    pub fn findings(&mut self, new: &Vec<Finding>) {
+    /// Appends Vulnerabilities to the Purl.
+    pub fn vulnerabilities(&mut self, new: &Vec<Vulnerability>) {
         if new.is_empty() {
             return;
         }
 
-        let mut current = match &self.findings {
+        let mut current = match &self.vulnerabilities {
             None => {
-                self.findings = Some(new.clone());
+                self.vulnerabilities = Some(new.clone());
                 return;
             }
             Some(existing) => existing.clone(),
         };
 
         if current.is_empty() {
-            self.findings = Some(new.clone());
+            self.vulnerabilities = Some(new.clone());
             return;
         }
 
-        for new_finding in new {
-            match new_finding.provider {
-                FindingProviderKind::DependencyTrack => {}
-                FindingProviderKind::IonChannel => {}
-                FindingProviderKind::Custom(_) => {}
-                FindingProviderKind::Snyk => {
-                    // TODO: Inlining this is a code smell and couples the domain to providers.
-                    // This needs to ultimately be handled differently and is confirmation that
-                    // putting the snyk_issue ref here was a bad design.
-                    if !current.iter().any(|existing_finding| {
-                        if existing_finding.provider != FindingProviderKind::Snyk {
-                            return false;
-                        }
-
-                        if let Some(existing_issue) = &existing_finding.snyk_issue {
-                            if let Some(existing_issue_id) = &existing_issue.id {
-                                if let Some(new_issue) = &new_finding.snyk_issue {
-                                    if let Some(new_issue_id) = &new_issue.id {
-                                        return existing_issue_id.eq(new_issue_id);
-                                    }
-                                }
-                            }
-                        }
-
-                        false
-                    }) {
-                        current.push(new_finding.clone());
-                    }
+        for new_vulnerability in new.iter() {
+            match current.iter().any(|existing| {
+                existing.cve == new_vulnerability.cve
+                    && existing.provider == new_vulnerability.provider
+            }) {
+                true => {}
+                false => {
+                    current.push(new_vulnerability.clone());
                 }
             }
         }
 
-        self.findings = Some(current);
+        self.vulnerabilities = Some(current);
     }
 }
 
@@ -198,20 +178,23 @@ impl ToString for ComponentKind {
 
 #[cfg(test)]
 mod tests {
-    use crate::entities::packages::{ComponentKind, Finding, FindingProviderKind, Purl};
-    use crate::services::snyk::IssueSnyk;
+    use crate::entities::enrichments::{Vulnerability, VulnerabilityProviderKind};
+    use crate::entities::packages::{ComponentKind, Purl};
     use crate::Error;
 
     #[async_std::test]
     #[ignore = "used to load projects from Snyk to local Mongo for debugging"]
     async fn can_prevent_duplicate_issues_from_snyk() -> Result<(), Error> {
         struct TestCase {
+            expected_count: usize,
             existing: Purl,
+            new: Purl,
         }
 
         let test_cases = vec![
-            // Snyk Case
+            // Unique by CVE & Provider
             TestCase {
+                expected_count: 1,
                 existing: Purl {
                     id: "".to_string(),
                     package_manager: None,
@@ -221,26 +204,88 @@ mod tests {
                     component_kind: ComponentKind::Package,
                     scan_refs: vec![],
                     xrefs: vec![],
-                    findings: Some(vec![Finding {
-                        provider: FindingProviderKind::Snyk,
-                        purl: None,
-                        cdx: None,
-                        snyk_issue: Some(IssueSnyk {
-                            attributes: None,
-                            id: Some("duplicate_id".to_string()),
-                            r#type: None,
-                        }),
-                        xrefs: vec![],
+                    vulnerabilities: Some(vec![Vulnerability {
+                        provider: VulnerabilityProviderKind::Snyk,
+                        severity: None,
+                        cve: Some("CVE-2023-0842".to_string()),
+                        description: None,
+                        cvss: None,
+                        cwes: None,
+                        remediation: None,
+                        raw: None,
+                    }]),
+                },
+                new: Purl {
+                    id: "".to_string(),
+                    package_manager: None,
+                    purl: "pkg:npm/xml2js@0.4.19".to_string(), // Known to have issues
+                    name: "".to_string(),
+                    version: None,
+                    component_kind: ComponentKind::Package,
+                    scan_refs: vec![],
+                    xrefs: vec![],
+                    vulnerabilities: Some(vec![Vulnerability {
+                        provider: VulnerabilityProviderKind::Snyk,
+                        severity: None,
+                        cve: Some("CVE-2023-0842".to_string()),
+                        description: None,
+                        cvss: None,
+                        cwes: None,
+                        remediation: None,
+                        raw: None,
                     }]),
                 },
             },
-            // TODO: Add more as other providers are added.
+            // Multiple by CVE with different provider
+            TestCase {
+                expected_count: 2,
+                existing: Purl {
+                    id: "".to_string(),
+                    package_manager: None,
+                    purl: "pkg:npm/xml2js@0.4.19".to_string(), // Known to have issues
+                    name: "".to_string(),
+                    version: None,
+                    component_kind: ComponentKind::Package,
+                    scan_refs: vec![],
+                    xrefs: vec![],
+                    vulnerabilities: Some(vec![Vulnerability {
+                        provider: VulnerabilityProviderKind::Snyk,
+                        severity: None,
+                        cve: Some("CVE-2023-0842".to_string()),
+                        description: None,
+                        cvss: None,
+                        cwes: None,
+                        remediation: None,
+                        raw: None,
+                    }]),
+                },
+                new: Purl {
+                    id: "".to_string(),
+                    package_manager: None,
+                    purl: "pkg:npm/xml2js@0.4.19".to_string(), // Known to have issues
+                    name: "".to_string(),
+                    version: None,
+                    component_kind: ComponentKind::Package,
+                    scan_refs: vec![],
+                    xrefs: vec![],
+                    vulnerabilities: Some(vec![Vulnerability {
+                        provider: VulnerabilityProviderKind::IonChannel,
+                        severity: None,
+                        cve: Some("CVE-2023-0842".to_string()),
+                        description: None,
+                        cvss: None,
+                        cwes: None,
+                        remediation: None,
+                        raw: None,
+                    }]),
+                },
+            },
         ];
 
-        for case in test_cases {
-            let mut new = case.existing.clone();
-            new.findings(&case.existing.findings.unwrap());
-            assert_eq!(1, new.findings.unwrap().len());
+        for mut case in test_cases {
+            case.new
+                .vulnerabilities(&case.existing.vulnerabilities.unwrap());
+            assert_eq!(case.expected_count, case.new.vulnerabilities.unwrap().len());
         }
 
         Ok(())

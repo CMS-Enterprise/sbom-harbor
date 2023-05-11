@@ -19,3 +19,6 @@ pub mod teams;
 
 /// Model extensions that allow cross-referencing to external systems.
 pub mod xrefs;
+
+/// Persistence and domain models that support enhancing SBOMs with additional metadata.
+pub mod enrichments;

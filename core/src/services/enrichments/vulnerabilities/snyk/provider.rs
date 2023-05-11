@@ -1,7 +1,8 @@
-use crate::entities::packages::{Finding, Purl};
+use crate::entities::enrichments::Vulnerability;
+use crate::entities::packages::Purl;
 use crate::entities::scans::Scan;
 use crate::entities::xrefs::XrefKind;
-use crate::services::findings::FindingService;
+use crate::services::enrichments::vulnerabilities::VulnerabilityService;
 use crate::services::packages::PackageService;
 use crate::services::scans::ScanProvider;
 use crate::services::snyk::{SnykService, SNYK_DISCRIMINATOR};
@@ -11,18 +12,18 @@ use platform::mongodb::{Service, Store};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-/// Analyzes the full set of [Purl] entities that have a Snyk [Xref] for new [Finding]s.
+/// Analyzes the full set of [Purl] entities that have a Snyk [Xref] for new [Vulnerability]s.
 #[derive(Debug)]
-pub struct FindingScanProvider {
+pub struct VulnerabilityProvider {
     store: Arc<Store>,
     snyk: SnykService,
-    pub(in crate::services::findings::snyk) packages: PackageService,
-    findings: FindingService,
+    pub(in crate::services::enrichments::vulnerabilities::snyk) packages: PackageService,
+    vulnerabilities: VulnerabilityService,
 }
 
 #[async_trait]
-impl ScanProvider for FindingScanProvider {
-    /// Builds the Scan and Finding results.
+impl ScanProvider for VulnerabilityProvider {
+    /// Builds the [Scan] and [Vulnerability] results.
     async fn scan_targets(&self, scan: &mut Scan) -> Result<HashMap<String, String>, Error> {
         println!("==> fetching purls");
 
@@ -31,7 +32,7 @@ impl ScanProvider for FindingScanProvider {
         let mut targets: Vec<Purl> = match self.list().await {
             Ok(purls) => purls,
             Err(e) => {
-                return Err(Error::Finding(format!("scan_purls::{}", e)));
+                return Err(Error::Vulnerability(format!("scan_purls::{}", e)));
             }
         };
 
@@ -39,7 +40,10 @@ impl ScanProvider for FindingScanProvider {
             return Err(Error::Snyk("scan_targets::no_purls".to_string()));
         }
 
-        println!("==> processing findings for {} purls...", targets.len());
+        println!(
+            "==> processing vulnerabilities for {} purls...",
+            targets.len()
+        );
         scan.count = targets.len() as u64;
 
         let mut iteration = 0;
@@ -68,54 +72,54 @@ impl ScanProvider for FindingScanProvider {
     }
 }
 
-impl Service<Purl> for FindingScanProvider {
+impl Service<Purl> for VulnerabilityProvider {
     fn store(&self) -> Arc<Store> {
         self.store.clone()
     }
 }
 
-impl Service<Scan> for FindingScanProvider {
+impl Service<Scan> for VulnerabilityProvider {
     fn store(&self) -> Arc<Store> {
         self.store.clone()
     }
 }
 
-impl FindingScanProvider {
+impl VulnerabilityProvider {
     /// Factory method to create new instance of type.
     pub fn new(
         store: Arc<Store>,
         snyk: SnykService,
         packages: PackageService,
-        findings: FindingService,
-    ) -> Result<FindingScanProvider, Error> {
-        Ok(FindingScanProvider {
+        vulnerabilities: VulnerabilityService,
+    ) -> Result<VulnerabilityProvider, Error> {
+        Ok(VulnerabilityProvider {
             store,
             snyk,
             packages,
-            findings,
+            vulnerabilities,
         })
     }
 
-    pub(in crate::services::findings::snyk) async fn scan_target(
+    pub(in crate::services::enrichments::vulnerabilities::snyk) async fn scan_target(
         &self,
         purl: &mut Purl,
         scan: &Scan,
     ) -> Result<(), Error> {
-        let findings = match self.findings_by_purl(purl).await {
+        let findings = match self.vulnerabilities_by_purl(purl).await {
             Ok(findings) => findings,
             Err(e) => {
-                return Err(Error::Finding(e.to_string()));
+                return Err(Error::Vulnerability(e.to_string()));
             }
         };
 
         match findings {
             None => {
-                println!("no findings for {}", purl.purl);
+                println!("no vulnerabilities for {}", purl.purl);
                 return Ok(());
             }
             Some(findings) => {
-                println!("==> found {} findings", findings.len());
-                purl.findings(&findings);
+                println!("==> found {} vulnerabilities", findings.len());
+                purl.vulnerabilities(&findings);
             }
         }
 
@@ -123,24 +127,27 @@ impl FindingScanProvider {
             Ok(scan_ref) => scan_ref,
             Err(e) => {
                 let msg = format!("purl::scan_refs::{}", e);
-                return Err(Error::Finding(msg));
+                return Err(Error::Vulnerability(msg));
             }
         };
 
         // TODO: Store file_path somewhere?
-        let _file_path = match self.findings.store_by_purl(purl, &scan_ref).await {
+        let _file_path = match self.vulnerabilities.store_by_purl(purl, &scan_ref).await {
             Ok(file_path) => file_path,
             Err(e) => {
-                return Err(Error::Finding(e.to_string()));
+                return Err(Error::Vulnerability(e.to_string()));
             }
         };
 
         self.packages.upsert_purl(purl).await
     }
 
-    /// Retrieves a set of native Snyk Issues from the API and converts them to native Harbor
-    /// [Finding]s.
-    pub async fn findings_by_purl(&self, purl: &mut Purl) -> Result<Option<Vec<Finding>>, Error> {
+    /// Retrieves a set of native Snyk Issues from the API and converts them to a native Harbor
+    /// [Vulnerability].
+    pub async fn vulnerabilities_by_purl(
+        &self,
+        purl: &mut Purl,
+    ) -> Result<Option<Vec<Vulnerability>>, Error> {
         // TODO: Validate getting this for a single org is good enough. We seem to get dupes.
         let xref = purl.xrefs.iter().find(|x| {
             x.kind == XrefKind::External(SNYK_DISCRIMINATOR.to_string())
@@ -149,28 +156,28 @@ impl FindingScanProvider {
 
         let org_id = xref.unwrap().map.get("orgId").unwrap();
 
-        let findings = match self
+        let vulnerabilities = match self
             .snyk
-            .findings(org_id.as_str(), purl.purl.as_str(), purl.xrefs.clone())
+            .vulnerabilities(org_id.as_str(), purl.purl.as_str())
             .await
         {
             Ok(f) => f,
             Err(e) => {
-                return Err(Error::Snyk(format!("findings_by_purl::{}", e)));
+                return Err(Error::Snyk(format!("vulnerabilities_by_purl::{}", e)));
             }
         };
 
-        let findings = match findings {
+        let vulnerabilities = match vulnerabilities {
             None => {
                 return Ok(None);
             }
-            Some(findings) => findings,
+            Some(vulnerabilities) => vulnerabilities,
         };
 
-        if findings.is_empty() {
+        if vulnerabilities.is_empty() {
             return Ok(None);
         }
 
-        Ok(Some(findings))
+        Ok(Some(vulnerabilities))
     }
 }

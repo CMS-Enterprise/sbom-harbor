@@ -1,14 +1,20 @@
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
-use crate::entities::packages::{Finding, FindingProviderKind, Unsupported};
+use crate::entities::packages::Unsupported;
 use crate::entities::sboms::SbomProviderKind;
 use crate::entities::xrefs::Xref;
 use crate::services::snyk::client::models::{
-    ListOrgProjects200ResponseDataInner, OrgV1, ProjectStatus,
+    EffectiveSeverityLevel, ListOrgProjects200ResponseDataInner, OrgV1, ProjectStatus,
 };
 use crate::services::snyk::{IssueSnyk, SnykRef};
 
+use crate::entities::enrichments::cvss::{Maturity, Score, Summary, Version};
+use crate::entities::enrichments::{
+    Cwe, Remediation, Severity, Vulnerability, VulnerabilityProviderKind,
+};
 use crate::services::snyk::API_VERSION;
+use crate::Error;
 use platform::mongodb::{mongo_doc, MongoDocument};
 
 mongo_doc!(Project);
@@ -22,9 +28,7 @@ pub(crate) struct Group {
 impl Group {
     pub fn new(inner: crate::services::snyk::client::models::Group) -> Self {
         let id = inner.id.clone().unwrap_or("group id not set".to_string());
-        let name = inner
-            .name
-            .unwrap_or("group name not set".to_string());
+        let name = inner.name.unwrap_or("group name not set".to_string());
 
         Self { id, name }
     }
@@ -39,15 +43,9 @@ pub(crate) struct Organization {
 
 impl Organization {
     pub fn new(inner: OrgV1) -> Self {
-        let id = inner
-            .id
-            .clone()
-            .unwrap_or("org id not set".to_string());
+        let id = inner.id.clone().unwrap_or("org id not set".to_string());
 
-        let name = inner
-            .name
-            .clone()
-            .unwrap_or("org name not set".to_string());
+        let name = inner.name.clone().unwrap_or("org name not set".to_string());
         Self { id, name, inner }
     }
 
@@ -151,13 +149,219 @@ impl Project {
 pub(crate) struct Issue {}
 
 impl IssueSnyk {
-    pub(crate) fn to_finding(&self, purl: String, xrefs: Vec<Xref>) -> Finding {
-        Finding {
-            provider: FindingProviderKind::Snyk,
-            purl: Some(purl),
-            cdx: None,
-            snyk_issue: Some(self.clone()),
-            xrefs,
+    pub(crate) fn to_vulnerability(&self) -> Vulnerability {
+        let raw = match serde_json::to_string(&self).map_err(|e| Error::Serde(e.to_string())) {
+            Ok(raw) => Some(raw),
+            Err(_) => None,
+        };
+
+        let severity = self.severity();
+
+        Vulnerability {
+            provider: VulnerabilityProviderKind::Snyk,
+            severity,
+            cve: self.cve(),
+            description: self.description(),
+            cvss: self.cvss(),
+            cwes: self.cwes(),
+            remediation: self.remediation(),
+            raw,
         }
     }
+
+    fn severity(&self) -> Option<Severity> {
+        let mut result = Severity::Unknown;
+
+        if let Some(severity) = self.attributes.as_deref()?.effective_severity_level {
+            result = match severity {
+                EffectiveSeverityLevel::Info => Severity::Info,
+                EffectiveSeverityLevel::Low => Severity::Low,
+                EffectiveSeverityLevel::Medium => Severity::Medium,
+                EffectiveSeverityLevel::High => Severity::High,
+                EffectiveSeverityLevel::Critical => Severity::Critical,
+            };
+        }
+
+        Some(result)
+    }
+
+    fn cve(&self) -> Option<String> {
+        match &self.attributes.as_deref()?.problems {
+            None => None,
+            Some(problems) => problems
+                .iter()
+                .find(|problem| problem.source == "CVE")
+                .map(|problem| problem.id.clone()),
+        }
+    }
+
+    fn cwes(&self) -> Option<Vec<Cwe>> {
+        match &self.attributes.as_deref()?.problems {
+            None => None,
+            Some(problems) => {
+                let cwes: Vec<Cwe> = problems
+                    .iter()
+                    .filter(|problem| problem.source == "CWE")
+                    .map(|problem| Cwe {
+                        id: problem.id.clone(),
+                        name: None,
+                        description: None,
+                    })
+                    .collect();
+
+                if cwes.is_empty() {
+                    return None;
+                }
+
+                Some(cwes)
+            }
+        }
+    }
+
+    fn description(&self) -> Option<String> {
+        self.attributes.as_deref()?.description.as_ref().cloned()
+    }
+
+    fn cvss(&self) -> Option<Summary> {
+        let mut detail = Summary {
+            maturity: self.resolve_maturity(),
+            mean_score: None,
+            median_score: None,
+            mode_score: None,
+            scores: self.resolve_scores(),
+        };
+
+        detail.calculate_scores();
+
+        Some(detail)
+    }
+
+    fn resolve_scores(&self) -> Option<Vec<Score>> {
+        let severities = match &self.attributes.as_deref()?.severities {
+            None => vec![],
+            Some(severities) => severities.to_vec(),
+        };
+
+        let mut scores = vec![];
+        for severity in severities.into_iter() {
+            match severity.score? {
+                None => {}
+                Some(score) => {
+                    let vector = severity.vector?.clone();
+                    scores.push(Score {
+                        score,
+                        source: severity.source.clone(),
+                        version: version_from_vector(vector.clone()),
+                        vector,
+                    });
+                }
+            };
+        }
+
+        if scores.is_empty() {
+            return None;
+        }
+
+        Some(scores)
+    }
+
+    fn resolve_maturity(&self) -> Option<Maturity> {
+        if let Some(exploit) = &self
+            .attributes
+            .as_deref()?
+            .slots
+            .as_deref()?
+            .exploit
+            .clone()
+        {
+            let exploit_maturity = match ExploitMaturity::from_str(exploit.as_str()) {
+                Ok(exploit_maturity) => exploit_maturity,
+                Err(_) => ExploitMaturity::NotDefined,
+            };
+
+            return Some(Maturity::from(exploit_maturity));
+        }
+
+        None
+    }
+
+    fn remediation(&self) -> Option<Remediation> {
+        let mut description = vec![];
+        let coordinates = self.attributes.as_deref()?.coordinates.clone()?;
+
+        for coordinate in coordinates {
+            for remedy in coordinate.remedies? {
+                match remedy.description {
+                    None => {}
+                    Some(remedy) => description.push(remedy),
+                }
+            }
+        }
+
+        Some(Remediation {
+            description: description.join("\n"),
+        })
+    }
+}
+
+enum ExploitMaturity {
+    NoData,
+    NotDefined,
+    Unproven,
+    ProofOfConcept,
+    Functional,
+    High,
+}
+
+impl FromStr for ExploitMaturity {
+    type Err = Error;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        match input {
+            "No Data" => Ok(Self::NoData),
+            "Not Defined" => Ok(Self::NotDefined),
+            "Unproven" => Ok(Self::Unproven),
+            "Proof of Concept" => Ok(Self::ProofOfConcept),
+            "Functional" => Ok(Self::Functional),
+            "High" => Ok(Self::High),
+            _ => Err(Error::Snyk(format!("invalid_exploit_maturity::{}", input))),
+        }
+    }
+}
+
+impl From<ExploitMaturity> for Maturity {
+    fn from(value: ExploitMaturity) -> Self {
+        match value {
+            ExploitMaturity::NoData => Maturity::NotDefined,
+            ExploitMaturity::NotDefined => Maturity::NotDefined,
+            ExploitMaturity::Unproven => Maturity::Unproven,
+            ExploitMaturity::ProofOfConcept => Maturity::ProofOfConcept,
+            ExploitMaturity::Functional => Maturity::Functional,
+            ExploitMaturity::High => Maturity::High,
+        }
+    }
+}
+
+fn version_from_vector(vector: Option<String>) -> Option<Version> {
+    let vector = match vector {
+        None => {
+            return None;
+        }
+        Some(vector) => vector,
+    };
+
+    // TODO: This needs hardening.
+    if vector.starts_with("CVSS:1") {
+        return Some(Version::V1);
+    } else if vector.starts_with("CVSS:2") {
+        return Some(Version::V2);
+    } else if vector.starts_with("CVSS:3.0") {
+        return Some(Version::V3);
+    } else if vector.starts_with("CVSS:3.1") {
+        return Some(Version::V3_1);
+    } else if vector.starts_with("CVSS:4") {
+        return Some(Version::V4);
+    }
+
+    None
 }

@@ -1,4 +1,4 @@
-use crate::entities::packages::FindingProviderKind;
+use crate::entities::enrichments::VulnerabilityProviderKind;
 use crate::entities::sboms::SbomProviderKind;
 use crate::Error;
 use chrono::{DateTime, Utc};
@@ -87,8 +87,8 @@ impl Scan {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ScanKind {
-    /// Scan was performed to assess Findings.
-    Finding(FindingProviderKind),
+    /// Scan was performed to assess Vulnerabilities.
+    Vulnerabilities(VulnerabilityProviderKind),
     /// Scan was performed to assess Sboms.
     Sbom(SbomProviderKind),
 }

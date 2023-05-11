@@ -233,7 +233,7 @@ mod tests {
         let invalid = "some::invalid";
         let valid = format_header_name(invalid);
 
-        assert!(valid.contains(':'));
+        assert!(!valid.contains(':'));
         assert!(valid.contains('-'));
         println!("{}", valid);
 

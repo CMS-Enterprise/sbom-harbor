@@ -79,15 +79,15 @@ pub struct SbomArgs {
     pub snyk_args: Option<SnykArgs>,
 }
 
-/// Args for generating and SBOM from the filesystem.
+/// Args for generating an SBOM from the filesystem.
 #[derive(Clone, Debug, Parser)]
 pub struct FileSystemArgs {}
 
-/// Args for generating one ore more SBOMs from a GitHub Organization.
+/// Args for generating one or more SBOMs from a GitHub Organization.
 #[derive(Clone, Debug, Parser)]
 pub struct GitHubArgs {}
 
-/// Args for generating a single SBOM from the Snyk API.
+/// Args for generating one or more SBOMs from the Snyk API.
 #[derive(Clone, Debug, Parser)]
 pub struct SnykArgs {
     /// The Snyk Org ID for the SBOM target.

@@ -12,9 +12,6 @@ pub enum Error {
     /// Enrichment provider error.
     #[error("enrichment provider error: {0}")]
     Enrichment(String),
-    /// Finding provider error.
-    #[error("finding provider error: {0}")]
-    Finding(String),
     /// Invalid format.
     #[error("invalid format: {0}")]
     InvalidFormat(String),
@@ -39,6 +36,9 @@ pub enum Error {
     /// Snyk provider error.
     #[error("snyk error: {0}")]
     Snyk(String),
+    /// Vulnerability provider error.
+    #[error("vulnerability provider error: {0}")]
+    Vulnerability(String),
 }
 
 impl From<platform::Error> for Error {

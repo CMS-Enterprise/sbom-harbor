@@ -170,11 +170,11 @@ impl PackageService {
         // instance id to existing instance id.
         new.id = existing.id.clone();
 
-        // Merge the findings if there existing findings.
-        match &existing.findings {
+        // Merge the vulnerabilities if there existing vulnerabilities.
+        match &existing.vulnerabilities {
             None => {}
             Some(findings) => {
-                new.findings(findings);
+                new.vulnerabilities(findings);
             }
         }
 

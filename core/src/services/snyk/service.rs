@@ -2,8 +2,7 @@ use std::fmt::Debug;
 
 use tracing::debug;
 
-use crate::entities::packages::Finding;
-use crate::entities::xrefs::Xref;
+use crate::entities::enrichments::Vulnerability;
 use crate::services::snyk::adapters::{Organization, Project};
 use crate::Error;
 
@@ -167,13 +166,12 @@ impl SnykService {
         Ok(raw)
     }
 
-    /// Get findings for a Package URL.
-    pub(in crate::services) async fn findings(
+    /// Get vulnerabilities for a Package URL.
+    pub(in crate::services) async fn vulnerabilities(
         &self,
         org_id: &str,
         purl: &str,
-        xrefs: Vec<Xref>,
-    ) -> Result<Option<Vec<Finding>>, Error> {
+    ) -> Result<Option<Vec<Vulnerability>>, Error> {
         let issues = match self.issues(org_id, purl).await {
             Ok(issues) => issues,
             Err(e) => {
@@ -195,13 +193,13 @@ impl SnykService {
         let mut results = vec![];
 
         issues.iter().for_each(|issue| {
-            results.push(issue.to_finding(purl.to_string(), xrefs.clone()));
+            results.push(issue.to_vulnerability());
         });
 
         Ok(Some(results))
     }
 
-    /// Get native Snyk issues. External callers should most likely use [findings].
+    /// Get native Snyk issues. External callers should most likely use [vulnerabilities].
     pub(in crate::services::snyk) async fn issues(
         &self,
         org_id: &str,

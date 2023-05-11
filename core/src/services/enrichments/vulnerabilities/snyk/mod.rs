@@ -5,8 +5,10 @@ pub use provider::*;
 mod tests {
     use crate::config::{dev_context, snyk_token};
     use crate::entities::scans::{Scan, ScanKind};
-    use crate::services::findings::snyk::provider::FindingScanProvider;
-    use crate::services::findings::{FileSystemStorageProvider, FindingService};
+    use crate::services::enrichments::vulnerabilities::snyk::VulnerabilityProvider;
+    use crate::services::enrichments::vulnerabilities::{
+        FileSystemStorageProvider, VulnerabilityService,
+    };
     use crate::services::packages::PackageService;
     use crate::services::scans::ScanProvider;
     use crate::services::snyk::SnykService;
@@ -19,8 +21,8 @@ mod tests {
     async fn can_scan_purls() -> Result<(), Error> {
         let provider = test_provider().await?;
 
-        let mut scan = Scan::new(ScanKind::Finding(
-            entities::packages::FindingProviderKind::Snyk,
+        let mut scan = Scan::new(ScanKind::Vulnerabilities(
+            entities::enrichments::vulnerabilities::VulnerabilityProviderKind::Snyk,
         ))?;
 
         match provider.execute(&mut scan).await {
@@ -33,18 +35,18 @@ mod tests {
         Ok(())
     }
 
-    async fn test_provider() -> Result<FindingScanProvider, Error> {
+    async fn test_provider() -> Result<VulnerabilityProvider, Error> {
         let token = snyk_token()?;
         let cx = dev_context(None)?;
         let store = Arc::new(Store::new(&cx).await?);
-        let provider = FindingScanProvider::new(
+        let provider = VulnerabilityProvider::new(
             store.clone(),
             SnykService::new(token),
             PackageService::new(store.clone()),
-            FindingService::new(
+            VulnerabilityService::new(
                 store,
                 Box::new(FileSystemStorageProvider::new(
-                    "/tmp/harbor/findings".to_string(),
+                    "/tmp/harbor/vulnerabilities".to_string(),
                 )),
             ),
         )?;

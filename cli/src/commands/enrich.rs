@@ -3,11 +3,11 @@ use std::sync::Arc;
 
 use clap::builder::PossibleValue;
 use clap::{Parser, ValueEnum};
-use harbcore::entities::packages::FindingProviderKind;
+use harbcore::entities::enrichments::VulnerabilityProviderKind;
 use harbcore::entities::scans::{Scan, ScanKind};
-use harbcore::services::findings::snyk::FindingScanProvider;
-use harbcore::services::findings::{
-    FileSystemStorageProvider, FindingService, S3StorageProvider, StorageProvider,
+use harbcore::services::enrichments::vulnerabilities::snyk::VulnerabilityProvider;
+use harbcore::services::enrichments::vulnerabilities::{
+    FileSystemStorageProvider, S3StorageProvider, StorageProvider, VulnerabilityService,
 };
 use harbcore::services::packages::PackageService;
 use harbcore::services::scans::ScanProvider;
@@ -109,7 +109,7 @@ impl SnykProvider {
     async fn new_provider(
         cx: Context,
         storage: Box<dyn StorageProvider>,
-    ) -> Result<FindingScanProvider, Error> {
+    ) -> Result<VulnerabilityProvider, Error> {
         let token = harbcore::config::snyk_token().map_err(|e| Error::Config(e.to_string()))?;
         let store = Arc::new(
             Store::new(&cx)
@@ -117,11 +117,11 @@ impl SnykProvider {
                 .map_err(|e| Error::Sbom(e.to_string()))?,
         );
 
-        let provider = FindingScanProvider::new(
+        let provider = VulnerabilityProvider::new(
             store.clone(),
             SnykService::new(token),
             PackageService::new(store.clone()),
-            FindingService::new(store, storage),
+            VulnerabilityService::new(store, storage),
         )
         .map_err(|e| Error::Enrich(e.to_string()))?;
 
@@ -148,8 +148,9 @@ impl SnykProvider {
 
         match &args.snyk_args {
             None => {
-                let mut scan: Scan = Scan::new(ScanKind::Finding(FindingProviderKind::Snyk))
-                    .map_err(|e| Error::Enrich(e.to_string()))?;
+                let mut scan: Scan =
+                    Scan::new(ScanKind::Vulnerabilities(VulnerabilityProviderKind::Snyk))
+                        .map_err(|e| Error::Enrich(e.to_string()))?;
 
                 let provider = SnykProvider::new_provider(cx, storage)
                     .await
@@ -172,17 +173,16 @@ mod tests {
     use super::*;
     use crate::Error;
     use harbcore::config::dev_context;
-    use harbcore::services::findings::{FileSystemStorageProvider, StorageProvider};
 
     #[async_std::test]
     #[ignore = "debug manual only"]
     async fn can_execute() -> Result<(), Error> {
         let cx = dev_context(Some("core-test")).map_err(|e| Error::Config(e.to_string()))?;
         let storage: Box<dyn StorageProvider> = Box::new(FileSystemStorageProvider::new(
-            "/tmp/harbor-debug/findings".to_string(),
+            "/tmp/harbor-debug/vulnerability".to_string(),
         ));
 
-        let mut scan: Scan = Scan::new(ScanKind::Finding(FindingProviderKind::Snyk))
+        let mut scan: Scan = Scan::new(ScanKind::Vulnerabilities(VulnerabilityProviderKind::Snyk))
             .map_err(|e| Error::Enrich(e.to_string()))?;
 
         let provider = SnykProvider::new_provider(cx, storage).await?;

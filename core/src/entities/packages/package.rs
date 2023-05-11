@@ -17,8 +17,11 @@ pub struct Package {
     /// The package manager for the [Package].
     pub manager: Option<String>,
 
-    /// Optional denormalized Package URL if the Package is associated with a Purl.
+    /// Optional Package URL if known.
     pub purl: Option<String>,
+
+    /// Optional Common Platform Enumeration (CPE) identifier if known.
+    pub cpe: Option<String>,
 
     /// Encapsulates CycloneDx specific attributes.
     pub cdx: Option<PackageCdx>,
@@ -41,6 +44,7 @@ impl Package {
         Ok(Self {
             id: "".to_string(),
             manager: package_manager,
+            cpe: bom.cpe(),
             purl,
             cdx,
             xrefs: vec![xref],

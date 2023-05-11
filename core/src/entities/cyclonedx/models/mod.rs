@@ -1,8 +1,3 @@
-use platform::mongodb::mongo_doc;
-use platform::mongodb::MongoDocument;
-
-mongo_doc!(Bom);
-
 pub mod advisory;
 pub use self::advisory::Advisory;
 pub mod affected_status;

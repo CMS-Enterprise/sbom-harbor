@@ -1,22 +1,21 @@
 /// The [packages] module contains domain and persistence logic related to the management of
-/// [Packages] and [Dependencies].
+/// a [Package].
 ///
-/// - [Package] - An artifact for which an SBOM can be generated.
+/// - [Package] - An artifact for which an [Sbom] can be generated.
 /// - [Dependency]- An artifact that a [Package] depends on.
 pub mod packages;
 
-/// The [packages] module contains domain and persistence logic related to the management of
-/// [SBOMs]. A [SBOM] is a document that lists all components and dependencies required to
+/// The [sboms] module contains domain and persistence logic related to the management of an
+/// [Sbom]. An [Sbom] is a document that lists all components and dependencies required to
 /// produce a [Package].
 pub mod sboms;
 
-/// The [findings] module contains domain and persistence logic related to the management of
-/// [Findings]. A [Finding] in Harbor is defined as a security fact that pertains to a [Package]
-/// or a [Dependency].
-pub mod findings;
+/// The [enrichments] module contains domain and persistence logic related to enriching an [Sbom]
+/// with additional metadata.
+pub mod enrichments;
 
 /// The Snyk module contains integration logic related to the management of [Packages],
-/// [Dependencies], and [SBOMs] when an organization is leveraging the Snyk application.
+/// and [SBOMs] when an organization is using the Snyk application.
 pub mod snyk;
 
 /// The [teams] module contains domain and persistence logic related to the management of

@@ -25,7 +25,7 @@ pub(in crate::services::snyk) mod client;
 
 /// Alias for the native Snyk status of a [Project].
 pub type ProjectStatus = client::models::ProjectStatus;
-/// Alias for a native Snyk issue. Analogous to a [Finding] in Harbor.
+/// Alias for a native Snyk issue. Analogous to a [Vulnerability] in Harbor.
 pub type IssueSnyk = client::models::CommonIssueModel;
 
 use crate::entities::xrefs::{Xref, XrefKind};

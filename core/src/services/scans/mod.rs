@@ -7,8 +7,6 @@ use chrono::Utc;
 use platform::mongodb::Service;
 use tracing::log::debug;
 
-// TODO: Review with the team if Batch is a better model concept than Scan.
-
 /// Transaction script for a batch scanning operation.
 #[async_trait]
 pub trait ScanProvider: Service<Scan> {
