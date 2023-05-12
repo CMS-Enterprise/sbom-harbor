@@ -8,7 +8,7 @@ use crate::common::mongodb::{local_context, AuthScenario};
 async fn can_create_local_cluster() -> Result<(), Error> {
     let cx = local_context().await?;
 
-    let uri = cx.connection_uri();
+    let uri = cx.connection_uri()?;
     assert!(!uri.is_empty());
 
     Ok(())

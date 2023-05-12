@@ -18,15 +18,10 @@
 //!   This term is recursively accurate for any dependency of a dependency.
 //! - **Diff**: Data that represents only the changes or differences between two files.
 
-/// The [Models] module contains the schema types defined by the OpenAPI specification for this API.
-/// [Models] are data transfer objects.
-pub mod models;
-
-/// The [Entities] module extends the [Models] and contains domain logic relevant to managing
-/// entity relationships.
+/// The [Entities] module contains data types and logic related to the Harbor problem domain.
 ///
-/// Entities are the things that the Service Layer manages. Some entities, on the server side,
-/// may be persisted as entries in a database. Some entities are materialized at runtime only for the
+/// [Entities] are managed by one or more [Service] types. Some entities, on the server side,
+/// may be persisted as entries in a data store. Some entities are materialized at runtime only for the
 /// purpose of executing business logic, and are never serialized or persisted.
 ///
 /// An Entity can be a standalone thing that represents and manages only itself, or it
@@ -40,6 +35,8 @@ pub mod models;
 /// are subordinate to [Teams], they are the Aggregate Root of [Codebases]. A [Codebase] has no meaning
 /// without a [Project], so likewise the domain model requires you to create or manage a [Codebase]
 /// through its [Project] Aggregate Root.
+///
+/// Entities may also contain validation or helper functions. Consider the [Token] example below.
 ///
 /// Example
 /// ```rust
@@ -76,6 +73,7 @@ pub mod services;
 
 /// Errors exposed by this crate.
 pub mod errors;
+
 /// The Error type for this crate.
 pub use errors::Error;
 

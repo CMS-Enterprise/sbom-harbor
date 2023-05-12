@@ -5,7 +5,7 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use harbcore::config::db_connection;
+use harbcore::config::dev_context;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -77,19 +77,18 @@ async fn main() {
     // Load injectable types.
     // let config = sdk_config_from_env().await.expect("failed to load config from environment");
     // let authorizer = Authorizer::new(&config).unwrap().expect("failed to load authorizer");
-    let cx = db_connection();
 
-    if cx.is_err() {
-        trace!(
-            "unable to retrieve connection config: {}",
-            cx.err().unwrap()
-        );
-        return;
-    }
+    // TODO: Figure out how to dynamically swap between debug vs. production context.
+    let cx = match dev_context(None) {
+        Ok(cx) => cx,
+        Err(e) => {
+            trace!("unable to retrieve connection config: {}", e);
+            return;
+        }
+    };
 
-    let store = Store::new(&cx.unwrap()).await.unwrap();
-
-    let team_service = controllers::team::new_service(Arc::new(store));
+    let store = Arc::new(Store::new(&cx).await.unwrap());
+    let team_service = controllers::team::new_service(store.clone());
 
     let harbor = Router::new()
         .fallback(handler_404)

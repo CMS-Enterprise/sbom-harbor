@@ -1,9 +1,7 @@
 [workspace]
 members = [
     "api",
-#    "client",
     "core",
-#    "pilot"
     "platform",
     "cli",
 ]
@@ -14,3 +12,7 @@ rust-version = "1.68.0"
 edition = "2021"
 authors = ["CMS SBOM Harbor Team"]
 documentation = "https://github.com/cms-enterprise/sbom-harbor"
+license = "MIT"
+repository = "https://github.com/CMS-Enterprise/sbom-harbor"
+keywords = ["SBOM", "harbor", "cli"]
+readme = "README.md"

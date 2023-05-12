@@ -49,5 +49,9 @@ cargo-generate/output.json
 **/client/gen
 **/server/gen
 
+# Third-party generator input specs
+generators/third-party/cyclonedx.yaml
+generators/third-party/snyk.json
+
 # devenv
 devenv/mongodb/

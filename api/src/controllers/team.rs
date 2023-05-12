@@ -3,8 +3,8 @@ use axum::{debug_handler, Json};
 use std::sync::Arc;
 use tracing::instrument;
 
-use harbcore::models::Team;
-use harbcore::services::TeamService;
+use harbcore::entities::teams::Team;
+use harbcore::services::teams::TeamService;
 use platform::mongodb::{Service, Store};
 
 use crate::auth::Claims;

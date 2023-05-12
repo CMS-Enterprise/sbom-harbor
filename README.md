@@ -22,21 +22,31 @@ but at this time all features are not yet operational, and the usage documentati
 The following environment variables are referenced in code. When possible, defaults are provided that
 support the `docker-compose` configuration found in the `devenv` folder.
 
-- `DB_CONNECTION` - Mongo connection configuration. If not set, tests will default to the configuration that supports the
-  `docker-compose.yaml` environment specified in the `devenv` folder.
-
-Expects a JSON document with the following schema:
+- `SNYK_TOKEN` - A valid Snyk API token. Required if using the Snyk integrations.
+- `HARBOR_FILE_STORE` - Path specification for file storage. When using an `S3StorageProvider`
+  this should be the bucket name with path prefix where you wish to store generated files. When
+  using a `FileSystemStorageProvider` this should be a valid directory on the host machine
+  running the job.
+- `DOCDB_CONFIG` - DocumentDB connection configuration. If not set, tests will default to the
+  configuration that supports the `docker-compose.yaml` environment specified in the `devenv`
+  folder. The primary Harbor installation is backed by DocumentDB, but any MongoDB 5.0 compliant
+  database should be usable. Dynamic configuration is not yet implemented, but pull requests
+  are welcome if community members need this capability before we can get to it. The
+  current DocumentDB config expects a JSON document with the following schema:
 
 ```json
 {
-  "host": "<instance host name/resolvable DNS name>",
-  "username": "<username>",
-  "password": "<password>",
-  "port": "<TCP port number>"
+  "password":"<redacted>",
+  "engine":"mongo",
+  "port":27017,
+  "dbInstanceIdentifier":"<documentdb-instance-identifier>",
+  "host":"<documentdb-host-name>",
+  "ssl":true,
+  "username":"<redacted>"
 }
 ```
 
-## Getting Started
+## Getting Started as a Contributor
 
 1. Clone the repository and `cd` into its directory.
 
@@ -50,6 +60,14 @@ cd sbom-harbor
 
 ```shell
 pre-commit install
+```
+
+3. Depending on your development environment, you may also need to add the following to your
+   `/etc/hosts` file.
+
+```shell
+# Harbor DevEnv
+127.0.0.1 mongo
 ```
 
 ## Crate Documentation
@@ -79,10 +97,51 @@ To build a single crate run the following from the root directory.
 cargo build --workspace -p <crate-name> # e.g. use harbor-api or harbor-cli as the final argument.
 ```
 
-By default, this will produce a debug build in the `target/debug` directory. To produce a release binary run the following.
+By default, this will produce a debug build in the `target/debug` directory. To produce a release
+binary run the following.
 
 ```shell
 cargo build --release
 ```
 
 The release build can be found in the `target/release` directory.
+
+## Try it out
+
+There are several use cases addressed by this repository. The following sections detail how to try
+out each one.
+
+### Local Development Environment
+
+If you wish to run Harbor locally using the development environment found in the `devenv` directory,
+open a new terminal and run the following command.
+
+```shell
+cd devenv && docker compose up
+```
+
+### Sbom Ingestion & Enrichment
+
+For organizations that use Snyk, Harbor can import SBOMs using the Snyk API. Make sure all environment
+variables are set and then run the following command.
+
+**Note:** this assumes you are running the command from the root directory of the repository and
+that you have run a `release` build as described above.
+
+```shell
+./target/release/harbor-cli sbom -p snyk
+```
+
+Once you have ingested the SBOMs from the Snyk API, you can then use Harbor to call the API for all
+identified packages, and store any known vulnerability findings for each package.
+
+```shell
+./target/release/harbor-cli enrich -p snyk
+```
+
+If you wish to run the above commands against the local development environment provided in
+the `devenv` directory, add the `--debug` flag.
+
+```shell
+./target/release/harbor-cli sbom --debug -p snyk
+```
