@@ -30,10 +30,9 @@ support the `docker-compose` configuration found in the `devenv` folder.
 - `DOCDB_CONFIG` - DocumentDB connection configuration. If not set, tests will default to the
   configuration that supports the `docker-compose.yaml` environment specified in the `devenv`
   folder. The primary Harbor installation is backed by DocumentDB, but any MongoDB 5.0 compliant
-  database should be usable. Truly dynamic configuration is not yet implemented, but pull requests
-  are welcome if community members need this capability before we can get to it.
-
-Expects a JSON document with the following schema:
+  database should be usable. Dynamic configuration is not yet implemented, but pull requests
+  are welcome if community members need this capability before we can get to it. The
+  current DocumentDB config expects a JSON document with the following schema:
 
 ```json
 {
@@ -61,6 +60,14 @@ cd sbom-harbor
 
 ```shell
 pre-commit install
+```
+
+3. Depending on your development environment, you may also need to add the following to your
+   `/etc/hosts` file.
+
+```shell
+# Harbor DevEnv
+127.0.0.1 mongo
 ```
 
 ## Crate Documentation
