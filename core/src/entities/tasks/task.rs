@@ -6,22 +6,21 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
 
-/// A [Scan] is a value type that contains the results of an enrichment cycle where the SBOM is
-/// assessed for vulnerability [Findings].
+/// A [Task] is a value type that allows tracking and correlating operations performed by Harbor.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 #[skip_serializing_none]
-pub struct Scan {
-    /// The unique identifier for the [Scan] batch.
+pub struct Task {
+    /// The unique identifier for the [Task] batch.
     pub id: String,
 
-    /// Discriminator indicating the type of scan operation performed.
-    pub kind: ScanKind,
+    /// Discriminator indicating the kind of task performed.
+    pub kind: TaskKind,
 
-    /// The total number of items to be processed by the [Scan].
+    /// The total number of items to be processed by the [Task].
     pub count: u64,
 
-    /// The unix timestamp for when the Scan was created.
+    /// The unix timestamp for when the [Task] was created.
     pub timestamp: u64,
 
     /// Human readable start time.
@@ -30,30 +29,30 @@ pub struct Scan {
     /// Human readable end time.
     pub finish: DateTime<Utc>,
 
-    /// The duration of the completed [Scan] in seconds.
+    /// The duration of the completed [Task] in seconds.
     pub duration_seconds: i64,
 
-    /// Result of the [Scan].
-    pub status: ScanStatus,
+    /// Result of the [Task].
+    pub status: TaskStatus,
 
-    /// Optional error message if the [Scan] failed.
+    /// Optional error message if the [Task] failed.
     pub err: Option<String>,
 
-    /// Map of recoverable errors that occurred during the [Scan]. Used to track recoverable
-    /// errors and the scan target that produced the error.
+    /// Map of recoverable errors that occurred during the [Task]. Used to track recoverable
+    /// errors and the target that produced the error.
     pub ref_errs: Option<HashMap<String, String>>,
 
-    /// The total count of errors encountered during the scan.
+    /// The total count of errors encountered during the [Task].
     pub err_total: u64,
 }
 
-impl Scan {
+impl Task {
     /// Factory method to create new instance of type.
-    pub fn new(kind: ScanKind) -> Result<Scan, Error> {
+    pub fn new(kind: TaskKind) -> Result<Task, Error> {
         let timestamp = platform::time::timestamp().map_err(|e| Error::Runtime(e.to_string()))?;
         let now = Utc::now();
 
-        Ok(Scan {
+        Ok(Task {
             id: "".to_string(),
             kind,
             count: 0,
@@ -61,7 +60,7 @@ impl Scan {
             start: now,
             finish: now,
             duration_seconds: 0,
-            status: ScanStatus::Started,
+            status: TaskStatus::Started,
             err: None,
             ref_errs: None,
             err_total: 0,
@@ -82,64 +81,57 @@ impl Scan {
     }
 }
 
-/// Discriminator indicating the type of scan operation performed and which provider performed
-/// the [Scan].
+/// Discriminator indicating the type of operation performed and which provider performed the
+/// [Task].
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub enum ScanKind {
-    /// Scan was performed to assess Vulnerabilities.
+pub enum TaskKind {
+    /// [Task] was performed to assess Vulnerabilities.
     Vulnerabilities(VulnerabilityProviderKind),
-    /// Scan was performed to assess Sboms.
+    /// [Task] was performed to assess Sboms.
     Sbom(SbomProviderKind),
 }
 
-/// Reference to an instance of a [Scan]
+/// Reference to an instance of a [Task]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ScanRef {
-    /// The unique identifier for the [Scan] batch.
-    pub scan_id: String,
+pub struct TaskRef {
+    /// The unique identifier for the [Task] batch.
+    pub task_id: String,
 
-    /// The unique identifier for the [Scan] target.
+    /// The unique identifier for the [Task] target.
     pub target_id: String,
 
-    /// The Scan iteration for the target being scanned instance. Forward-only incrementing counter.
+    /// The Task iteration for the target. Forward-only incrementing counter.
     pub iteration: u32,
 
-    /// Optional error message if the [Scan] failed for this target.
+    /// Optional error message if the [Task] failed for this target.
     pub err: Option<String>,
 }
 
-impl ScanRef {
+impl TaskRef {
     /// Factory method for creating new instance of type.
-    pub fn new(scan: &Scan, target_id: String, iteration: u32) -> Self {
+    pub fn new(task: &Task, target_id: String, iteration: u32) -> Self {
         Self {
-            scan_id: scan.id.clone(),
+            task_id: task.id.clone(),
             target_id,
             iteration,
             err: None,
         }
     }
-
-    /// Compares to [ScanRef] instances for id and iteration equality.
-    pub fn functionally_eq(&self, other: &ScanRef) -> bool {
-        self.scan_id.eq(&other.scan_id)
-            && self.target_id == other.target_id
-            && self.iteration == other.iteration
-    }
 }
 
-/// Used to track [Scan] results and errors.
+/// Used to track [Task] results and errors.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 #[skip_serializing_none]
-pub enum ScanStatus {
-    /// Scan started.
+pub enum TaskStatus {
+    /// Task started.
     Started,
-    /// Scan completed successfully.
+    /// Task completed successfully.
     Complete,
-    /// Scan completed with recoverable errors.
+    /// Task completed with recoverable errors.
     CompleteWithErrors,
-    /// Scan completed with unrecoverable errors.
+    /// Task completed with unrecoverable errors.
     Failed,
 }

@@ -27,15 +27,15 @@ pub enum Error {
     /// Sbom provider error.
     #[error("sbom provider error: {0}")]
     Sbom(String),
-    /// Scan provider error.
-    #[error("scan provider error: {0}")]
-    Scan(String),
     /// Serialization error.
     #[error("serialization error: {0}")]
     Serde(String),
     /// Snyk provider error.
     #[error("snyk error: {0}")]
     Snyk(String),
+    /// Task provider error.
+    #[error("task provider error: {0}")]
+    Task(String),
     /// Vulnerability provider error.
     #[error("vulnerability provider error: {0}")]
     Vulnerability(String),

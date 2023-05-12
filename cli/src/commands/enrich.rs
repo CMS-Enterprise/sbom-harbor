@@ -4,14 +4,14 @@ use std::sync::Arc;
 use clap::builder::PossibleValue;
 use clap::{Parser, ValueEnum};
 use harbcore::entities::enrichments::VulnerabilityProviderKind;
-use harbcore::entities::scans::{Scan, ScanKind};
-use harbcore::services::enrichments::vulnerabilities::snyk::VulnerabilityProvider;
+use harbcore::entities::tasks::{Task, TaskKind};
+use harbcore::services::enrichments::vulnerabilities::snyk::VulnerabilityScanTask;
 use harbcore::services::enrichments::vulnerabilities::{
     FileSystemStorageProvider, S3StorageProvider, StorageProvider, VulnerabilityService,
 };
 use harbcore::services::packages::PackageService;
-use harbcore::services::scans::ScanProvider;
 use harbcore::services::snyk::SnykService;
+use harbcore::services::tasks::TaskProvider;
 use platform::mongodb::{Context, Store};
 
 use crate::Error;
@@ -109,7 +109,7 @@ impl SnykProvider {
     async fn new_provider(
         cx: Context,
         storage: Box<dyn StorageProvider>,
-    ) -> Result<VulnerabilityProvider, Error> {
+    ) -> Result<VulnerabilityScanTask, Error> {
         let token = harbcore::config::snyk_token().map_err(|e| Error::Config(e.to_string()))?;
         let store = Arc::new(
             Store::new(&cx)
@@ -117,7 +117,7 @@ impl SnykProvider {
                 .map_err(|e| Error::Sbom(e.to_string()))?,
         );
 
-        let provider = VulnerabilityProvider::new(
+        let provider = VulnerabilityScanTask::new(
             store.clone(),
             SnykService::new(token),
             PackageService::new(store.clone()),
@@ -148,8 +148,8 @@ impl SnykProvider {
 
         match &args.snyk_args {
             None => {
-                let mut scan: Scan =
-                    Scan::new(ScanKind::Vulnerabilities(VulnerabilityProviderKind::Snyk))
+                let mut task: Task =
+                    Task::new(TaskKind::Vulnerabilities(VulnerabilityProviderKind::Snyk))
                         .map_err(|e| Error::Enrich(e.to_string()))?;
 
                 let provider = SnykProvider::new_provider(cx, storage)
@@ -157,12 +157,12 @@ impl SnykProvider {
                     .map_err(|e| Error::Enrich(e.to_string()))?;
 
                 provider
-                    .execute(&mut scan)
+                    .execute(&mut task)
                     .await
                     .map_err(|e| Error::Sbom(e.to_string()))
             }
             Some(_a) => Err(Error::Sbom(
-                "individual project scans not yet implemented".to_string(),
+                "individual project not yet implemented".to_string(),
             )),
         }
     }
@@ -182,12 +182,12 @@ mod tests {
             "/tmp/harbor-debug/vulnerability".to_string(),
         ));
 
-        let mut scan: Scan = Scan::new(ScanKind::Vulnerabilities(VulnerabilityProviderKind::Snyk))
+        let mut task: Task = Task::new(TaskKind::Vulnerabilities(VulnerabilityProviderKind::Snyk))
             .map_err(|e| Error::Enrich(e.to_string()))?;
 
         let provider = SnykProvider::new_provider(cx, storage).await?;
 
-        match provider.execute(&mut scan).await {
+        match provider.execute(&mut task).await {
             Ok(_) => Ok(()),
             Err(e) => {
                 let msg = e.to_string();

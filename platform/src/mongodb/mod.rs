@@ -115,7 +115,7 @@ mod tests {
 
     fn context() -> Context {
         Context {
-            host: "localhost".to_string(),
+            host: "mongo".to_string(),
             username: "root".to_string(),
             password: "harbor".to_string(),
             port: 27017,

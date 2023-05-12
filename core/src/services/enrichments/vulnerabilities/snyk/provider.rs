@@ -1,11 +1,11 @@
 use crate::entities::enrichments::Vulnerability;
 use crate::entities::packages::Purl;
-use crate::entities::scans::Scan;
+use crate::entities::tasks::Task;
 use crate::entities::xrefs::XrefKind;
 use crate::services::enrichments::vulnerabilities::VulnerabilityService;
 use crate::services::packages::PackageService;
-use crate::services::scans::ScanProvider;
 use crate::services::snyk::{SnykService, SNYK_DISCRIMINATOR};
+use crate::services::tasks::TaskProvider;
 use crate::Error;
 use async_trait::async_trait;
 use platform::mongodb::{Service, Store};
@@ -14,7 +14,7 @@ use std::sync::Arc;
 
 /// Analyzes the full set of [Purl] entities that have a Snyk [Xref] for new [Vulnerability]s.
 #[derive(Debug)]
-pub struct VulnerabilityProvider {
+pub struct VulnerabilityScanTask {
     store: Arc<Store>,
     snyk: SnykService,
     pub(in crate::services::enrichments::vulnerabilities::snyk) packages: PackageService,
@@ -22,9 +22,9 @@ pub struct VulnerabilityProvider {
 }
 
 #[async_trait]
-impl ScanProvider for VulnerabilityProvider {
-    /// Builds the [Scan] and [Vulnerability] results.
-    async fn scan_targets(&self, scan: &mut Scan) -> Result<HashMap<String, String>, Error> {
+impl TaskProvider for VulnerabilityScanTask {
+    /// Builds the [Task] and [Vulnerability] results.
+    async fn run(&self, task: &mut Task) -> Result<HashMap<String, String>, Error> {
         println!("==> fetching purls");
 
         // TODO: This needs to actually constrain on Purls that have a Snyk Ref once other
@@ -32,19 +32,17 @@ impl ScanProvider for VulnerabilityProvider {
         let mut targets: Vec<Purl> = match self.list().await {
             Ok(purls) => purls,
             Err(e) => {
-                return Err(Error::Vulnerability(format!("scan_purls::{}", e)));
+                return Err(Error::Vulnerability(format!("run::{}", e)));
             }
         };
 
         if targets.is_empty() {
-            return Err(Error::Snyk("scan_targets::no_purls".to_string()));
+            return Err(Error::Snyk("run::no_purls".to_string()));
         }
 
-        println!(
-            "==> processing vulnerabilities for {} purls...",
-            targets.len()
-        );
-        scan.count = targets.len() as u64;
+        let total = targets.len();
+        println!("==> processing vulnerabilities for {} purls...", total);
+        task.count = targets.len() as u64;
 
         let mut iteration = 0;
         let mut errors = HashMap::new();
@@ -52,11 +50,11 @@ impl ScanProvider for VulnerabilityProvider {
         for purl in targets.iter_mut() {
             iteration += 1;
             println!(
-                "==> processing iteration {} for purl {}",
-                iteration, purl.purl
+                "==> processing iteration {} of {} for purl {}",
+                iteration, total, purl.purl
             );
 
-            match self.scan_target(purl, scan).await {
+            match self.process_target(purl, task).await {
                 Ok(_) => {
                     println!("==> iteration {} succeeded", iteration);
                 }
@@ -72,27 +70,27 @@ impl ScanProvider for VulnerabilityProvider {
     }
 }
 
-impl Service<Purl> for VulnerabilityProvider {
+impl Service<Purl> for VulnerabilityScanTask {
     fn store(&self) -> Arc<Store> {
         self.store.clone()
     }
 }
 
-impl Service<Scan> for VulnerabilityProvider {
+impl Service<Task> for VulnerabilityScanTask {
     fn store(&self) -> Arc<Store> {
         self.store.clone()
     }
 }
 
-impl VulnerabilityProvider {
+impl VulnerabilityScanTask {
     /// Factory method to create new instance of type.
     pub fn new(
         store: Arc<Store>,
         snyk: SnykService,
         packages: PackageService,
         vulnerabilities: VulnerabilityService,
-    ) -> Result<VulnerabilityProvider, Error> {
-        Ok(VulnerabilityProvider {
+    ) -> Result<VulnerabilityScanTask, Error> {
+        Ok(VulnerabilityScanTask {
             store,
             snyk,
             packages,
@@ -100,10 +98,10 @@ impl VulnerabilityProvider {
         })
     }
 
-    pub(in crate::services::enrichments::vulnerabilities::snyk) async fn scan_target(
+    pub(in crate::services::enrichments::vulnerabilities::snyk) async fn process_target(
         &self,
         purl: &mut Purl,
-        scan: &Scan,
+        task: &Task,
     ) -> Result<(), Error> {
         let findings = match self.vulnerabilities_by_purl(purl).await {
             Ok(findings) => findings,
@@ -123,16 +121,16 @@ impl VulnerabilityProvider {
             }
         }
 
-        let scan_ref = match purl.init_scan(scan) {
-            Ok(scan_ref) => scan_ref,
+        let task_ref = match purl.init_scan(task) {
+            Ok(task_ref) => task_ref,
             Err(e) => {
-                let msg = format!("purl::scan_refs::{}", e);
+                let msg = format!("purl::task_refs::{}", e);
                 return Err(Error::Vulnerability(msg));
             }
         };
 
         // TODO: Store file_path somewhere?
-        let _file_path = match self.vulnerabilities.store_by_purl(purl, &scan_ref).await {
+        let _file_path = match self.vulnerabilities.store_by_purl(purl, &task_ref).await {
             Ok(file_path) => file_path,
             Err(e) => {
                 return Err(Error::Vulnerability(e.to_string()));

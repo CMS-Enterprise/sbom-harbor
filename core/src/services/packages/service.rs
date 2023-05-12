@@ -178,9 +178,9 @@ impl PackageService {
             }
         }
 
-        // // Copy existing scan_refs.
-        for scan_ref in &existing.scan_refs {
-            new.scan_refs(scan_ref);
+        // // Copy existing task_refs.
+        for task_ref in &existing.task_refs {
+            new.task_refs(task_ref);
         }
 
         // Copy existing xrefs.

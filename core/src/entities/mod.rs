@@ -9,9 +9,8 @@ pub mod packages;
 /// Persistence models that support storing, analyzing, and tracking SBOMs over time.
 pub mod sboms;
 
-/// Persistence and domain models that support running batch processing tasks that match the
-/// idiom of a [Scan].
-pub mod scans;
+/// Persistence and domain models that support running processing tasks.
+pub mod tasks;
 
 /// Persistence models that support storing and managing groups of people that produce and manage
 /// SBOMs.

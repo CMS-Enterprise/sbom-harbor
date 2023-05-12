@@ -30,6 +30,5 @@ pub mod teams;
 /// cross-references for entities that implement the [Xrefs] trait.
 pub mod xrefs;
 
-/// The [scans] module contains domain logic and traits related to batch processing tasks that
-/// match the idiom of a [Scan].
-pub mod scans;
+/// The [tasks] module contains domain logic and traits related to processing tasks.
+pub mod tasks;

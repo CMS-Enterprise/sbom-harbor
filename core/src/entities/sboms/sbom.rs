@@ -6,7 +6,7 @@ use tracing::log::debug;
 use crate::entities::cyclonedx::{Bom, Component};
 use crate::entities::packages::{Dependency, Package};
 use crate::entities::sboms::SbomProviderKind;
-use crate::entities::scans::ScanRef;
+use crate::entities::tasks::TaskRef;
 use crate::entities::xrefs::Xref;
 use crate::Error;
 
@@ -45,8 +45,8 @@ pub struct Sbom {
     /// A map of cross-references to internal and external systems.
     pub xrefs: Vec<Xref>,
 
-    /// Reference to each [Scan] that was performed against this [Sbom] instance.
-    pub scan_refs: Vec<ScanRef>,
+    /// Reference to each [Task] that was performed against this [Sbom] instance.
+    pub task_refs: Vec<TaskRef>,
 
     /// Denormalized list of dependency refs.
     pub dependency_refs: Option<Vec<String>>,
@@ -145,7 +145,7 @@ impl Sbom {
             provider: Some(provider),
             timestamp: platform::time::timestamp()?,
             checksum_sha256: "".to_string(),
-            scan_refs: vec![],
+            task_refs: vec![],
             xrefs: vec![xref],
             bom: Some(bom),
             package: Some(package),
@@ -182,26 +182,26 @@ impl Sbom {
         }
     }
 
-    /// Utility function to get the current iteration by ScanRefs.
+    /// Utility function to get the current iteration by [TaskRef].
     pub fn iteration(&self) -> u32 {
-        match self.scan_refs.iter().max_by_key(|s| s.iteration) {
+        match self.task_refs.iter().max_by_key(|s| s.iteration) {
             Some(s) => s.iteration,
             _ => 1,
         }
     }
 
-    /// Utility function to get the next iteration by ScanRefs.
+    /// Utility function to get the next iteration by [TaskRef].
     pub fn next_iteration(&self) -> u32 {
-        match self.scan_refs.iter().max_by_key(|s| s.iteration) {
+        match self.task_refs.iter().max_by_key(|s| s.iteration) {
             Some(s) => s.iteration + 1,
             _ => 1,
         }
     }
 
-    /// Add a [ScanRef] to the [Sbom].
-    pub fn scan_refs(&mut self, scan_ref: &mut ScanRef) {
-        scan_ref.iteration = self.next_iteration();
-        self.scan_refs.push(scan_ref.to_owned());
+    /// Add a [TaskRef] to the [Sbom].
+    pub fn task_refs(&mut self, task_ref: &mut TaskRef) {
+        task_ref.iteration = self.next_iteration();
+        self.task_refs.push(task_ref.to_owned());
     }
 }
 

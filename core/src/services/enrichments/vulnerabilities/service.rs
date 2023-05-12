@@ -1,6 +1,6 @@
 use crate::entities::packages::Purl;
 use crate::entities::sboms::Sbom;
-use crate::entities::scans::ScanRef;
+use crate::entities::tasks::TaskRef;
 use crate::services::enrichments::vulnerabilities::StorageProvider;
 use crate::Error;
 use platform::mongodb::{Service, Store};
@@ -31,7 +31,7 @@ impl VulnerabilityService {
     pub async fn store_by_purl(
         &self,
         purl: &Purl,
-        scan_ref: &ScanRef,
+        task_ref: &TaskRef,
     ) -> Result<Option<String>, Error> {
         let findings = match &purl.vulnerabilities {
             None => {
@@ -46,7 +46,7 @@ impl VulnerabilityService {
 
         match self
             .storage
-            .write(purl.purl.as_str(), findings, scan_ref, &purl.xrefs)
+            .write(purl.purl.as_str(), findings, task_ref, &purl.xrefs)
             .await
         {
             Ok(file_path) => Ok(Some(file_path)),

@@ -4,7 +4,7 @@ use serde_with::skip_serializing_none;
 
 use crate::entities::cyclonedx::Component;
 use crate::entities::enrichments::Vulnerability;
-use crate::entities::scans::{Scan, ScanRef};
+use crate::entities::tasks::{Task, TaskRef};
 use crate::entities::xrefs::Xref;
 use crate::Error;
 
@@ -31,8 +31,8 @@ pub struct Purl {
     /// Source of the Purl.
     pub component_kind: ComponentKind,
 
-    /// Reference to each [Scan] that was performed against this [Purl].
-    pub scan_refs: Vec<ScanRef>,
+    /// Reference to each [Task] that was performed against this [Purl].
+    pub task_refs: Vec<TaskRef>,
 
     /// A map of cross-references to internal and external systems.
     pub xrefs: Vec<Xref>,
@@ -58,7 +58,7 @@ impl Purl {
     pub(crate) fn from_component(
         component: &Component,
         component_kind: ComponentKind,
-        scan: &Scan,
+        task: &Task,
         iteration: u32,
         xref: Xref,
     ) -> Result<Self, Error> {
@@ -69,7 +69,7 @@ impl Purl {
             Some(p) => p,
         };
 
-        let scan_ref = ScanRef::new(scan, purl.clone(), iteration);
+        let task_ref = TaskRef::new(task, purl.clone(), iteration);
 
         Ok(Self {
             id: "".to_string(),
@@ -78,47 +78,35 @@ impl Purl {
             name: component.name.clone(),
             version: component.version.clone(),
             component_kind,
-            scan_refs: vec![scan_ref],
+            task_refs: vec![task_ref],
             vulnerabilities: None,
             xrefs: vec![xref],
         })
     }
 
-    /// Sets up a reference between the [Purl] and the [Scan]. This is has been renamed to
-    /// `join_scan` in the concurrency branch.
-    pub fn init_scan(&mut self, scan: &Scan) -> Result<ScanRef, Error> {
-        if scan.id.is_empty() {
-            return Err(Error::Entity("scan_id_required".to_string()));
+    /// Sets up a reference between the [Purl] and the [Task].
+    pub fn init_scan(&mut self, task: &Task) -> Result<TaskRef, Error> {
+        if task.id.is_empty() {
+            return Err(Error::Entity("task_id_required".to_string()));
         }
 
-        let mut scan_ref = ScanRef::new(scan, self.purl.clone(), 0);
+        let mut task_ref = TaskRef::new(task, self.purl.clone(), 0);
 
-        scan_ref.iteration = match self.scan_refs.iter().max_by_key(|s| s.iteration) {
+        task_ref.iteration = match self.task_refs.iter().max_by_key(|s| s.iteration) {
             Some(s) => s.iteration + 1,
             _ => 1,
         };
 
-        let result = scan_ref.clone();
-        self.scan_refs.push(scan_ref);
+        let result = task_ref.clone();
+        self.task_refs.push(task_ref);
 
         Ok(result)
     }
 
-    /// Log an error ta the [ScanRef] that matches the [Scan].
-    pub fn scan_err(&mut self, scan: &Scan, err: Option<String>) -> Result<(), Error> {
-        return match self.scan_refs.iter_mut().find(|e| e.scan_id == scan.id) {
-            None => Err(Error::Entity("scan_ref_none".to_string())),
-            Some(scan_ref) => {
-                scan_ref.err = err;
-                Ok(())
-            }
-        };
-    }
-
-    /// Add a [ScanRef] to the [Purl].
-    pub fn scan_refs(&mut self, scan_ref: &ScanRef) {
-        if !self.scan_refs.iter().any(|s| s.scan_id == scan_ref.scan_id) {
-            self.scan_refs.push(scan_ref.clone());
+    /// Add a [TaskRef] to the [Purl].
+    pub fn task_refs(&mut self, task_ref: &TaskRef) {
+        if !self.task_refs.iter().any(|s| s.task_id == task_ref.task_id) {
+            self.task_refs.push(task_ref.clone());
         }
     }
 
@@ -202,7 +190,7 @@ mod tests {
                     name: "".to_string(),
                     version: None,
                     component_kind: ComponentKind::Package,
-                    scan_refs: vec![],
+                    task_refs: vec![],
                     xrefs: vec![],
                     vulnerabilities: Some(vec![Vulnerability {
                         provider: VulnerabilityProviderKind::Snyk,
@@ -222,7 +210,7 @@ mod tests {
                     name: "".to_string(),
                     version: None,
                     component_kind: ComponentKind::Package,
-                    scan_refs: vec![],
+                    task_refs: vec![],
                     xrefs: vec![],
                     vulnerabilities: Some(vec![Vulnerability {
                         provider: VulnerabilityProviderKind::Snyk,
@@ -246,7 +234,7 @@ mod tests {
                     name: "".to_string(),
                     version: None,
                     component_kind: ComponentKind::Package,
-                    scan_refs: vec![],
+                    task_refs: vec![],
                     xrefs: vec![],
                     vulnerabilities: Some(vec![Vulnerability {
                         provider: VulnerabilityProviderKind::Snyk,
@@ -266,7 +254,7 @@ mod tests {
                     name: "".to_string(),
                     version: None,
                     component_kind: ComponentKind::Package,
-                    scan_refs: vec![],
+                    task_refs: vec![],
                     xrefs: vec![],
                     vulnerabilities: Some(vec![Vulnerability {
                         provider: VulnerabilityProviderKind::IonChannel,

@@ -1,6 +1,6 @@
-mod scan;
-pub use scan::*;
+mod task;
+pub use task::*;
 
 use platform::mongodb::{mongo_doc, MongoDocument};
 
-mongo_doc!(Scan);
+mongo_doc!(Task);

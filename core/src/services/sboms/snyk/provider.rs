@@ -5,20 +5,20 @@ use crate::services::snyk::{SnykService, SUPPORTED_SBOM_PROJECT_TYPES};
 use crate::Error;
 
 use crate::entities::packages::{ComponentKind, Purl};
-use crate::entities::scans::Scan;
+use crate::entities::tasks::Task;
 use crate::entities::xrefs::Xref;
 use crate::services::packages::PackageService;
 use crate::services::sboms::SbomService;
-use crate::services::scans::ScanProvider;
+use crate::services::tasks::TaskProvider;
 use async_trait::async_trait;
 use platform::mongodb::{Service, Store};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::debug;
 
-/// Synchronizes a Snyk Group with Harbor.
+/// Synchronizes SBOMS for a Snyk Group with Harbor.
 #[derive(Debug)]
-pub struct SbomScanProvider {
+pub struct SbomSyncTask {
     store: Arc<Store>,
     pub(in crate::services::sboms::snyk) snyk: SnykService,
     packages: PackageService,
@@ -26,9 +26,9 @@ pub struct SbomScanProvider {
 }
 
 #[async_trait]
-impl ScanProvider for SbomScanProvider {
+impl TaskProvider for SbomSyncTask {
     /// Builds the Packages Dependencies, Purls, and Unsupported from the Snyk API.
-    async fn scan_targets(&self, scan: &mut Scan) -> Result<HashMap<String, String>, Error> {
+    async fn run(&self, task: &mut Task) -> Result<HashMap<String, String>, Error> {
         println!("==> fetching projects");
 
         let mut targets = match self.snyk.projects().await {
@@ -42,8 +42,9 @@ impl ScanProvider for SbomScanProvider {
             return Err(Error::Snyk("no_projects".to_string()));
         }
 
-        println!("==> found {} projects", targets.len());
-        scan.count = targets.len() as u64;
+        let total = targets.len();
+        println!("==> found {} projects", total);
+        task.count = targets.len() as u64;
 
         let mut iteration = 0;
         let mut errors = HashMap::new();
@@ -51,11 +52,11 @@ impl ScanProvider for SbomScanProvider {
         for project in targets.iter_mut() {
             iteration += 1;
             println!(
-                "==> processing iteration {} for project {}",
-                iteration, project.project_name
+                "==> processing iteration {} of {} for project {}",
+                iteration, total, project.project_name
             );
 
-            match self.scan_target(scan, project).await {
+            match self.process_target(task, project).await {
                 Ok(()) => {
                     // TODO: Emit Metric
                     println!("==> iteration {} succeeded", iteration);
@@ -72,21 +73,21 @@ impl ScanProvider for SbomScanProvider {
     }
 }
 
-impl Service<Scan> for SbomScanProvider {
+impl Service<Task> for SbomSyncTask {
     fn store(&self) -> Arc<Store> {
         self.store.clone()
     }
 }
 
-impl SbomScanProvider {
+impl SbomSyncTask {
     /// Factory method to create new instance of type.
     pub fn new(
         store: Arc<Store>,
         snyk: SnykService,
         packages: PackageService,
         sboms: SbomService,
-    ) -> Result<SbomScanProvider, Error> {
-        Ok(SbomScanProvider {
+    ) -> Result<SbomSyncTask, Error> {
+        Ok(SbomSyncTask {
             store,
             snyk,
             packages,
@@ -95,9 +96,9 @@ impl SbomScanProvider {
     }
 
     /// Generates an [Sbom] and associated types from a Snyk [Project].
-    pub(crate) async fn scan_target(
+    pub(crate) async fn process_target(
         &self,
-        scan: &Scan,
+        task: &Task,
         project: &mut Project,
     ) -> Result<(), Error> {
         if project.status == ProjectStatus::Inactive {
@@ -124,7 +125,7 @@ impl SbomScanProvider {
         let raw = match self.snyk.sbom_raw(&snyk_ref).await {
             Ok(raw) => raw,
             Err(e) => {
-                let msg = format!("scan_target::sbom_raw::{}", e);
+                let msg = format!("process_target::sbom_raw::{}", e);
                 debug!("{}", msg);
                 return Err(Error::Sbom(msg));
             }
@@ -142,17 +143,17 @@ impl SbomScanProvider {
         ) {
             Ok(sbom) => sbom,
             Err(e) => {
-                let msg = format!("scan_target::from_raw_cdx::{}", e);
+                let msg = format!("process_target::from_raw_cdx::{}", e);
                 debug!("{}", msg);
                 return Err(Error::Sbom(msg));
             }
         };
 
-        // Determine how many times this Sbom has been scanned/synced.
+        // Determine how many times this Sbom has been synced.
         match self.sboms.set_instance_by_purl(&mut sbom).await {
             Ok(_) => {}
             Err(e) => {
-                let msg = format!("scan_target::from_raw_cdx::{}", e);
+                let msg = format!("process_target::from_raw_cdx::{}", e);
                 debug!("{}", msg);
                 return Err(Error::Sbom(msg));
             }
@@ -170,11 +171,11 @@ impl SbomScanProvider {
         {
             Ok(()) => {
                 // TODO: Emit Metric.
-                debug!("scan_target::write_to_storage::success");
+                debug!("process_target::write_to_storage::success");
             }
             Err(e) => {
                 // TODO: Emit Metric.
-                let msg = format!("scan_target::write_to_storage::{}", e);
+                let msg = format!("process_target::write_to_storage::{}", e);
                 debug!("{}", msg);
                 return Err(Error::Sbom(msg));
             }
@@ -184,7 +185,7 @@ impl SbomScanProvider {
         sbom.timestamp = platform::time::timestamp()?;
 
         // Commit the Sbom.
-        self.commit_target(scan, &mut sbom, Xref::from(snyk_ref))
+        self.commit_target(task, &mut sbom, Xref::from(snyk_ref))
             .await?;
 
         Ok(())
@@ -202,13 +203,13 @@ impl SbomScanProvider {
     /// has errors and dependent entities should not be committed.
     pub(crate) async fn commit_target(
         &self,
-        scan: &Scan,
+        task: &Task,
         sbom: &mut Sbom,
         xref: Xref,
     ) -> Result<(), Error> {
         let mut errs = HashMap::<String, String>::new();
 
-        // Should always insert Sbom. It should never be a duplicate, but a new instance from scan.
+        // Should always insert Sbom. It should never be a duplicate, but a new instance from task.
         match self.sboms.insert(sbom).await {
             Ok(_) => {}
             Err(e) => {
@@ -232,7 +233,7 @@ impl SbomScanProvider {
             match Purl::from_component(
                 &component,
                 ComponentKind::Package,
-                scan,
+                task,
                 sbom.iteration(),
                 xref.clone(),
             ) {
@@ -269,7 +270,7 @@ impl SbomScanProvider {
                     let mut purl = match Purl::from_component(
                         component,
                         ComponentKind::Dependency,
-                        scan,
+                        task,
                         0,
                         xref.clone(),
                     ) {

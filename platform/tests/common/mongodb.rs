@@ -15,7 +15,7 @@ pub const COLLECTION: &str = "Group";
 #[allow(dead_code)]
 pub async fn local_context() -> Result<Context, Error> {
     let cx: Context = Context {
-        host: "localhost".to_string(),
+        host: "mongo".to_string(),
         username: "root".to_string(),
         password: "harbor".to_string(),
         port: 27017,

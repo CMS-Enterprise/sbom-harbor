@@ -13,7 +13,7 @@ use std::io::BufReader;
 
 use crate::entities::enrichments::Vulnerability;
 use crate::entities::packages::Purl;
-use crate::entities::scans::ScanRef;
+use crate::entities::tasks::TaskRef;
 use crate::entities::xrefs;
 use crate::entities::xrefs::Xref;
 use crate::{config, Error};
@@ -27,7 +27,7 @@ pub trait StorageProvider: Debug + Send + Sync {
         &self,
         purl: &str,
         findings: &[Vulnerability],
-        scan_ref: &ScanRef,
+        task_ref: &TaskRef,
         xrefs: &[Xref],
     ) -> Result<String, Error>;
 }
@@ -56,7 +56,7 @@ impl StorageProvider for FileSystemStorageProvider {
         &self,
         purl: &str,
         vulnerabilities: &[Vulnerability],
-        scan_ref: &ScanRef,
+        task_ref: &TaskRef,
         _xrefs: &[Xref],
     ) -> Result<String, Error> {
         if vulnerabilities.is_empty() {
@@ -76,7 +76,7 @@ impl StorageProvider for FileSystemStorageProvider {
             "vulnerabilities-{}-{}-{}",
             provider,
             Purl::format_file_name(purl),
-            scan_ref.iteration
+            task_ref.iteration
         );
         let file_path = format!("{}/{}", self.out_dir, file_name);
 
@@ -109,7 +109,7 @@ impl StorageProvider for S3StorageProvider {
         &self,
         purl: &str,
         vulnerabilities: &[Vulnerability],
-        scan_ref: &ScanRef,
+        task_ref: &TaskRef,
         xrefs: &[Xref],
     ) -> Result<String, Error> {
         if vulnerabilities.is_empty() {
@@ -131,7 +131,7 @@ impl StorageProvider for S3StorageProvider {
             "vulnerabilities-{}-{}-{}",
             provider,
             Purl::format_file_name(purl),
-            scan_ref.iteration
+            task_ref.iteration
         );
 
         let json_raw = serde_json::to_vec(vulnerabilities)

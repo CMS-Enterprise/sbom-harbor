@@ -4,41 +4,41 @@ pub use provider::*;
 #[cfg(test)]
 mod tests {
     use crate::config::{dev_context, snyk_token};
-    use crate::entities::scans::{Scan, ScanKind};
+    use crate::entities::tasks::{Task, TaskKind};
     use crate::services::packages::PackageService;
-    use crate::services::sboms::snyk::provider::SbomScanProvider;
+    use crate::services::sboms::snyk::provider::SbomSyncTask;
     use crate::services::sboms::{FileSystemStorageProvider, SbomService};
-    use crate::services::scans::ScanProvider;
     use crate::services::snyk::{SnykService, API_VERSION};
+    use crate::services::tasks::TaskProvider;
     use crate::{entities, Error};
     use platform::mongodb::Store;
     use std::sync::Arc;
 
     #[async_std::test]
     #[ignore = "manual_debug_test"]
-    async fn can_scan_sboms() -> Result<(), Error> {
+    async fn can_process_sboms() -> Result<(), Error> {
         let provider = test_provider().await?;
 
-        let mut scan = Scan::new(ScanKind::Sbom(entities::sboms::SbomProviderKind::Snyk {
+        let mut task = Task::new(TaskKind::Sbom(entities::sboms::SbomProviderKind::Snyk {
             api_version: API_VERSION.to_string(),
         }))?;
 
-        match provider.execute(&mut scan).await {
+        match provider.execute(&mut task).await {
             Ok(()) => {}
             Err(e) => {
-                return Err(Error::Snyk(format!("can_scan_sboms::{}", e)));
+                return Err(Error::Snyk(format!("can_process_sboms::{}", e)));
             }
         };
 
         Ok(())
     }
 
-    async fn test_provider() -> Result<SbomScanProvider, Error> {
+    async fn test_provider() -> Result<SbomSyncTask, Error> {
         let token = snyk_token()?;
         let cx = dev_context(None)?;
         let store = Arc::new(Store::new(&cx).await?);
 
-        let provider = SbomScanProvider::new(
+        let provider = SbomSyncTask::new(
             store.clone(),
             SnykService::new(token),
             PackageService::new(store.clone()),

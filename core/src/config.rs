@@ -28,7 +28,7 @@ pub fn dev_context(db_name: Option<&str>) -> Result<Context, Error> {
     };
 
     Ok(Context {
-        host: "localhost".to_string(),
+        host: "mongo".to_string(),
         username: "root".to_string(),
         password: "harbor".to_string(),
         port: 27017,

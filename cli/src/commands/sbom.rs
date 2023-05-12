@@ -4,14 +4,14 @@ use std::sync::Arc;
 use clap::builder::PossibleValue;
 use clap::{Parser, ValueEnum};
 use harbcore::entities;
-use harbcore::entities::scans::{Scan, ScanKind};
+use harbcore::entities::tasks::{Task, TaskKind};
 use harbcore::services::packages::PackageService;
-use harbcore::services::sboms::snyk::SbomScanProvider;
+use harbcore::services::sboms::snyk::SbomSyncTask;
 use harbcore::services::sboms::{
     FileSystemStorageProvider, S3StorageProvider, SbomService, StorageProvider,
 };
-use harbcore::services::scans::ScanProvider;
 use harbcore::services::snyk::{SnykService, API_VERSION};
+use harbcore::services::tasks::TaskProvider;
 use platform::mongodb::{Context, Store};
 
 use crate::Error;
@@ -141,7 +141,7 @@ impl SnykProvider {
     async fn new_provider(
         cx: Context,
         storage: Box<dyn StorageProvider>,
-    ) -> Result<SbomScanProvider, Error> {
+    ) -> Result<SbomSyncTask, Error> {
         let token = harbcore::config::snyk_token().map_err(|e| Error::Config(e.to_string()))?;
         let store = Arc::new(
             Store::new(&cx)
@@ -149,7 +149,7 @@ impl SnykProvider {
                 .map_err(|e| Error::Sbom(e.to_string()))?,
         );
 
-        let provider = SbomScanProvider::new(
+        let provider = SbomSyncTask::new(
             store.clone(),
             SnykService::new(token),
             PackageService::new(store.clone()),
@@ -180,22 +180,22 @@ impl SnykProvider {
 
         match &args.snyk_args {
             None => {
-                let mut scan: Scan =
-                    Scan::new(ScanKind::Sbom(entities::sboms::SbomProviderKind::Snyk {
+                let mut task: Task =
+                    Task::new(TaskKind::Sbom(entities::sboms::SbomProviderKind::Snyk {
                         api_version: API_VERSION.to_string(),
                     }))
                     .map_err(|e| Error::Sbom(e.to_string()))?;
 
                 let provider = SnykProvider::new_provider(cx, storage).await?;
                 provider
-                    .execute(&mut scan)
+                    .execute(&mut task)
                     .await
                     .map_err(|e| Error::Sbom(e.to_string()))
             }
             Some(args) => {
                 let (_, _) = (&args.org_id, &args.project_id);
                 Err(Error::Sbom(
-                    "individual project scans not yet implemented".to_string(),
+                    "individual projects not yet implemented".to_string(),
                 ))
             }
         }
@@ -218,14 +218,14 @@ mod tests {
             "/tmp/harbor-debug/sboms".to_string(),
         ));
 
-        let mut scan: Scan = Scan::new(ScanKind::Sbom(entities::sboms::SbomProviderKind::Snyk {
+        let mut task: Task = Task::new(TaskKind::Sbom(entities::sboms::SbomProviderKind::Snyk {
             api_version: API_VERSION.to_string(),
         }))
         .map_err(|e| Error::Sbom(e.to_string()))?;
 
         let provider = SnykProvider::new_provider(cx, storage).await?;
 
-        match provider.execute(&mut scan).await {
+        match provider.execute(&mut task).await {
             Ok(_) => Ok(()),
             Err(e) => {
                 let msg = e.to_string();
