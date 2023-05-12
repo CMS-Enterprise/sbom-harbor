@@ -31,7 +31,7 @@ jobs:
     steps:
       - name: CHECKOUT
         uses: actions/checkout@v3
-      
+
       - name: CACHE
         uses: actions/cache@v3
         with:
@@ -51,35 +51,3 @@ jobs:
 
       - name: TEST - unit & integration
         run: cargo test
-
-  frontend:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ui
-    steps:
-      - name: CHECKOUT
-        uses: actions/checkout@v3
-      
-      - name: INSTALL- nodejs, yarn
-        uses: actions/setup-node@v3
-        with:
-          node-version: 19
-          cache: 'yarn'
-          cache-dependency-path: 'ui/yarn.lock'
-      
-      - name: DEBUG - node, npm, yarn versions
-        run: |
-          echo "node --version: $(node --version)"
-          echo "npm --version: $(npm --version)"
-          echo "yarn --version: $(yarn --version)"
-
-      - name: INSTALL - ui dependencies
-        working-directory: ui
-        run: CI=true yarn install
-
-      - name: LINT
-        run: yarn lint
-
-      - name: TEST - unit
-        run: yarn test
