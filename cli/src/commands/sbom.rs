@@ -83,9 +83,11 @@ pub struct SbomArgs {
 #[derive(Clone, Debug, Parser)]
 pub struct FileSystemArgs {}
 
-/// Args for generating one or more SBOMs from a GitHub Organization.
+/// Args for generating one ore more SBOMs from a GitHub Organization.
 #[derive(Clone, Debug, Parser)]
-pub struct GitHubArgs {}
+pub struct GitHubArgs {
+    org: Option<String>
+}
 
 /// Args for generating one or more SBOMs from the Snyk API.
 #[derive(Clone, Debug, Parser)]
@@ -127,9 +129,64 @@ impl FileSystemProvider {
 struct GithubProvider {}
 
 impl GithubProvider {
-    async fn execute(_args: &SbomArgs) -> Result<(), Error> {
-        // Construct and invoke Core Services here or if args are contextual call specialized subroutine.
-        todo!()
+
+    async fn execute(args: &SbomArgs) -> Result<(), Error> {
+        match &args.github_args {
+            None => {
+                let task_kind = TaskKind::Sbom(entities::sboms::SbomProviderKind::GitHub);
+
+                let mut task: Task = Task::new(task_kind)
+                    .map_err(|e| Error::Sbom(e.to_string()))?;
+
+                let provider = SnykProvider::new_provider(cx, storage).await?;
+                provider
+                    .execute(&mut task)
+                    .await
+                    .map_err(|e| Error::Sbom(e.to_string()))
+            }
+            Some(args) => {
+                let (_, _) = (&args.org_id, &args.project_id);
+                Err(Error::Sbom(
+                    "individual projects not yet implemented".to_string(),
+                ))
+            }
+        }.expect("TODO: panic message");
+
+            //&Option<GitHubArgs>
+
+        let default_org = String::from("cmsgov");
+
+        print!("Github args: {:#?}", args);
+
+        let gh_args = match args {
+            Some(gh_args) => gh_args.clone(),
+            None => {
+                GitHubArgs {
+                    org: Some(
+                        default_org.clone()
+                    )
+                }
+            }
+        };
+
+        let org = match &gh_args.org {
+            Some(org) => org,
+            None => &default_org
+        }.to_string();
+
+        let service = match GitHubSbomProvider::new(org) {
+            Ok(service) => service,
+            Err(err) => return Err(
+                Error::Config(err.to_string())
+            ),
+        };
+
+        match service.provide_sboms().await {
+            Ok(_r) => Ok(()),
+            Err(err) => Err(
+                Error::Sbom(err.to_string())
+            )
+        }
     }
 }
 

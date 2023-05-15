@@ -132,7 +132,12 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
     let resp = match client.request(req).await {
         Ok(r) => r,
         Err(err) => {
-            return Err(Error::Remote(err.to_string()));
+            return Err(
+                Error::Remote(
+                    local_error_sc.as_u16(),
+                    err.to_string()
+                )
+            );
         }
     };
 
@@ -146,7 +151,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
     };
 
     if resp_status != StatusCode::OK {
-        return Err(Error::Remote(resp_body));
+        return Err(Error::Remote(resp_status.as_u16(), resp_body));
     }
 
     // TODO: This a hack around empty JSON.
@@ -181,7 +186,7 @@ pub enum Error {
     Hyper(String),
     /// Error calling remote resource.
     #[error("error from remote resource: {0}")]
-    Remote(String),
+    Remote(u16, String),
     /// Error serializing types.
     #[error("error serializing types: {0}")]
     Serde(String),

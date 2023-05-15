@@ -1,6 +1,7 @@
 mod service;
 /// Supports generating [Sbom] instances from the Snyk API.
 pub mod snyk;
+mod github;
 
 pub use service::*;
 use std::fmt::Debug;
