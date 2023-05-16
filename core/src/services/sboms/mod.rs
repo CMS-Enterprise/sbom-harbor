@@ -2,6 +2,9 @@ mod service;
 /// Supports generating [Sbom] instances from the Snyk API.
 pub mod snyk;
 
+mod sbom_scorecard;
+pub use sbom_scorecard::*;
+
 pub use service::*;
 use std::fmt::Debug;
 use std::io::BufReader;
