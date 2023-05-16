@@ -1,6 +1,9 @@
 use regex::Regex;
 use std::process::Command;
 use std::str;
+use std::env;
+#[cfg(test)]
+use std::path::PathBuf;
 
 #[derive(Debug, PartialEq)]
 struct SbomScorecardRow {
@@ -16,7 +19,7 @@ struct SbomScorecard {
     summary: String,
 }
 
-// Converts a raw string into an SbomScorecard object
+/// Converts a raw string into an SbomScorecard object
 fn get_scorecard_from_string(raw_scorecard: String) -> SbomScorecard {
 
     let t = raw_scorecard.chars().filter(|c| c.is_ascii()).collect::<String>();
@@ -58,18 +61,24 @@ fn get_scorecard_from_string(raw_scorecard: String) -> SbomScorecard {
     return sbom_scorecard;
 }
 
-// Uses the sbom-scorecard utility to get a raw string representation of an sbom scorecard from stdout
+/// Uses the sbom-scorecard utility to get a raw string representation of an sbom scorecard from stdout
 fn retrieve_sbom_scorecard(sbom_path: String) -> String {
-    let result = Command::new("/home/jshattjr/sbom-scorecard")
-    .arg("score")
-    .arg(sbom_path)
-    .output()
-    .expect("failed to execute process");
-
-    return str::from_utf8(&result.stdout).unwrap().to_string();
+    print!("Generating scorecard from sbom file: {}", sbom_path);
+    match env::var(format!("SBOM_SCORECARD")) {
+        Ok(sbom_scorecard) => {
+            let result = Command::new(sbom_scorecard)
+            .arg("score")
+            .arg(sbom_path)
+            .output()
+            .expect("failed to execute process");
+        
+            return str::from_utf8(&result.stdout).unwrap().to_string();
+        },
+        Err(e) => panic!("sbom-scorecard application not installed: {}", e)
+    }
 }
 
-// Compares two Sboms, and returns true if they match. We may wish to do a more in-depth comparison in the future
+/// Compares two Sboms, and returns true if they match. We may wish to do a more in-depth comparison in the future
 fn is_matching_sbom(sbom_1_path: String, sbom_2_path: String) -> bool {
     let raw_scorecard_1 = retrieve_sbom_scorecard(sbom_1_path);
     let scorecard_1 = get_scorecard_from_string(raw_scorecard_1);
@@ -86,28 +95,35 @@ fn is_matching_sbom(sbom_1_path: String, sbom_2_path: String) -> bool {
 
 #[test]
 fn compare_matching_sboms() {
-    let sbom_1_path = format!("/home/jshattjr/SBOM/dropwizard-1.3.15/bom.json");
-    let sbom_2_path = format!("/home/jshattjr/SBOM/dropwizard-1.3.15/bom.json");
 
-    let result = is_matching_sbom(sbom_1_path, sbom_2_path);
+    let mut sbom_1_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    sbom_1_path.push("src/services/sboms/sbom_scorecard/test_files/dropwizard.json");
+    
+
+    let result = is_matching_sbom(sbom_1_path.display().to_string(), sbom_1_path.display().to_string());
 
     assert!(result == true, "Sboms should be matching");
 }
 
 #[test]
 fn compare_not_matching_sboms() {
-    let sbom_1_path = format!("/home/jshattjr/SBOM/dropwizard-1.3.15/bom.json");
-    let sbom_2_path = format!("/home/jshattjr/SBOM/keycloak-10.0.2/bom.json");
+    let mut sbom_1_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    sbom_1_path.push("src/services/sboms/sbom_scorecard/test_files/dropwizard.json");
 
-    let result = is_matching_sbom(sbom_1_path, sbom_2_path);
+    let mut sbom_2_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    sbom_2_path.push("src/services/sboms/sbom_scorecard/test_files/keycloak.json");
+
+    let result = is_matching_sbom(sbom_1_path.display().to_string(), sbom_2_path.display().to_string());
 
     assert!(result == false, "Sboms should be matching");
 }
 
 #[test]
 pub fn test_get_orgs() {
-    let path = format!("/home/jshattjr/SBOM/dropwizard-1.3.15/bom.json");
-    let raw_scorecard = retrieve_sbom_scorecard(path);
+    let mut test_sbom = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    test_sbom.push("src/services/sboms/sbom_scorecard/test_files/dropwizard.json");
+
+    let raw_scorecard = retrieve_sbom_scorecard(test_sbom.display().to_string());
     let scorecard = get_scorecard_from_string(raw_scorecard);
 
     println!("{:#?}", scorecard);
