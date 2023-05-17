@@ -16,7 +16,7 @@ pub struct Vulnerability {
     /// Unique identifier for instance.
     pub id: String,
 
-    /// Package URL that the [Vulnerability] pertains to.
+    /// The Package URL that the [Vulnerability] pertains to.
     pub purl: String,
 
     /// Indicates which enrichment provider reported the vulnerability.
@@ -30,6 +30,9 @@ pub struct Vulnerability {
 
     /// The CVE description of the [Vulnerability].
     pub description: Option<String>,
+
+    /// The EPSS Score for the CVE ID.
+    pub epss_score: Option<f32>,
 
     /// Optional CVSS Detail from the enrichment provider.
     pub cvss: Option<Summary>,
@@ -70,14 +73,16 @@ impl Vulnerability {
     }
 }
 
-/// Discriminator used to indicate what enrichment provider identified a [Vulnerability]. Implementers
-/// that want to develop their own enrichment sources and don't intend to contribute them back upstream can
-/// use the Custom variant without having to hard fork.
+/// Discriminator used to indicate what enrichment provider identified or scored a [Vulnerability].
+/// Implementers that want to develop their own enrichment sources and don't intend to contribute '
+/// them back upstream can use the Custom variant without having to hard fork.
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum VulnerabilityProviderKind {
     /// Dependency Track provider.
     DependencyTrack,
+    /// EPSS Score provider.
+    Epss,
     /// Ion Channel provider.
     IonChannel,
     /// Snyk provider.
@@ -90,6 +95,7 @@ impl Display for VulnerabilityProviderKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             VulnerabilityProviderKind::DependencyTrack => write!(f, "dependency-track"),
+            VulnerabilityProviderKind::Epss => write!(f, "epss"),
             VulnerabilityProviderKind::IonChannel => write!(f, "ion-channel"),
             VulnerabilityProviderKind::Snyk => write!(f, "snyk"),
             VulnerabilityProviderKind::Custom(name) => write!(f, "custom-{}", name),
@@ -158,6 +164,7 @@ mod tests {
                         severity: None,
                         cve: Some("CVE-2023-0842".to_string()),
                         description: None,
+                        epss_score: None,
                         cvss: None,
                         cwes: None,
                         remediation: None,
@@ -184,6 +191,7 @@ mod tests {
                         severity: None,
                         cve: Some("CVE-2023-0842".to_string()),
                         description: None,
+                        epss_score: None,
                         cvss: None,
                         cwes: None,
                         remediation: None,
@@ -214,6 +222,7 @@ mod tests {
                         severity: None,
                         cve: Some("CVE-2023-0842".to_string()),
                         description: None,
+                        epss_score: None,
                         cvss: None,
                         cwes: None,
                         remediation: None,
@@ -240,6 +249,7 @@ mod tests {
                         severity: None,
                         cve: Some("CVE-2023-0842".to_string()),
                         description: None,
+                        epss_score: None,
                         cvss: None,
                         cwes: None,
                         remediation: None,
