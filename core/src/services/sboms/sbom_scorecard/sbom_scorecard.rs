@@ -8,7 +8,7 @@ use serde_json;
 
 
 #[derive(Debug, PartialEq, Deserialize, Clone)]
-struct RowData {
+pub struct RowData {
     #[serde(alias = "Ratio")]
     ratio: f32,
     #[serde(alias = "Reasoning")]
@@ -18,13 +18,13 @@ struct RowData {
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
-struct SbomScorecardMetadata {
+pub struct SbomScorecardMetadata {
     #[serde(alias = "TotalPackages")]
     total_packages: u32
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
-struct SbomScorecard {
+pub struct SbomScorecard {
     #[serde(alias = "Compliance")]
     compliance: RowData,
     #[serde(alias = "PackageIdentification")]
@@ -42,7 +42,7 @@ struct SbomScorecard {
 }
 
 /// Uses the sbom-scorecard utility to create an SBOMScorecard Object
-fn generate_sbom_scorecard(sbom_path: String) -> SbomScorecard {
+pub fn generate_sbom_scorecard(sbom_path: String) -> SbomScorecard {
     print!("Generating scorecard from sbom file: {}", sbom_path);
     match env::var(format!("SBOM_SCORECARD")) {
         Ok(sbom_scorecard) => {
@@ -68,7 +68,7 @@ fn generate_sbom_scorecard(sbom_path: String) -> SbomScorecard {
 }
 
 /// Compares two Sboms, and returns true if they match. We may wish to do a more in-depth comparison in the future
-fn is_matching_sbom(sbom_1_path: String, sbom_2_path: String) -> bool {
+pub fn is_matching_sbom(sbom_1_path: String, sbom_2_path: String) -> bool {
     let scorecard_1 = generate_sbom_scorecard(sbom_1_path);
     let scorecard_2 = generate_sbom_scorecard(sbom_2_path);
 

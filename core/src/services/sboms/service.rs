@@ -9,22 +9,19 @@ use crate::services::sboms::StorageProvider;
 use crate::services::xrefs::XrefService;
 use crate::Error;
 
+use super::sbom_scorecard::{SbomScorecard, generate_sbom_scorecard, is_matching_sbom};
+
 /// Invoke [sbom-scorecard](https://github.com/eBay/sbom-scorecard) and return the results.
-pub fn score(_path: &str) -> Result<String, Error> {
-    Ok("not implemented".to_string())
+pub fn score(_path: &str) -> Result<SbomScorecard, Error> {
+    let scorecard = generate_sbom_scorecard(_path.to_owned());
+    Ok(scorecard)
 }
 
 /// Compare 2 SBOM scores.
-pub fn compare(first_path: &str, second_path: &str) -> Result<String, Error> {
-    let first_score = score(first_path)?;
-    let second_score = score(second_path)?;
+pub fn compare(first_path: &str, second_path: &str) -> Result<bool, Error> {
 
-    let mut result = format!("----------------{} score-------------------", first_path);
-    result.push_str(first_score.as_str());
-    result.push_str(format!("----------------{} score-------------------", second_path).as_str());
-    result.push_str(second_score.as_str());
-
-    Ok(result)
+    let match_results = is_matching_sbom(first_path.to_owned(), second_path.to_owned());
+    Ok(match_results)
 }
 
 // Implement Xref Service so that xrefs can be managed for Sboms.
