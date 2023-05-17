@@ -1,9 +1,9 @@
 use regex::Regex;
-use std::process::Command;
-use std::str;
 use std::env;
 #[cfg(test)]
 use std::path::PathBuf;
+use std::process::Command;
+use std::str;
 
 #[derive(Debug, PartialEq)]
 struct SbomScorecardRow {
@@ -21,11 +21,16 @@ struct SbomScorecard {
 
 /// Converts a raw string into an SbomScorecard object
 fn get_scorecard_from_string(raw_scorecard: String) -> SbomScorecard {
+    let raw_scorecard_string = raw_scorecard
+        .chars()
+        .filter(|c| c.is_ascii())
+        .collect::<String>();
 
-    let t = raw_scorecard.chars().filter(|c| c.is_ascii()).collect::<String>();
+    let raw_scorecard_string = raw_scorecard.chars().filter(|c| c.is_ascii()).collect::<String>();
 
-    let t = t.replace("\n\n", "\n");
-    let collection: Vec<&str> = t.split("\n").collect();
+    // Remove all the extra carriage returns and turn them into normal carriage returns
+    let raw_scorecard_string = raw_scorecard_string.replace("\n\n", "\n");
+    let collection: Vec<&str> = raw_scorecard_string.split("\n").collect();
 
     let re = Regex::new(r"\s{2,}").unwrap();
 
@@ -33,9 +38,8 @@ fn get_scorecard_from_string(raw_scorecard: String) -> SbomScorecard {
     let mut summary: String = format!("");
 
     for row in collection {
-
         // Do nothing if we have an empty row or with the header
-        if !row.is_empty() && !row.starts_with(" #"){
+        if !row.is_empty() && !row.starts_with(" #") {
             let record = re.replace_all(&row, "||");
             let record: Vec<&str> = record.split("||").collect();
 
@@ -67,14 +71,14 @@ fn retrieve_sbom_scorecard(sbom_path: String) -> String {
     match env::var(format!("SBOM_SCORECARD")) {
         Ok(sbom_scorecard) => {
             let result = Command::new(sbom_scorecard)
-            .arg("score")
-            .arg(sbom_path)
-            .output()
-            .expect("failed to execute process");
-        
+                .arg("score")
+                .arg(sbom_path)
+                .output()
+                .expect("failed to execute process");
+
             return str::from_utf8(&result.stdout).unwrap().to_string();
-        },
-        Err(e) => panic!("sbom-scorecard application not installed: {}", e)
+        }
+        Err(e) => panic!("sbom-scorecard application not installed: {}", e),
     }
 }
 
@@ -95,12 +99,13 @@ fn is_matching_sbom(sbom_1_path: String, sbom_2_path: String) -> bool {
 
 #[test]
 fn compare_matching_sboms() {
-
     let mut sbom_1_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     sbom_1_path.push("src/services/sboms/sbom_scorecard/test_files/dropwizard.json");
-    
 
-    let result = is_matching_sbom(sbom_1_path.display().to_string(), sbom_1_path.display().to_string());
+    let result = is_matching_sbom(
+        sbom_1_path.display().to_string(),
+        sbom_1_path.display().to_string(),
+    );
 
     assert!(result == true, "Sboms should be matching");
 }
@@ -113,7 +118,10 @@ fn compare_not_matching_sboms() {
     let mut sbom_2_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     sbom_2_path.push("src/services/sboms/sbom_scorecard/test_files/keycloak.json");
 
-    let result = is_matching_sbom(sbom_1_path.display().to_string(), sbom_2_path.display().to_string());
+    let result = is_matching_sbom(
+        sbom_1_path.display().to_string(),
+        sbom_2_path.display().to_string(),
+    );
 
     assert!(result == false, "Sboms should be matching");
 }
