@@ -1,82 +1,67 @@
-use regex::Regex;
+use serde::Deserialize;
 use std::env;
 #[cfg(test)]
 use std::path::PathBuf;
 use std::process::Command;
 use std::str;
+use serde_json;
 
-#[derive(Debug, PartialEq)]
-struct SbomScorecardRow {
-    index: String,
-    field_name: String,
-    points: String,
+
+#[derive(Debug, PartialEq, Deserialize, Clone)]
+struct RowData {
+    #[serde(alias = "Ratio")]
+    ratio: f32,
+    #[serde(alias = "Reasoning")]
     reasoning: String,
+    #[serde(alias = "MaxPoints")]
+    max_points: u32
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Deserialize)]
+struct SbomScorecardMetadata {
+    #[serde(alias = "TotalPackages")]
+    total_packages: u32
+}
+
+#[derive(Debug, PartialEq, Deserialize)]
 struct SbomScorecard {
-    rows: Vec<SbomScorecardRow>,
-    summary: String,
+    #[serde(alias = "Compliance")]
+    compliance: RowData,
+    #[serde(alias = "PackageIdentification")]
+    package_identification: RowData,
+    #[serde(alias = "PackageVersions")]
+    package_versions: RowData,
+    #[serde(alias = "PackageLicenses")]
+    package_licenses: RowData,
+    #[serde(alias = "CreationInfo")]
+    creation_info: RowData,
+    #[serde(alias = "Total")]
+    total: RowData,
+    #[serde(alias = "Metadata")]
+    metadata: SbomScorecardMetadata
 }
 
-/// Converts a raw string into an SbomScorecard object
-fn get_scorecard_from_string(raw_scorecard: String) -> SbomScorecard {
-    let raw_scorecard_string = raw_scorecard
-        .chars()
-        .filter(|c| c.is_ascii())
-        .collect::<String>();
-
-    let raw_scorecard_string = raw_scorecard.chars().filter(|c| c.is_ascii()).collect::<String>();
-
-    // Remove all the extra carriage returns and turn them into normal carriage returns
-    let raw_scorecard_string = raw_scorecard_string.replace("\n\n", "\n");
-    let collection: Vec<&str> = raw_scorecard_string.split("\n").collect();
-
-    let re = Regex::new(r"\s{2,}").unwrap();
-
-    let mut scorecard_rows: Vec<SbomScorecardRow> = Vec::new();
-    let mut summary: String = format!("");
-
-    for row in collection {
-        // Do nothing if we have an empty row or with the header
-        if !row.is_empty() && !row.starts_with(" #") {
-            let record = re.replace_all(&row, "||");
-            let record: Vec<&str> = record.split("||").collect();
-
-            if record.len() >= 4 {
-                let sbom_scorecard_row = SbomScorecardRow {
-                    index: record.get(0).unwrap_or(&"").to_string(),
-                    field_name: record.get(1).unwrap_or(&"").to_string(),
-                    points: record.get(2).unwrap_or(&"").to_string(),
-                    reasoning: record.get(3).unwrap_or(&"").to_string(),
-                };
-                scorecard_rows.push(sbom_scorecard_row);
-            } else {
-                for field in record {
-                    summary.push_str(field);
-                }
-            }
-        }
-    }
-    let sbom_scorecard = SbomScorecard {
-        rows: scorecard_rows,
-        summary,
-    };
-    return sbom_scorecard;
-}
-
-/// Uses the sbom-scorecard utility to get a raw string representation of an sbom scorecard from stdout
-fn retrieve_sbom_scorecard(sbom_path: String) -> String {
+/// Uses the sbom-scorecard utility to create an SBOMScorecard Object
+fn generate_sbom_scorecard(sbom_path: String) -> SbomScorecard {
     print!("Generating scorecard from sbom file: {}", sbom_path);
     match env::var(format!("SBOM_SCORECARD")) {
         Ok(sbom_scorecard) => {
             let result = Command::new(sbom_scorecard)
                 .arg("score")
                 .arg(sbom_path)
+                .arg("--outputFormat")
+                .arg("json")
                 .output()
                 .expect("failed to execute process");
+            let raw_scorecard = str::from_utf8(&result.stdout).unwrap().to_string();
 
-            return str::from_utf8(&result.stdout).unwrap().to_string();
+            let scorecard_obj: SbomScorecard = serde_json::from_str(&raw_scorecard).unwrap_or({
+                let empty_row = RowData{ ratio: 0.0, reasoning: format!(""), max_points: 0 };
+                SbomScorecard { compliance: empty_row.clone(), package_identification: empty_row.clone(), package_versions: empty_row.clone(), package_licenses: empty_row.clone(), creation_info: empty_row.clone(), total: empty_row.clone(), metadata: SbomScorecardMetadata{total_packages:0} }
+            });
+
+            return scorecard_obj;
+
         }
         Err(e) => panic!("sbom-scorecard application not installed: {}", e),
     }
@@ -84,11 +69,8 @@ fn retrieve_sbom_scorecard(sbom_path: String) -> String {
 
 /// Compares two Sboms, and returns true if they match. We may wish to do a more in-depth comparison in the future
 fn is_matching_sbom(sbom_1_path: String, sbom_2_path: String) -> bool {
-    let raw_scorecard_1 = retrieve_sbom_scorecard(sbom_1_path);
-    let scorecard_1 = get_scorecard_from_string(raw_scorecard_1);
-
-    let raw_scorecard_2 = retrieve_sbom_scorecard(sbom_2_path);
-    let scorecard_2 = get_scorecard_from_string(raw_scorecard_2);
+    let scorecard_1 = generate_sbom_scorecard(sbom_1_path);
+    let scorecard_2 = generate_sbom_scorecard(sbom_2_path);
 
     if scorecard_1 == scorecard_2 {
         return true;
@@ -131,8 +113,12 @@ pub fn test_get_orgs() {
     let mut test_sbom = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     test_sbom.push("src/services/sboms/sbom_scorecard/test_files/dropwizard.json");
 
-    let raw_scorecard = retrieve_sbom_scorecard(test_sbom.display().to_string());
-    let scorecard = get_scorecard_from_string(raw_scorecard);
+    let scorecard = generate_sbom_scorecard(test_sbom.display().to_string());
+    assert!(scorecard.compliance.ratio == 1.0, "Compliance ratio should be 1");
+    assert!(scorecard.compliance.reasoning == "", "Compliance reasoning should be an empty string");
+    assert!(scorecard.compliance.max_points == 25, "Compliance max points should be 25");
 
-    println!("{:#?}", scorecard);
+    assert!(scorecard.package_identification.ratio == 1.0, "PackageIdentification ratio should be 1");
+    assert!(scorecard.package_identification.reasoning == "100% have either a purl (100%) or CPE (0%)", "PackageIdentification reasoning should be 100% have either a purl (100%) or CPE (0%)");
+    assert!(scorecard.package_identification.max_points == 20, "PackageIdentification max points should be 20");
 }
