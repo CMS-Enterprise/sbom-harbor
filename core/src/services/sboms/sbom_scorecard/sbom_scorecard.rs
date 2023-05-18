@@ -41,6 +41,23 @@ pub struct SbomScorecard {
     metadata: SbomScorecardMetadata
 }
 
+pub fn show_sbom_scorecard(sbom_path: String) -> String {
+    println!("Generating scorecard from sbom file: {}", sbom_path);
+    match env::var(format!("SBOM_SCORECARD")) {
+        Ok(sbom_scorecard) => {
+            let result = Command::new(sbom_scorecard)
+                .arg("score")
+                .arg(sbom_path)
+                .output()
+                .expect("failed to execute process");
+
+            //println!("{}", String::from_utf8_lossy(&result.stdout));
+            return String::from_utf8_lossy(&result.stdout).to_string();
+        }
+        Err(e) => panic!("sbom-scorecard application not installed: {}", e),
+    }
+}
+
 /// Uses the sbom-scorecard utility to create an SBOMScorecard Object
 pub fn generate_sbom_scorecard(sbom_path: String) -> SbomScorecard {
     print!("Generating scorecard from sbom file: {}", sbom_path);
@@ -95,7 +112,7 @@ fn compare_matching_sboms() {
 #[test]
 fn compare_not_matching_sboms() {
     let mut sbom_1_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    sbom_1_path.push("src/services/sboms/sbom_scorecard/test_files/dropwizard.json");
+    sbom_1_path.push("src/services/sboms/sbom_scorecard/test_fiopwizard.json");
 
     let mut sbom_2_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     sbom_2_path.push("src/services/sboms/sbom_scorecard/test_files/keycloak.json");
@@ -121,4 +138,14 @@ pub fn test_get_orgs() {
     assert!(scorecard.package_identification.ratio == 1.0, "PackageIdentification ratio should be 1");
     assert!(scorecard.package_identification.reasoning == "100% have either a purl (100%) or CPE (0%)", "PackageIdentification reasoning should be 100% have either a purl (100%) or CPE (0%)");
     assert!(scorecard.package_identification.max_points == 20, "PackageIdentification max points should be 20");
+}
+
+#[test]
+pub fn test_show_score() {
+    let mut test_sbom = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    test_sbom.push("src/services/sboms/sbom_scorecard/test_files/dropwizard.json");
+
+    let result = show_sbom_scorecard(test_sbom.display().to_string());
+
+    println!("{}", result);
 }
