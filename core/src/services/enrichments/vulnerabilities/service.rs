@@ -1,6 +1,5 @@
 use crate::entities::enrichments::Vulnerability;
 use crate::entities::packages::Package;
-use crate::entities::tasks::TaskRef;
 use crate::services::enrichments::vulnerabilities::StorageProvider;
 use crate::Error;
 use platform::mongodb::{Service, Store};
@@ -29,11 +28,7 @@ impl VulnerabilityService {
 
     /// Stores the set of [Vulnerability] instances for a [Package] using the configured
     /// [StorageProvider].
-    pub async fn store_by_purl(
-        &self,
-        package: &Package,
-        task_ref: &TaskRef,
-    ) -> Result<Option<String>, Error> {
+    pub async fn store_by_purl(&self, package: &Package) -> Result<Option<String>, Error> {
         if package.vulnerabilities.is_empty() {
             return Ok(None);
         }
@@ -47,12 +42,7 @@ impl VulnerabilityService {
 
         match self
             .storage
-            .write(
-                purl,
-                package.vulnerabilities.as_slice(),
-                task_ref,
-                &package.xrefs,
-            )
+            .write(purl, package.vulnerabilities.as_slice(), &package.xrefs)
             .await
         {
             Ok(file_path) => Ok(Some(file_path)),

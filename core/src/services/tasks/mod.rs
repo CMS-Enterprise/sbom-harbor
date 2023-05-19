@@ -76,7 +76,7 @@ pub trait TaskProvider: Service<Task> {
             None => {
                 task.err_total = match &task.ref_errs {
                     None => 0,
-                    Some(ref_errs) => ref_errs.len(),
+                    Some(ref_errs) => ref_errs.len() as u64,
                 };
 
                 match task.err_total > 0 {

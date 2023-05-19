@@ -175,25 +175,8 @@ impl Sbom {
         }
     }
 
-    /// Utility function to get the current iteration by [TaskRef].
-    pub fn iteration(&self) -> u32 {
-        match self.task_refs.iter().max_by_key(|s| s.iteration) {
-            Some(s) => s.iteration,
-            _ => 1,
-        }
-    }
-
-    /// Utility function to get the next iteration by [TaskRef].
-    pub fn next_iteration(&self) -> u32 {
-        match self.task_refs.iter().max_by_key(|s| s.iteration) {
-            Some(s) => s.iteration + 1,
-            _ => 1,
-        }
-    }
-
     /// Add a [TaskRef] to the [Sbom].
     pub fn task_refs(&mut self, task_ref: &mut TaskRef) {
-        task_ref.iteration = self.next_iteration();
         self.task_refs.push(task_ref.to_owned());
     }
 
@@ -203,12 +186,7 @@ impl Sbom {
             return Err(Error::Entity("task_id_required".to_string()));
         }
 
-        let mut task_ref = TaskRef::new(task, target_id, 0);
-
-        task_ref.iteration = match self.task_refs.iter().max_by_key(|s| s.iteration) {
-            Some(s) => s.iteration + 1,
-            _ => 1,
-        };
+        let task_ref = TaskRef::new(task, target_id);
 
         let result = task_ref.clone();
         self.task_refs.push(task_ref);

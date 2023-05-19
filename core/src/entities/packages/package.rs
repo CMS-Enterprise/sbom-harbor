@@ -182,12 +182,7 @@ impl Package {
             return Err(Error::Entity("task_id_required".to_string()));
         }
 
-        let mut task_ref = TaskRef::new(task, target_id, 0);
-
-        task_ref.iteration = match self.task_refs.iter().max_by_key(|s| s.iteration) {
-            Some(s) => s.iteration + 1,
-            _ => 1,
-        };
+        let task_ref = TaskRef::new(task, target_id);
 
         let result = task_ref.clone();
         self.task_refs.push(task_ref);

@@ -118,7 +118,7 @@ impl VulnerabilityScanTask {
 
         // Load existing vulnerabilities
         package.vulnerabilities = self.query(HashMap::from([("purl", purl.as_str())])).await?;
-        let task_ref = package.join_task(purl.clone(), task)?;
+        let _ = package.join_task(purl.clone(), task)?;
 
         let new_vulnerabilities = match self.vulnerabilities_by_purl(package).await {
             Ok(vulnerabilities) => vulnerabilities,
@@ -143,7 +143,7 @@ impl VulnerabilityScanTask {
         };
 
         // TODO: Store file_path somewhere?
-        let _file_path = match self.vulnerabilities.store_by_purl(package, &task_ref).await {
+        let _file_path = match self.vulnerabilities.store_by_purl(package).await {
             Ok(file_path) => file_path,
             Err(e) => {
                 return Err(Error::Vulnerability(e.to_string()));
