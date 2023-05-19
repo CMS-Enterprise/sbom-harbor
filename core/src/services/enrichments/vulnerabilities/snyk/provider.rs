@@ -1,5 +1,5 @@
 use crate::entities::enrichments::Vulnerability;
-use crate::entities::packages::Purl;
+use crate::entities::packages::Package;
 use crate::entities::tasks::Task;
 use crate::entities::xrefs::XrefKind;
 use crate::services::enrichments::vulnerabilities::VulnerabilityService;
@@ -27,10 +27,10 @@ impl TaskProvider for VulnerabilityScanTask {
     async fn run(&self, task: &mut Task) -> Result<HashMap<String, String>, Error> {
         println!("==> fetching purls");
 
-        // TODO: This needs to actually constrain on Purls that have a Snyk Ref once other
+        // TODO: This needs to actually constrain on Packages that have a Snyk Ref once other
         // Providers start writing to the data store.
-        let mut targets: Vec<Purl> = match self.list().await {
-            Ok(purls) => purls,
+        let mut targets: Vec<Package> = match self.packages.list().await {
+            Ok(packages) => packages,
             Err(e) => {
                 return Err(Error::Vulnerability(format!("run::{}", e)));
             }
@@ -47,21 +47,29 @@ impl TaskProvider for VulnerabilityScanTask {
         let mut iteration = 0;
         let mut errors = HashMap::new();
 
-        for purl in targets.iter_mut() {
+        for package in targets.iter_mut() {
             iteration += 1;
+            let purl = match &package.purl {
+                None => {
+                    errors.insert(package.id.clone(), "package_purl_none".to_string());
+                    continue;
+                }
+                Some(purl) => purl.clone(),
+            };
+
             println!(
                 "==> processing iteration {} of {} for purl {}",
-                iteration, total, purl.purl
+                iteration, total, purl
             );
 
-            match self.process_target(purl, task).await {
+            match self.process_target(package, task).await {
                 Ok(_) => {
                     println!("==> iteration {} succeeded", iteration);
                 }
                 Err(e) => {
                     // Don't fail on a single error.
                     println!("==> iteration {} failed with error: {}", iteration, e);
-                    errors.insert(purl.purl.clone(), e.to_string());
+                    errors.insert(purl, e.to_string());
                 }
             }
         }
@@ -70,7 +78,7 @@ impl TaskProvider for VulnerabilityScanTask {
     }
 }
 
-impl Service<Purl> for VulnerabilityScanTask {
+impl Service<Vulnerability> for VulnerabilityScanTask {
     fn store(&self) -> Arc<Store> {
         self.store.clone()
     }
@@ -100,63 +108,97 @@ impl VulnerabilityScanTask {
 
     pub(in crate::services::enrichments::vulnerabilities::snyk) async fn process_target(
         &self,
-        purl: &mut Purl,
+        package: &mut Package,
         task: &Task,
     ) -> Result<(), Error> {
-        let findings = match self.vulnerabilities_by_purl(purl).await {
-            Ok(findings) => findings,
+        let purl = match &package.purl {
+            None => return Err(Error::Vulnerability("package_purl_none".to_string())),
+            Some(purl) => purl.clone(),
+        };
+
+        // Load existing vulnerabilities
+        package.vulnerabilities = self.query(HashMap::from([("purl", purl.as_str())])).await?;
+        let task_ref = package.join_task(purl.clone(), task)?;
+
+        let new_vulnerabilities = match self.vulnerabilities_by_purl(package).await {
+            Ok(vulnerabilities) => vulnerabilities,
             Err(e) => {
                 return Err(Error::Vulnerability(e.to_string()));
             }
         };
 
-        match findings {
+        let mut new_vulnerabilities = match new_vulnerabilities {
             None => {
-                println!("no vulnerabilities for {}", purl.purl);
+                println!("==> no vulnerabilities for {}", purl);
                 return Ok(());
             }
-            Some(findings) => {
-                println!("==> found {} vulnerabilities", findings.len());
-                purl.vulnerabilities(&findings);
-            }
-        }
-
-        let task_ref = match purl.init_scan(task) {
-            Ok(task_ref) => task_ref,
-            Err(e) => {
-                let msg = format!("purl::task_refs::{}", e);
-                return Err(Error::Vulnerability(msg));
+            Some(vulnerabilities) => {
+                println!(
+                    "==> found {} vulnerabilities for {}",
+                    vulnerabilities.len(),
+                    purl
+                );
+                vulnerabilities
             }
         };
 
         // TODO: Store file_path somewhere?
-        let _file_path = match self.vulnerabilities.store_by_purl(purl, &task_ref).await {
+        let _file_path = match self.vulnerabilities.store_by_purl(package, &task_ref).await {
             Ok(file_path) => file_path,
             Err(e) => {
                 return Err(Error::Vulnerability(e.to_string()));
             }
         };
 
-        self.packages.upsert_purl(purl).await
+        for vulnerability in new_vulnerabilities.iter_mut() {
+            let task_ref = match vulnerability.join_task(task) {
+                Ok(task_ref) => task_ref,
+                Err(e) => {
+                    let msg = format!("purl::task_refs::{}", e);
+                    return Err(Error::Vulnerability(msg));
+                }
+            };
+
+            self.vulnerabilities.upsert_by_purl(vulnerability).await?;
+
+            package.task_refs(&task_ref);
+            package.vulnerabilities(vulnerability)
+        }
+
+        self.packages.upsert_package_by_purl(package, None).await
     }
 
     /// Retrieves a set of native Snyk Issues from the API and converts them to a native Harbor
     /// [Vulnerability].
     pub async fn vulnerabilities_by_purl(
         &self,
-        purl: &mut Purl,
+        package: &Package,
     ) -> Result<Option<Vec<Vulnerability>>, Error> {
+        let purl = match &package.purl {
+            None => {
+                return Err(Error::Snyk("package_purl_none".to_string()));
+            }
+            Some(purl) => purl.clone(),
+        };
+
         // TODO: Validate getting this for a single org is good enough. We seem to get dupes.
-        let xref = purl.xrefs.iter().find(|x| {
+        let xref = package.xrefs.iter().find(|x| {
             x.kind == XrefKind::External(SNYK_DISCRIMINATOR.to_string())
                 && x.map.get("orgId").is_some()
         });
 
-        let org_id = xref.unwrap().map.get("orgId").unwrap();
+        let xref = match xref {
+            None => {
+                return Err(Error::Snyk("snyk_ref_none".to_string()));
+            }
+            Some(xref) => xref,
+        };
+
+        let org_id = xref.map.get("orgId").unwrap();
 
         let vulnerabilities = match self
             .snyk
-            .vulnerabilities(org_id.as_str(), purl.purl.as_str())
+            .vulnerabilities(org_id.as_str(), purl.as_str())
             .await
         {
             Ok(f) => f,

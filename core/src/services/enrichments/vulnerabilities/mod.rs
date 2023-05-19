@@ -12,7 +12,7 @@ use std::fmt::Debug;
 use std::io::BufReader;
 
 use crate::entities::enrichments::Vulnerability;
-use crate::entities::packages::Purl;
+use crate::entities::packages::Package;
 use crate::entities::tasks::TaskRef;
 use crate::entities::xrefs;
 use crate::entities::xrefs::Xref;
@@ -26,7 +26,7 @@ pub trait StorageProvider: Debug + Send + Sync {
     async fn write(
         &self,
         purl: &str,
-        findings: &[Vulnerability],
+        vulnerabilities: &[Vulnerability],
         task_ref: &TaskRef,
         xrefs: &[Xref],
     ) -> Result<String, Error>;
@@ -75,7 +75,7 @@ impl StorageProvider for FileSystemStorageProvider {
         let file_name = format!(
             "vulnerabilities-{}-{}-{}",
             provider,
-            Purl::format_file_name(purl),
+            Package::format_file_name(purl),
             task_ref.iteration
         );
         let file_path = format!("{}/{}", self.out_dir, file_name);
@@ -130,7 +130,7 @@ impl StorageProvider for S3StorageProvider {
         let object_key = format!(
             "vulnerabilities-{}-{}-{}",
             provider,
-            Purl::format_file_name(purl),
+            Package::format_file_name(purl),
             task_ref.iteration
         );
 

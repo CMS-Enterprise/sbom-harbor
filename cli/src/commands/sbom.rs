@@ -10,7 +10,7 @@ use harbcore::services::sboms::snyk::SbomSyncTask;
 use harbcore::services::sboms::{
     FileSystemStorageProvider, S3StorageProvider, SbomService, StorageProvider,
 };
-use harbcore::services::snyk::{SnykService, API_VERSION};
+use harbcore::services::snyk::SnykService;
 use harbcore::services::tasks::TaskProvider;
 use platform::mongodb::{Context, Store};
 
@@ -181,10 +181,8 @@ impl SnykProvider {
         match &args.snyk_args {
             None => {
                 let mut task: Task =
-                    Task::new(TaskKind::Sbom(entities::sboms::SbomProviderKind::Snyk {
-                        api_version: API_VERSION.to_string(),
-                    }))
-                    .map_err(|e| Error::Sbom(e.to_string()))?;
+                    Task::new(TaskKind::Sbom(entities::sboms::SbomProviderKind::Snyk))
+                        .map_err(|e| Error::Sbom(e.to_string()))?;
 
                 let provider = SnykProvider::new_provider(cx, storage).await?;
                 provider
@@ -218,10 +216,8 @@ mod tests {
             "/tmp/harbor-debug/sboms".to_string(),
         ));
 
-        let mut task: Task = Task::new(TaskKind::Sbom(entities::sboms::SbomProviderKind::Snyk {
-            api_version: API_VERSION.to_string(),
-        }))
-        .map_err(|e| Error::Sbom(e.to_string()))?;
+        let mut task: Task = Task::new(TaskKind::Sbom(entities::sboms::SbomProviderKind::Snyk))
+            .map_err(|e| Error::Sbom(e.to_string()))?;
 
         let provider = SnykProvider::new_provider(cx, storage).await?;
 

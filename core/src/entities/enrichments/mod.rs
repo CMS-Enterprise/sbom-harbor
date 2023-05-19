@@ -5,4 +5,8 @@ pub mod cvss;
 /// [Package].
 pub mod vulnerabilities;
 
+use platform::mongo_doc;
+use platform::mongodb::MongoDocument;
 pub use vulnerabilities::*;
+
+mongo_doc!(Vulnerability);

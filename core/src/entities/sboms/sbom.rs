@@ -4,9 +4,9 @@ use std::fmt::{Display, Formatter};
 use tracing::log::debug;
 
 use crate::entities::cyclonedx::{Bom, Component};
-use crate::entities::packages::{Dependency, Package};
+use crate::entities::packages::Package;
 use crate::entities::sboms::SbomProviderKind;
-use crate::entities::tasks::TaskRef;
+use crate::entities::tasks::{Task, TaskRef};
 use crate::entities::xrefs::Xref;
 use crate::Error;
 
@@ -28,15 +28,36 @@ pub struct Sbom {
     pub instance: u32,
 
     /// The spec the [Sbom] conforms to.
-    pub spec: Spec,
+    pub kind: SpecKind,
 
-    /// The actor that that was the source of the [Sbom].
-    pub source: Source,
+    /// The system or tool that generated the [Sbom] if known. Should satisfy the Author
+    /// element as specified by the NTIA SBOM Minimum Elements.
+    pub author: Author,
 
-    /// The system or tool that generated the [Sbom] if known.
+    /// Denormalized from Author. Allows partitioning SBOMs by the tool that was used to generate
+    /// them.
     pub provider: Option<SbomProviderKind>,
 
-    /// The unix timestamp for when the [Sbom] was created.
+    /// The name of an entity that creates, defines, and identifies the component that this [Sbom]
+    /// pertains to. Part of the NTIA SBOM Minimum Elements.
+    pub supplier_name: Option<String>,
+
+    /// Designation assigned to a unit of software defined by the original supplier as specified by
+    /// the NTIA SBOM Minimum Elements.
+    pub component_name: Option<String>,
+
+    /// Identifier used by the supplier to specify a change in software from a previously identified
+    /// version as specified by the NTIA SBOM Minimum Elements.
+    pub version: Option<String>,
+
+    /// Identifiers that are used to identify a component, or serve as a look-up key for relevant
+    /// databases as specified by the NTIA SBOM Minimum Elements. (e.g. CPE).
+    pub other_identifiers: Option<Vec<String>>,
+
+    /// Denormalized list of dependency refs as specified by the NTIA SBOM Minimum Elements.
+    pub dependency_refs: Option<Vec<String>>,
+
+    /// The unix timestamp for when the [Sbom] was created as specified by the NTIA SBOM Minimum Elements.
     pub timestamp: u64,
 
     /// The checksum of the file.
@@ -48,9 +69,6 @@ pub struct Sbom {
     /// Reference to each [Task] that was performed against this [Sbom] instance.
     pub task_refs: Vec<TaskRef>,
 
-    /// Denormalized list of dependency refs.
-    pub dependency_refs: Option<Vec<String>>,
-
     /// CycloneDx JSON spec model of Sbom. Hydrated at runtime.
     #[serde(skip)]
     pub(crate) bom: Option<Bom>,
@@ -58,14 +76,6 @@ pub struct Sbom {
     /// [Package] instance that represents this Sbom. Hydrated at runtime.
     #[serde(skip)]
     pub package: Option<Package>,
-
-    /// [Packages] this Sbom depends on. Hydrated at runtime.
-    #[serde(skip)]
-    pub dependencies: Vec<Dependency>,
-
-    /// [Packages] that depend on this Sbom. Hydrated at runtime.
-    #[serde(skip)]
-    pub dependents: Vec<Dependency>,
 }
 
 impl Sbom {
@@ -73,9 +83,10 @@ impl Sbom {
     pub fn from_raw_cdx(
         raw: &str,
         format: CdxFormat,
-        source: Source,
+        author: Author,
         package_manager: &Option<String>,
         xref: Xref,
+        task: &Task,
     ) -> Result<Sbom, Error> {
         let bom: Bom = match Bom::parse(raw, CdxFormat::Json) {
             Ok(bom) => bom,
@@ -85,6 +96,10 @@ impl Sbom {
                 return Err(Error::Entity(msg));
             }
         };
+
+        let component_name = bom.component_name();
+        let supplier_name = bom.supplier_name();
+        let version = bom.component_version();
 
         let purl = match bom.purl() {
             None => {
@@ -98,49 +113,26 @@ impl Sbom {
             }
         };
 
-        let provider = match source.clone() {
-            Source::Harbor(provider) => provider,
-            Source::Vendor(name) => SbomProviderKind::Vendor(name),
+        let provider = match author.clone() {
+            Author::Harbor(provider) => provider,
+            Author::Vendor(name) => SbomProviderKind::Vendor(name),
         };
 
-        let package = Package::from_bom(&bom, package_manager.clone(), xref.clone())?;
-        let package_ref = purl.clone();
+        let package = Package::from_bom(&bom, package_manager.clone(), xref.clone(), task)?;
 
-        let mut dependency_refs = vec![];
-        let mut dependencies = vec![];
+        let other_identifiers = bom.cpe().map(|cpe| vec![cpe]);
 
-        let components = match &bom.components {
-            None => vec![],
-            Some(components) => components.to_vec(),
-        };
+        let dependency_refs = package.dependency_refs.clone();
 
-        components
-            .iter()
-            .for_each(|component| match &component.purl {
-                None => {}
-                Some(purl) => {
-                    dependency_refs.push(purl.clone());
-                    dependencies.push(Dependency::from_component(
-                        component,
-                        provider.clone(),
-                        package_ref.clone(),
-                        package_manager.clone(),
-                        xref.clone(),
-                    ));
-                }
-            });
-
-        let dependency_refs = match dependency_refs.is_empty() {
-            true => Some(dependency_refs),
-            false => None,
-        };
-
-        let sbom = Sbom {
+        let mut sbom = Sbom {
             id: "".to_string(),
-            purl: Some(purl),
+            purl: Some(purl.clone()),
             instance: 1,
-            spec: Spec::Cdx(format),
-            source,
+            kind: SpecKind::Cdx(format),
+            author,
+            component_name,
+            version,
+            supplier_name,
             package_manager: package_manager.clone(),
             provider: Some(provider),
             timestamp: platform::time::timestamp()?,
@@ -149,10 +141,11 @@ impl Sbom {
             xrefs: vec![xref],
             bom: Some(bom),
             package: Some(package),
-            dependencies,
-            dependents: vec![],
             dependency_refs,
+            other_identifiers,
         };
+
+        sbom.join_task(purl, task)?;
 
         Ok(sbom)
     }
@@ -203,12 +196,31 @@ impl Sbom {
         task_ref.iteration = self.next_iteration();
         self.task_refs.push(task_ref.to_owned());
     }
+
+    /// Sets up a reference between the [Sbom] and the [Task].
+    pub fn join_task(&mut self, target_id: String, task: &Task) -> Result<TaskRef, Error> {
+        if task.id.is_empty() {
+            return Err(Error::Entity("task_id_required".to_string()));
+        }
+
+        let mut task_ref = TaskRef::new(task, target_id, 0);
+
+        task_ref.iteration = match self.task_refs.iter().max_by_key(|s| s.iteration) {
+            Some(s) => s.iteration + 1,
+            _ => 1,
+        };
+
+        let result = task_ref.clone();
+        self.task_refs.push(task_ref);
+
+        Ok(result)
+    }
 }
 
-/// A Spec is the SBOM specification to which the SBOM conforms.
+/// The SBOM specification kind of the [Sbom].
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub enum Spec {
+pub enum SpecKind {
     /// SBOM is a CycloneDx document.
     Cdx(CdxFormat),
 
@@ -216,16 +228,16 @@ pub enum Spec {
     Spdx(SpdxFormat),
 }
 
-impl Display for Spec {
+impl Display for SpecKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Spec::Cdx(format) => write!(f, "cdx::{}", format),
-            Spec::Spdx(format) => write!(f, "spdx::{}", format),
+            SpecKind::Cdx(format) => write!(f, "cdx::{}", format),
+            SpecKind::Spdx(format) => write!(f, "spdx::{}", format),
         }
     }
 }
 
-/// CdxFormat is the document encoding format for the CycloneDx [Spec].
+/// CdxFormat is the document encoding format for the CycloneDx [SpecKind].
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum CdxFormat {
@@ -244,7 +256,7 @@ impl Display for CdxFormat {
     }
 }
 
-/// SpdxFormat is the document encoding format for the Spdx [Spec].
+/// SpdxFormat is the document encoding format for the Spdx [SpecKind].
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum SpdxFormat {
@@ -275,18 +287,18 @@ impl Display for SpdxFormat {
 /// The actor that provided or generated the Sbom.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub enum Source {
+pub enum Author {
     /// SBOM produced by Harbor using the specified internal provider (e.g. GitHub, Snyk)
     Harbor(SbomProviderKind),
     /// SBOM provided by the vendor.
     Vendor(String),
 }
 
-impl Display for Source {
+impl Display for Author {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Source::Harbor(provider) => write!(f, "harbor::{}", provider),
-            Source::Vendor(name) => write!(f, "vendor::{}", name.to_lowercase()),
+            Author::Harbor(provider) => write!(f, "harbor::{}", provider),
+            Author::Vendor(name) => write!(f, "vendor::{}", name.to_lowercase()),
         }
     }
 }

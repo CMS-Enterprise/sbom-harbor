@@ -1,10 +1,9 @@
-use crate::entities::sboms::{CdxFormat, Sbom, SbomProviderKind, Source};
+use crate::entities::sboms::{Author, CdxFormat, Sbom, SbomProviderKind};
 use crate::services::snyk::adapters::Project;
-use crate::services::snyk::{ProjectStatus, API_VERSION};
+use crate::services::snyk::ProjectStatus;
 use crate::services::snyk::{SnykService, SUPPORTED_SBOM_PROJECT_TYPES};
 use crate::Error;
 
-use crate::entities::packages::{ComponentKind, Purl};
 use crate::entities::tasks::Task;
 use crate::entities::xrefs::Xref;
 use crate::services::packages::PackageService;
@@ -135,11 +134,10 @@ impl SbomSyncTask {
         let mut sbom = match Sbom::from_raw_cdx(
             raw.as_str(),
             CdxFormat::Json,
-            Source::Harbor(SbomProviderKind::Snyk {
-                api_version: API_VERSION.to_string(),
-            }),
+            Author::Harbor(SbomProviderKind::Snyk),
             &package_manager,
             Xref::from(snyk_ref.clone()),
+            task,
         ) {
             Ok(sbom) => sbom,
             Err(e) => {
@@ -185,8 +183,7 @@ impl SbomSyncTask {
         sbom.timestamp = platform::time::timestamp()?;
 
         // Commit the Sbom.
-        self.commit_target(task, &mut sbom, Xref::from(snyk_ref))
-            .await?;
+        self.commit_target(&mut sbom, Xref::from(snyk_ref)).await?;
 
         Ok(())
     }
@@ -201,92 +198,52 @@ impl SbomSyncTask {
 
     /// Transaction script for saving Sbom results to data store. If change_set None, indicates Sbom
     /// has errors and dependent entities should not be committed.
-    pub(crate) async fn commit_target(
-        &self,
-        task: &Task,
-        sbom: &mut Sbom,
-        xref: Xref,
-    ) -> Result<(), Error> {
+    pub(crate) async fn commit_target(&self, sbom: &mut Sbom, xref: Xref) -> Result<(), Error> {
         let mut errs = HashMap::<String, String>::new();
 
         // Should always insert Sbom. It should never be a duplicate, but a new instance from task.
         match self.sboms.insert(sbom).await {
             Ok(_) => {}
             Err(e) => {
-                errs.insert("sbom".to_string(), e.to_string());
+                return Err(Error::Sbom(e.to_string()));
             }
         }
 
-        match sbom.package.clone() {
+        let mut package = match sbom.package.clone() {
+            Some(package) => package,
             None => {
-                errs.insert("package".to_string(), "sbom_package_none".to_string());
-            }
-            Some(mut package) => match self.packages.upsert_package_by_purl(&mut package).await {
-                Ok(_) => {}
-                Err(e) => {
-                    errs.insert("package".to_string(), e.to_string());
-                }
-            },
-        }
-
-        if let Some(component) = sbom.component() {
-            match Purl::from_component(
-                &component,
-                ComponentKind::Package,
-                task,
-                sbom.iteration(),
-                xref.clone(),
-            ) {
-                Ok(mut purl) => match self.packages.upsert_purl(&mut purl).await {
-                    Ok(_) => {}
-                    Err(e) => {
-                        errs.insert("purl".to_string(), e.to_string());
-                    }
-                },
-                Err(e) => {
-                    errs.insert("purl".to_string(), e.to_string());
-                }
+                return Err(Error::Sbom("sbom_package_none".to_string()));
             }
         };
 
-        for dependency in sbom.dependencies.iter_mut() {
-            let key = match dependency.purl() {
-                None => "unset".to_string(),
-                Some(purl) => format!("dependency::{}", purl),
-            };
+        match self
+            .packages
+            .upsert_package_by_purl(&mut package, Some(&xref))
+            .await
+        {
+            Ok(_) => {}
+            Err(e) => {
+                errs.insert("package".to_string(), e.to_string());
+            }
+        }
 
-            match self.packages.upsert_dependency_by_purl(dependency).await {
+        if !errs.is_empty() {
+            let errs = match serde_json::to_string(&errs) {
+                Ok(errs) => errs,
+                Err(e) => format!("error serializing errs {}", e),
+            };
+            return Err(Error::Sbom(errs));
+        }
+
+        for dependency in package.dependencies.iter_mut() {
+            match self
+                .packages
+                .upsert_package_by_purl(dependency, Some(&xref))
+                .await
+            {
                 Ok(_) => {}
                 Err(e) => {
-                    errs.insert(key.clone(), e.to_string());
-                }
-            }
-
-            match &dependency.component {
-                None => {
-                    errs.insert(key, "dependency_component_none".to_string());
-                }
-                Some(component) => {
-                    let mut purl = match Purl::from_component(
-                        component,
-                        ComponentKind::Dependency,
-                        task,
-                        0,
-                        xref.clone(),
-                    ) {
-                        Ok(purl) => purl,
-                        Err(e) => {
-                            errs.insert(key.clone(), e.to_string());
-                            continue;
-                        }
-                    };
-
-                    match self.packages.upsert_purl(&mut purl).await {
-                        Ok(_) => {}
-                        Err(e) => {
-                            errs.insert(key.clone(), format!("upsert_dependency_purl::{}", e));
-                        }
-                    }
+                    errs.insert("package".to_string(), e.to_string());
                 }
             }
         }

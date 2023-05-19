@@ -8,7 +8,7 @@ use std::io::BufReader;
 
 use crate::{config, Error};
 
-use crate::entities::packages::Purl;
+use crate::entities::packages::Package;
 use crate::entities::sboms::Sbom;
 use crate::entities::xrefs;
 use crate::entities::xrefs::Xref;
@@ -53,7 +53,7 @@ impl StorageProvider for FileSystemStorageProvider {
         _xref: &Option<Xref>,
     ) -> Result<String, Error> {
         let purl = &sbom.purl()?;
-        let purl = Purl::format_file_name(purl.as_str());
+        let purl = Package::format_file_name(purl.as_str());
 
         match std::fs::create_dir_all(&self.out_dir) {
             Ok(_) => {}
@@ -93,7 +93,7 @@ impl StorageProvider for S3StorageProvider {
         xref: &Option<Xref>,
     ) -> Result<String, Error> {
         let purl = &sbom.purl()?;
-        let purl = Purl::format_file_name(purl.as_str());
+        let purl = Package::format_file_name(purl.as_str());
 
         let metadata = xref.as_ref().map(xrefs::flatten);
 
@@ -144,9 +144,7 @@ mod tests {
 
         match std::fs::write(file_path.as_str(), json_raw) {
             Ok(()) => Ok(()),
-            Err(e) => {
-                Err(Error::Runtime(format!("debug_sbom::{}", e)))
-            }
+            Err(e) => Err(Error::Runtime(format!("debug_sbom::{}", e))),
         }
     }
 }

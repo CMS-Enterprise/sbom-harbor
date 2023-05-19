@@ -73,9 +73,8 @@ impl PackageCdx {
         })
     }
 
-    /// Creates a Cdx summary from a CycloneDx Component. Typically used during [Dependency]
-    /// creation.
-    pub fn from_component(component: &Component, package_manager: Option<String>) -> PackageCdx {
+    /// Creates a Cdx summary from a CycloneDx Component that is defined as a dependency.
+    pub fn from_dependency(component: &Component, package_manager: Option<String>) -> PackageCdx {
         Self {
             component_type: component.r#type,
             bom_ref: component.bom_ref.clone(),

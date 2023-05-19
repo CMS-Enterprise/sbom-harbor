@@ -13,7 +13,6 @@ use crate::entities::enrichments::cvss::{Maturity, Score, Summary, Version};
 use crate::entities::enrichments::{
     Cwe, Remediation, Severity, Vulnerability, VulnerabilityProviderKind,
 };
-use crate::services::snyk::API_VERSION;
 use crate::Error;
 use platform::mongodb::{mongo_doc, MongoDocument};
 
@@ -125,9 +124,7 @@ impl Project {
             external_id: self.project_id.clone(),
             name: self.project_name.clone(),
             package_manager: Some(self.package_manager.clone()),
-            provider: SbomProviderKind::Snyk {
-                api_version: API_VERSION.to_string(),
-            },
+            provider: SbomProviderKind::Snyk,
             xrefs: vec![Xref::from(self.to_snyk_ref())],
         }
     }
@@ -149,15 +146,18 @@ impl Project {
 pub(crate) struct Issue {}
 
 impl IssueSnyk {
-    pub(crate) fn to_vulnerability(&self) -> Vulnerability {
+    pub(crate) fn to_vulnerability(&self, purl: &str) -> Vulnerability {
         let raw = match serde_json::to_string(&self).map_err(|e| Error::Serde(e.to_string())) {
             Ok(raw) => Some(raw),
             Err(_) => None,
         };
 
         let severity = self.severity();
+        let purl = purl.to_string();
 
         Vulnerability {
+            id: "".to_string(),
+            purl,
             provider: VulnerabilityProviderKind::Snyk,
             severity,
             cve: self.cve(),
@@ -166,6 +166,7 @@ impl IssueSnyk {
             cwes: self.cwes(),
             remediation: self.remediation(),
             raw,
+            task_refs: vec![],
         }
     }
 
