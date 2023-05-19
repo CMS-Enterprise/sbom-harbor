@@ -140,7 +140,7 @@ impl SnykProvider {
             }
             true => {
                 storage = Box::new(FileSystemStorageProvider::new(
-                    "/tmp/harbor-debug/sboms".to_string(),
+                    "/tmp/harbor-debug/vulnerabilities".to_string(),
                 ));
                 harbcore::config::dev_context(None).map_err(|e| Error::Config(e.to_string()))?
             }
