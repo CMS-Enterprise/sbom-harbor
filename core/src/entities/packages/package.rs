@@ -18,7 +18,7 @@ pub struct Package {
     pub id: String,
 
     /// Discriminator indicating if the Package defines a [Package] being monitored or a dependency
-    /// of one of a [Package] being monitored.
+    /// of a [Package] being monitored.
     pub kind: PackageKind,
 
     /// The package manager for the [Package].

@@ -74,11 +74,10 @@ pub trait TaskProvider: Service<Task> {
     async fn complete(&self, task: &mut Task) -> Result<(), Error> {
         match task.err {
             None => {
-                task.err_total = task
-                    .ref_errs
-                    .iter()
-                    .filter(|ref_err| !ref_err.is_empty())
-                    .count() as u64;
+                task.err_total = match &task.ref_errs {
+                    None => 0,
+                    Some(ref_errs) => ref_errs.len(),
+                };
 
                 match task.err_total > 0 {
                     true => task.status = TaskStatus::CompleteWithErrors,
