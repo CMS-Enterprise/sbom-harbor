@@ -49,6 +49,32 @@ impl Bom {
         None
     }
 
+    /// Extracts the Component Name for the BOM if available.
+    pub fn component_name(&self) -> Option<String> {
+        match self.component() {
+            None => None,
+            Some(component) => Some(component.name),
+        }
+    }
+
+    /// Extracts the Component Version for the BOM if available.
+    pub fn component_version(&self) -> Option<String> {
+        if let Some(version) = self.component()?.version {
+            return Some(version);
+        }
+
+        None
+    }
+
+    /// Extracts the Supplier Name for the BOM if available.
+    pub fn supplier_name(&self) -> Option<String> {
+        if let Some(name) = &self.component()?.supplier.as_deref()?.name {
+            return Some(name.clone());
+        }
+
+        None
+    }
+
     /// Extracts the CPE for the BOM if available.
     pub fn cpe(&self) -> Option<String> {
         if let Some(cpe) = self.component()?.cpe {

@@ -102,20 +102,16 @@ pub struct TaskRef {
     /// The unique identifier for the [Task] target.
     pub target_id: String,
 
-    /// The Task iteration for the target. Forward-only incrementing counter.
-    pub iteration: u32,
-
     /// Optional error message if the [Task] failed for this target.
     pub err: Option<String>,
 }
 
 impl TaskRef {
     /// Factory method for creating new instance of type.
-    pub fn new(task: &Task, target_id: String, iteration: u32) -> Self {
+    pub fn new(task: &Task, target_id: String) -> Self {
         Self {
             task_id: task.id.clone(),
             target_id,
-            iteration,
             err: None,
         }
     }

@@ -193,7 +193,7 @@ impl SnykService {
         let mut results = vec![];
 
         issues.iter().for_each(|issue| {
-            results.push(issue.to_vulnerability());
+            results.push(issue.to_vulnerability(purl));
         });
 
         Ok(Some(results))

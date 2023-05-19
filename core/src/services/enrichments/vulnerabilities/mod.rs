@@ -12,8 +12,7 @@ use std::fmt::Debug;
 use std::io::BufReader;
 
 use crate::entities::enrichments::Vulnerability;
-use crate::entities::packages::Purl;
-use crate::entities::tasks::TaskRef;
+use crate::entities::packages::Package;
 use crate::entities::xrefs;
 use crate::entities::xrefs::Xref;
 use crate::{config, Error};
@@ -26,8 +25,7 @@ pub trait StorageProvider: Debug + Send + Sync {
     async fn write(
         &self,
         purl: &str,
-        findings: &[Vulnerability],
-        task_ref: &TaskRef,
+        vulnerabilities: &[Vulnerability],
         xrefs: &[Xref],
     ) -> Result<String, Error>;
 }
@@ -56,7 +54,6 @@ impl StorageProvider for FileSystemStorageProvider {
         &self,
         purl: &str,
         vulnerabilities: &[Vulnerability],
-        task_ref: &TaskRef,
         _xrefs: &[Xref],
     ) -> Result<String, Error> {
         if vulnerabilities.is_empty() {
@@ -73,10 +70,9 @@ impl StorageProvider for FileSystemStorageProvider {
         }
 
         let file_name = format!(
-            "vulnerabilities-{}-{}-{}",
+            "vulnerabilities-{}-{}",
             provider,
-            Purl::format_file_name(purl),
-            task_ref.iteration
+            Package::format_file_name(purl)
         );
         let file_path = format!("{}/{}", self.out_dir, file_name);
 
@@ -109,7 +105,6 @@ impl StorageProvider for S3StorageProvider {
         &self,
         purl: &str,
         vulnerabilities: &[Vulnerability],
-        task_ref: &TaskRef,
         xrefs: &[Xref],
     ) -> Result<String, Error> {
         if vulnerabilities.is_empty() {
@@ -128,10 +123,9 @@ impl StorageProvider for S3StorageProvider {
         let s3_store = s3::Store::new_from_env().await?;
         let bucket_name = config::harbor_bucket()?;
         let object_key = format!(
-            "vulnerabilities-{}-{}-{}",
+            "vulnerabilities-{}-{}",
             provider,
-            Purl::format_file_name(purl),
-            task_ref.iteration
+            Package::format_file_name(purl)
         );
 
         let json_raw = serde_json::to_vec(vulnerabilities)
