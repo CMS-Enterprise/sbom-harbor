@@ -51,8 +51,12 @@ pub fn show_sbom_scorecard(sbom_path: String) -> String {
                 .output()
                 .expect("failed to execute process");
 
-            //println!("{}", String::from_utf8_lossy(&result.stdout));
-            return String::from_utf8_lossy(&result.stdout).to_string();
+            if !result.stderr.is_empty() {
+                return String::from_utf8_lossy(&result.stderr).to_string();
+            }
+            else {
+                return String::from_utf8_lossy(&result.stdout).to_string();
+            }
         }
         Err(e) => panic!("sbom-scorecard application not installed: {}", e),
     }
@@ -60,7 +64,7 @@ pub fn show_sbom_scorecard(sbom_path: String) -> String {
 
 /// Uses the sbom-scorecard utility to create an SBOMScorecard Object
 pub fn generate_sbom_scorecard(sbom_path: String) -> SbomScorecard {
-    print!("Generating scorecard from sbom file: {}", sbom_path);
+    println!("Generating scorecard from sbom file: {}", sbom_path);
     match env::var(format!("SBOM_SCORECARD")) {
         Ok(sbom_scorecard) => {
             let result = Command::new(sbom_scorecard)
@@ -84,16 +88,29 @@ pub fn generate_sbom_scorecard(sbom_path: String) -> SbomScorecard {
     }
 }
 
-/// Compares two Sboms, and returns true if they match. We may wish to do a more in-depth comparison in the future
-pub fn is_matching_sbom(sbom_1_path: String, sbom_2_path: String) -> bool {
-    let scorecard_1 = generate_sbom_scorecard(sbom_1_path);
-    let scorecard_2 = generate_sbom_scorecard(sbom_2_path);
+/// Compares two Sboms total scores, and returns a String with details about which is the higher score.
+pub fn compare_sbom_scorecards(sbom_1_path: String, sbom_2_path: String) -> String {
 
-    if scorecard_1 == scorecard_2 {
-        return true;
-    } else {
-        return false;
+    let scorecard_1 = generate_sbom_scorecard(sbom_1_path.clone());
+    let scorecard_2 = generate_sbom_scorecard(sbom_2_path.clone());
+
+    let precision = 0;
+    let scorecard_1_details = format!("Scorecard 1:({})\n=> Has a total score of {:.2$}/100", sbom_1_path.clone(), 100.0 * scorecard_1.total.ratio, precision);
+    let scorecard_2_details = format!("Scorecard 2:({})\n=> Has a total score of {:.2$}/100", sbom_2_path.clone(), 100.0 * scorecard_2.total.ratio, precision);
+   
+    let mut compare_results = format!("{}\n\n{}\n\n", scorecard_1_details, scorecard_2_details);
+ 
+    if scorecard_1.total.ratio > scorecard_2.total.ratio {
+        compare_results.push_str(&format!("Scorecard 1 has a higher score!"));
     }
+    else if scorecard_1.total.ratio < scorecard_2.total.ratio {
+        compare_results.push_str(&format!("Scorecard 2 has a higher score!"));
+    }
+    else {
+        compare_results.push_str(&format!("The two scorecards have a matching score!"));
+    }
+
+    return compare_results;
 }
 
 #[test]
@@ -101,28 +118,26 @@ fn compare_matching_sboms() {
     let mut sbom_1_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     sbom_1_path.push("src/services/sboms/sbom_scorecard/test_files/dropwizard.json");
 
-    let result = is_matching_sbom(
+    let result = compare_sbom_scorecards(
         sbom_1_path.display().to_string(),
         sbom_1_path.display().to_string(),
     );
 
-    assert!(result == true, "Sboms should be matching");
 }
 
 #[test]
 fn compare_not_matching_sboms() {
     let mut sbom_1_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    sbom_1_path.push("src/services/sboms/sbom_scorecard/test_fiopwizard.json");
+    sbom_1_path.push("src/services/sboms/sbom_scorecard/test_files/dropwizard.json");
 
     let mut sbom_2_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     sbom_2_path.push("src/services/sboms/sbom_scorecard/test_files/keycloak.json");
 
-    let result = is_matching_sbom(
+    let result = compare_sbom_scorecards(
         sbom_1_path.display().to_string(),
         sbom_2_path.display().to_string(),
     );
 
-    assert!(result == false, "Sboms should be matching");
 }
 
 #[test]

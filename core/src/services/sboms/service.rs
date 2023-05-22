@@ -9,7 +9,7 @@ use crate::services::sboms::StorageProvider;
 use crate::services::xrefs::XrefService;
 use crate::Error;
 
-use super::sbom_scorecard::{SbomScorecard, generate_sbom_scorecard, is_matching_sbom};
+use super::sbom_scorecard::{SbomScorecard, generate_sbom_scorecard, compare_sbom_scorecards};
 
 /// Invoke [sbom-scorecard](https://github.com/eBay/sbom-scorecard) and return the results.
 pub fn score(_path: &str) -> Result<SbomScorecard, Error> {
@@ -18,9 +18,9 @@ pub fn score(_path: &str) -> Result<SbomScorecard, Error> {
 }
 
 /// Compare 2 SBOM scores.
-pub fn compare(first_path: &str, second_path: &str) -> Result<bool, Error> {
+pub fn compare(first_path: &str, second_path: &str) -> Result<String, Error> {
 
-    let match_results = is_matching_sbom(first_path.to_owned(), second_path.to_owned());
+    let match_results = compare_sbom_scorecards(first_path.to_owned(), second_path.to_owned());
     Ok(match_results)
 }
 
