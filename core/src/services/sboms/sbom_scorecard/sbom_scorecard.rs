@@ -8,6 +8,7 @@ use serde_json;
 
 
 #[derive(Debug, PartialEq, Deserialize, Clone)]
+/// Model that represents a row within the scorecard
 pub struct RowData {
     #[serde(alias = "Ratio")]
     ratio: f32,
@@ -18,12 +19,14 @@ pub struct RowData {
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
+/// Model that represents the scorecard metadata 
 pub struct SbomScorecardMetadata {
     #[serde(alias = "TotalPackages")]
     total_packages: u32
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
+/// Model that represents sbom scorecard results
 pub struct SbomScorecard {
     #[serde(alias = "Compliance")]
     compliance: RowData,
@@ -41,6 +44,7 @@ pub struct SbomScorecard {
     metadata: SbomScorecardMetadata
 }
 
+/// Displays sbom scorecard results to stdout
 pub fn show_sbom_scorecard(sbom_path: String) -> String {
     println!("Generating scorecard from sbom file: {}", sbom_path);
     match env::var(format!("SBOM_SCORECARD")) {
@@ -123,6 +127,7 @@ fn compare_matching_sboms() {
         sbom_1_path.display().to_string(),
     );
 
+    assert!(result.contains("The two scorecards have a matching score!"), "The scorecards should be matching");
 }
 
 #[test]
@@ -137,7 +142,8 @@ fn compare_not_matching_sboms() {
         sbom_1_path.display().to_string(),
         sbom_2_path.display().to_string(),
     );
-
+    
+    assert!(result.contains("Scorecard 2 has a higher score!"), "The second scorecard should be more highly rated");
 }
 
 #[test]
@@ -153,14 +159,4 @@ pub fn test_get_orgs() {
     assert!(scorecard.package_identification.ratio == 1.0, "PackageIdentification ratio should be 1");
     assert!(scorecard.package_identification.reasoning == "100% have either a purl (100%) or CPE (0%)", "PackageIdentification reasoning should be 100% have either a purl (100%) or CPE (0%)");
     assert!(scorecard.package_identification.max_points == 20, "PackageIdentification max points should be 20");
-}
-
-#[test]
-pub fn test_show_score() {
-    let mut test_sbom = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    test_sbom.push("src/services/sboms/sbom_scorecard/test_files/dropwizard.json");
-
-    let result = show_sbom_scorecard(test_sbom.display().to_string());
-
-    println!("{}", result);
 }
