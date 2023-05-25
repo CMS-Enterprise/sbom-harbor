@@ -6,6 +6,8 @@ use std::process::Command;
 use std::str;
 use serde_json;
 
+use crate::Error;
+
 
 #[derive(Debug, PartialEq, Deserialize, Clone)]
 /// Model that represents a row within the scorecard
@@ -45,7 +47,7 @@ pub struct SbomScorecard {
 }
 
 /// Displays sbom scorecard results to stdout
-pub fn show_sbom_scorecard(sbom_path: String) -> String {
+pub fn show_sbom_scorecard(sbom_path: String) -> Result<String, Error> {
     println!("Generating scorecard from sbom file: {}", sbom_path);
     match env::var(format!("SBOM_SCORECARD")) {
         Ok(sbom_scorecard) => {
@@ -56,18 +58,18 @@ pub fn show_sbom_scorecard(sbom_path: String) -> String {
                 .expect("failed to execute process");
 
             if !result.stderr.is_empty() {
-                return String::from_utf8_lossy(&result.stderr).to_string();
+                return Ok(String::from_utf8_lossy(&result.stderr).to_string());
             }
             else {
-                return String::from_utf8_lossy(&result.stdout).to_string();
+                return Ok(String::from_utf8_lossy(&result.stdout).to_string());
             }
         }
-        Err(e) => panic!("sbom-scorecard application not installed: {}", e),
+        Err(e) => Err(Error::SbomScorecard(format!("sbom-scorecard application not installed: {}", e))),
     }
 }
 
 /// Uses the sbom-scorecard utility to create an SBOMScorecard Object
-pub fn generate_sbom_scorecard(sbom_path: String) -> SbomScorecard {
+pub fn generate_sbom_scorecard(sbom_path: String) -> Result<SbomScorecard, Error> {
     println!("Generating scorecard from sbom file: {}", sbom_path);
     match env::var(format!("SBOM_SCORECARD")) {
         Ok(sbom_scorecard) => {
@@ -85,36 +87,44 @@ pub fn generate_sbom_scorecard(sbom_path: String) -> SbomScorecard {
                 SbomScorecard { compliance: empty_row.clone(), package_identification: empty_row.clone(), package_versions: empty_row.clone(), package_licenses: empty_row.clone(), creation_info: empty_row.clone(), total: empty_row.clone(), metadata: SbomScorecardMetadata{total_packages:0} }
             });
 
-            return scorecard_obj;
+            return Ok(scorecard_obj);
 
         }
-        Err(e) => panic!("sbom-scorecard application not installed: {}", e),
+        Err(e) => return Err(Error::SbomScorecard(format!("sbom-scorecard application not installed: {}", e))),
     }
 }
 
 /// Compares two Sboms total scores, and returns a String with details about which is the higher score.
-pub fn compare_sbom_scorecards(sbom_1_path: String, sbom_2_path: String) -> String {
+pub fn compare_sbom_scorecards(sbom_1_path: String, sbom_2_path: String) -> Result<String, Error> {
 
-    let scorecard_1 = generate_sbom_scorecard(sbom_1_path.clone());
-    let scorecard_2 = generate_sbom_scorecard(sbom_2_path.clone());
+    let scorecard_1_result = generate_sbom_scorecard(sbom_1_path.clone());
+    let scorecard_2_result = generate_sbom_scorecard(sbom_2_path.clone());
 
-    let precision = 0;
-    let scorecard_1_details = format!("Scorecard 1:({})\n=> Has a total score of {:.2$}/100", sbom_1_path.clone(), 100.0 * scorecard_1.total.ratio, precision);
-    let scorecard_2_details = format!("Scorecard 2:({})\n=> Has a total score of {:.2$}/100", sbom_2_path.clone(), 100.0 * scorecard_2.total.ratio, precision);
-   
-    let mut compare_results = format!("{}\n\n{}\n\n", scorecard_1_details, scorecard_2_details);
- 
-    if scorecard_1.total.ratio > scorecard_2.total.ratio {
-        compare_results.push_str(&format!("Scorecard 1 has a higher score!"));
-    }
-    else if scorecard_1.total.ratio < scorecard_2.total.ratio {
-        compare_results.push_str(&format!("Scorecard 2 has a higher score!"));
+    if scorecard_1_result.is_ok() && scorecard_2_result.is_ok() {
+        let scorecard_1 = scorecard_1_result.unwrap();
+        let scorecard_2 = scorecard_2_result.unwrap();
+        let precision = 0;
+        let scorecard_1_details = format!("Scorecard 1:({})\n=> Has a total score of {:.2$}/100", sbom_1_path.clone(), 100.0 * scorecard_1.total.ratio, precision);
+        let scorecard_2_details = format!("Scorecard 2:({})\n=> Has a total score of {:.2$}/100", sbom_2_path.clone(), 100.0 * scorecard_2.total.ratio, precision);
+    
+        let mut compare_results = format!("{}\n\n{}\n\n", scorecard_1_details, scorecard_2_details);
+    
+        if scorecard_1.total.ratio > scorecard_2.total.ratio {
+            compare_results.push_str(&format!("Scorecard 1 has a higher score!"));
+        }
+        else if scorecard_1.total.ratio < scorecard_2.total.ratio {
+            compare_results.push_str(&format!("Scorecard 2 has a higher score!"));
+        }
+        else {
+            compare_results.push_str(&format!("The two scorecards have a matching score!"));
+        }
+
+        return Ok(compare_results);
     }
     else {
-        compare_results.push_str(&format!("The two scorecards have a matching score!"));
+        let error_string = format!("\n{}\n{}", scorecard_1_result.unwrap_err(), scorecard_2_result.unwrap_err());
+        return Err(Error::SbomScorecard(format!("Failed to compare scorecards due to errors: {}", error_string)))
     }
-
-    return compare_results;
 }
 
 #[test]
@@ -127,7 +137,8 @@ fn compare_matching_sboms() {
         sbom_1_path.display().to_string(),
     );
 
-    assert!(result.contains("The two scorecards have a matching score!"), "The scorecards should be matching");
+    assert!(result.is_ok(), "Should not return an error when performing a compare");
+    assert!(result.unwrap().contains("The two scorecards have a matching score!"), "The scorecards should be matching");
 }
 
 #[test]
@@ -143,7 +154,8 @@ fn compare_not_matching_sboms() {
         sbom_2_path.display().to_string(),
     );
     
-    assert!(result.contains("Scorecard 2 has a higher score!"), "The second scorecard should be more highly rated");
+    assert!(result.is_ok(), "Should not return an error when performing a compare");
+    assert!(result.unwrap().contains("Scorecard 2 has a higher score!"), "The second scorecard should be more highly rated");
 }
 
 #[test]
@@ -152,11 +164,13 @@ pub fn test_get_orgs() {
     test_sbom.push("src/services/sboms/sbom_scorecard/test_files/dropwizard.json");
 
     let scorecard = generate_sbom_scorecard(test_sbom.display().to_string());
-    assert!(scorecard.compliance.ratio == 1.0, "Compliance ratio should be 1");
-    assert!(scorecard.compliance.reasoning == "", "Compliance reasoning should be an empty string");
-    assert!(scorecard.compliance.max_points == 25, "Compliance max points should be 25");
+    assert!(scorecard.is_ok(), "Should not return an error");
+    let unwrapped_scorecard = scorecard.unwrap();
+    assert!(unwrapped_scorecard.compliance.ratio == 1.0, "Compliance ratio should be 1");
+    assert!(unwrapped_scorecard.compliance.reasoning == "", "Compliance reasoning should be an empty string");
+    assert!(unwrapped_scorecard.compliance.max_points == 25, "Compliance max points should be 25");
 
-    assert!(scorecard.package_identification.ratio == 1.0, "PackageIdentification ratio should be 1");
-    assert!(scorecard.package_identification.reasoning == "100% have either a purl (100%) or CPE (0%)", "PackageIdentification reasoning should be 100% have either a purl (100%) or CPE (0%)");
-    assert!(scorecard.package_identification.max_points == 20, "PackageIdentification max points should be 20");
+    assert!(unwrapped_scorecard.package_identification.ratio == 1.0, "PackageIdentification ratio should be 1");
+    assert!(unwrapped_scorecard.package_identification.reasoning == "100% have either a purl (100%) or CPE (0%)", "PackageIdentification reasoning should be 100% have either a purl (100%) or CPE (0%)");
+    assert!(unwrapped_scorecard.package_identification.max_points == 20, "PackageIdentification max points should be 20");
 }

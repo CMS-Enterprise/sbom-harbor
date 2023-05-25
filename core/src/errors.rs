@@ -39,6 +39,9 @@ pub enum Error {
     /// Vulnerability provider error.
     #[error("vulnerability provider error: {0}")]
     Vulnerability(String),
+    /// Sbom Scorecard processing error
+    #[error("Sbom Scorecard processing error: {0}")]
+    SbomScorecard(String),
 }
 
 impl From<platform::Error> for Error {

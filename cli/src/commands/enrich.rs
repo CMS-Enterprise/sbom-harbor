@@ -137,19 +137,25 @@ impl SbomScorecardProvider {
                 match scorecard_args {
                     val if val.sbom_file_path_1.is_some() && val.sbom_file_path_2.is_none() => {
                         let results = show_sbom_scorecard(val.sbom_file_path_1.clone().unwrap().to_string());
-                        println!("\n{}", results);
+                        match results {
+                            Ok(valid_result) => println!("\n{}", valid_result),
+                            Err(error) => println!("Failed with errors: \n{}", error),
+                        }
                     },
                     val if val.sbom_file_path_1.is_some() && val.sbom_file_path_2.is_some() => {
                         let results = compare_sbom_scorecards(
                             val.sbom_file_path_1.clone().unwrap().to_string(), 
                             val.sbom_file_path_2.clone().unwrap().to_string()
                         );
-                        println!("\n{}", results);
+                        match results {
+                            Ok(valid_result) => println!("\n{}", valid_result),
+                            Err(error) => println!("Failed with errors: \n{}", error),
+                        }
                     },
                     &_ => panic!("At least one path to a file is required")
                 }
             },
-            None => panic!("A path to an Sbom file must be provided, please use "),
+            None => panic!("A path to an Sbom file must be provided, please use --sbom-file-path-1 <path>"),
         }
         return Ok(());
     }

@@ -14,14 +14,20 @@ use super::sbom_scorecard::{SbomScorecard, generate_sbom_scorecard, compare_sbom
 /// Invoke [sbom-scorecard](https://github.com/eBay/sbom-scorecard) and return the results.
 pub fn score(_path: &str) -> Result<SbomScorecard, Error> {
     let scorecard = generate_sbom_scorecard(_path.to_owned());
-    Ok(scorecard)
+    match scorecard {
+        Ok(valid_scorecard) => return Ok(valid_scorecard),
+        Err(error) => return Err(error),
+    }
 }
 
 /// Compare 2 SBOM scores.
 pub fn compare(first_path: &str, second_path: &str) -> Result<String, Error> {
 
     let match_results = compare_sbom_scorecards(first_path.to_owned(), second_path.to_owned());
-    Ok(match_results)
+    match match_results {
+        Ok(valid_results) => return Ok(valid_results),
+        Err(error) => return Err(error),
+    }
 }
 
 // Implement Xref Service so that xrefs can be managed for Sboms.
