@@ -21,4 +21,17 @@ Taking all that into context, we can update our definition of an SBOM to the fol
 > - Provides information about the supplier
 > - Lists the dependencies that make up the package
 
+## Specifications
+
+That expanded definition includes the requirement that an SBOM be defined in a machine-readable 
+format. At this time, there are two dominant SBOM specifications for the format of an SBOM which 
+are:
+
+- [CycloneDX](https://cyclonedx.org/) backed by the [OWASP Foundation](https://owasp.org/).
+- [SPDX](https://spdx.dev/) backed by the [Linux Foundation](https://www.linuxfoundation.org/).
+
+At this time, Harbor is focused on processing files in the CycloneDX format. This is not an 
+endorsement of one specification over the other, as much as a pragmatic decision based on 
+availability of data. We do have SPDX support in our backlog, and ultimately intend to support 
+both formats. Community PRs welcome!
 

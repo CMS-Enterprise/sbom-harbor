@@ -5,7 +5,7 @@
 - [ ] Vendor SBOM staleness/freshness policy tracking and enforcement (research & development)
 - [ ] Machine to machine vendor upload mechanism (research)
 
-#### SBOM generation & synchronization
+### SBOM generation & synchronization
 - [X] Snyk
 - [X] GitHub Action (POC)
 - [ ] GitHub (in progress)
@@ -14,14 +14,20 @@
 - [ ] Syft
 - [ ] Ion Channel
 
-#### SBOM storage
+### SBOM storage
 - [X] S3
 - [X] File system
 
-#### Enrichment
+### Enrichment
 - [X] Snyk
 - [X] EPSS
 - [ ] Ion Channel
 - [ ] OSV
 - [ ] Dependency Track
 
+### Technical Improvements
+
+- [ ] SPDX support
+- [ ] Pipeline Metrics (e.g. OTEL, Prometheus, Grafana, )
+- [ ] Cargo features
+- 
