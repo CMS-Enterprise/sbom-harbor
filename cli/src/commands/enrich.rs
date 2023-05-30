@@ -134,28 +134,38 @@ impl SbomScorecardProvider {
 
         match &args.sbom_scorecard_args {
             Some(scorecard_args) => {
-                match scorecard_args {
-                    val if val.sbom_file_path_1.is_some() && val.sbom_file_path_2.is_none() => {
-                        let results = show_sbom_scorecard(val.sbom_file_path_1.clone().unwrap().to_string());
+                match (scorecard_args.sbom_file_path_1.clone(), scorecard_args.sbom_file_path_2.clone()) {
+                    (None, None) => {
+                        let error_string = "No Paths provided, please use --sbom-file-path-1 <path>, and --sbom-file-path-2 <path>";
+                        return Err(Error::SbomScorecard(format!("Failed to compare scorecards due to errors: {}", error_string)));
+                    },
+                    (None, Some(path)) => {
+                        let results = show_sbom_scorecard(path);
                         match results {
                             Ok(valid_result) => println!("\n{}", valid_result),
                             Err(error) => println!("Failed with errors: \n{}", error),
                         }
                     },
-                    val if val.sbom_file_path_1.is_some() && val.sbom_file_path_2.is_some() => {
-                        let results = compare_sbom_scorecards(
-                            val.sbom_file_path_1.clone().unwrap().to_string(), 
-                            val.sbom_file_path_2.clone().unwrap().to_string()
-                        );
+                    (Some(path), None) => {
+                        let results = show_sbom_scorecard(path);
                         match results {
                             Ok(valid_result) => println!("\n{}", valid_result),
                             Err(error) => println!("Failed with errors: \n{}", error),
                         }
                     },
-                    &_ => panic!("At least one path to a file is required")
+                    (Some(path_1), Some(path_2)) => {
+                        let results = compare_sbom_scorecards(path_1, path_2);
+                        match results {
+                            Ok(valid_result) => println!("\n{}", valid_result),
+                            Err(error) => println!("Failed with errors: \n{}", error),
+                        }
+                    },
                 }
             },
-            None => panic!("A path to an Sbom file must be provided, please use --sbom-file-path-1 <path>"),
+            None => {
+                let error_string = "A path to an Sbom file must be provided, please use --sbom-file-path-1 <path>";
+                return Err(Error::SbomScorecard(format!("Failed to compare scorecard due to errors: {}", error_string)))
+            }
         }
         return Ok(());
     }

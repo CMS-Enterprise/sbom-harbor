@@ -100,30 +100,38 @@ pub fn compare_sbom_scorecards(sbom_1_path: String, sbom_2_path: String) -> Resu
     let scorecard_1_result = generate_sbom_scorecard(sbom_1_path.clone());
     let scorecard_2_result = generate_sbom_scorecard(sbom_2_path.clone());
 
-    if scorecard_1_result.is_ok() && scorecard_2_result.is_ok() {
-        let scorecard_1 = scorecard_1_result.unwrap();
-        let scorecard_2 = scorecard_2_result.unwrap();
-        let precision = 0;
-        let scorecard_1_details = format!("Scorecard 1:({})\n=> Has a total score of {:.2$}/100", sbom_1_path.clone(), 100.0 * scorecard_1.total.ratio, precision);
-        let scorecard_2_details = format!("Scorecard 2:({})\n=> Has a total score of {:.2$}/100", sbom_2_path.clone(), 100.0 * scorecard_2.total.ratio, precision);
+    match  (scorecard_1_result, scorecard_2_result){
+        (Ok(scorecard_1), Ok(scorecard_2)) => {
+            let precision = 0;
+            let scorecard_1_details = format!("Scorecard 1:({})\n=> Has a total score of {:.2$}/100", sbom_1_path.clone(), 100.0 * scorecard_1.total.ratio, precision);
+            let scorecard_2_details = format!("Scorecard 2:({})\n=> Has a total score of {:.2$}/100", sbom_2_path.clone(), 100.0 * scorecard_2.total.ratio, precision);
+        
+            let mut compare_results = format!("{}\n\n{}\n\n", scorecard_1_details, scorecard_2_details);
+        
+            if scorecard_1.total.ratio > scorecard_2.total.ratio {
+                compare_results.push_str(&format!("Scorecard 1 has a higher score!"));
+            }
+            else if scorecard_1.total.ratio < scorecard_2.total.ratio {
+                compare_results.push_str(&format!("Scorecard 2 has a higher score!"));
+            }
+            else {
+                compare_results.push_str(&format!("The two scorecards have a matching score!"));
+            }
     
-        let mut compare_results = format!("{}\n\n{}\n\n", scorecard_1_details, scorecard_2_details);
-    
-        if scorecard_1.total.ratio > scorecard_2.total.ratio {
-            compare_results.push_str(&format!("Scorecard 1 has a higher score!"));
-        }
-        else if scorecard_1.total.ratio < scorecard_2.total.ratio {
-            compare_results.push_str(&format!("Scorecard 2 has a higher score!"));
-        }
-        else {
-            compare_results.push_str(&format!("The two scorecards have a matching score!"));
-        }
-
-        return Ok(compare_results);
-    }
-    else {
-        let error_string = format!("\n{}\n{}", scorecard_1_result.unwrap_err(), scorecard_2_result.unwrap_err());
-        return Err(Error::SbomScorecard(format!("Failed to compare scorecards due to errors: {}", error_string)))
+            return Ok(compare_results);
+        },
+        (Ok(_), Err(error)) => {
+            let error_string = format!("Unable due to compare scorecards due to error with second scorecard:\n{}", error);
+            return Err(Error::SbomScorecard(format!("Failed to compare scorecards due to errors: {}", error_string)))
+        },
+        (Err(error), Ok(_)) => {
+            let error_string = format!("Unable due to compare scorecards due to error with first scorecard:\n{}", error);
+            return Err(Error::SbomScorecard(format!("Failed to compare scorecards due to errors: {}", error_string)))
+        },
+        (Err(error_1), Err(error_2)) => {
+            let error_string = format!("\n{}\n{}", error_1, error_2);
+            return Err(Error::SbomScorecard(format!("Failed to compare scorecards due to errors: {}", error_string)))
+        },
     }
 }
 

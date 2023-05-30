@@ -18,4 +18,7 @@ pub enum Error {
     /// Pilot runtime error.
     #[error("sbom: {0}")]
     Sbom(String),
+    /// Sbom Scorecard processing error
+    #[error("Sbom Scorecard command error: {0}")]
+    SbomScorecard(String),
 }
