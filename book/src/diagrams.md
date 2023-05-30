@@ -34,9 +34,9 @@ graph LR
 ```mermaid
 classDiagram
     Sbom --> Package
-    Sbom *-- Source
+    Sbom *-- Author
     Sbom --> TaskRef
-    Sbom *-- Spec
+    Sbom *-- SpecKind
     Sbom --> Xref
     Package o-- Xref
     Package o-- PackageKind
@@ -56,8 +56,8 @@ classDiagram
     Vulnerability o-- CvssScore
     Vulnerability o-- Cwe
     Vulnerability --> TaskRef
-    Spec *-- CycloneDx
-    Spec *-- Spdx
+    SpecKind *-- CycloneDx
+    SpecKind *-- Spdx
     CycloneDx *-- CycloneDxFormat
     Spdx *-- SpdxFormat
 
@@ -88,8 +88,8 @@ classDiagram
     class Sbom {
         +String id
         +Integer version
-        +Spec spec
-        +Source source
+        +SpecKind kind
+        +Author author
         +Integer timestamp
         +List~Package~ dependencies
         +List~Xref~ xrefs
@@ -134,10 +134,6 @@ classDiagram
         +String description
     }
 
-    class Spdx {
-
-    }
-
     class Task {
         +String id
         +TaskKind kind
@@ -164,11 +160,19 @@ classDiagram
     class PackageKind
     <<enumeration>> PackageKind
 
-    class Source
-    <<enumeration>> Source
+    class CycloneDx {
 
-    class Spec
-    <<enumeration>> Spec
+    }
+
+    class Spdx {
+
+    }
+
+    class Author
+    <<enumeration>> Author
+
+    class SpecKind
+    <<enumeration>> SpecKind
 
     class CycloneDxFormat
     <<enumeration>> CycloneDxFormat
@@ -189,12 +193,12 @@ classDiagram
 ```mermaid
 classDiagram
     Sbom --> Package
-    Sbom *-- Source
-    Sbom *-- Spec
+    Sbom *-- Author
+    Sbom *-- SpecKind
     Package --> Package
     Package --> Vulnerability
-    Spec *-- CycloneDx
-    Spec *-- Spdx
+    SpecKind *-- CycloneDx
+    SpecKind *-- Spdx
     CycloneDx *-- CycloneDxFormat
     Spdx *-- SpdxFormat
 
@@ -207,8 +211,8 @@ classDiagram
     class Sbom {
         +String id
         +Integer version
-        +Spec spec
-        +Source source
+        +SpecKind kind
+        +Author author
         +Integer timestamp
         +List~Package~ dependencies
         +List~Xref~ xrefs
@@ -219,15 +223,19 @@ classDiagram
         +String id
     }
 
+    class CycloneDx {
+
+    }
+
     class Spdx {
 
     }
 
-    class Source
-    <<enumeration>> Source
+    class Author
+    <<enumeration>> Author
 
-    class Spec
-    <<enumeration>> Spec
+    class SpecKind
+    <<enumeration>> SpecKind
 
     class CycloneDxFormat
     <<enumeration>> CycloneDxFormat
