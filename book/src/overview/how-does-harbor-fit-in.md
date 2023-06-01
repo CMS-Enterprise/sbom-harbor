@@ -15,3 +15,4 @@ opt-in to a vulnerability data-sharing relationship.
 inventory of software components relative to your operations. Once you have established your inventory, 
 you can hook into the different sources of vulnerability data, or enrichment sources, and manage 
 your own _recall_ process when you determine a vulnerability is relevant to your organization.
+

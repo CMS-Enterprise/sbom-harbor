@@ -507,3 +507,94 @@ classDiagram
     class XrefKind
     <<enumeration>> XrefKind
 ```
+
+## Component Model
+
+```mermaid
+sequenceDiagram
+    participant process as Process
+    participant provider as Task Provider
+    participant service as Service
+    participant entity as Entity
+    participant store as Data Store
+
+    process->>+provider: Executes provider
+    provider->>store: Creates new task log entry
+    provider->>service: Initializes service(s)
+    service->>store: Requests targeted entities
+    store->>service: Returns targeted entities
+    loop
+        service->>entity: Creates or mutates targeted entities
+        service->>store: Updates data store
+        service->>service: Tracks errors on task log entry
+    end
+    service->>store: Updates task log entry
+    service->>provider: Returns result
+    provider->>process: Returns result
+```
+
+## MongoDB Overview
+
+```mermaid
+sequenceDiagram
+    participant service as Service
+    participant entity as Entity
+    participant store as Store
+    service->>store: Submit query
+    store->>service: Return result
+    service->>entity: Mutate entity
+    service->>store: Persist entity
+```
+
+## Auth Overview
+
+```mermaid
+classDiagram
+    Group "1" --> "1..*" User
+    Group "1" --> "1..*" Role
+    Role "1" --> "1..*" Policy
+    Policy "1" --> "1" Resource
+    Policy "1" --> "1" Action
+    Policy "1" --> "1" Effect
+    Resource "1" --> "1" ResourceKind
+
+    class Authorizer {
+        <<Service>>
+        +Bool assert(User, Resource, Effect)
+        -List~Group~ groups(User)
+    }
+
+    class User {
+      +String id
+      +String email
+    }
+
+    class Group {
+      +List~User~
+      +List~Role~
+    }
+
+    class Role {
+      List~Policy~
+    }
+
+    class Policy {
+        +Resource
+        +Action
+        +Effect
+    }
+
+    class Resource {
+        +String id
+        +ResourceKind
+    }
+
+    class ResourceKind
+    <<enumeration>> ResourceKind
+
+    class Action
+    <<enumeration>> Action
+
+    class Effect
+    <<enumeration>> Effect
+```

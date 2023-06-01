@@ -1,13 +1,10 @@
 ## Tasks
 
-A `Task` records an instance of a `TaskProvider` process that is run against a Harbor instance. 
-
-
-Some task
-
-You can  think of this as unit of work. The enrichment engine is modeled as a set of 
-`TaskProvider` services. You can build a service that implements the `TaskProvider` trait and record 
-details about each instantiation of the process using a `Task` entity.
+A `Task` records that an instance of a process was run in a Harbor environment. It may be helpful to
+think of a task as unit of work. The enrichment engine is implemented as a set of services that 
+implement the `TaskProvider` trait. You can build a service that implements the `TaskProvider` 
+trait and unless you override the key default functions, Harbor will record details about each 
+instantiation of the process by storing an instance of a `Task` entity.
 
 The `TaskProvider` trait has the following interface. 
 
@@ -33,22 +30,7 @@ pub trait TaskProvider: Service<Task> {
 }
 ```
 
-The default implementations of the `execute`, `init`, and`complete` function provide a consistent way 
-to track and debug `Task` services. You most likely only need to implement the `run` function. This 
-is where your custom business logic runs. You can review existing `TaskProvider` implementations 
+The default implementations of the `execute`, `init`, and`complete` functions provide a consistent 
+way to track and debug `Task` services. Contributors most likely only need to implement the `run` 
+function. This is where task specific logic runs. Review existing `TaskProvider` implementations 
 for example of how to implement a `TaskProvider`. 
-
-## Implementation Considerations
-
-Some specific things you should consider when designing a `TaskProvider` are:
-
-### What kind of task is it?
-
-
-### Can the `Task` tolerate partial failures
-
-
-### Should affected entities maintain a reference to `Task` instances?
-
-- Adding errors to the `Task` entity for debugging purposes.
-- Adding `TaskRef` entries to entities affected by a run of a `TaskProvider` instance.

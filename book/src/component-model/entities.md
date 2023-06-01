@@ -1,15 +1,14 @@
 ## Entities
 
 **Entities** are types that either define the data elements being observed in the Harbor problem 
-domain, or support interaction across services, both internal and external. Some entities, may be 
-persisted as entries in a data store. Some entities are materialized at runtime only for the purpose
-of executing domain logic, and are never serialized or persisted. Entities are typically managed by
-one or more services.
+domain, or support interaction across services, both internal and external. Most entities are 
+persisted as entries in a data store. However, ome entities are materialized at runtime only for 
+the purpose of executing domain logic, and are never serialized or persisted. Entities are typically 
+managed by one or more **services**.
 
 Entities may also contain validation or helper functions that can operate on an instance of an entity.
-Consider the following example. In this example, the `Token` entity defines a function, 
-`expired`, that provides a consistent, functional mechanism for determining if a `Token` 
-instance has expired.
+Consider the following. In this example, the `Token` entity defines a function (`expired`) that 
+provides a consistent, functional mechanism for determining if a `Token` instance has expired.
 
 ```rust
 use chrono::{DateTime, Utc};

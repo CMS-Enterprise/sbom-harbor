@@ -2,11 +2,11 @@
 
 Harbor is a system for:
 
-- Collecting, categorizing, and storing SBOMs.
-- Analyzing SBOMs to identify associated vulnerability and supply chain data.
-- The process of collecting SBOMs is called **_ingestion_**.
-- The process of identifying and storing vulnerability and supply chain data associated with SBOMs
-  is called **_enrichment_**.
+- Collecting, categorizing, and storing SBOMs. The process of collecting SBOMs is called 
+  **_ingestion_**.
+- Analyzing SBOMs to identify associated vulnerability and supply chain data. The process of 
+  identifying and storing vulnerability and supply chain data associated with SBOMs is called 
+  **_enrichment_**.
 
 ### Compliance
 
