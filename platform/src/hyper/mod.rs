@@ -13,12 +13,6 @@ pub use hyper::{Method, StatusCode};
 
 const CONTENT_TYPE: &str = "content-type";
 
-/// Replaces invalid header name characters with hyphens.
-pub fn format_header_name(name: &str) -> String {
-    let re = regex::Regex::new(r"[^A-Za-z0-9]").unwrap();
-    re.replace_all(name, "-").to_string()
-}
-
 /// HTTP Content Types.
 pub enum ContentType {
     /// Form data is sent in a single block in the HTTP message body.
@@ -223,20 +217,3 @@ impl From<InvalidUri> for Error {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::Error;
-
-    #[async_std::test]
-    async fn can_format_header_name() -> Result<(), Error> {
-        let invalid = "some::invalid";
-        let valid = format_header_name(invalid);
-
-        assert!(!valid.contains(':'));
-        assert!(valid.contains('-'));
-        println!("{}", valid);
-
-        Ok(())
-    }
-}

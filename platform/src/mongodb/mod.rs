@@ -17,6 +17,8 @@ pub mod migrations;
 pub mod service;
 /// Provides a generics-based [Store] trait for handling CRUD based operations against a [Collection].
 pub mod store;
+/// Provides analytics tooling for creating DocumentDB Aggregation pipelines
+pub mod analytics;
 
 // TODO: Make Context a trait and split these up in to purpose build contexts instead of a single type.
 /// Provides connection information and schema conventions for a MongoDB/DocumentDB backed [Store].

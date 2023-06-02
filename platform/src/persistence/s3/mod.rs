@@ -5,8 +5,7 @@ use aws_sdk_s3::Client;
 use aws_types::SdkConfig;
 use std::collections::HashMap;
 use tracing::instrument;
-
-use crate::hyper::format_header_name;
+use crate::naming::{NameHelper, NameKind};
 use crate::Error;
 
 /// Provides a coarse-grained abstraction over S3 that conforms to the conventions of this crate.
@@ -74,7 +73,11 @@ impl Store {
                 let mut result = HashMap::<String, String>::new();
 
                 for (k, v) in incoming.iter() {
-                    result.insert(format_header_name(k), v.to_string());
+
+                    let safe_s3_key_name = NameHelper::from(k)
+                        .make_a_safe(NameKind::S3KeyName)?;
+
+                    result.insert(safe_s3_key_name, v.to_string());
                 }
 
                 Some(result)
