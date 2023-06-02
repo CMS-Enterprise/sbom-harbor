@@ -78,11 +78,8 @@ mod tests {
             .await
             .map_err(|e| Error::Vulnerability(e.to_string()))?;
 
-<<<<<<< Updated upstream
-        assert_ne!(0.0_f32, score);
-=======
         assert_ne!(0.0 as f32, score);
->>>>>>> Stashed changes
+
         Ok(())
     }
 }

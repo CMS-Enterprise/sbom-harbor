@@ -111,7 +111,7 @@ impl Package {
 
         let mut package = Package {
             id: "".to_string(),
-            kind: PackageKind::Direct,
+            kind: PackageKind::Primary,
             package_manager,
             version,
             cpe: bom.cpe(),
@@ -226,7 +226,7 @@ impl Package {
 #[serde(rename_all = "camelCase")]
 pub enum PackageKind {
     /// Indicates a [Package] is being directly monitored.
-    Direct,
+    Primary,
     /// Indicates a [Package] is a dependency of a [Package] being directly monitored.
     Dependency,
 }
@@ -234,7 +234,7 @@ pub enum PackageKind {
 impl ToString for PackageKind {
     fn to_string(&self) -> String {
         match self {
-            PackageKind::Direct => "direct".to_string(),
+            PackageKind::Primary => "primary".to_string(),
             PackageKind::Dependency => "dependency".to_string(),
         }
     }

@@ -57,8 +57,6 @@ mod tests {
     use super::*;
     use crate::Error;
     use harbcore::config::dev_context;
-    use harbcore::entities::packages::Purl;
-    use uuid::Uuid;
 
     #[async_std::test]
     #[ignore = "debug manual only"]
@@ -77,40 +75,5 @@ mod tests {
                 Err(Error::Enrich(msg))
             }
         }
-    }
-
-    #[async_std::test]
-    #[ignore = "debug manual only"]
-    async fn migrate_vulnerabilities() -> Result<(), Error> {
-        let cx = dev_context(Some("harbor")).map_err(|e| Error::Config(e.to_string()))?;
-
-        let store = Store::new(&cx)
-            .await
-            .map_err(|e| Error::Enrich(e.to_string()))?;
-
-        let purls: Vec<Purl> = match store.list().await {
-            Ok(purls) => purls,
-            Err(e) => {
-                return Err(Error::Enrich(format!("run::{}", e)));
-            }
-        };
-
-        for purl in purls.iter() {
-            if purl.vulnerabilities.is_none() {
-                continue;
-            }
-
-            let mut vulns = purl.vulnerabilities.clone().unwrap();
-            for vuln in vulns.iter_mut() {
-                vuln.id = Uuid::new_v4().to_string();
-                vuln.purl = purl.purl.clone();
-                store
-                    .insert(vuln)
-                    .await
-                    .map_err(|e| Error::Enrich(e.to_string()))?;
-            }
-        }
-
-        Ok(())
     }
 }
