@@ -31,9 +31,10 @@ pub struct Cli {
 pub enum Commands {
     /// Enrich an SBOM.
     Enrich(commands::enrich::EnrichArgs),
-
     /// Generate one or more SBOMs from a directory or from an external SBOM Provider.
     Sbom(commands::sbom::SbomArgs),
+    /// Generate reports from SBOM data
+    Analyze(commands::analyze::AnalyzeArgs),
 }
 
 /// Allows specifying the output format.

@@ -21,3 +21,6 @@ pub mod xrefs;
 
 /// Persistence and domain models that support enhancing SBOMs with additional metadata.
 pub mod enrichments;
+
+/// Models for Analytics
+pub mod analytics;

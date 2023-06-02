@@ -11,7 +11,8 @@ use crate::Error;
 /// Default client factory method. Allows callers to avoid a direct dependency on the Mongo Driver.
 pub async fn client_from_context(cx: &Context) -> Result<Client, Error> {
     let connection_uri = cx.connection_uri()?;
-    Ok(Client::with_uri_str(connection_uri.as_str()).await?)
+    let client = Client::with_uri_str(connection_uri.as_str()).await?;
+    Ok(client)
 }
 
 /// Facade that provides access to a MongoDB compliant data store.
@@ -36,13 +37,13 @@ impl Store {
         Ok(store)
     }
 
-    fn client(&self) -> Client {
+    pub(crate) fn client(&self) -> Client {
         // Always clone the client
         // For explanation, see https://mongodb.github.io/mongo-rust-driver/manual/performance.html
         self.client.clone()
     }
 
-    fn db_name(&self) -> &str {
+    pub(crate) fn db_name(&self) -> &str {
         self.db_name.as_str()
     }
 

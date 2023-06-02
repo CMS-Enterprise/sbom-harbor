@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use crate::entities::analytics::AnalyticProviderKind;
 
 /// A [Task] is a value type that allows tracking and correlating operations performed by Harbor.
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -93,6 +94,8 @@ pub enum TaskKind {
     Sbom(SbomProviderKind),
     /// [Task] was performed by a custom extension.
     Extension(String),
+    /// [Task] was performed to execute an Analytic.
+    Analytics(AnalyticProviderKind),
 }
 
 impl Display for TaskKind {
@@ -101,6 +104,7 @@ impl Display for TaskKind {
             TaskKind::Vulnerabilities(kind) => write!(f, "vulnerabilities::{}", kind),
             TaskKind::Sbom(kind) => write!(f, "sbom::{}", kind),
             TaskKind::Extension(name) => write!(f, "extension::{}", name),
+            TaskKind::Analytics(kind) => write!(f, "analytic::{}", kind),
         }
     }
 }
@@ -131,7 +135,7 @@ impl TaskRef {
 }
 
 /// Used to track [Task] results and errors.
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[skip_serializing_none]
 pub enum TaskStatus {

@@ -4,10 +4,10 @@ use harbor_cli::{commands, Cli, Commands, Error};
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let cli = Cli::parse();
-
     match &cli.command {
         Some(Commands::Enrich(enrich)) => commands::enrich::execute(enrich).await,
         Some(Commands::Sbom(sbom)) => commands::sbom::execute(sbom).await,
+        Some(Commands::Analyze(analyze)) => commands::analyze::execute(analyze).await,
         _ => {
             println!("command not found");
             std::process::exit(1);
