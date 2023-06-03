@@ -5,7 +5,7 @@
 - [ ] Vendor SBOM staleness/freshness policy tracking and enforcement (research & development)
 - [ ] Machine to machine vendor upload mechanism (research)
 
-### SBOM generation & synchronization
+### SBOM generation and synchronization
 - [X] Snyk
 - [X] GitHub Action (POC)
 - [ ] GitHub (in progress)
@@ -21,13 +21,19 @@
 ### Enrichment
 - [X] Snyk
 - [X] EPSS
+- [X] sbom-scorecard
 - [ ] Ion Channel
 - [ ] OSV
-- [ ] Dependency Track
+
+### Analytics
+- [ ] Vulnerabilities and scores by SBOM
+- [ ] Dependency blast radius
+- [ ] SBOM freshness
 
 ### Technical Improvements
 
 - [ ] SPDX support
-- [ ] Pipeline Metrics (e.g. OTEL, Prometheus, Grafana, )
+- [ ] Pipeline Metrics (e.g. OTEL, Prometheus, Grafana)
 - [ ] Cargo features
-- 
+- [ ] Notifications
+- [ ] CI/CD integration
