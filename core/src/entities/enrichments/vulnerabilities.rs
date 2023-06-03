@@ -79,8 +79,6 @@ impl Vulnerability {
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum VulnerabilityProviderKind {
-    /// Dependency Track provider.
-    DependencyTrack,
     /// EPSS Score provider.
     Epss,
     /// Ion Channel provider.
@@ -94,7 +92,6 @@ pub enum VulnerabilityProviderKind {
 impl Display for VulnerabilityProviderKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            VulnerabilityProviderKind::DependencyTrack => write!(f, "dependency-track"),
             VulnerabilityProviderKind::Epss => write!(f, "epss"),
             VulnerabilityProviderKind::IonChannel => write!(f, "ion-channel"),
             VulnerabilityProviderKind::Snyk => write!(f, "snyk"),
