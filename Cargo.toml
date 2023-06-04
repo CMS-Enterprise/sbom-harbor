@@ -4,6 +4,7 @@ members = [
     "core",
     "platform",
     "cli",
+    "sdk/task-template"
 ]
 
 [workspace.package]

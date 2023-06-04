@@ -1,7 +1,7 @@
 import http from "k6/http";
 import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
 
-const BASE_URL = `${__ENV.CF_DOMAIN}`
+const BASE_URL = `${__ENV.TEST_DOMAIN}`
 
 // Utility method to reduce boilerplate. Pretty prints JSON output.
 const stringify = (obj) => {

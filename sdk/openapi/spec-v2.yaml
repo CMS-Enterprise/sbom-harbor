@@ -1,0 +1,748 @@
+openapi: 3.0.1
+info:
+  title: Harbor
+  description: Harbor SBOM Management API
+  version: 0.1.0
+servers:
+  - url: https://localhost:6000
+    variables:
+      basePath:
+        default: ''
+tags:
+  - name: auth
+    description: Operations related to authentication concerns of the system.
+  - name: team
+    description: Operations related to the team entity.
+  - name: member
+    description: Operations related to the member entity.
+  - name: project
+    description: Operations related to the project entity.
+  - name: codebase
+    description: Operations related to the codebase entity.
+  - name: token
+    description: Operations related to the token entity.
+paths:
+  /api/v1/login:
+    post:
+      summary: Authenticate with a username and password.
+      tags:
+        - auth
+      requestBody:
+        $ref: '#/components/requestBodies/login'
+      responses:
+        "200":
+          $ref: '#/components/responses/apiKey'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:SBOMLoginLambda-v1/invocations
+        connectionType: INTERNET
+  /api/v1/user/search:
+    get:
+      summary: Search for members by email.
+      tags:
+        - auth
+      responses:
+        "200":
+          $ref: '#/components/responses/userList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/filterQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:SBOMUserSearchLambda/invocations
+        connectionType: INTERNET
+
+  /api/v1/team:
+    post:
+      summary: Create a new team.
+      tags:
+        - team
+      requestBody:
+        $ref: '#/components/requestBodies/team'
+      responses:
+        "200":
+          $ref: '#/components/responses/team'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/childrenQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: '2.0'
+        type: aws_proxy
+        httpMethod: POST
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:393419659647:function:Harbor_Team_POST_Lambda/invocations
+        connectionType: INTERNET
+  /api/v1/team/{teamId}:
+    get:
+      summary: Get an existing team.
+      tags:
+        - team
+      responses:
+        "200":
+          $ref: '#/components/responses/team'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+        - $ref: '#/components/parameters/childrenQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+    put:
+      summary: Modify an existing team.
+      tags:
+        - team
+      requestBody:
+        $ref: '#/components/requestBodies/team'
+      responses:
+        "200":
+          $ref: '#/components/responses/team'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+        - $ref: '#/components/parameters/childrenQuery'
+    delete:
+      summary: Delete an existing team.
+      tags:
+        - team
+      responses:
+        "200":
+          $ref: '#/components/responses/team'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+        - $ref: '#/components/parameters/childrenQuery'
+
+  /api/v1/teams:
+    get:
+      summary: Get all existing teams.
+      tags:
+        - team
+      responses:
+        "200":
+          $ref: '#/components/responses/teamList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/childrenQuery'
+
+  /api/v1/member:
+    post:
+      summary: Add a member to a team. Creates member if they do not exist.
+      tags:
+        - member
+      requestBody:
+        $ref: '#/components/requestBodies/member'
+      responses:
+        "200":
+          $ref: '#/components/responses/member'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        -   $ref: '#/components/parameters/teamIdQuery'
+
+  /api/v1/member/{memberId}:
+    get:
+      summary: Get an existing member.
+      tags:
+        - member
+      responses:
+        "200":
+          $ref: '#/components/responses/member'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/memberId'
+        - $ref: '#/components/parameters/teamIdQuery'
+    put:
+      summary: Modify an existing member.
+      tags:
+        - member
+      requestBody:
+        $ref: '#/components/requestBodies/member'
+      responses:
+        "200":
+          $ref: '#/components/responses/member'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/memberId'
+        - $ref: '#/components/parameters/teamIdQuery'
+    delete:
+      summary: Delete an existing member from a team.
+      tags:
+        - member
+      responses:
+        "200":
+          $ref: '#/components/responses/member'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/memberId'
+        - $ref: '#/components/parameters/teamIdQuery'
+      security:
+        - SBOMApi_HttpLambdaAuthorizer_NAME: []
+  /api/v1/members:
+    get:
+      summary: Get all existing members for a team.
+      tags:
+        - member
+      responses:
+        "200":
+          $ref: '#/components/responses/memberList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamIdQuery'
+
+  /api/v1/project:
+    post:
+      summary: Create a project for a team.
+      tags:
+        - project
+      requestBody:
+        $ref: '#/components/requestBodies/project'
+      responses:
+        "200":
+          $ref: '#/components/responses/project'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamIdQuery'
+        - $ref: '#/components/parameters/childrenQuery'
+  /api/v1/project/{projectId}:
+    get:
+      summary: Get an existing project.
+      tags:
+        - project
+      responses:
+        "200":
+          $ref: '#/components/responses/project'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/teamIdQuery'
+        - $ref: '#/components/parameters/childrenQuery'
+    put:
+      summary: Modify an existing project.
+      tags:
+        - project
+      requestBody:
+        $ref: '#/components/requestBodies/project'
+      responses:
+        "200":
+          $ref: '#/components/responses/project'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/teamIdQuery'
+        - $ref: '#/components/parameters/childrenQuery'
+    delete:
+      summary: Delete an existing project.
+      tags:
+        - project
+      responses:
+        "200":
+          $ref: '#/components/responses/project'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/teamIdQuery'
+        - $ref: '#/components/parameters/childrenQuery'
+  /api/v1/projects:
+    get:
+      summary: Get all projects for a team.
+      tags:
+        - project
+      responses:
+        "200":
+          $ref: '#/components/responses/projectList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamIdQuery'
+        - $ref: '#/components/parameters/childrenQuery'
+
+  /api/v1/token:
+    post:
+      summary: Create a token for a team.
+      tags:
+        - token
+      requestBody:
+        $ref: '#/components/requestBodies/token'
+      responses:
+        "200":
+          $ref: '#/components/responses/token'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamIdQuery'
+  /api/v1/token/{tokenId}:
+    get:
+      summary: Get an existing token.
+      tags:
+        - token
+      responses:
+        "200":
+          $ref: '#/components/responses/token'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/tokenId'
+        - $ref: '#/components/parameters/teamIdQuery'
+    put:
+      summary: Modify an existing token.
+      tags:
+        - token
+      requestBody:
+        $ref: '#/components/requestBodies/token'
+      responses:
+        "200":
+          $ref: '#/components/responses/token'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/tokenId'
+        - $ref: '#/components/parameters/teamIdQuery'
+    delete:
+      summary: Delete an existing token.
+      tags:
+        - token
+      responses:
+        "200":
+          $ref: '#/components/responses/token'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/tokenId'
+        - $ref: '#/components/parameters/teamIdQuery'
+  /api/v2/{organizationId}/tokens:
+    get:
+      summary: Get all tokens for an organization.
+      tags:
+        - token
+      responses:
+        "200":
+          $ref: '#/components/responses/tokenList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/organizationId'
+
+  /api/v1/{packageId}/sbom:
+    post:
+      summary: Upload an SBOM to the Enrichment Engine.
+      tags:
+        - enrichment
+      requestBody:
+        $ref: '#/components/requestBodies/sbom'
+      responses:
+        "200":
+          $ref: '#/components/responses/uploadResult'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/packageId'
+
+components:
+  securitySchemes:
+  schemas:
+    login:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+    organization:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/product'
+        repositories:
+          type: array
+          items:
+            $ref: '#/components/schemas/repository'
+      required:
+        - name
+    project:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        packages:
+          type: array
+          items:
+            $ref: '#/components/schemas/package'
+      required:
+        - name
+    vendor:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/product'
+      required:
+        - name
+    product:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+        - name
+    package:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        purl:
+          type: string
+      required:
+        - name
+    token:
+      type: object
+      properties:
+        name:
+          type: string
+        created:
+          type: string
+          format: date-time
+        enabled:
+          type: boolean
+        expires:
+          type: string
+          format: date-time
+        token:
+          type: string
+      required:
+        - name
+        - enabled
+    uploadResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        s3BucketName:
+          type: string
+        s3ObjectKey:
+          type: string
+    userList:
+      type: array
+      items:
+        type: string
+  parameters:
+    organizationId:
+      required: true
+      description: Unique identifier for an organization.
+      in: path
+      name: organizationId
+      schema:
+        type: string
+    repositoryId:
+      required: true
+      description: Unique identifier for a repository.
+      in: path
+      name: repositoryId
+      schema:
+        type: string
+    vendorId:
+      required: true
+      description: Unique identifier for a vendor.
+      in: path
+      name: vendorId
+      schema:
+        type: string
+    productId:
+      required: true
+      description: Unique identifier for a vendor product.
+      in: path
+      name: productId
+      schema:
+        type: string
+    packageId:
+      required: true
+      description: Unique identifier for a package.
+      in: path
+      name: packageId
+      schema:
+        type: string
+    tokenId:
+      required: true
+      description: Unique identifier for a token.
+      in: path
+      name: tokenId
+      schema:
+        type: string
+    childrenQuery:
+      description: Flag indicating whether operation should consider types nested in the primary type.
+      in: query
+      name: children
+      schema:
+        type: boolean
+    filterQuery:
+      description: Starts with text filter.
+      in: query
+      name: filter
+      schema:
+        type: string
+  requestBodies:
+    login:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/login'
+
+    organization:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/organization'
+    organizationList:
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/organization'
+            type: array
+
+    repository:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/repository'
+    repositoryList:
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/repository'
+            type: array
+
+    token:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/token'
+    tokenList:
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/token'
+            type: array
+
+    sbom:
+      content:
+        application/json:
+          schema:
+            type: string
+            oneOf:
+              - $ref: 'https://gist.githubusercontent.com/DerekStrickland/9b9c4997b68b278e1f9835e235a87e52/raw/917863e9233c15af783cbab33655a53496e9e84e/cyclonedx-1.4.json'
+              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.3/schema/bom-1.3.schema.json'
+              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.2/schema/bom-1.2.schema.json'
+  responses:
+    badRequest:
+      description: 'Bad Request'
+    forbidden:
+      description: 'Authorization Failure'
+    internalServerError:
+      description: "Internal Server Error"
+
+    apiKey:
+      description: 'Result of the login operation.'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+
+    organization:
+      description: 'An grouping of related repositories, vendors, and products.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/organization'
+    organizationList:
+      description: 'A list of organizations.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/organization'
+            type: array
+
+    repository:
+      description: 'Source control repository owned by an Organization'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/repository'
+    repositoryList:
+      description: 'A list of repositories.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/repository'
+            type: array
+
+    token:
+      description: 'A secret use to authenticate, authorize, and track SBOM upload operations.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/token'
+    tokenList:
+      description: 'A list of tokens.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/token'
+            type: array
+
+    uploadResult:
+      description: 'The result of an SBOM upload operation.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/uploadResult'
+
+
+    userList:
+      description: 'The user search matches. Queries members by email address.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/userList'

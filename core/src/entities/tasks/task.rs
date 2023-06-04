@@ -90,6 +90,8 @@ pub enum TaskKind {
     Vulnerabilities(VulnerabilityProviderKind),
     /// [Task] was performed to assess Sboms.
     Sbom(SbomProviderKind),
+    /// [Task] was performed by a custom extension.
+    Extension(String),
 }
 
 /// Reference to an instance of a [Task]

@@ -1,0 +1,22 @@
+[package]
+name = "task-template"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1.63"
+clap = { version = "4.1.4", default-features = true, features = ["derive"] }
+thiserror = "1.0"
+tokio = { version = "1.25.0", features = ["full"] }
+
+[dependencies.harbcore]
+path = "../../core"
+version = "0.1.0"
+
+[dependencies.platform]
+path = "../../platform"
+version = "0.1.0"
+
+[[bin]]
+name = "example"
+path = "src/bin/main.rs"

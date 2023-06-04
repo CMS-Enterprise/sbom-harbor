@@ -55,7 +55,7 @@ results.forEach(adapter => {
     });
 });
 
-export async function loadBundle(specPath = "../../openapi/spec.yaml") {
+export async function loadBundle(specPath = "../../openapi/spec-v2.yaml") {
     return await SwaggerParser.bundle(specPath);
 }
 
@@ -126,11 +126,11 @@ function writeBashFile() {
     }
 
     try {
-        fs.writeFileSync('iron-generate.sh', "#!/bin/bash\n\n");
+        fs.writeFileSync('harbor-generate.sh', "#!/bin/bash\n\n");
 
         commands.forEach(command => {
             console.info(`appending command: ${command}`);
-            fs.appendFileSync('iron-generate.sh', `${command}\n`);
+            fs.appendFileSync('harbor-generate.sh', `${command}\n`);
         });
 
         console.info("Script generation complete!");

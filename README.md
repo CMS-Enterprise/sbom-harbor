@@ -20,7 +20,7 @@ but at this time all features are not yet operational, and the usage documentati
 ## Environment
 
 The following environment variables are referenced in code. When possible, defaults are provided that
-support the `docker-compose` configuration found in the `devenv` folder.
+support the `docker-compose` configuration found in the `sdk/devenv` folder.
 
 - `SNYK_TOKEN` - A valid Snyk API token. Required if using the Snyk integrations.
 - `HARBOR_FILE_STORE` - Path specification for file storage. When using an `S3StorageProvider`
@@ -28,7 +28,7 @@ support the `docker-compose` configuration found in the `devenv` folder.
   using a `FileSystemStorageProvider` this should be a valid directory on the host machine
   running the job.
 - `DOCDB_CONFIG` - DocumentDB connection configuration. If not set, tests will default to the
-  configuration that supports the `docker-compose.yaml` environment specified in the `devenv`
+  configuration that supports the `docker-compose.yaml` environment specified in the `sdk/devenv`
   folder. The primary Harbor installation is backed by DocumentDB, but any MongoDB 5.0 compliant
   database should be usable. Dynamic configuration is not yet implemented, but pull requests
   are welcome if community members need this capability before we can get to it. The
@@ -113,11 +113,12 @@ out each one.
 
 ### Local Development Environment
 
-If you wish to run Harbor locally using the development environment found in the `devenv` directory,
+If you wish to run Harbor locally using the development environment found in the `sdk/devenv` 
+directory,
 open a new terminal and run the following command.
 
 ```shell
-cd devenv && docker compose up
+cd sdk/devenv && docker compose up
 ```
 
 ### Sbom Ingestion & Enrichment
@@ -140,7 +141,7 @@ identified packages, and store any known vulnerability findings for each package
 ```
 
 If you wish to run the above commands against the local development environment provided in
-the `devenv` directory, add the `--debug` flag.
+the `sdk/devenv` directory, add the `--debug` flag.
 
 ```shell
 ./target/release/harbor-cli sbom --debug -p snyk
