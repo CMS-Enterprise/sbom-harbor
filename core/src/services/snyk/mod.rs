@@ -4,7 +4,7 @@ mod service;
 /// ## Overview
 /// This module provides a lightweight partial OpenAPI client for the Snyk API. It is primarily used for
 ///
-/// - Using Snyk as an SBOM Provider
+/// - Using Snyk as an SBOM Provider.
 /// - Using Snyk as Enrichment Provider.
 ///
 /// ## SBOM Provider

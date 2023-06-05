@@ -2,6 +2,7 @@
 members = [
     "api",
     "core",
+    "extensions/cms",
     "platform",
     "cli",
     "sdk/task-template"
