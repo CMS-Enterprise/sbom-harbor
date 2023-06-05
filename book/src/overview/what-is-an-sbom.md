@@ -10,8 +10,8 @@ car is made up of components, a piece of software, or a `Package` in Harbor term
 up of other components, and just like a car, a component, might have subcomponents.
 
 When one software component depends on another we typically refer that relationship as a `Dependency`.
-Both are ultimately a `Package`, but the term `Dependency` simply provides context about the 
-relationship between two `Packages`.
+Both components are ultimately a `Package`, but Harbor uses the terms `Primary` and `Dependency` 
+to provides context about the relationship between two `Packages`.
 
 Taking all that into context, we can update our definition of an SBOM to the following:
 

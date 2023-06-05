@@ -1,8 +1,8 @@
 ## How does Harbor fit in?
 
-Unlike automobile manufacturing, software development and procurement is happening in virtually 
-every organization in the industrialized world. The identity and operations locales of the world's 
-automobile manufacturers and parts suppliers is arguably knowable and can be regulated. 
+Unlike automobile manufacturing, software development. maintenance, and procurement is happening in 
+virtually every organization in the industrialized world. The identity and operations locales of the
+world's automobile manufacturers and parts suppliers is arguably knowable and can be regulated. 
 
 Conversely, the number of software systems, developers, consumers, and operators on the planet is a 
 far more challenging catalog to develop and maintain. Even if you could identify all the developers 
