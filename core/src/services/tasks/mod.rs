@@ -7,13 +7,14 @@ use chrono::Utc;
 use platform::mongodb::Service;
 use tracing::log::debug;
 
-/// Transaction script for running and logging Task operations.
+/// Provides a [Template Method](https://en.wikipedia.org/wiki/Template_method_pattern) for running
+/// and logging Task operations.
 #[async_trait]
 pub trait TaskProvider: Service<Task> {
     /// Implement this to load and process data.
     async fn run(&self, task: &mut Task) -> Result<HashMap<String, String>, Error>;
 
-    /// Run the transaction script and store the results.
+    /// Run the task and store the results.
     async fn execute(&self, task: &mut Task) -> Result<(), Error> {
         match self.init(task).await {
             Ok(_) => {}
@@ -51,7 +52,7 @@ pub trait TaskProvider: Service<Task> {
         }
     }
 
-    /// Inserts the [Task] record at the start of the transaction script.
+    /// Inserts the [Task] record at the start of the task run.
     async fn init(&self, task: &mut Task) -> Result<(), Error> {
         match self.insert(task).await {
             Ok(()) => {}
@@ -70,7 +71,7 @@ pub trait TaskProvider: Service<Task> {
         Ok(())
     }
 
-    /// Updates the [Task] record at the end of the transaction script.
+    /// Updates the [Task] record at the end of the task run.
     async fn complete(&self, task: &mut Task) -> Result<(), Error> {
         match task.err {
             None => {

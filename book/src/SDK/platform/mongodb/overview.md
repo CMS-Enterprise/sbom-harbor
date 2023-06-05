@@ -8,17 +8,11 @@ Harbor currently supports. This module was developed based on the following need
   inherently full of boilerplate, which we equate to engineering toil, and can also be a 
   significant source of bugs. While the Rust type system helps with the latter issue to a great 
   degree, we still wanted to leverage generics to generate as much boilerplate code as possible.
-- The official Mongo Rust Driver (see below) is wonderful, but also deep and finely-grained. 
-  This is appropriate since it is a low-level driver designed to allow total control of 
+- The official Mongo Rust Driver (see below) is a low-level driver designed to allow total control of 
   all aspects of MongoDB interaction. We wanted a way to abstract away that complexity and allow 
   developers to focus on domain logic rather than repeatedly handle infrastructure concerns.
 - We wanted database interactions to be consistent and easily refactorable in a handful of places 
   rather than scattered throughout the codebase.
-- The Mongo Rust Driver is designed in a very specific way in terms of [connection management](https://mongodb.github.io/mongo-rust-driver/manual/performance.html).
-  Connections are designed to be long-lived, and we learned the hard way that they require a 
-  significant amount of overhead to create, especially when negotiating TLS. We needed to provide a 
-  convention-based way to ensure reuse of Mongo client instances when possible and appropriate, 
-  which so far has been always.
 - We needed a way to apply DB Migrations over time.
 - We needed a way to dynamically and unpredictably layer in Authz controls. In order to do that 
   we needed to keep authorization concerns/data separate from the entity data itself. Building a 
@@ -42,3 +36,12 @@ page for an overview of what versions and features Harbor can support.
 Harbor leverages [the official MongoDB Rust Driver](https://github.com/mongodb/mongo-rust-driver). 
 Review their documentation for a comprehensive overview of how the driver works and how to work 
 with the driver.
+
+One important design consideration to bring attention to is managing instances of the driver 
+`Client.` The Mongo Rust Driver is designed in a very specific way in terms of [connection 
+management](https://mongodb.github.io/mongo-rust-driver/manual/performance.html).
+Connections are designed to be long-lived. We learned the hard way that they require a
+significant amount of overhead to create, especially when negotiating TLS. The 
+`platform:mongodb::Store` struct provides a convention-based way to ensure reuse of Mongo client 
+instances when possible and appropriate, which so far has been always. Code that makes use of a 
+`Store` should wrap that in an `Arc` and reuse a single instance.

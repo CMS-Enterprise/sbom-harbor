@@ -2,7 +2,7 @@
 
 **Entities** are types that either define the data elements being observed in the Harbor problem 
 domain, or support interaction across services, both internal and external. Most entities are 
-persisted as entries in a data store. However, ome entities are materialized at runtime only for 
+persisted as entries in a data store. However, some entities are materialized at runtime only for 
 the purpose of executing domain logic, and are never serialized or persisted. Entities are typically 
 managed by one or more **services**.
 

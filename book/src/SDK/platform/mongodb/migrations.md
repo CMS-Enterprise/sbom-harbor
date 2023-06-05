@@ -1,8 +1,8 @@
 ## Migrations
 
-Sometimes, it is necessary to refactor a data model after it has already been release to 
-production. The `migrations` module provides a mechanism to both `apply` and `rollback` a migration.
-This mechanism is limited in its opinions and feature set, since migrations are highly 
+Sometimes, it is necessary to refactor a data model after it has already been released to 
+production. The `migrations` module provides a mechanism to either `apply` and `rollback` a 
+migration. This mechanism is limited in its opinions and feature set, since migrations are highly 
 contextual by their nature. Migration script authors are responsible for ensuring that their 
 migrations are either idempotent and safe to re-run, or for checking the migration log to 
 determine if a script has already been applied.

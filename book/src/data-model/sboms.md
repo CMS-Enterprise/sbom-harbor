@@ -1,13 +1,14 @@
 ## SBOMs
 
 The `Sbom` entity records that an SBOM was ingested or generated for a `Package` that is being
-_directly monitored_. See the [`Packages`](./packages.md) documentation for a discussion.
+_directly monitored_. See the [`Packages`](./packages.md) documentation for a 
+discussion.
 
 ![SBOMs](sboms.png)
 
 ### Data Dictionary
 
-- `Sbom` - An SBOM is a snapshot inventory of the components that make up a piece of software at a 
+- `Sbom` - An SBOM is a snapshot manifest of the components that make up a piece of software at a 
     moment in time.
 - `Package` - An inventory item from an `Sbom`. Can be defined by standard identifiers like CPE 
   or PURL.
