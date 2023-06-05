@@ -508,17 +508,17 @@ classDiagram
     <<enumeration>> XrefKind
 ```
 
-## Component Model
+## Enrichment Engine Sequence
 
 ```mermaid
 sequenceDiagram
-    participant process as Process
+    participant cli as cli
     participant provider as Task Provider
     participant service as Service
     participant entity as Entity
     participant store as Data Store
 
-    process->>+provider: Executes provider
+    cli->>+provider: Executes provider
     provider->>store: Creates new task log entry
     provider->>service: Initializes service(s)
     service->>store: Requests targeted entities
@@ -530,7 +530,41 @@ sequenceDiagram
     end
     service->>store: Updates task log entry
     service->>provider: Returns result
-    provider->>process: Returns result
+    provider->>cli: Returns result
+```
+
+## API Sequence
+
+```mermaid
+sequenceDiagram
+    participant client as client
+    participant API as API
+    participant controller as Controller
+    participant service as Service
+    participant store as Data Store
+
+    client->>+API: Submit request
+    alt POST/PUT
+        API->>+API: Decodes payload
+    end
+    API->>+controller: Invokes controller for route
+    controller->>service: Calls service method
+    alt GET
+        service->>store: Requests entities
+        store->>service: Returns entities
+        service->>controller: Returns result
+    end
+    alt POST/PUT
+        service->>+store: Persists entities
+    end
+    alt DELETE
+        service->>+store: Deletes entities
+    end
+    controller->>API: Returns status
+    alt GET
+        API->>API: Encodes payload
+    end
+    API->>client: Returns response
 ```
 
 ## MongoDB Overview
