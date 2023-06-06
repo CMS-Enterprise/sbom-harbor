@@ -63,6 +63,6 @@ impl SbomScorecardProvider {
                 return Err(Error::SbomScorecard(format!("Failed to compare scorecard due to errors: {}", error_string)))
             }
         }
-        return Ok(());
+        Ok(())
     }
 }
