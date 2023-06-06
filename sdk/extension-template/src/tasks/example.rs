@@ -108,7 +108,6 @@ impl TaskProvider for ExampleTask {
 mod tests {
     use super::*;
     use crate::Error;
-    use harbcore::config::dev_context;
     use harbcore::entities::tasks::TaskKind;
 
     #[async_std::test]
@@ -116,8 +115,8 @@ mod tests {
     async fn can_run() -> Result<(), Error> {
         let cx = harbcore::config::dev_context(None).map_err(|e| Error::Config(e.to_string()))?;
 
-        let mut task: Task =
-            Task::new(TaskKind::Extension("example")).map_err(|e| Error::Task(e.to_string()))?;
+        let mut task: Task = Task::new(TaskKind::Extension("example".to_string()))
+            .map_err(|e| Error::Task(e.to_string()))?;
 
         let provider = ExampleTask::new(cx)
             .await

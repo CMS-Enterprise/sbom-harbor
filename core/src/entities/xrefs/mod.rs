@@ -9,10 +9,10 @@ use std::fmt::{Display, Formatter};
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Xref {
     /// Discriminator indicating which internal or external system being referenced.
-    pub(crate) kind: XrefKind,
+    pub kind: XrefKind,
     /// The HashMap of key-value pairs that are used to cross-reference the entity in the other
     /// system.
-    pub(crate) map: HashMap<String, String>,
+    pub map: HashMap<String, String>,
 }
 
 impl PartialEq<Self> for Xref {

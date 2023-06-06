@@ -5,7 +5,7 @@ members = [
     "extensions/cms",
     "platform",
     "cli",
-    "sdk/task-template"
+    "sdk/extension-template"
 ]
 
 [workspace.package]

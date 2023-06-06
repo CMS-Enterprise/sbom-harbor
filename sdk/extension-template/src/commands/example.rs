@@ -37,11 +37,10 @@ pub async fn execute(args: &ExampleArgs) -> Result<(), Error> {
 mod tests {
     use super::*;
     use crate::Error;
-    use harbcore::config::dev_context;
 
     #[async_std::test]
     #[ignore = "debug manual only"]
     async fn can_execute() -> Result<(), Error> {
-        let result = execute(&ExampleArgs { debug: true }).await?;
+        execute(&ExampleArgs { debug: true }).await
     }
 }

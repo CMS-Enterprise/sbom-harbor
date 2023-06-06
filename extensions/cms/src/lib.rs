@@ -16,6 +16,9 @@ pub mod commands;
 /// Errors defined for this crate.
 pub mod errors;
 
+/// Services that support Tasks defined for this crate.
+pub(crate) mod services;
+
 /// Tasks that can be performed by this CLI.
 pub mod tasks;
 

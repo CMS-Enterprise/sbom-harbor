@@ -6,9 +6,13 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1.63"
 clap = { version = "4.1.4", default-features = true, features = ["derive"] }
+serde = { version = "1.0.92", features = ["derive"] }
 thiserror = "1.0"
 tokio = { version = "1.25.0", features = ["full"] }
 uuid = { version = "1.2.2", features = ["serde", "v4"] }
+
+[dev-dependencies]
+async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
 
 [dependencies.harbcore]
 path = "../../core"

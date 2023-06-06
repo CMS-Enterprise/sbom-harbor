@@ -1,7 +1,8 @@
+use harbcore::entities::xrefs::{Xref, XrefKind};
+use std::collections::HashMap;
 use std::fmt::Debug;
 
 use crate::Error;
-use tracing::debug;
 
 use crate::services::snyk::client::*;
 
@@ -24,27 +25,38 @@ impl SnykService {
         let tags = match self.client.org_tags().await {
             Ok(orgs) => orgs,
             Err(e) => {
-                return Err(Error::Task(e.to_string()));
+                return Err(Error::Snyk(e.to_string()));
             }
         };
 
-        match tags {
-            None => Err(Error::Snyk("orgs_tag_not_found".to_string())),
-            Some(tags) => {
-                if tags.is_empty() {
-                    return Err(Error::Task("org_tags_empty".to_string()));
-                }
-
-                let mut results = vec![];
-
-                tags.into_iter().for_each(|inner| {
-                    results.push(Organization::new(inner));
-                });
-
-                Ok(results)
-            }
+        if tags.is_empty() {
+            return Err(Error::Snyk("org_tags_empty".to_string()));
         }
+
+        Ok(tags)
     }
+}
+
+pub fn extract_xref(tag: &OrgTag) -> Result<Xref, Error> {
+    let tags = match &tag.attributes.tags {
+        None => return Err(Error::Snyk("org_tag_tags_none".to_string())),
+        Some(tags) => tags,
+    };
+
+    let id = match tags.iter().find(|t| t.key == "FISMA_ACRONYM") {
+        None => return Err(Error::Snyk("fisma_id_none".to_string())),
+        Some(t) => t.value.clone(),
+    };
+
+    let name = match &tag.name {
+        None => return Err(Error::Snyk("org_tag_name_none".to_string())),
+        Some(name) => name.clone(),
+    };
+
+    Ok(Xref {
+        kind: XrefKind::External("fisma".to_string()),
+        map: HashMap::from([("id".to_string(), id), ("name".to_string(), name)]),
+    })
 }
 
 #[cfg(test)]

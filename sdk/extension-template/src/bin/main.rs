@@ -1,5 +1,5 @@
 use clap::Parser;
-use task_template::{commands, Cli, Commands, Error};
+use extension_template::{commands, Cli, Commands, Error};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

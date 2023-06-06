@@ -1,10 +1,6 @@
-use tracing::debug;
-
-use platform::encoding::url_encode;
 use platform::hyper;
 use platform::hyper::ContentType;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 use crate::Error;
 
@@ -41,10 +37,11 @@ impl Client {
                 &self.token(),
                 None::<OrgTagObjectListGetResponse>,
             )
-            .await?;
+            .await
+            .map_err(|e| Error::Snyk(e.to_string()))?;
 
         match response {
-            None => Err(Error::Runtime("snyk failed to list org tags".to_string())),
+            None => Err(Error::Snyk("snyk failed to list org tags".to_string())),
             Some(r) => Ok(r.data),
         }
     }
@@ -86,6 +83,8 @@ pub struct OrgTagObjectListGetResponse {
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct SelfLink {
+    // Allowing the following lint since the spec generated code seems to violate this suggestion.
+    #[allow(clippy::box_collection)]
     #[serde(rename = "self", skip_serializing_if = "Option::is_none")]
     pub param_self: Option<Box<String>>,
 }
