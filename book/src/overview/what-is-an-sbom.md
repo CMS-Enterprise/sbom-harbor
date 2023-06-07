@@ -51,7 +51,7 @@ Here is an example of a very minimal SBOM in CycloneDX JSON format.
             "bom-ref": "example-app@1.2.3",
             "type": "application",
             "name": "project",
-            "purl": "pkg:nuget/project"
+            "purl": "pkg:nuget/exampl-app@1.2.3"
         }
     },
     "components": [
