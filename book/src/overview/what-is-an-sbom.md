@@ -35,3 +35,46 @@ endorsement of one specification over the other, as much as a pragmatic decision
 availability of data. We do have SPDX support in our backlog, and ultimately intend to support 
 both formats. Community PRs welcome!
 
+### Example
+
+Here is an example of a very minimal SBOM in CycloneDX JSON format.
+
+```json
+{
+    "$schema": "http://cyclonedx.org/schema/bom-1.4.schema.json",
+    "bomFormat": "CycloneDX",
+    "specVersion": "1.4",
+    "version": 1,
+    "metadata": {
+        "timestamp": "2023-06-06T11:29:16Z",
+        "component": {
+            "bom-ref": "example-app@1.2.3",
+            "type": "application",
+            "name": "project",
+            "purl": "pkg:nuget/project"
+        }
+    },
+    "components": [
+        {
+            "bom-ref": "example-library@2.3.4",
+            "type": "library",
+            "name": "stateless-4.0",
+            "version": "2.3.1.1",
+            "purl": "pkg:nuget/example-library@2.3.4"
+        }
+    ],
+    "dependencies": [
+        {
+            "ref": "example-app@1.2.3",
+            "dependsOn": [
+                "example-library@2.3.4"
+            ]
+        },
+        {
+            "ref": "example-library@2.3.4",
+            "dependsOn": []
+        }
+    ]
+}
+```
+

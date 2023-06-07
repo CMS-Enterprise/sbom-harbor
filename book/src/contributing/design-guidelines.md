@@ -3,41 +3,47 @@
 The following sections contain a non-exhaustive list of design guidelines to consider when 
 contributing to Harbor. Suggestions for additional guiding principles welcome!
 
-## Code Organization
+## Repository Organization
 
-```
-workspace/
-├── api/
-├── cli/
-├── core/
-└── platform/
+```ascii
+root/
+  ├── api/          # HTTP API
+  ├── cli/          # Enrichment Engine
+  ├── core/         # Component Model and Domain Logic
+  ├── extensions/   # Custom logic specific to a Harbor instance
+  ├── platform/     # Infrastructure and generically reusable code
+  └── sdk/          # Automation and developer oriented tooling
 ```
 
 ### Modules
 
-- `mod.rs` - This file should contain exports, unit tests, and types that are shared or fundamental 
-  to the module as a whole. Examples of fundamental types include:
-  - Enums
-  - Traits
-  - Errors
+Subdirectories are the unit of modularization in Rust. They should contain a `mod.rs` file and this 
+file should contain exports, unit tests, and types that are shared or fundamental to the module as 
+a whole. 
+
+>Examples of fundamental types include:
+>
+>  - Enums
+>  - Traits
+>  - Errors
 
 ### Platform
 
 Code in the `platform` crate is intended to be entirely generic and unrelated to the Harbor 
 application. It should be thought of as a separate reusable library that can be leveraged by any 
 application. When contributing or reviewing new features or modifications to the `platform`crate 
-it is imperative to keep this in mind. 
+it is imperative to keep this in mind.
 
 ### Services
 
-- Services can consume external models or types but should not expose them. Make sure your
-  service does not expose a non-Harbor type outside the service's containing module.
+- Services can consume external models or types but should not expose them outside the crate 
+  boundary. Make sure your service exposes only Harbor entities outside the crate.
 - If a function does not rely on shared state, consider making it a module level function 
   instead. It will likely be easier to test.
 - If you need to repeatedly use a type that is expensive to create, such as an TLS-enabled HTTP 
   Client or a DB driver that establishes long-lived connections, consider wrapping it in a service.
 
-## Task Providers
+### Task Providers
 
 Some specific things to consider when designing a `TaskProvider` are:
 

@@ -1,32 +1,39 @@
 
-## Infrastructure
+## Deployment
 
 ```mermaid
 graph LR
-    client([client])-->API[API];
+    client([client])<-->API[API];
     subgraph public
         API
     end
     subgraph private
         direction BT
         subgraph db-cluster
-            API-->MongoDB
+            API<-->MongoDB
             MongoDB
         end
-        subgraph enrichment-engine
+        subgraph task-orchestrator
             direction BT
             IngestTask
             EnrichmentTask
             IngestTask-->MongoDB[MongoDB]
             EnrichmentTask-->MongoDB[MongoDB]
         end
+        subgraph storage
+            direction TB
+            FileStore
+            API-->FileStore
+            IngestTask-->FileStore
+            EnrichmentTask-->FileStore
+        end
     end
  classDef plain fill:#ddd,stroke:#fff,stroke-width:4px,color:#000
  classDef component fill:#326ce5,stroke:#fff,stroke-width:4px,color:#fff
  classDef cluster fill:#fff,stroke:#bbb,stroke-width:2px,color:#326ce5
- class Ingress,API,IngestTask,EnrichmentTask,MongoDB component
+ class Ingress,API,IngestTask,EnrichmentTask,MongoDB,FileStore component
  class client plain
- class public,private,db-cluster,enrichment-engine cluster
+ class public,private,db-cluster,task-orchestrator,storage cluster
 ```
 
 ## Overview

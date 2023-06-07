@@ -29,6 +29,7 @@
 - [ ] Vulnerabilities and scores by SBOM
 - [ ] Dependency blast radius
 - [ ] SBOM freshness
+- [ ] CI/CD & Runtime monitoring
 
 ### Technical Improvements
 
