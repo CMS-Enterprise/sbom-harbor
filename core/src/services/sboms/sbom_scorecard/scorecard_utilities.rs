@@ -135,8 +135,18 @@ pub fn compare_sbom_scorecards(sbom_1_path: String, sbom_2_path: String) -> Resu
     }
 }
 
+#[cfg(test)] 
+fn set_scorecard_test_app() {
+    let mut scorecard_test_app = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    scorecard_test_app.push("src/services/sboms/sbom_scorecard/test_files/sbom-scorecard");
+    env::set_var("SBOM_SCORECARD", scorecard_test_app);
+}
+
 #[test]
 fn compare_matching_sboms() {
+
+    set_scorecard_test_app();
+
     let mut sbom_1_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     sbom_1_path.push("src/services/sboms/sbom_scorecard/test_files/dropwizard.json");
 
@@ -151,6 +161,9 @@ fn compare_matching_sboms() {
 
 #[test]
 fn compare_not_matching_sboms() {
+
+    set_scorecard_test_app();
+
     let mut sbom_1_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     sbom_1_path.push("src/services/sboms/sbom_scorecard/test_files/dropwizard.json");
 
@@ -168,6 +181,9 @@ fn compare_not_matching_sboms() {
 
 #[test]
 pub fn test_get_orgs() {
+    
+    set_scorecard_test_app();
+
     let mut test_sbom = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     test_sbom.push("src/services/sboms/sbom_scorecard/test_files/dropwizard.json");
 
