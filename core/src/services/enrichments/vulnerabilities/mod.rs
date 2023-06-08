@@ -3,6 +3,9 @@ mod service;
 /// Supports generating [Vulnerability] instances from the Snyk API.
 pub mod snyk;
 
+/// Supports adding an EPSS Score to a [Vulnerability].
+pub mod epss;
+
 pub use service::*;
 use std::collections::HashMap;
 

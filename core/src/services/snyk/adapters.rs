@@ -161,6 +161,7 @@ impl IssueSnyk {
             provider: VulnerabilityProviderKind::Snyk,
             severity,
             cve: self.cve(),
+            epss_score: None,
             description: self.description(),
             cvss: self.cvss(),
             cwes: self.cwes(),
