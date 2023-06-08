@@ -54,4 +54,4 @@ generators/third-party/cyclonedx.yaml
 generators/third-party/snyk.json
 
 # devenv
-devenv/mongodb/
+sdk/devenv/mongodb/
