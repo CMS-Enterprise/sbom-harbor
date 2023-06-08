@@ -1,7 +1,8 @@
 [![TESTS](https://github.com/CMS-Enterprise/sbom-harbor/actions/workflows/tests.yaml/badge.svg)](https://github.com/CMS-Enterprise/sbom-harbor/actions/workflows/tests.yaml) [![BACKEND-BUILD](https://github.com/CMS-Enterprise/sbom-harbor/actions/workflows/build.yaml/badge.svg?branch=main&event=workflow_run)](https://github.com/CMS-Enterprise/sbom-harbor/actions/workflows/build.yaml)
 # Overview
 
-This project contains the Harbor application and enrichment providers that support it.
+This project contains the Harbor application and enrichment providers that support it. Please refer
+to our [book](https://cms-enterprise.github.io/sbom-harbor/) for a comprehensive explanation.
 
 ## Status
 
@@ -74,8 +75,7 @@ pre-commit install
 
 ## Project Documentation
 
-Project documentation and additional developer guidance can be found on our [GitPage]
-(https://cms-enterprise.github.io/sbom-harbor/).
+Project documentation and additional developer guidance can be found on our [GitPage](https://cms-enterprise.github.io/sbom-harbor/).
 
 ## Crate Documentation
 
