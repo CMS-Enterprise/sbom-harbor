@@ -18,12 +18,6 @@ pub mod service;
 /// Provides a generics-based [Store] trait for handling CRUD based operations against a [Collection].
 pub mod store;
 
-/// Trait to implement when injecting a custom uri provider.
-pub trait ConnectionUriProvider: Debug + Send + Sync {
-    /// Implement this to provide a custom uri.
-    fn connection_uri(&self) -> Result<String, Error>;
-}
-
 // TODO: Make Context a trait and split these up in to purpose build contexts instead of a single type.
 /// Provides connection information and schema conventions for a MongoDB/DocumentDB backed [Store].
 #[derive(Clone, Debug, Deserialize, Serialize)]

@@ -76,6 +76,10 @@ pub struct Sbom {
     /// [Package] instance that represents this Sbom. Hydrated at runtime.
     #[serde(skip)]
     pub package: Option<Package>,
+
+    /// [Package] instances that represent dependencies defined in this Sbom. Hydrated at runtime.
+    #[serde(skip)]
+    pub dependencies: Option<Vec<Package>>,
 }
 
 impl Sbom {
@@ -143,6 +147,7 @@ impl Sbom {
             package: Some(package),
             dependency_refs,
             other_identifiers,
+            dependencies: None,
         };
 
         sbom.join_task(purl, task)?;

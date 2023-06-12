@@ -196,8 +196,9 @@ impl SbomSyncTask {
         Ok(())
     }
 
-    /// Transaction script for saving Sbom results to data store. If change_set None, indicates Sbom
-    /// has errors and dependent entities should not be committed.
+    /// [Transaction script](https://martinfowler.com/eaaCatalog/transactionScript.html) for saving
+    /// Sbom results to data store. If change_set None, indicates Sbom has errors and dependent
+    /// entities should not be committed.
     pub(crate) async fn commit_target(&self, sbom: &mut Sbom, xref: Xref) -> Result<(), Error> {
         let mut errs = HashMap::<String, String>::new();
 

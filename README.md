@@ -1,14 +1,17 @@
 [![TESTS](https://github.com/CMS-Enterprise/sbom-harbor/actions/workflows/tests.yaml/badge.svg)](https://github.com/CMS-Enterprise/sbom-harbor/actions/workflows/tests.yaml) [![BACKEND-BUILD](https://github.com/CMS-Enterprise/sbom-harbor/actions/workflows/build.yaml/badge.svg?branch=main&event=workflow_run)](https://github.com/CMS-Enterprise/sbom-harbor/actions/workflows/build.yaml)
 # Overview
 
-This project contains the Harbor application and enrichment providers that support it.
+This project contains the Harbor application and enrichment providers that support it. Please refer
+to our [book](https://cms-enterprise.github.io/sbom-harbor/) for a comprehensive explanation.
 
 ## Status
 
-Version 2 of this project is in early stages of development.  We are rapidly iterating towards a v2.0.0 MVP,
-but at this time all features are not yet operational, and the usage documentation is not available.
+Harbor is under active development. We are currently working at a `0.1.0` pre-release semver level. 
+There is no guarantee of stable interfaces or backward compatability at this time. We would be 
+thrilled to have additional contributors and end-users, but we want to make sure you are aware 
+of that before you decide to invest your time and resources.
 
-## System Requirements
+## Developer System Requirements
 
 - [Rust toolchain](https://www.rust-lang.org/tools/install)
 - [Protobuf](https://grpc.io/docs/protoc-installation/)
@@ -25,8 +28,8 @@ support the `docker-compose` configuration found in the `sdk/devenv` folder.
 - `SNYK_TOKEN` - A valid Snyk API token. Required if using the Snyk integrations.
 - `HARBOR_FILE_STORE` - Path specification for file storage. When using an `S3StorageProvider`
   this should be the bucket name with path prefix where you wish to store generated files. When
-  using a `FileSystemStorageProvider` this should be a valid directory on the host machine
-  running the job.
+  using a `FileSystemStorageProvider` this should be a valid directory or volume on the host machine
+  or container running the job.
 - `DOCDB_CONFIG` - DocumentDB connection configuration. If not set, tests will default to the
   configuration that supports the `docker-compose.yaml` environment specified in the `sdk/devenv`
   folder. The primary Harbor installation is backed by DocumentDB, but any MongoDB 5.0 compliant
@@ -70,12 +73,19 @@ pre-commit install
 127.0.0.1 mongo
 ```
 
+## Project Documentation
+
+Project documentation and additional developer guidance can be found on our [GitPage](https://cms-enterprise.github.io/sbom-harbor/).
+
 ## Crate Documentation
 
-The documentation for each crate can be generated from source using `cargo` or `rustdoc`.
+The documentation for each crate can be generated from source using `cargo` or `rustdoc`. We 
+plan to integrate the `rustdoc` output with the[project documentation](#project-documentation) 
+in time. However, that requires additional tooling that we haven't gotten to yet. That would 
+make a great first contribution. If you are willing, a PR will definitely be considered.
 
-To generate the documentation, clone the repository, and then run the
-following command from this directory.
+To generate the crate documentation, clone the repository, and then run the
+following command from the root directory.
 
 ```shell
 cargo doc --no-deps
@@ -123,26 +133,31 @@ cd sdk/devenv && docker compose up
 
 ### Sbom Ingestion & Enrichment
 
-For organizations that use Snyk, Harbor can import SBOMs using the Snyk API. Make sure all environment
-variables are set and then run the following command.
+Many teams at CMS have been onboarded to Snyk. That fact made a Snyk integration an appealing 
+first target. Currently, Harbor supports ingesting SBOMs using the Snyk API. A generic GitHub 
+ingestion provider is imminent. Similarly, an enrichment provider based on an Open Source 
+vulnerability data provider is on the short-term roadmap. Stay tuned for updates on how to get 
+started with purely Open Source tools.
+
+Make sure all environment variables are set and then run the following command.
 
 **Note:** this assumes you are running the command from the root directory of the repository and
 that you have run a `release` build as described above.
 
 ```shell
-./target/release/harbor-cli sbom -p snyk
+./target/release/harbor sbom -p snyk
 ```
 
 Once you have ingested the SBOMs from the Snyk API, you can then use Harbor to call the API for all
 identified packages, and store any known vulnerability findings for each package.
 
 ```shell
-./target/release/harbor-cli enrich -p snyk
+./target/release/harbor enrich -p snyk
 ```
 
 If you wish to run the above commands against the local development environment provided in
 the `sdk/devenv` directory, add the `--debug` flag.
 
 ```shell
-./target/release/harbor-cli sbom --debug -p snyk
+./target/release/harbor sbom --debug -p snyk
 ```
