@@ -36,8 +36,6 @@ jobs:
           grep -m 1 "http.*linux-amd64" |
           awk '{print $2}' | sed 's|[\"\,]*||g')
           export SBOM_SCORECARD="~/.sbom_scorecard/scorecard"
-          echo ----------------------
-          echo $SBOM_SCORECARD
       - name: CHECKOUT
         uses: actions/checkout@v3
 
@@ -60,3 +58,5 @@ jobs:
 
       - name: TEST - unit & integration
         run: cargo test
+        env:
+          SBOM_SCORECARD: "~/.sbom_scorecard/scorecard"
