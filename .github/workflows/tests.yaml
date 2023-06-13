@@ -59,4 +59,4 @@ jobs:
       - name: TEST - unit & integration
         run: cargo test
         env:
-          SBOM_SCORECARD: "~/.sbom_scorecard/scorecard"
+          SBOM_SCORECARD: ~/.sbom_scorecard/scorecard
