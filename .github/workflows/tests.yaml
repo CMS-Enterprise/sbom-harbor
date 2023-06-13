@@ -31,8 +31,7 @@ jobs:
     steps:
       - name: Install latest sbom-scorecard
         run: |
-          mkdir ~/.sbom_scorecard
-          wget -O ~/.sbom_scorecard/scorecard $(curl -s https://api.github.com/repos/ebay/sbom-scorecard/releases/latest | 
+          wget -O /usr/local/bin/scorecard $(curl -s https://api.github.com/repos/ebay/sbom-scorecard/releases/latest | 
           grep -m 1 "http.*linux-amd64" |
           awk '{print $2}' | sed 's|[\"\,]*||g')
           export SBOM_SCORECARD="~/.sbom_scorecard/scorecard"
@@ -59,4 +58,4 @@ jobs:
       - name: TEST - unit & integration
         run: cargo test
         env:
-          SBOM_SCORECARD: ~/.sbom_scorecard/scorecard
+          SBOM_SCORECARD: /usr/local/bin/scorecard
