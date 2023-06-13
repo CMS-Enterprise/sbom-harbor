@@ -40,4 +40,7 @@ pub struct Cli {
 pub enum Commands {
     /// Fisma command - synchronizes FISMA IDs with Primary packages.
     Fisma(commands::fisma::FismaArgs),
+    /// IonChannel command - synchronizes Ion Channel Vulnerability or metrics data with
+    /// Dependency packages.
+    IonChannel(commands::ionchannel::IonChannelArgs),
 }

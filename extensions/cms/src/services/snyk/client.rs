@@ -9,7 +9,7 @@ fn org_tags_url() -> String {
     "https://api.snyk.io/hidden/org_tags?version=2022-12-09~experimental".to_string()
 }
 
-/// A purpose build Snyk HTTP Client.
+/// A purpose built Snyk HTTP Client.
 #[derive(Debug)]
 pub struct Client {
     token: String,

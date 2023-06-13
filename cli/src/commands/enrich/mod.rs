@@ -62,7 +62,7 @@ pub struct EnrichArgs {
     pub provider: EnrichmentProviderKind,
 
     /// Specifies to run the command against the local debug environment.
-    #[arg(long)]
+    #[arg(short, long)]
     debug: bool,
 
     /// Flattened args for use with the Snyk enrichment provider.

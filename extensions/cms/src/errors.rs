@@ -12,6 +12,9 @@ pub enum Error {
     /// Invalid argument.
     #[error("invalid argument: {0}")]
     InvalidArg(String),
+    /// Ion Channel provider error.
+    #[error("ion channel provider: {0}")]
+    IonChannel(String),
     /// Invalid subcommand.
     #[error("invalid subcommand: {0}")]
     InvalidSubcommand(String),

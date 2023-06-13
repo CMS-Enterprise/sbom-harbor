@@ -5,7 +5,7 @@ use harbcore::services::tasks::TaskProvider;
 use crate::tasks::fisma::FismaTask;
 use crate::Error;
 
-/// Specifies the CLI args for the Packages command.
+/// Specifies the CLI args for the `fisma` command.
 #[derive(Debug, Parser)]
 pub struct FismaArgs {
     /// Specifies to run the command against the local debug environment.
@@ -13,7 +13,7 @@ pub struct FismaArgs {
     debug: bool,
 }
 
-/// The Example Command handler.
+/// The FISMA Command handler.
 pub async fn execute(args: &FismaArgs) -> Result<(), Error> {
     let cx = match &args.debug {
         false => harbcore::config::harbor_context().map_err(|e| Error::Config(e.to_string()))?,
