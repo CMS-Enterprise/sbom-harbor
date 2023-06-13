@@ -146,7 +146,7 @@ fn compare_matching_sboms() {
         sbom_1_path.display().to_string(),
     );
 
-    assert!(result.is_ok(), "Should not return an error when performing a compare");
+    assert!(result.is_ok(), "Failed to get a result with error {:#?}", result.err());
     assert!(result.unwrap().contains("The two scorecards have a matching score!"), "The scorecards should be matching");
 }
 
@@ -164,7 +164,7 @@ fn compare_not_matching_sboms() {
         sbom_2_path.display().to_string(),
     );
     
-    assert!(result.is_ok(), "Should not return an error when performing a compare");
+    assert!(result.is_ok(), "Failed to get a result with error {:#?}", result.err());
     assert!(result.unwrap().contains("Scorecard 2 has a higher score!"), "The second scorecard should be more highly rated");
 }
 
@@ -175,7 +175,7 @@ pub fn test_get_orgs() {
     test_sbom.push("src/services/sboms/sbom_scorecard/test_files/dropwizard.json");
 
     let scorecard = generate_sbom_scorecard(test_sbom.display().to_string());
-    assert!(scorecard.is_ok(), "Should not return an error");
+    assert!(scorecard.is_ok(), "Failed to get a result with error {:#?}", scorecard.err());
     let unwrapped_scorecard = scorecard.unwrap();
     assert!(unwrapped_scorecard.compliance.ratio == 1.0, "Compliance ratio should be 1");
     assert!(unwrapped_scorecard.compliance.reasoning == "", "Compliance reasoning should be an empty string");
