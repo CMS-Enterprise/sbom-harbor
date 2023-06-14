@@ -52,14 +52,16 @@ impl Client {
     }
 
     #[allow(dead_code)]
-    pub async fn metrics(&self) -> Result<Vec<Metrics>, Error> {
+    pub async fn metrics(&self, package_id: String) -> Result<Vec<Metrics>, Error> {
+        let request = MetricsRequest{ package_id };
+
         let response: Option<Vec<Metrics>> = self
             .inner
             .get(
                 &metrics_url(),
                 ContentType::Json,
                 &self.token(),
-                None::<Metrics>,
+                None::<MetricsRequest>,
             )
             .await
             .map_err(|e| Error::IonChannel(e.to_string()))?;
@@ -69,6 +71,10 @@ impl Client {
             Some(r) => Ok(r.data),
         }
     }
+}
+
+struct MetricsRequest {
+    package_id: String,
 }
 
 #[cfg(test)]
@@ -89,7 +95,7 @@ mod tests {
         assert!(!vulnerabilities.is_empty());
 
         for vulnerability in vulnerabilities {
-            DO SOMETHING
+            // DO SOMETHING
         }
 
         Ok(())
