@@ -9,7 +9,7 @@ use crate::services::snyk::client::models::{
 };
 use crate::services::snyk::{IssueSnyk, SnykRef};
 
-use crate::entities::enrichments::cvss::{Maturity, Score, Summary, Version};
+use crate::entities::enrichments::cvss::{Cvss, Maturity, Score, Version};
 use crate::entities::enrichments::{
     Cwe, Remediation, Severity, Vulnerability, VulnerabilityProviderKind,
 };
@@ -224,8 +224,8 @@ impl IssueSnyk {
         self.attributes.as_deref()?.description.as_ref().cloned()
     }
 
-    fn cvss(&self) -> Option<Summary> {
-        let mut detail = Summary {
+    fn cvss(&self) -> Option<Cvss> {
+        let mut detail = Cvss {
             maturity: self.resolve_maturity(),
             mean_score: None,
             median_score: None,
