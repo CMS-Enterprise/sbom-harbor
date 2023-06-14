@@ -5,6 +5,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 
 /// A [Task] is a value type that allows tracking and correlating operations performed by Harbor.
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -90,6 +91,18 @@ pub enum TaskKind {
     Vulnerabilities(VulnerabilityProviderKind),
     /// [Task] was performed to assess Sboms.
     Sbom(SbomProviderKind),
+    /// [Task] was performed by a custom extension.
+    Extension(String),
+}
+
+impl Display for TaskKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TaskKind::Vulnerabilities(kind) => write!(f, "vulnerabilities::{}", kind),
+            TaskKind::Sbom(kind) => write!(f, "sbom::{}", kind),
+            TaskKind::Extension(name) => write!(f, "extension::{}", name),
+        }
+    }
 }
 
 /// Reference to an instance of a [Task]

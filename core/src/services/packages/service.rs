@@ -1,5 +1,6 @@
 use crate::entities::packages::{Package, Unsupported};
 use crate::entities::xrefs::{Xref, Xrefs};
+use crate::services::xrefs::XrefService;
 use crate::Error;
 use platform::mongodb::{Service, Store};
 use std::collections::HashMap;
@@ -17,6 +18,8 @@ impl Service<Package> for PackageService {
         self.store.clone()
     }
 }
+
+impl XrefService<Package> for PackageService {}
 
 impl Service<Unsupported> for PackageService {
     fn store(&self) -> Arc<Store> {

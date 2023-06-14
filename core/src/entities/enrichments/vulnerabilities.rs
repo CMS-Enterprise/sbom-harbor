@@ -1,4 +1,4 @@
-use crate::entities::enrichments::cvss::Summary;
+use crate::entities::enrichments::cvss::Cvss;
 use crate::entities::tasks::{Task, TaskRef};
 use crate::Error;
 use serde::{Deserialize, Serialize};
@@ -35,7 +35,7 @@ pub struct Vulnerability {
     pub epss_score: Option<f32>,
 
     /// Optional CVSS Detail from the enrichment provider.
-    pub cvss: Option<Summary>,
+    pub cvss: Option<Cvss>,
 
     /// Optional list of identified CWEs for the Vulnerability.
     pub cwes: Option<Vec<Cwe>>,

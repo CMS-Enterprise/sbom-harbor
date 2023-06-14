@@ -2,8 +2,10 @@
 members = [
     "api",
     "core",
+    "extensions/cms",
     "platform",
     "cli",
+    "sdk/extension-template"
 ]
 
 [workspace.package]

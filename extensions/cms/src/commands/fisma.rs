@@ -1,0 +1,50 @@
+use clap::Parser;
+use harbcore::entities::tasks::{Task, TaskKind};
+use harbcore::services::tasks::TaskProvider;
+
+use crate::tasks::fisma::FismaTask;
+use crate::Error;
+
+/// Specifies the CLI args for the Packages command.
+#[derive(Debug, Parser)]
+pub struct FismaArgs {
+    /// Specifies to run the command against the local debug environment.
+    #[arg(long)]
+    debug: bool,
+}
+
+/// The Example Command handler.
+pub async fn execute(args: &FismaArgs) -> Result<(), Error> {
+    let cx = match &args.debug {
+        false => harbcore::config::harbor_context().map_err(|e| Error::Config(e.to_string()))?,
+        true => harbcore::config::dev_context(None).map_err(|e| Error::Config(e.to_string()))?,
+    };
+
+    let token = std::env::var("SNYK_TOKEN")
+        .map_err(|e| Error::Config(e.to_string()))
+        .unwrap();
+
+    let mut task = Task::new(TaskKind::Extension("fisma".to_string()))
+        .map_err(|e| Error::Fisma(e.to_string()))?;
+
+    let provider = FismaTask::new(cx, token)
+        .await
+        .map_err(|e| Error::Fisma(e.to_string()))?;
+
+    provider
+        .execute(&mut task)
+        .await
+        .map_err(|e| Error::Fisma(e.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Error;
+
+    #[async_std::test]
+    #[ignore = "debug manual only"]
+    async fn can_execute() -> Result<(), Error> {
+        execute(&FismaArgs { debug: true }).await
+    }
+}

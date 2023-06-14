@@ -1,0 +1,1308 @@
+openapi: 3.0.1
+info:
+  title: Harbor
+  description: Harbor SBOM Management API
+  version: 0.1.0
+servers:
+  - url: https://localhost:6000
+    variables:
+      basePath:
+        default: ''
+tags:
+  - name: auth
+    description: Operations related to authentication concerns of the system.
+  - name: user
+    description: Operations related to the user entity.
+  - name: organization
+    description: Operations related to the organization entity.
+  - name: repository
+    description: Operations related to the repository entity.
+  - name: vendor
+    description: Operations related to the vendor entity.
+  - name: product
+    description: Operations related to the product entity.
+  - name: token
+    description: Operations related to the token entity.
+paths:
+  # Auth Paths
+  /api/v1/login:
+    post:
+      summary: Authenticate with a username and password.
+      tags:
+        - auth
+      requestBody:
+        $ref: '#/components/requestBodies/login'
+      responses:
+        "200":
+          $ref: '#/components/responses/apiKey'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+  /api/v1/user/search:
+    get:
+      summary: Search for members by email.
+      tags:
+        - auth
+      responses:
+        "200":
+          $ref: '#/components/responses/userList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/filterQuery'
+
+  # Organization & Repository Paths
+  /api/v1/organization:
+    post:
+      summary: Create a new organization.
+      tags:
+        - organization
+      requestBody:
+        $ref: '#/components/requestBodies/organization'
+      responses:
+        "200":
+          $ref: '#/components/responses/organization'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/childrenQuery'
+  /api/v1/organization/{organizationId}:
+    get:
+      summary: Get an existing organization.
+      tags:
+        - organization
+      responses:
+        "200":
+          $ref: '#/components/responses/organization'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/organizationId'
+        - $ref: '#/components/parameters/childrenQuery'
+    put:
+      summary: Modify an existing organization.
+      tags:
+        - organization
+      requestBody:
+        $ref: '#/components/requestBodies/organization'
+      responses:
+        "200":
+          $ref: '#/components/responses/organization'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/organizationId'
+        - $ref: '#/components/parameters/childrenQuery'
+    delete:
+      summary: Delete an existing organization.
+      tags:
+        - organization
+      responses:
+        "200":
+          $ref: '#/components/responses/organization'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/organizationId'
+        - $ref: '#/components/parameters/childrenQuery'
+
+  /api/v1/organizations:
+    get:
+      summary: Get all organizations a user or token has access to.
+      tags:
+        - organization
+      responses:
+        "200":
+          $ref: '#/components/responses/organizationList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/childrenQuery'
+
+  /api/v1/organization/{organizationId}/repository:
+    post:
+      summary: Create a repository for a organization.
+      tags:
+        - organization
+      requestBody:
+        $ref: '#/components/requestBodies/repository'
+      responses:
+        "200":
+          $ref: '#/components/responses/repository'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/organizationId'
+        - $ref: '#/components/parameters/childrenQuery'
+  /api/v1/organization/{organizationId}/repository/{repositoryId}:
+    get:
+      summary: Get an existing repository.
+      tags:
+        - organization
+      responses:
+        "200":
+          $ref: '#/components/responses/repository'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/repositoryId'
+        - $ref: '#/components/parameters/organizationId'
+        - $ref: '#/components/parameters/childrenQuery'
+    put:
+      summary: Modify an existing repository.
+      tags:
+        - organization
+      requestBody:
+        $ref: '#/components/requestBodies/repository'
+      responses:
+        "200":
+          $ref: '#/components/responses/repository'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/repositoryId'
+        - $ref: '#/components/parameters/organizationId'
+        - $ref: '#/components/parameters/childrenQuery'
+    delete:
+      summary: Delete an existing repository.
+      tags:
+        - organization
+      responses:
+        "200":
+          $ref: '#/components/responses/repository'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/repositoryId'
+        - $ref: '#/components/parameters/organizationId'
+        - $ref: '#/components/parameters/childrenQuery'
+  /api/v1/organization/{organizationId}/repositories:
+    get:
+      summary: Get all repositories for a organization.
+      tags:
+        - organization
+      responses:
+        "200":
+          $ref: '#/components/responses/repositoryList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/organizationId'
+        - $ref: '#/components/parameters/childrenQuery'
+
+  # Token Paths
+  /api/v1/token:
+    post:
+      summary: Create a token for an organization.
+      tags:
+        - token
+      requestBody:
+        $ref: '#/components/requestBodies/token'
+      responses:
+        "200":
+          $ref: '#/components/responses/token'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/organizationId'
+  /api/v1/token/{tokenId}:
+    get:
+      summary: Get an existing token.
+      tags:
+        - token
+      responses:
+        "200":
+          $ref: '#/components/responses/token'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/tokenId'
+        - $ref: '#/components/parameters/organizationId'
+    put:
+      summary: Modify an existing token.
+      tags:
+        - token
+      requestBody:
+        $ref: '#/components/requestBodies/token'
+      responses:
+        "200":
+          $ref: '#/components/responses/token'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/tokenId'
+        - $ref: '#/components/parameters/organizationId'
+    delete:
+      summary: Delete an existing token.
+      tags:
+        - token
+      responses:
+        "200":
+          $ref: '#/components/responses/token'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/tokenId'
+        - $ref: '#/components/parameters/organizationId'
+  /api/v1/{organizationId}/tokens:
+    get:
+      summary: Get all tokens for an organization.
+      tags:
+        - token
+      responses:
+        "200":
+          $ref: '#/components/responses/tokenList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/organizationId'
+
+  # Vendor & Product Paths
+  /api/v1/vendor:
+    post:
+      summary: Create a new vendor entity.
+      tags:
+        - vendor
+      requestBody:
+        $ref: '#/components/requestBodies/vendor'
+      responses:
+        "200":
+          $ref: '#/components/responses/vendor'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/childrenQuery'
+
+  /api/v1/vendor/{vendorId}:
+    get:
+      summary: Get an existing vendor.
+      tags:
+        - vendor
+      responses:
+        "200":
+          $ref: '#/components/responses/vendor'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+        - $ref: '#/components/parameters/childrenQuery'
+    put:
+      summary: Modify an existing vendor.
+      tags:
+        - vendor
+      requestBody:
+        $ref: '#/components/requestBodies/vendor'
+      responses:
+        "200":
+          $ref: '#/components/responses/vendor'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+        - $ref: '#/components/parameters/childrenQuery'
+    delete:
+      summary: Delete an existing vendor.
+      tags:
+        - vendor
+      responses:
+        "200":
+          $ref: '#/components/responses/vendor'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+        - $ref: '#/components/parameters/childrenQuery'
+
+  /api/v1/vendors:
+    get:
+      summary: Get all vendors a user or token has access to.
+      tags:
+        - vendor
+      responses:
+        "200":
+          $ref: '#/components/responses/vendorList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/childrenQuery'
+
+  /api/v1/vendor/{vendorId}/product:
+    post:
+      summary: Create a product for a vendor.
+      tags:
+        - vendor
+      requestBody:
+        $ref: '#/components/requestBodies/product'
+      responses:
+        "200":
+          $ref: '#/components/responses/product'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+        - $ref: '#/components/parameters/childrenQuery'
+  /api/v1/vendor/{vendorId}/product/{productId}:
+    get:
+      summary: Get an existing product.
+      tags:
+        - vendor
+      responses:
+        "200":
+          $ref: '#/components/responses/product'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+        - $ref: '#/components/parameters/productId'
+        - $ref: '#/components/parameters/childrenQuery'
+    put:
+      summary: Modify an existing product.
+      tags:
+        - vendor
+      requestBody:
+        $ref: '#/components/requestBodies/product'
+      responses:
+        "200":
+          $ref: '#/components/responses/product'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+        - $ref: '#/components/parameters/productId'
+        - $ref: '#/components/parameters/childrenQuery'
+    delete:
+      summary: Delete an existing product.
+      tags:
+        - vendor
+      responses:
+        "200":
+          $ref: '#/components/responses/product'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+        - $ref: '#/components/parameters/productId'
+        - $ref: '#/components/parameters/childrenQuery'
+  /api/v1/vendor/{vendorId}/products:
+    get:
+      summary: Get all products for a vendor.
+      tags:
+        - vendor
+      responses:
+        "200":
+          $ref: '#/components/responses/productList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+        - $ref: '#/components/parameters/childrenQuery'
+  /api/v1/vendor/{vendorId}/sboms:
+    get:
+      summary: Get all sboms for all products associated with a vendor.
+      tags:
+        - vendor
+      responses:
+        "200":
+          $ref: '#/components/responses/vendorList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/childrenQuery'
+
+  # SBOM Paths
+  /api/v1/sbom:
+    post:
+      summary:
+        - Upload an SBOM. The system will attempt to identify an existing package using the Package
+        - URL. If no package can be identified, a new one will be created.
+      tags:
+        - sbom
+      requestBody:
+        $ref: '#/components/requestBodies/sbom'
+      responses:
+        "200":
+          $ref: '#/components/responses/uploadResult'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/packageId'
+
+  /api/v1/{packageId}/sbom:
+    post:
+      summary: Upload an SBOM for an already existing package to the Enrichment Engine.
+      tags:
+        - sbom
+      requestBody:
+        $ref: '#/components/requestBodies/sbom'
+      responses:
+        "200":
+          $ref: '#/components/responses/uploadResult'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/packageId'
+
+  /api/v1/sbom/{sbomId}:
+    get:
+      summary: Get an sbom by id.
+      tags:
+        - sbom
+      responses:
+        "200":
+          $ref: '#/components/responses/sbom'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/childrenQuery'
+  /api/v1/sbom/{sbomId}/raw:
+    get:
+      summary: Get the full, raw sbom document for an sbom entity by id.
+      tags:
+        - sbom
+      responses:
+        "200":
+          $ref: '#/components/requestBodies/sbom'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/childrenQuery'
+
+components:
+  securitySchemes:
+  schemas:
+    login:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    organization:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/product'
+        repositories:
+          type: array
+          items:
+            $ref: '#/components/schemas/repository'
+
+    repository:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        packages:
+          type: array
+          items:
+            $ref: '#/components/schemas/package'
+
+    vendor:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/product'
+
+    product:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+
+    token:
+      type: object
+      properties:
+        name:
+          type: string
+        created:
+          type: string
+          format: date-time
+        enabled:
+          type: boolean
+        expires:
+          type: string
+          format: date-time
+        token:
+          type: string
+
+    uploadResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        s3BucketName:
+          type: string
+        s3ObjectKey:
+          type: string
+
+    userList:
+      type: array
+      items:
+        type: string
+
+    xref:
+      type: object
+      properties:
+        kind:
+          type: string
+        map:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      required:
+        - kind
+        - map
+
+    task:
+      type: object
+      id:
+        type: string
+      kind:
+        type: object
+        additionalProperties: true
+      count:
+        type: integer
+      timestamp:
+        type: integer
+      start:
+        type: string
+        format: date-time
+      finish:
+        type: string
+        format: date-time
+      durationSeconds:
+        type: integer
+      status:
+        type: string
+      err:
+        type:
+          - string
+          - "null"
+      refErrs:
+        type:
+          - object
+          - "null"
+        additionalProperties: true
+      errTotal:
+        type: integer
+      additionalProperties: true
+
+    taskRef:
+      type: object
+      properties:
+        taskId:
+          type: string
+        targetId:
+          type: string
+        err:
+          type:
+            - string
+            - "null"
+      additionalProperties: true
+      required:
+        - taskId
+        - targetId
+
+    sbom:
+      type: object
+      properties:
+        id:
+          type:
+            - string
+            - "null"
+        packageManager:
+          type:
+            - string
+            - "null"
+        purl:
+          type:
+            - string
+            - "null"
+        instance:
+          type: integer
+        kind:
+          type: object
+          additionalProperties: true
+        author:
+          type: object
+          additionalProperties: true
+        provider:
+          type:
+            - string
+            - "null"
+        supplierName:
+          type:
+            - string
+            - "null"
+        componentName:
+          type:
+            - string
+            - "null"
+        version:
+          type:
+            - string
+            - "null"
+        otherIdentifiers:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+        dependencyRefs:
+          type:
+            - array
+            - "null"
+          additionalItems: true
+          items:
+            type: string
+        timestamp:
+          type: integer
+        checksumSha256:
+          type: string
+        xrefs:
+          type: array
+          additionalItems: true
+          items:
+            $ref: '#/components/schemas/xref'
+        taskRefs:
+          type: array
+          additionalItems: true
+          items:
+            $ref: '#/components/schemas/taskRef'
+      additionalProperties: true
+
+    package:
+      type: object
+      properties:
+        id:
+          type:
+            - string
+            - "null"
+        kind:
+          type: string
+          enum:
+            - primary
+            - dependency
+        packageManager:
+          type:
+            - string
+            - "null"
+        purl:
+          type:
+            - string
+            - "null"
+        version:
+          type:
+            - string
+            - "null"
+        cpe:
+          type:
+            - string
+            - "null"
+        cdx:
+          type:
+            - object
+            - "null"
+          properties:
+            purl:
+              type:
+                - string
+                - "null"
+            name:
+              type: string
+            packageManager:
+              type:
+                - string
+                - "null"
+            componentType:
+              type: string
+            bomRef:
+              type:
+                - string
+                - "null"
+            version:
+              type:
+                - string
+                - "null"
+            dependencies:
+              type: array
+              additionalItems: true
+              items:
+                type: string
+          additionalProperties: true
+        dependencyRefs:
+          type: array
+          additionalItems: true
+          items:
+            type: string
+        xrefs:
+          type: array
+          additionalItems: true
+          items:
+            $ref: '#/components/schemas/xref'
+        taskRefs:
+          type: array
+          additionalItems: true
+          items:
+            $ref: '#/components/schemas/taskRef'
+      additionalProperties: true
+
+    vulnerability:
+      type: object
+      id:
+        type:
+          - string
+          - "null"
+        purl:
+          type:
+            - string
+            - "null"
+        provider:
+          type:
+            - string
+            - "null"
+        severity:
+          type:
+            - string
+            - "null"
+          enum:
+            - critical
+            - high
+            - medium
+            - low
+            - info
+            - none
+            - unknown
+        cve:
+          type:
+            - string
+            - "null"
+        description:
+          type:
+            - string
+            - "null"
+        epssScore:
+          type:
+            - number
+            - "null"
+        cvss:
+          type: object
+          $ref: '#/components/schemas/cvss'
+          additionalProperties: true
+        cwes:
+          type: array
+          additionalItems: true
+          items:
+            $ref: '#/components/schemas/cwe'
+        remediation:
+          type:
+            - object
+            - "null"
+          $ref: '#/components/schemas/remediation'
+        raw:
+          type:
+            - string
+            - "null"
+        taskRefs:
+          type: array
+          items:
+            $ref: '#/components/schemas/taskRef'
+          additionalItems: true
+      additionalProperties: true
+
+  cvss:
+    type: object
+    properties:
+      maturity:
+        type:
+          - string
+          - "null"
+        enum:
+          - notDefined
+          - high
+          - functional
+          - proofOfConcept
+          - unproven
+      meanScore:
+        type:
+          - number
+          - "null"
+      medianScore:
+        type:
+          - number
+          - "null"
+      modeScore:
+        type:
+          - number
+          - "null"
+      scores:
+        type: array
+        additionalItems: true
+        items:
+          type: object
+          properties:
+            score:
+              type: number
+            source:
+              type:
+                - string
+                - "null"
+            version:
+              type:
+                - string
+                - "null"
+              enum:
+                - 1.0
+                - 2.0
+                - 3.0
+                - 3.1
+                - 4.0
+            vector:
+              type:
+                - string
+                - "null"
+          additionalProperties: true
+    additionalProperties: true
+
+  cwe:
+    type: object
+    properties:
+      id:
+        type: string
+      name:
+        type:
+          - string
+          - "null"
+      description:
+        type:
+        - string
+        - "null"
+    additionalProperties: true
+    required:
+      - id
+
+  remediation:
+    type: object
+    properties:
+      description:
+        type: string
+    additionalProperties: true
+    required:
+      - description
+
+  parameters:
+    organizationId:
+      required: true
+      description: Unique identifier for an organization.
+      in: path
+      name: organizationId
+      schema:
+        type: string
+    repositoryId:
+      required: true
+      description: Unique identifier for a repository.
+      in: path
+      name: repositoryId
+      schema:
+        type: string
+    vendorId:
+      required: true
+      description: Unique identifier for a vendor.
+      in: path
+      name: vendorId
+      schema:
+        type: string
+    productId:
+      required: true
+      description: Unique identifier for a vendor product.
+      in: path
+      name: productId
+      schema:
+        type: string
+    packageId:
+      required: true
+      description: Unique identifier for a package.
+      in: path
+      name: packageId
+      schema:
+        type: string
+    tokenId:
+      required: true
+      description: Unique identifier for a token.
+      in: path
+      name: tokenId
+      schema:
+        type: string
+    childrenQuery:
+      description: Flag indicating whether operation should consider types nested in the primary type.
+      in: query
+      name: children
+      schema:
+        type: boolean
+    filterQuery:
+      description: Starts with text filter.
+      in: query
+      name: filter
+      schema:
+        type: string
+
+  requestBodies:
+    login:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/login'
+
+    organization:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/organization'
+
+    repository:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/repository'
+
+    vendor:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/vendor'
+
+    product:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/product'
+
+    token:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/token'
+
+    sbom:
+      content:
+        application/json:
+          schema:
+            type: string
+            oneOf:
+              - $ref: 'https://gist.githubusercontent.com/DerekStrickland/9b9c4997b68b278e1f9835e235a87e52/raw/917863e9233c15af783cbab33655a53496e9e84e/cyclonedx-1.4.json'
+              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.3/schema/bom-1.3.schema.json'
+              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.2/schema/bom-1.2.schema.json'
+
+  responses:
+    badRequest:
+      description: 'Bad Request'
+    forbidden:
+      description: 'Authorization Failure'
+    internalServerError:
+      description: "Internal Server Error"
+
+    apiKey:
+      description: 'Result of the login operation.'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+
+    organization:
+      description: 'An grouping of related repositories, vendors, and products.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/organization'
+    organizationList:
+      description: 'A list of organizations.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/organization'
+            type: array
+
+    repository:
+      description: 'Source control repository owned by an Organization'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/repository'
+    repositoryList:
+      description: 'A list of repositories.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/repository'
+            type: array
+
+    vendor:
+      description: 'An entity that provides SBOMs for one or more products.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/vendor'
+    vendorList:
+      description: 'A list of vendors.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/vendor'
+            type: array
+
+    product:
+      description: 'An artifact from a vendor for which an SBOM can be generated, stored, and 
+      tracked.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/product'
+    productList:
+      description: 'A list of products.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/product'
+            type: array
+
+    token:
+      description: 'A secret use to authenticate, authorize, and track SBOM upload operations.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/token'
+    tokenList:
+      description: 'A list of tokens.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/token'
+            type: array
+
+    uploadResult:
+      description: 'The result of an SBOM upload operation.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/uploadResult'
+
+
+    userList:
+      description: 'The user search matches. Queries members by email address.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/userList'
+
+    task:
+      description: 'A single Task entity'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/task'
+    taskList:
+      description: 'A list of task entities.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/task'
+            type: array
+
+    sbom:
+      description: 'A single sbom entity'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/sbom'
+    sbomList:
+      description: 'A list of sbom entities.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/sbom'
+            type: array
+
+    package:
+      description: 'A single package entity'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/package'
+    packageList:
+      description: 'A list of package entities.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/package'
+            type: array
+
+    vulnerability:
+      description: 'A single vulnerability entity'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/vulnerability'
+    vulnerabilityList:
+      description: 'A list of vulnerability entities.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/vulnerability'
+            type: array

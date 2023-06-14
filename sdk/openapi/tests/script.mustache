@@ -1,0 +1,95 @@
+{{>licenseInfo}}
+
+import http from "k6/http";
+import { group, check, sleep } from "k6";
+import {TestContext} from "../test-context.js";
+
+const BASE_URL = `${__ENV.TEST_DOMAIN}`;
+// Sleep duration between successive requests.
+const SLEEP_DURATION = 0.01;
+
+let ctx = new TestContext();
+
+let test_route = undefined;
+if (__ENV.TEST_ROUTE) {
+    test_route = `${__ENV.TEST_ROUTE}`;
+}
+
+export default function() {
+    if (!ctx.init()) {
+        return
+    }
+
+    {{#requestGroups}}
+    group("{{{groupName}}}", () => {
+        let route = "{{groupName}}";
+        // If we want to test a single route, and this is not it, exit.
+        if (test_route && route !== test_route) {
+            return;
+        }
+
+        {{#variables}}
+        let {{{key}}} = ctx.getParamValue("{{{key}}}");
+        {{/variables}}
+        {{#requests}}
+
+        // Request No. {{-index}}
+        {
+            let url = BASE_URL + `{{{path}}}{{=<% %>=}}<%#query%><%#-first%>?<%/-first%><%& key%>=<%& value%><%^-last%>&<%/-last%><%/query%><%={{ }}=%>`;
+            let method = "{{method}}";
+            let body = ctx.bodyFor(route);
+
+            let params = {headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Authorization": ctx.tokenFor(route)
+            }};
+
+            {{#isDelete}}
+            {{#params}}
+            // this is a DELETE method request - if params are also set, empty body must be passed
+            request = http.{{method}}(url, body, params);
+            {{/params}}
+            {{^params}}
+            // Not params DELETE
+            let request = http.{{method}}(url, body, params);
+            {{/params}}
+            {{/isDelete}}
+            {{^isDelete}}
+            // Not delete
+            let request = http.{{method}}(url{{#body}}, body{{/body}}, params);
+            {{/isDelete}}
+
+            {{#k6Checks}}
+            {{=<% %>=}}
+            if (ctx.isFixture(method, route)) {
+                return;
+            }
+
+            check(request, {
+                "<%& description%>": (r) => {
+                    if (r.status !== 200) {
+                        console.log(`${r.request.method}: ${r.url.replace(BASE_URL, '')} failed with ${r.status} - ${JSON.stringify(r.body)}`);
+                    } else {
+                        ctx.handleFixtures(method, route, r.body);
+                    }
+                    return r.status === <%& status%>
+                }
+            });
+            <%={{ }}=%>
+            {{/k6Checks}}
+            {{#dataExtract}}
+
+            {{{paramName}}} = JSON.parse(request.body).{{{valuePath}}}; // extract data for subsequent use
+            {{/dataExtract}}
+            {{^-last}}
+
+            sleep(SLEEP_DURATION);
+            {{/-last}}
+        }
+        {{/requests}}
+    });
+
+    {{/requestGroups}}
+    ctx.teardown();
+}

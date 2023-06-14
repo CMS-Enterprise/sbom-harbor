@@ -21,7 +21,7 @@
   - [Packages](./data-model/packages.md)
   - [Vulnerabilities](./data-model/vulnerabilities.md)
   - [Tasks](./data-model/tasks.md)
-  - [Organization](./data-model/organizations.md)
+  - [Organizations](./data-model/organizations.md)
   - [Xrefs](./data-model/xrefs.md)
 - [Deployment](./deployment/overview.md)
 - [SDK](./SDK/overview.md)

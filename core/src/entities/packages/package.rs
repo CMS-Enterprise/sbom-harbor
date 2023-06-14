@@ -7,6 +7,7 @@ use crate::Error;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+use std::fmt::{Display, Formatter};
 
 /// A [Package] is a item for which an SBOM can be generated. It serves as an aggregate root for all
 /// version of an SBOM, and as a way of cross-referencing SBOMs across disparate systems.
@@ -231,11 +232,11 @@ pub enum PackageKind {
     Dependency,
 }
 
-impl ToString for PackageKind {
-    fn to_string(&self) -> String {
+impl Display for PackageKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            PackageKind::Primary => "primary".to_string(),
-            PackageKind::Dependency => "dependency".to_string(),
+            PackageKind::Primary => write!(f, "primary"),
+            PackageKind::Dependency => write!(f, "dependency"),
         }
     }
 }

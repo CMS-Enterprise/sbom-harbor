@@ -1,0 +1,14 @@
+# File is used by the openapi-generator cli to generate a harbor client.
+generatorName: typescript-fetch
+gitUserId: CMS-Enterprise
+gitRepoId: sbom-harbor/openapi/client
+inputSpec: /local/spec-v2.yaml
+outputDir: /local/client/gen
+packageName: harbor-client
+packageVersion: 2.0.0
+#templateDir: /local/openapi/client
+#files:
+#  client.mustache:
+#    templateType: SupportingFiles
+#    destinationFilename: README.md
+# File is used by the openapi-generator cli to generate a rust client.

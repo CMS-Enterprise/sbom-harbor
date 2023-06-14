@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 #[skip_serializing_none]
-pub struct Summary {
+pub struct Cvss {
     /// Indicates the [CVSS 3 maturity](https://www.first.org/cvss/specification-document) of the
     /// [Vulnerability].
     pub maturity: Option<Maturity>,
@@ -24,7 +24,7 @@ pub struct Summary {
     pub scores: Option<Vec<Score>>,
 }
 
-impl Summary {
+impl Cvss {
     /// Calculates mean, mode, and median for CVSS scores in the summary.
     pub fn calculate_scores(&mut self) {
         match &self.scores {

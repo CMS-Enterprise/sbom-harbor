@@ -1,0 +1,10 @@
+generatorName: k6
+gitUserId: CMS-Enterprise
+gitRepoId: sbom-harbor/openapi/tests
+inputSpec: /local/spec-v2.yaml
+outputDir: /local/tests/gen
+templateDir: /local/tests
+files:
+  script.mustache:
+    templateType: SupportingFiles
+    destinationFilename: script.js
