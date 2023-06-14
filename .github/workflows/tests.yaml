@@ -31,9 +31,7 @@ jobs:
     steps:
       - name: Install latest sbom-scorecard
         run: |
-          wget -O /usr/local/bin/scorecard $(curl -s https://api.github.com/repos/ebay/sbom-scorecard/releases/latest | 
-          grep -m 1 "http.*linux-amd64" |
-          awk '{print $2}' | sed 's|[\"\,]*||g')
+          wget -O /usr/local/bin/scorecard https://github.com/eBay/sbom-scorecard/releases/download/0.0.7/sbom-scorecard-linux-amd64
           chmod u+x /usr/local/bin/scorecard
           export SBOM_SCORECARD="~/.sbom_scorecard/scorecard"
       - name: CHECKOUT
