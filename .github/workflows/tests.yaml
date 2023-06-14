@@ -34,7 +34,7 @@ jobs:
           wget -O /usr/local/bin/scorecard $(curl -s https://api.github.com/repos/ebay/sbom-scorecard/releases/latest | 
           grep -m 1 "http.*linux-amd64" |
           awk '{print $2}' | sed 's|[\"\,]*||g')
-          chmod u+x
+          chmod u+x /usr/local/bin/scorecard
           export SBOM_SCORECARD="~/.sbom_scorecard/scorecard"
       - name: CHECKOUT
         uses: actions/checkout@v3
