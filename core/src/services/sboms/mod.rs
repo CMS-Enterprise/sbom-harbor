@@ -3,7 +3,7 @@ mod service;
 pub mod snyk;
 
 /// Support for generating a score for a sbom file
-pub mod sbom_scorecard;
+pub mod scorecard;
 
 pub use service::*;
 use std::fmt::Debug;

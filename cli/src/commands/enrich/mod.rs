@@ -1,6 +1,6 @@
 use crate::commands::enrich::epss::EpssProvider;
-use crate::commands::enrich::snyk::{SnykArgs, SnykProvider};
 use crate::commands::enrich::sbom_scorecard::{SbomScorecardArgs, SbomScorecardProvider};
+use crate::commands::enrich::snyk::{SnykArgs, SnykProvider};
 use crate::Error;
 use clap::builder::PossibleValue;
 use clap::{Parser, ValueEnum};
@@ -8,10 +8,10 @@ use std::str::FromStr;
 
 /// EPSS enrichment command handler.
 pub mod epss;
-/// Snyk enrichment command handler.
-pub mod snyk;
 /// Sbom Scorecard enrichment command handler.
 pub mod sbom_scorecard;
+/// Snyk enrichment command handler.
+pub mod snyk;
 
 /// Enumerates the supported enrichment providers.
 #[derive(Clone, Debug)]
