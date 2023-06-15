@@ -131,6 +131,7 @@ impl Stage {
 }
 
 #[tokio::test]
+#[ignore = "debug manual only"]
 async fn analytic_test() {
 
     let cx = match test_context(None) {
