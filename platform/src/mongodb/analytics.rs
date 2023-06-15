@@ -19,9 +19,9 @@ use crate::mongodb::store::Store;
 pub struct Pipeline {
     /// Store so we can read from MongoDB
     store: Arc<Store>,
-    /// This variable holds all of teh Stages to be executed
+    /// This variable holds all of the Stages to be executed
     /// in the pipeline.
-    pub stages: Mutex<Vec<Stage>>
+    stages: Mutex<Vec<Stage>>
 }
 
 impl Pipeline {
