@@ -13,17 +13,13 @@ use async_trait::async_trait;
 use platform::persistence::s3;
 use std::fmt::Debug;
 use std::io::BufReader;
-use regex::Regex;
+use platform::filesystem::make_file_name_safe;
+use platform::persistence::s3::make_s3_key_safe;
 
 use crate::entities::enrichments::Vulnerability;
 use crate::entities::xrefs;
 use crate::entities::xrefs::Xref;
 use crate::{config, Error};
-
-fn make_safe(purl: &str) -> Result<String, Error> {
-    let re = Regex::new(r"[^A-Za-z0-9]").unwrap();
-    Ok(re.replace_all(purl, "-").to_string())
-}
 
 // TODO: This could maybe be generalized and combined with Sbom version.
 /// Abstract storage provider for vulnerabilities.
@@ -80,7 +76,7 @@ impl StorageProvider for FileSystemStorageProvider {
         let file_name = format!(
             "vulnerabilities-{}-{}",
             provider,
-            make_safe(purl)?
+            make_file_name_safe(purl)?
         );
         let file_path = format!("{}/{}", self.out_dir, file_name);
 
@@ -134,7 +130,7 @@ impl StorageProvider for S3StorageProvider {
         let object_key = format!(
             "vulnerabilities-{}-{}",
             provider,
-            make_safe(purl)?
+            make_s3_key_safe(purl)?
         );
 
         let json_raw = serde_json::to_vec(vulnerabilities)

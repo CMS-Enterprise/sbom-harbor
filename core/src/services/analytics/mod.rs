@@ -8,17 +8,20 @@ use async_trait::async_trait;
 use platform::persistence::s3;
 use std::fmt::Debug;
 use std::io::{BufReader, Cursor};
-use regex::Regex;
 use serde_json::Value;
+use platform::filesystem::make_file_name_safe;
+use platform::persistence::s3::make_s3_key_safe;
 use crate::{config, Error};
 
-fn make_safe(purl: &str) -> Result<String, Error> {
-    let re = Regex::new(r"[^A-Za-z0-9]").unwrap();
-    Ok(re.replace_all(purl, "-").to_string())
+/// Ensuring the file name is safe
+fn get_file_name(provider_name: &str, purl: &str) -> Result<String, Error> {
+    let safe_purl = make_file_name_safe(purl)?;
+    Ok(format!("analytic-{}-{}", provider_name, safe_purl))
 }
 
-fn get_file_name(provider_name: &str, purl: &str) -> Result<String, Error> {
-    let safe_purl = make_safe(purl)?;
+/// Ensuring the s3 key is safe
+fn get_s3_key_name(provider_name: &str, purl: &str) -> Result<String, Error> {
+    let safe_purl = make_s3_key_safe(purl)?;
     Ok(format!("analytic-{}-{}", provider_name, safe_purl))
 }
 
@@ -105,7 +108,7 @@ impl StorageProvider for S3StorageProvider {
         let metadata = HashMap::<String, String>::new();
         let s3_store = s3::Store::new_from_env().await?;
         let bucket_name = config::harbor_bucket()?;
-        let object_key = get_file_name(provider_name, purl)?;
+        let object_key = get_s3_key_name(provider_name, purl)?;
         let json_raw = serde_json::to_vec(&json)
             .map_err(|e| Error::Serde(format!("write::to_string::{}", e)))?;
 
