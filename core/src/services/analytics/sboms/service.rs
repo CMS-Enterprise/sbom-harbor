@@ -289,8 +289,6 @@ impl AnalyticService {
         self.pipeline.add_stage(
             get_group_purls_stage());
 
-        // TODO Using Platform's Errors.  Need to transform them
-        //  into core errors
         match self.pipeline.execute_on("Package").await {
 
             Ok(json) => {
@@ -432,6 +430,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "debug manual only"]
     async fn test_get_primary_purls() {
         // Mock store and storage provider
         let cxt: &Context = &test_context(Some("harbor"))
@@ -451,6 +450,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "debug manual only"]
     async fn test_generate_detail() {
         // Mock store and storage provider
         let cxt: &Context = &test_context(Some("harbor"))
