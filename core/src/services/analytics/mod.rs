@@ -8,12 +8,10 @@ use async_trait::async_trait;
 use platform::persistence::s3;
 use std::fmt::Debug;
 use std::io::{BufReader, Cursor};
-use regex::Regex;
 use serde_json::Value;
-use std::str::FromStr;
 use crate::{config, Error};
 
-use platform::naming::{NameHelper, NameKind};
+use platform::naming::NameHelper;
 use platform::naming::NameKind::FileName;
 
 fn get_file_name(provider_name: &str, purl: &str) -> Result<String, Error> {
