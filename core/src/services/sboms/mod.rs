@@ -8,12 +8,13 @@ use std::io::BufReader;
 
 use crate::{config, Error};
 
-use crate::entities::packages::Package;
 use crate::entities::sboms::Sbom;
 use crate::entities::xrefs;
 use crate::entities::xrefs::Xref;
 use async_trait::async_trait;
+use platform::filesystem::make_file_name_safe;
 use platform::persistence::s3;
+use platform::persistence::s3::make_s3_key_safe;
 
 /// Abstract storage provider for [Sboms].
 #[async_trait]
@@ -52,8 +53,8 @@ impl StorageProvider for FileSystemStorageProvider {
         sbom: &mut Sbom,
         _xref: &Option<Xref>,
     ) -> Result<String, Error> {
-        let purl = &sbom.purl()?;
-        let purl = Package::format_file_name(purl.as_str());
+
+        let purl = make_file_name_safe(&sbom.purl()?)?;
 
         match std::fs::create_dir_all(&self.out_dir) {
             Ok(_) => {}
@@ -92,8 +93,8 @@ impl StorageProvider for S3StorageProvider {
         sbom: &mut Sbom,
         xref: &Option<Xref>,
     ) -> Result<String, Error> {
-        let purl = &sbom.purl()?;
-        let purl = Package::format_file_name(purl.as_str());
+
+        let purl = make_s3_key_safe(&sbom.purl()?)?;
 
         let metadata = xref.as_ref().map(xrefs::flatten);
 

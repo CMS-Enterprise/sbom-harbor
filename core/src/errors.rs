@@ -39,6 +39,10 @@ pub enum Error {
     /// Vulnerability provider error.
     #[error("vulnerability provider error: {0}")]
     Vulnerability(String),
+    /// Analytic provider error.
+    #[error("analytic provider error: {0}")]
+    Analytic(String),
+
 }
 
 impl From<platform::Error> for Error {

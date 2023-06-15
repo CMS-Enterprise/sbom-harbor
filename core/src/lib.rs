@@ -66,6 +66,7 @@
 ///     }
 /// }
 /// ```
+
 pub mod entities;
 
 /// The [Services] module is responsible for exposing domain logic for the Harbor runtime.

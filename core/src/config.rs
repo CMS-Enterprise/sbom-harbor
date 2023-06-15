@@ -67,15 +67,25 @@ struct DocDbConfig {
 
 impl DocDbConfig {
     fn to_context(&self) -> Context {
-        let connection_uri = format!(
-            "mongodb://{}:{}@{}:{}/?ssl={}&tlsCAFile=rds-combined-ca-bundle.pem&retryWrites=false",
+
+        let mut connection_uri = format!(
+            "mongodb://{}:{}@{}:{}",
             url_encode(self.username.as_str()),
             url_encode(self.password.as_str()),
-            //self.db_instance_identifier,
             self.host,
-            self.port,
-            self.ssl
+            self.port
         );
+
+        connection_uri = match self.ssl {
+            true => format!(
+                "{}/?ssl=true&tlsCAFile=rds-combined-ca-bundle.pem&retryWrites=false",
+                connection_uri
+            ),
+            false => format!(
+                "{}/?ssl=false&retryWrites=false",
+                connection_uri
+            )
+        };
 
         Context {
             host: "".to_string(),

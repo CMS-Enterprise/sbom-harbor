@@ -6,6 +6,7 @@
 //! The Platform crate encapsulates all functionality related to underlying platform services (e.g. databases,
 //! AWS Managed services). It also includes a generic authorization module based on AWS IAM.
 
+/// Core crate
 extern crate core;
 
 /// The `auth` module provides a reusable RBAC model inspired by the AWS IAM model. It was initially
@@ -43,3 +44,9 @@ pub mod persistence;
 
 /// Extensions to `std::time`.
 pub mod time;
+
+/// Start of a Filesystem module
+pub mod filesystem;
+
+
+

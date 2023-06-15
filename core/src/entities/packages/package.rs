@@ -4,7 +4,6 @@ use crate::entities::packages::PackageCdx;
 use crate::entities::tasks::{Task, TaskRef};
 use crate::entities::xrefs::Xref;
 use crate::Error;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::fmt::{Display, Formatter};
@@ -167,12 +166,6 @@ impl Package {
         dependency.join_task(purl, task)?;
 
         Ok(dependency)
-    }
-
-    /// Generates a path safe file name from a Package URL.
-    pub(crate) fn format_file_name(purl: &str) -> String {
-        let re = Regex::new(r"[^A-Za-z0-9]").unwrap();
-        re.replace_all(purl, "-").to_string()
     }
 
     /// Sets up a reference between the [Package] and the [Task]. Callers specify the target_id

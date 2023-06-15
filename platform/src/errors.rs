@@ -55,6 +55,9 @@ pub enum Error {
     /// Error executing update.
     #[error("error executing update: {0}")]
     Update(String),
+    /// Error formatting a name.
+    #[error("error formatting name: {0}")]
+    NameFormat(String),
 }
 
 impl From<mongodb::error::Error> for Error {

@@ -13,9 +13,10 @@ use async_trait::async_trait;
 use platform::persistence::s3;
 use std::fmt::Debug;
 use std::io::BufReader;
+use platform::filesystem::make_file_name_safe;
+use platform::persistence::s3::make_s3_key_safe;
 
 use crate::entities::enrichments::Vulnerability;
-use crate::entities::packages::Package;
 use crate::entities::xrefs;
 use crate::entities::xrefs::Xref;
 use crate::{config, Error};
@@ -75,7 +76,7 @@ impl StorageProvider for FileSystemStorageProvider {
         let file_name = format!(
             "vulnerabilities-{}-{}",
             provider,
-            Package::format_file_name(purl)
+            make_file_name_safe(purl)?
         );
         let file_path = format!("{}/{}", self.out_dir, file_name);
 
@@ -125,10 +126,11 @@ impl StorageProvider for S3StorageProvider {
         // TODO: Probably want to inject these values.
         let s3_store = s3::Store::new_from_env().await?;
         let bucket_name = config::harbor_bucket()?;
+
         let object_key = format!(
             "vulnerabilities-{}-{}",
             provider,
-            Package::format_file_name(purl)
+            make_s3_key_safe(purl)?
         );
 
         let json_raw = serde_json::to_vec(vulnerabilities)

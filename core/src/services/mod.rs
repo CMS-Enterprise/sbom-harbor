@@ -32,3 +32,6 @@ pub mod xrefs;
 
 /// The [tasks] module contains domain logic and traits related to processing tasks.
 pub mod tasks;
+
+/// The [analytics] module contains reporting services to make the data useful.
+pub mod analytics;
