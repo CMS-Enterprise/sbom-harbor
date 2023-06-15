@@ -8,7 +8,7 @@ use platform::mongodb::{
     Service as MongoService,
     Store as MongoStore,
 };
-use platform::mongodb::analytics::{Analytic, Stage};
+use platform::mongodb::analytics::{Pipeline, Stage};
 use serde_json::json;
 use crate::entities::analytics::detail::Manifest;
 use crate::Error;
@@ -256,14 +256,14 @@ fn report_analytic_stage_11() -> Stage {
 pub struct AnalyticService {
     pub(crate) store: Arc<MongoStore>,
     pub(crate) storage: Arc<dyn StorageProvider>,
-    pub(crate) analytic: Analytic,
+    pub(crate) analytic: Pipeline,
 }
 
 impl AnalyticService {
     /// Creates a new AnalyticService
     pub fn new(store: Arc<MongoStore>, storage: Arc<dyn StorageProvider>) -> Self {
 
-        let analytic = Analytic::new(store.clone());
+        let analytic = Pipeline::new(store.clone());
 
         AnalyticService {
             store,
