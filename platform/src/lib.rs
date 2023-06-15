@@ -45,5 +45,8 @@ pub mod persistence;
 /// Extensions to `std::time`.
 pub mod time;
 
+/// Start of a Filesystem module
+pub mod filesystem;
+
 
 

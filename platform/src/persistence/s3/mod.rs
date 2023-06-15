@@ -8,7 +8,8 @@ use regex::Regex;
 use tracing::instrument;
 use crate::Error;
 
-fn make_safe(purl: &str) -> Result<String, Error> {
+/// Ensuring the s3 key is safe
+pub fn make_s3_key_safe(purl: &str) -> Result<String, Error> {
     let re = Regex::new(r"[^A-Za-z0-9]").unwrap();
     Ok(re.replace_all(purl, "-").to_string())
 }
@@ -79,7 +80,7 @@ impl Store {
 
                 for (k, v) in incoming.iter() {
 
-                    let safe_s3_key_name = make_safe(k)?;
+                    let safe_s3_key_name = make_s3_key_safe(k)?;
 
                     result.insert(safe_s3_key_name, v.to_string());
                 }
