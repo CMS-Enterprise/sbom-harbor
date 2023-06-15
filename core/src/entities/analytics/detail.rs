@@ -5,7 +5,7 @@ use platform::mongodb::mongo_doc;
 use crate::entities::tasks::{Task, TaskRef};
 use crate::Error;
 
-use std::result::{ Result as StdResult };
+use std::result::Result;
 
 /// The Manifest struct is the root of the report
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
@@ -45,7 +45,7 @@ pub struct Manifest {
 impl Manifest {
 
     /// Sets up a reference between the [Manifest] and a [Task].
-    pub fn join_task(&mut self, task: &Task) -> StdResult<TaskRef, Error> {
+    pub fn join_task(&mut self, task: &Task) -> Result<TaskRef, Error> {
         if task.id.is_empty() {
             return Err(
                 Error::Entity(
