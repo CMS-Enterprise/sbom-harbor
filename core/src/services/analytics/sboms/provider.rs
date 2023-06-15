@@ -41,9 +41,17 @@ impl TaskProvider for SbomDetailTask {
         let primary_purls = match self.service.get_primary_purls().await {
             Ok(opt) => match opt {
                 Some(purls) => purls,
-                None => panic!("Error attempting to get primary purls, none found!"),
+                None => return Err(
+                    Error::Analytic(
+                        format!("Error attempting to get primary purls, none found!")
+                    )
+                ),
             },
-            Err(err) => panic!("Error attempting to get primary purls: {}", err)
+            Err(err) => return Err(
+                Error::Analytic(
+                    format!("Error attempting to get primary purls: {err}")
+                )
+            )
         };
 
         task.count = primary_purls.len() as u64;

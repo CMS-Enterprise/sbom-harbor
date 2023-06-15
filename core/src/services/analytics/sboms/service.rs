@@ -256,19 +256,19 @@ fn report_analytic_stage_11() -> Stage {
 pub struct AnalyticService {
     pub(crate) store: Arc<MongoStore>,
     pub(crate) storage: Arc<dyn StorageProvider>,
-    pub(crate) analytic: Pipeline,
+    pub(crate) pipeline: Pipeline,
 }
 
 impl AnalyticService {
     /// Creates a new AnalyticService
     pub fn new(store: Arc<MongoStore>, storage: Arc<dyn StorageProvider>) -> Self {
 
-        let analytic = Pipeline::new(store.clone());
+        let pipeline = Pipeline::new(store.clone());
 
         AnalyticService {
             store,
             storage,
-            analytic,
+            pipeline,
         }
     }
 }
@@ -278,18 +278,18 @@ impl AnalyticService {
     /// Queries MongoDB to get all of the purls for the primary SBOMs
     pub(crate) async fn get_primary_purls(&self) -> Result<Option<Vec<String>>, Error> {
 
-        self.analytic.add_stage(
+        self.pipeline.add_stage(
             get_match_primaries_stage());
 
-        self.analytic.add_stage(
+        self.pipeline.add_stage(
             get_primary_purls_stage());
 
-        self.analytic.add_stage(
+        self.pipeline.add_stage(
             get_group_purls_stage());
 
         // TODO Using Platform's Errors.  Need to transform them
         //  into core errors
-        match self.analytic.execute_on("Package").await {
+        match self.pipeline.execute_on("Package").await {
 
             Ok(json) => {
 
@@ -335,40 +335,40 @@ impl AnalyticService {
         &self, purl: String
     ) -> Result<Option<String>, Error> {
 
-        self.analytic.add_stage(
+        self.pipeline.add_stage(
             report_analytic_stage_1(purl.clone()));
 
-        self.analytic.add_stage(
+        self.pipeline.add_stage(
             report_analytic_stage_2());
 
-        self.analytic.add_stage(
+        self.pipeline.add_stage(
             report_analytic_stage_3());
 
-        self.analytic.add_stage(
+        self.pipeline.add_stage(
             report_analytic_stage_4_and_7());
 
-        self.analytic.add_stage(
+        self.pipeline.add_stage(
             report_analytic_stage_5());
 
-        self.analytic.add_stage(
+        self.pipeline.add_stage(
             report_analytic_stage_6());
 
-        self.analytic.add_stage(
+        self.pipeline.add_stage(
             report_analytic_stage_4_and_7());
 
-        self.analytic.add_stage(
+        self.pipeline.add_stage(
             report_analytic_stage_8());
 
-        self.analytic.add_stage(
+        self.pipeline.add_stage(
             report_analytic_stage_9());
 
-        self.analytic.add_stage(
+        self.pipeline.add_stage(
             report_analytic_stage_10());
 
-        self.analytic.add_stage(
+        self.pipeline.add_stage(
             report_analytic_stage_11());
 
-        let json = match self.analytic.execute_on("Sbom").await {
+        let json = match self.pipeline.execute_on("Sbom").await {
             Ok(json) => {
                 json
             },
