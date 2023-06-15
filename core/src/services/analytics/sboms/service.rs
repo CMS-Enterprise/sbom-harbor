@@ -1,16 +1,18 @@
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 use async_trait::async_trait;
+use serde_derive::{Deserialize, Serialize};
 
 #[allow(unused_imports)]
 use tracing::trace;
 use platform::mongodb::{
     Service as MongoService,
     Store as MongoStore,
+    MongoDocument
 };
 use platform::mongodb::analytics::{Pipeline, Stage};
 use serde_json::json;
-use crate::entities::analytics::detail::Manifest;
+use platform::mongo_doc;
 use crate::Error;
 use crate::services::analytics::StorageProvider;
 
@@ -392,8 +394,14 @@ impl AnalyticService {
     }
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct NoModel {
+    id: String
+}
+mongo_doc!(NoModel);
+
 #[async_trait]
-impl MongoService<Manifest> for AnalyticService {
+impl MongoService<NoModel> for AnalyticService {
     fn store(&self) -> Arc<MongoStore> {
         self.store.clone()
     }
