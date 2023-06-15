@@ -16,38 +16,38 @@ use crate::mongodb::store::Store;
 
 /// Analytic struct uses stages to execute a MongoDB Aggregate Pipeline
 #[derive(Debug)]
-pub struct Analytic {
+pub struct Pipeline {
     /// Store so we can read from MongoDB
     store: Arc<Store>,
     /// This variable holds all of teh Stages to be executed
     /// in the pipeline.
-    pub pipeline: Mutex<Vec<Stage>>
+    pub stages: Mutex<Vec<Stage>>
 }
 
-impl Analytic {
+impl Pipeline {
 
     /// Creates a new Analytic type
     pub fn new(store: Arc<Store>) -> Self {
-        Analytic {
+        Pipeline {
             store,
-            pipeline: Mutex::new(vec![]),
+            stages: Mutex::new(vec![]),
         }
     }
 
     /// This method adds a stage to the Analytic
     pub fn add_stage(&self, stage: Stage) {
-        self.pipeline.lock().unwrap().push(stage);
+        self.stages.lock().unwrap().push(stage);
     }
 
     /// Functions to clear out the pipeline after execution
-    pub fn clear_pipeline(&self) {
-        self.pipeline.lock().unwrap().clear();
+    pub fn clear(&self) {
+        self.stages.lock().unwrap().clear();
     }
 
     /// This method executes the Analytic and returns the results as a Serde Value
     pub async fn execute_on(&self, collection: &str) -> Result<Value, Error> {
 
-        if self.pipeline.lock().unwrap().len() == 0 {
+        if self.stages.lock().unwrap().len() == 0 {
             return Err(
                 Error::Mongo(
                     String::from("The Aggregation Pipeline is empty")
@@ -63,7 +63,7 @@ impl Analytic {
         let options = AggregateOptions::builder().build();
 
         // Map the stages over to Documents
-        let doc_pipeline = self.pipeline
+        let doc_pipeline = self.stages
             .lock()
             .unwrap()
             .iter()
@@ -77,7 +77,7 @@ impl Analytic {
         match cursor.next().await {
             Some(result) => {
 
-                self.clear_pipeline();
+                self.clear();
 
                 match result {
                     Ok(doc) => match serde_json::to_value(&doc) {
@@ -97,7 +97,7 @@ impl Analytic {
             },
             None => {
 
-                self.clear_pipeline();
+                self.clear();
 
                 Err(
                     Error::Mongo(
@@ -142,7 +142,7 @@ async fn analytic_test() {
     };
 
     let store = Arc::new(Store::new(&cx).await.unwrap());
-    let analytic = Analytic::new(store);
+    let analytic = Pipeline::new(store);
 
     let json: Value = json!({
         "$match": {
