@@ -4,9 +4,14 @@ use aws_sdk_s3::types::{ByteStream, DisplayErrorContext};
 use aws_sdk_s3::Client;
 use aws_types::SdkConfig;
 use std::collections::HashMap;
+use regex::Regex;
 use tracing::instrument;
-use crate::naming::{NameHelper, NameKind};
 use crate::Error;
+
+fn make_safe(purl: &str) -> Result<String, Error> {
+    let re = Regex::new(r"[^A-Za-z0-9]").unwrap();
+    Ok(re.replace_all(purl, "-").to_string())
+}
 
 /// Provides a coarse-grained abstraction over S3 that conforms to the conventions of this crate.
 #[derive(Debug)]
@@ -74,8 +79,7 @@ impl Store {
 
                 for (k, v) in incoming.iter() {
 
-                    let safe_s3_key_name = NameHelper::from(k)
-                        .make_a_safe(NameKind::S3KeyName)?;
+                    let safe_s3_key_name = make_safe(k)?;
 
                     result.insert(safe_s3_key_name, v.to_string());
                 }

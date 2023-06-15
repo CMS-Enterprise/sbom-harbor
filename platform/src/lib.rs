@@ -45,9 +45,5 @@ pub mod persistence;
 /// Extensions to `std::time`.
 pub mod time;
 
-/// Tiny module to manage the names of things
-/// that are written to various storage mediums
-/// like a Filesystem or S3
-pub mod naming;
 
 
