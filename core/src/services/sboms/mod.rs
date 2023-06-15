@@ -12,12 +12,13 @@ use crate::entities::sboms::Sbom;
 use crate::entities::xrefs;
 use crate::entities::xrefs::Xref;
 use async_trait::async_trait;
+use regex::Regex;
 use platform::persistence::s3;
-use platform::naming::NameHelper;
-use platform::naming::NameKind::{
-    FileName,
-    S3KeyName
-};
+
+fn make_safe(purl: &str) -> Result<String, Error> {
+    let re = Regex::new(r"[^A-Za-z0-9]").unwrap();
+    Ok(re.replace_all(purl, "-").to_string())
+}
 
 /// Abstract storage provider for [Sboms].
 #[async_trait]
@@ -57,8 +58,7 @@ impl StorageProvider for FileSystemStorageProvider {
         _xref: &Option<Xref>,
     ) -> Result<String, Error> {
 
-        let purl = NameHelper::from(&sbom.purl()?)
-            .make_a_safe(FileName)?;
+        let purl = make_safe(&sbom.purl()?)?;
 
         match std::fs::create_dir_all(&self.out_dir) {
             Ok(_) => {}
@@ -98,8 +98,7 @@ impl StorageProvider for S3StorageProvider {
         xref: &Option<Xref>,
     ) -> Result<String, Error> {
 
-        let purl = NameHelper::from(&sbom.purl()?)
-            .make_a_safe(S3KeyName)?;
+        let purl = make_safe(&sbom.purl()?)?;
 
         let metadata = xref.as_ref().map(xrefs::flatten);
 

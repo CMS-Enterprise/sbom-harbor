@@ -8,14 +8,17 @@ use async_trait::async_trait;
 use platform::persistence::s3;
 use std::fmt::Debug;
 use std::io::{BufReader, Cursor};
+use regex::Regex;
 use serde_json::Value;
 use crate::{config, Error};
 
-use platform::naming::NameHelper;
-use platform::naming::NameKind::FileName;
+fn make_safe(purl: &str) -> Result<String, Error> {
+    let re = Regex::new(r"[^A-Za-z0-9]").unwrap();
+    Ok(re.replace_all(purl, "-").to_string())
+}
 
 fn get_file_name(provider_name: &str, purl: &str) -> Result<String, Error> {
-    let safe_purl = NameHelper::from(purl).make_a_safe(FileName)?;
+    let safe_purl = make_safe(purl)?;
     Ok(format!("analytic-{}-{}", provider_name, safe_purl))
 }
 
