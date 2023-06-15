@@ -39,15 +39,11 @@ impl TaskProvider for SbomDetailTask {
         let mut report_paths = Vec::<String>::new();
 
         let primary_purls = match self.service.get_primary_purls().await {
-            Ok(Some(purls)) => purls,
-            Ok(None) => {
-                Vec::<String>::new()
+            Ok(opt) => match opt {
+                Some(purls) => purls,
+                None => panic!("Error attempting to get primary purls, none found!"),
             },
-            Err(err) => return Err(
-                Error::Analytic(
-                    format!("Error attempting to get primary purls: {err}")
-                )
-            )
+            Err(err) => panic!("Error attempting to get primary purls: {}", err)
         };
 
         task.count = primary_purls.len() as u64;
