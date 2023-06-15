@@ -4,7 +4,7 @@ use std::sync::Arc;
 use platform::mongodb::{Service, Store};
 use crate::entities::tasks::{Task, TaskStatus};
 use crate::Error;
-use crate::services::analytics::sboms::service::{AnalyticService, Analyzer};
+use crate::services::analytics::sboms::service::AnalyticService;
 use crate::services::tasks::TaskProvider;
 use async_trait::async_trait;
 

@@ -252,15 +252,6 @@ fn report_analytic_stage_11() -> Stage {
     )
 }
 
-/// Trait to define methods in the Analyzer
-#[async_trait]
-pub trait Analyzer {
-    /// Extracts the purls of all of the SBOMs marked as 'primary'
-    async fn get_primary_purls(&self) -> Result<Option<Vec<String>>, Error>;
-    /// Generates teh Detailed SBOM report for a given purl
-    async fn generate_detail(&self, purl: String) -> Result<Option<String>, Error>;
-}
-
 /// Service to create and run analytics on DocumentDB
 pub struct AnalyticService {
     pub(crate) store: Arc<MongoStore>,
@@ -282,11 +273,10 @@ impl AnalyticService {
     }
 }
 
-#[async_trait]
-impl Analyzer for AnalyticService {
+impl AnalyticService {
 
     /// Queries MongoDB to get all of the purls for the primary SBOMs
-    async fn get_primary_purls(&self) -> Result<Option<Vec<String>>, Error> {
+    pub(crate) async fn get_primary_purls(&self) -> Result<Option<Vec<String>>, Error> {
 
         self.analytic.add_stage(
             get_match_primaries_stage());
@@ -341,7 +331,7 @@ impl Analyzer for AnalyticService {
     }
 
     /// Generates a Detail Analytic Report. Specification is here:
-    async fn generate_detail(
+    pub(crate) async fn generate_detail(
         &self, purl: String
     ) -> Result<Option<String>, Error> {
 
