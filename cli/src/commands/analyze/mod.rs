@@ -1,14 +1,14 @@
-use crate::commands::analyze::sbom_detail::{DetailArgs, SbomDetailProvider};
+use crate::commands::analyze::sbom_detail::DetailArgs;
 use crate::Error;
 use clap::builder::PossibleValue;
 use clap::{Parser, ValueEnum};
 
 mod sbom_detail;
 
-/// The SBOM Command handler.
+/// The CommandFactory function for the `analyze` command.
 pub async fn execute(args: &AnalyzeArgs) -> Result<(), Error> {
     match args.provider {
-        AnalyticProviderKind::SbomDetail => SbomDetailProvider::execute(args).await,
+        AnalyticProviderKind::SbomDetail => sbom_detail::execute(args).await,
     }
 }
 
@@ -26,7 +26,7 @@ impl ValueEnum for AnalyticProviderKind {
 
     fn to_possible_value(&self) -> Option<PossibleValue> {
         Some(match self {
-            AnalyticProviderKind::SbomDetail => PossibleValue::new("detail")
+            AnalyticProviderKind::SbomDetail => PossibleValue::new("sbom-detail")
                 .help("Generates a detailed analysis of all SBOMs and related enrichment data."),
         })
     }

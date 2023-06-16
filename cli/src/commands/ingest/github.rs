@@ -6,12 +6,7 @@ use clap::Parser;
 #[derive(Clone, Debug, Parser)]
 pub struct GitHubArgs {}
 
-/// Strategy pattern implementation that handles Snyk SBOM commands.
-pub struct GithubProvider {}
-
-impl GithubProvider {
-    pub(crate) async fn execute(_args: &IngestArgs) -> Result<(), Error> {
-        // Construct and invoke Core Services here or if args are contextual call specialized subroutine.
-        todo!()
-    }
+pub(crate) async fn execute(_args: &IngestArgs) -> Result<(), Error> {
+    // Construct and invoke Core Services here or if args are contextual call specialized subroutine.
+    todo!()
 }

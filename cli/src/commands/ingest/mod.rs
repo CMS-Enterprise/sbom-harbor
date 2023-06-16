@@ -1,7 +1,6 @@
-use crate::commands::ingest::filesystem::{FileSystemArgs, FileSystemProvider};
-use crate::commands::ingest::github::{GitHubArgs, GithubProvider};
+use crate::commands::ingest::filesystem::FileSystemArgs;
+use crate::commands::ingest::github::GitHubArgs;
 use crate::commands::ingest::snyk::SnykArgs;
-use crate::commands::ingest::snyk::SnykProvider;
 use crate::Error;
 use clap::builder::PossibleValue;
 use clap::{Parser, ValueEnum};
@@ -11,12 +10,12 @@ mod filesystem;
 mod github;
 mod snyk;
 
-/// The SBOM Command handler.
+/// The CommandFactory function for the `ingest` command.
 pub async fn execute(args: &IngestArgs) -> Result<(), Error> {
     match args.provider {
-        IngestionProviderKind::FileSystem => FileSystemProvider::execute(args).await,
-        IngestionProviderKind::GitHub => GithubProvider::execute(args).await,
-        IngestionProviderKind::Snyk => SnykProvider::execute(args).await,
+        IngestionProviderKind::FileSystem => filesystem::execute(args).await,
+        IngestionProviderKind::GitHub => github::execute(args).await,
+        IngestionProviderKind::Snyk => snyk::execute(args).await,
     }
 }
 
@@ -93,29 +92,26 @@ impl FromStr for IngestionProviderKind {
 
 #[cfg(test)]
 mod tests {
-    use crate::commands::enrich::snyk::SnykProvider;
+    use super::snyk;
+    use crate::commands::ingest::snyk::SnykArgs;
+    use crate::commands::ingest::{IngestArgs, IngestionProviderKind};
     use crate::Error;
-    use harbcore::config::dev_context;
-    use harbcore::entities;
-    use harbcore::entities::tasks::{Task, TaskKind};
-    use harbcore::services::vulnerabilities::{FileSystemStorageProvider, StorageProvider};
-    use harbcore::tasks::TaskProvider;
 
     #[async_std::test]
     #[ignore = "debug manual only"]
     async fn can_execute_snyk() -> Result<(), Error> {
-        let cx = dev_context(Some("core-test")).map_err(|e| Error::Config(e.to_string()))?;
-
-        let storage: Box<dyn StorageProvider> = Box::new(FileSystemStorageProvider::new(
-            "/tmp/harbor-debug/sboms".to_string(),
-        ));
-
-        let mut task: Task = Task::new(TaskKind::Sbom(entities::sboms::SbomProviderKind::Snyk))
-            .map_err(|e| Error::Sbom(e.to_string()))?;
-
-        let provider = SnykProvider::new_provider(cx, storage).await?;
-
-        match provider.execute(&mut task).await {
+        match snyk::execute(&IngestArgs {
+            provider: IngestionProviderKind::Snyk,
+            debug: true,
+            filesystem_args: None,
+            github_args: None,
+            snyk_args: Some(SnykArgs {
+                org_id: None,
+                project_id: None,
+            }),
+        })
+        .await
+        {
             Ok(_) => Ok(()),
             Err(e) => {
                 let msg = e.to_string();
