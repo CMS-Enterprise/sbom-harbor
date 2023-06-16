@@ -61,16 +61,4 @@ impl Team {
             .and_then(|p: &Project| p.codebases.iter().find(|c| c.id == *codebase_id))
             .is_some()
     }
-
-    #[allow(dead_code)]
-    pub(crate) fn get_sbom_token(&self) -> Option<&str> {
-        let sbom_token = self
-            .tokens
-            .iter()
-            .filter(|t| t.enabled && t.expired().unwrap_or(true))
-            .map(|t| &*t.token)
-            .next();
-
-        sbom_token
-    }
 }

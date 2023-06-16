@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::Error;
 
-#[allow(dead_code)]
 fn org_tags_url() -> String {
     "https://api.snyk.io/hidden/org_tags?version=2022-12-09~experimental".to_string()
 }
@@ -27,7 +26,6 @@ impl Client {
         format!("token {}", self.token)
     }
 
-    #[allow(dead_code)]
     pub async fn org_tags(&self) -> Result<Vec<OrgTag>, Error> {
         let response: Option<OrgTagObjectListGetResponse> = self
             .inner

@@ -208,7 +208,6 @@ impl InitDefaultAuth {
         Ok(disabled_policy)
     }
 
-    #[allow(dead_code)]
     async fn ensure_disabled_role(store: &Store, disabled_policy: &Policy) -> Result<Role, Error> {
         let filter = HashMap::from([("name", "disabled")]);
         let existing = store.query::<Role>(filter).await?;

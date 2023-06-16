@@ -19,12 +19,10 @@ const V1_URL: &str = "https://snyk.io/api/v1";
 const V3_URL: &str = "https://api.snyk.io/rest";
 const ORGS_ROUTE: &str = "/orgs";
 
-#[allow(dead_code)]
 fn orgs_url() -> String {
     format!("{}{}", V1_URL, ORGS_ROUTE)
 }
 
-#[allow(dead_code)]
 fn issues_url(org_id: &str, purl: &str) -> String {
     let route = format!(
         "/orgs/{}/packages/{}/issues?version={}",
@@ -36,13 +34,11 @@ fn issues_url(org_id: &str, purl: &str) -> String {
     format!("{}{}", V3_URL, route)
 }
 
-#[allow(dead_code)]
 fn projects_url(org_id: &str) -> String {
     let route = format!("/orgs/{}/projects?version={}", org_id, API_VERSION);
     format!("{}{}", V3_URL, route)
 }
 
-#[allow(dead_code)]
 fn sbom_url(org_id: &str, project_id: &str, format: SbomFormat) -> String {
     let route = format!(
         "/orgs/{}/projects/{}/sbom?version={}&format={}",
@@ -69,7 +65,6 @@ impl Client {
         format!("token {}", self.token)
     }
 
-    #[allow(dead_code)]
     pub async fn orgs(&self) -> Result<Option<Vec<OrgV1>>, Error> {
         let response: Option<OrgsResponse> = self
             .inner
@@ -87,7 +82,6 @@ impl Client {
         }
     }
 
-    #[allow(dead_code)]
     pub async fn projects(
         &self,
         org_id: &str,
@@ -108,7 +102,6 @@ impl Client {
         }
     }
 
-    #[allow(dead_code)]
     pub async fn sbom_raw(
         &self,
         org_id: &str,
@@ -142,7 +135,6 @@ impl Client {
         Ok(Some(response.1))
     }
 
-    #[allow(dead_code)]
     pub async fn get_issues(
         &self,
         org_id: &str,

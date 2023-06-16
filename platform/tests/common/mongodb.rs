@@ -12,7 +12,6 @@ pub const DB_IDENTIFIER: &str = "platform";
 pub const KEY_NAME: &str = "id";
 pub const COLLECTION: &str = "Group";
 
-#[allow(dead_code)]
 pub async fn local_context() -> Result<Context, Error> {
     let cx: Context = Context {
         host: "mongo".to_string(),
@@ -53,7 +52,6 @@ pub struct AuthScenario {
 }
 
 impl AuthScenario {
-    #[allow(dead_code)]
     pub async fn new(name: String, ctx: &Context) -> Result<AuthScenario, Error> {
         let store = Arc::new(Store::new(ctx).await?);
         let mut scenario = AuthScenario {
@@ -153,7 +151,6 @@ impl AuthScenario {
         Ok(scenario)
     }
 
-    #[allow(dead_code)]
     pub async fn with<T>(&self, d: &T) -> Result<(), Error>
     where
         T: MongoDocument,
@@ -163,7 +160,6 @@ impl AuthScenario {
         Ok(())
     }
 
-    #[allow(dead_code)]
     pub async fn with_policy(&mut self, action: Action, effect: Effect) -> Result<(), Error> {
         let policy = Policy {
             id: Uuid::new_v4().to_string(),
@@ -178,7 +174,6 @@ impl AuthScenario {
         self.store.update::<Role>(&self.role).await
     }
 
-    #[allow(dead_code)]
     pub async fn assert(&self, action: Action) -> Result<Effect, Error> {
         let authorizer = DefaultAuthorizer::new(self.store.clone());
         authorizer
@@ -186,7 +181,6 @@ impl AuthScenario {
             .await
     }
 
-    #[allow(dead_code)]
     pub async fn teardown(&self) -> Result<(), Error> {
         let filter = HashMap::from([("name", self.name.as_str())]);
 
@@ -220,7 +214,6 @@ impl AuthScenario {
         Ok(())
     }
 
-    #[allow(dead_code)]
     pub async fn remove_group_policy_for_user(&self) -> Result<(), Error> {
         let filter = HashMap::from([("name", self.name.as_str())]);
 

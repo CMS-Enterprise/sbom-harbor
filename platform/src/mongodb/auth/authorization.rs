@@ -102,7 +102,6 @@ pub fn assert_role_policy(
     action: Action,
 ) -> Result<Effect, Error> {
     let policies = policies_for_roles(policies, roles);
-    println!("policies for roles: {:#?}", policies);
 
     // Check for explicit deny. An explicit deny overrides an explicit allow.
     if explicitly_denied(&policies) {
