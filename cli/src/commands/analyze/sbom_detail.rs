@@ -1,6 +1,6 @@
+use crate::commands::analyze::AnalyzeArgs;
 use crate::Error;
-use clap::builder::PossibleValue;
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use harbcore::entities::analytics::AnalyticProviderKind;
 use harbcore::entities::tasks::{Task, TaskKind};
 use harbcore::services::analytics::sboms::service::AnalyticService;
@@ -12,54 +12,12 @@ use harbcore::tasks::TaskProvider;
 use platform::persistence::mongodb::{Context, Store};
 use std::sync::Arc;
 
-/// The SBOM Command handler.
-pub async fn execute(args: &AnalyzeArgs) -> Result<(), Error> {
-    match args.provider {
-        AnalysisProviderKind::SbomDetail => SbomDetailProvider::execute(args).await,
-    }
-}
-
-/// Enumerates which SBOM analysis provider to employ.
-#[derive(Clone, Debug)]
-pub(crate) enum AnalysisProviderKind {
-    /// Generate a Detailed report from SBOM data.
-    SbomDetail,
-}
-
-impl ValueEnum for AnalysisProviderKind {
-    fn value_variants<'a>() -> &'a [Self] {
-        &[Self::SbomDetail]
-    }
-
-    fn to_possible_value(&self) -> Option<PossibleValue> {
-        Some(match self {
-            AnalysisProviderKind::SbomDetail => PossibleValue::new("detail")
-                .help("Generates a detailed analysis of all SBOMs and related enrichment data."),
-        })
-    }
-}
-
-/// Specifies the CLI args for the SBOM command.
-#[derive(Debug, Parser)]
-pub struct AnalyzeArgs {
-    /// Specifies to run the command against the local debug environment.
-    #[arg(long)]
-    debug: bool,
-
-    /// Specifies the type of provider
-    provider: AnalysisProviderKind,
-
-    /// Flattened args for use with the Detail Provider
-    #[command(flatten)]
-    pub detail_args: Option<DetailArgs>,
-}
-
 /// Args for generating a Detailed Report
 #[derive(Clone, Debug, Parser)]
 pub struct DetailArgs {}
 
 /// Strategy pattern implementation that handles Report generation commands.
-struct SbomDetailProvider {}
+pub struct SbomDetailProvider {}
 
 impl SbomDetailProvider {
     async fn new_provider(
@@ -77,7 +35,7 @@ impl SbomDetailProvider {
         Ok(provider)
     }
 
-    async fn execute(args: &AnalyzeArgs) -> Result<(), Error> {
+    pub(crate) async fn execute(args: &AnalyzeArgs) -> Result<(), Error> {
         let storage: Arc<dyn StorageProvider>;
 
         let cx = match &args.debug {

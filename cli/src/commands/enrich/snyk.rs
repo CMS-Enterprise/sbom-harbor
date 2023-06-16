@@ -31,7 +31,7 @@ pub struct SnykProvider {}
 
 impl SnykProvider {
     /// Factory method to create new instance of type.
-    async fn new_provider(
+    pub(crate) async fn new_provider(
         cx: Context,
         storage: Box<dyn StorageProvider>,
     ) -> Result<SyncTask, Error> {

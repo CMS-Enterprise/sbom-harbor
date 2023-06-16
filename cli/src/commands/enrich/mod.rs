@@ -54,7 +54,7 @@ impl FromStr for EnrichmentProviderKind {
     }
 }
 
-/// Specifies the CLI args for the Enrich command.
+/// Specifies the CLI args for the `enrich` command.
 #[derive(Debug, Parser)]
 pub struct EnrichArgs {
     /// Specifies with Enrichment Provider to invoke.
