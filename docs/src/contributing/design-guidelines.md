@@ -9,10 +9,10 @@ contributing to Harbor. Suggestions for additional guiding principles welcome!
 root/
   ├── api/          # HTTP API
   ├── cli/          # Enrichment Engine
-  ├── core/         # Component Model and Domain Logic
   ├── extensions/   # Custom logic specific to a Harbor instance
-  ├── platform/     # Infrastructure and generically reusable code
   └── sdk/          # Automation and developer oriented tooling
+    ├── core/         # Component Model and Domain Logic  
+    └── platform/     # Infrastructure and generically reusable code
 ```
 
 ### Modules

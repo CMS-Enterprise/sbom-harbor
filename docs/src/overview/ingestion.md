@@ -4,7 +4,7 @@ The _ingestion_ phase is the phase during which Harbor receives an SBOM for a so
 being monitored. SBOMs can be _ingested_ in one of three ways:
 
 - Syncing with an external SBOM provider (see `cli/src/commands/sbom` and
-  `core/src/services/sboms/snyk`).
+  `sdk/core/src/services/sboms/snyk`).
 - Manual upload through the UI.
 - Automated upload via the API.
 
@@ -17,5 +17,5 @@ develop a tamper-resistance storage strategy appropriate for their environment.
 
 > By convention, the Harbor team implements tasks as CLI commands that can be run via an 
 > orchestrator. In our case, we deploy Fargate tasks that can be parameterized and invoked.
-> Organizations are free to leverage the business logic found in `core/src/services` using whatever 
-> scheduling mechanism is appropriate for their operating environment.
+> Organizations are free to leverage the business logic found in `sdk/core/src/services` using 
+> whatever scheduling mechanism is appropriate for their operating environment.
