@@ -10,9 +10,9 @@ pub mod packages;
 /// produce a [Package].
 pub mod sboms;
 
-/// The [enrichments] module contains domain and persistence logic related to enriching an [Sbom]
-/// with additional metadata.
-pub mod enrichments;
+/// The [vulnerabilities] module contains domain and persistence logic related to the tracking of
+/// a [Vulnerability] related to a [Package].
+pub mod vulnerabilities;
 
 /// The Snyk module contains integration logic related to the management of [Packages],
 /// and [SBOMs] when an organization is using the Snyk application.

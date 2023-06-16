@@ -10,25 +10,25 @@ use std::sync::Arc;
 
 /// AnalyticExecutionTask to add errors to the data store
 #[derive(Debug)]
-pub struct SbomDetailTask {
+pub struct DetailTask {
     service: AnalyticService,
 }
 
-impl SbomDetailTask {
+impl DetailTask {
     /// Creates a new AnalyticExecutionTask
     pub fn new(service: AnalyticService) -> Self {
         Self { service }
     }
 }
 
-impl Service<Task> for SbomDetailTask {
+impl Service<Task> for DetailTask {
     fn store(&self) -> Arc<Store> {
         self.service.store.clone()
     }
 }
 
 #[async_trait]
-impl TaskProvider for SbomDetailTask {
+impl TaskProvider for DetailTask {
     async fn run(&self, task: &mut Task) -> Result<HashMap<String, String>, Error> {
         let mut errors = HashMap::<String, String>::new();
         let mut report_paths = Vec::<String>::new();

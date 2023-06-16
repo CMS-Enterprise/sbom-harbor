@@ -7,6 +7,15 @@ use chrono::Utc;
 use platform::persistence::mongodb::Service;
 use tracing::log::debug;
 
+/// Contains all [TaskProvider] implementations related to performing analytics tasks.
+pub mod analytics;
+
+/// Contains all [TaskProvider] implementations related to enrichment tasks.
+pub mod enrichments;
+
+/// Contains all [TaskProvider] implementations related to ingestion tasks.
+pub mod sboms;
+
 /// Provides a [Template Method](https://en.wikipedia.org/wiki/Template_method_pattern) for running
 /// and logging Task operations.
 #[async_trait]

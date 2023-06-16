@@ -3,11 +3,11 @@ use clap::builder::PossibleValue;
 use clap::{Parser, ValueEnum};
 use harbcore::entities::analytics::AnalyticProviderKind;
 use harbcore::entities::tasks::{Task, TaskKind};
-use harbcore::services::analytics::sboms::provider::SbomDetailTask;
 use harbcore::services::analytics::sboms::service::AnalyticService;
 use harbcore::services::analytics::{
     FileSystemStorageProvider, S3StorageProvider, StorageProvider,
 };
+use harbcore::tasks::analytics::sboms::detail::DetailTask;
 use harbcore::tasks::TaskProvider;
 use platform::persistence::mongodb::{Context, Store};
 use std::sync::Arc;
@@ -65,14 +65,14 @@ impl SbomDetailProvider {
     async fn new_provider(
         cx: Context,
         storage: Arc<dyn StorageProvider>,
-    ) -> Result<SbomDetailTask, Error> {
+    ) -> Result<DetailTask, Error> {
         let store = Arc::new(
             Store::new(&cx)
                 .await
                 .map_err(|e| Error::Sbom(e.to_string()))?,
         );
 
-        let provider = SbomDetailTask::new(AnalyticService::new(store, storage));
+        let provider = DetailTask::new(AnalyticService::new(store, storage));
 
         Ok(provider)
     }
@@ -99,7 +99,7 @@ impl SbomDetailProvider {
                     Task::new(TaskKind::Analytics(AnalyticProviderKind::SbomDetail))
                         .map_err(|e| Error::Analyze(e.to_string()))?;
 
-                let provider: SbomDetailTask = SbomDetailProvider::new_provider(cx, storage)
+                let provider: DetailTask = SbomDetailProvider::new_provider(cx, storage)
                     .await
                     .map_err(|e| Error::Analyze(e.to_string()))?;
 

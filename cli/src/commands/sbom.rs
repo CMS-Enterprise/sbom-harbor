@@ -6,11 +6,11 @@ use clap::{Parser, ValueEnum};
 use harbcore::entities;
 use harbcore::entities::tasks::{Task, TaskKind};
 use harbcore::services::packages::PackageService;
-use harbcore::services::sboms::snyk::SbomSyncTask;
 use harbcore::services::sboms::{
     FileSystemStorageProvider, S3StorageProvider, SbomService, StorageProvider,
 };
 use harbcore::services::snyk::SnykService;
+use harbcore::tasks::sboms::snyk::SyncTask;
 use harbcore::tasks::TaskProvider;
 use platform::persistence::mongodb::{Context, Store};
 
@@ -141,7 +141,7 @@ impl SnykProvider {
     async fn new_provider(
         cx: Context,
         storage: Box<dyn StorageProvider>,
-    ) -> Result<SbomSyncTask, Error> {
+    ) -> Result<SyncTask, Error> {
         let token = harbcore::config::snyk_token().map_err(|e| Error::Config(e.to_string()))?;
         let store = Arc::new(
             Store::new(&cx)
@@ -149,7 +149,7 @@ impl SnykProvider {
                 .map_err(|e| Error::Sbom(e.to_string()))?,
         );
 
-        let provider = SbomSyncTask::new(
+        let provider = SyncTask::new(
             store.clone(),
             SnykService::new(token),
             PackageService::new(store.clone()),

@@ -1,7 +1,4 @@
 mod service;
-/// Supports generating [Sbom] instances from the Snyk API.
-pub mod snyk;
-
 pub use service::*;
 use std::fmt::Debug;
 use std::io::BufReader;
@@ -53,7 +50,6 @@ impl StorageProvider for FileSystemStorageProvider {
         sbom: &mut Sbom,
         _xref: &Option<Xref>,
     ) -> Result<String, Error> {
-
         let purl = make_file_name_safe(&sbom.purl()?)?;
 
         match std::fs::create_dir_all(&self.out_dir) {
@@ -93,7 +89,6 @@ impl StorageProvider for S3StorageProvider {
         sbom: &mut Sbom,
         xref: &Option<Xref>,
     ) -> Result<String, Error> {
-
         let purl = make_s3_key_safe(&sbom.purl()?)?;
 
         let metadata = xref.as_ref().map(xrefs::flatten);

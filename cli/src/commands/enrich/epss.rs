@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use crate::commands::enrich::EnrichArgs;
 use harbcore::entities::tasks::{Task, TaskKind};
-use harbcore::services::enrichments::vulnerabilities::epss::EpssScoreTask;
+use harbcore::tasks::enrichments::vulnerabilities::epss::SyncTask;
 use harbcore::tasks::TaskProvider;
 use platform::persistence::mongodb::{Context, Store};
 
@@ -14,14 +14,14 @@ pub struct EpssProvider {}
 
 impl EpssProvider {
     /// Factory method to create new instance of type.
-    async fn new_provider(cx: Context) -> Result<EpssScoreTask, Error> {
+    async fn new_provider(cx: Context) -> Result<SyncTask, Error> {
         let store = Arc::new(
             Store::new(&cx)
                 .await
                 .map_err(|e| Error::Enrich(e.to_string()))?,
         );
 
-        let provider = EpssScoreTask::new(store);
+        let provider = SyncTask::new(store);
 
         Ok(provider)
     }

@@ -26,7 +26,7 @@ impl SnykService {
     }
 
     /// Retrieves orgs from the Snyk API.
-    pub(in crate::services) async fn orgs(&self) -> Result<Vec<Organization>, Error> {
+    pub(crate) async fn orgs(&self) -> Result<Vec<Organization>, Error> {
         let orgs = match self.client.orgs().await {
             Ok(orgs) => orgs,
             Err(e) => {
@@ -53,7 +53,7 @@ impl SnykService {
     }
 
     /// Gathers all projects across all orgs so that index can be analyzed linearly.
-    pub(in crate::services) async fn projects(&self) -> Result<Vec<Project>, Error> {
+    pub(crate) async fn projects(&self) -> Result<Vec<Project>, Error> {
         let mut projects = vec![];
 
         let orgs = match self.orgs().await {
@@ -83,10 +83,7 @@ impl SnykService {
     }
 
     /// Retrieves [Projects] for an [Organization] from the Snyk API.
-    pub(in crate::services) async fn projects_by_org(
-        &self,
-        org: &Organization,
-    ) -> Result<Vec<Project>, Error> {
+    pub(crate) async fn projects_by_org(&self, org: &Organization) -> Result<Vec<Project>, Error> {
         let projects = match self.client.projects(org.id.as_str()).await {
             Ok(projects) => projects,
             Err(e) => {
@@ -128,7 +125,7 @@ impl SnykService {
     }
 
     /// Retrieves raw native Snyk [Sbom] JSON from the Snyk API.
-    pub(in crate::services) async fn sbom_raw(&self, snyk_ref: &SnykRef) -> Result<String, Error> {
+    pub(crate) async fn sbom_raw(&self, snyk_ref: &SnykRef) -> Result<String, Error> {
         let raw = match self
             .client
             .sbom_raw(
@@ -167,7 +164,7 @@ impl SnykService {
     }
 
     /// Get vulnerabilities for a Package URL.
-    pub(in crate::services) async fn vulnerabilities(
+    pub(crate) async fn vulnerabilities(
         &self,
         org_id: &str,
         purl: &str,
@@ -200,7 +197,7 @@ impl SnykService {
     }
 
     /// Get native Snyk issues. External callers should most likely use [vulnerabilities].
-    pub(in crate::services::snyk) async fn issues(
+    pub(crate) async fn issues(
         &self,
         org_id: &str,
         purl: &str,

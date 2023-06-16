@@ -1,20 +1,14 @@
 mod service;
 
-/// Supports generating [Vulnerability] instances from the Snyk API.
-pub mod snyk;
-
-/// Supports adding an EPSS Score to a [Vulnerability].
-pub mod epss;
-
 pub use service::*;
 use std::collections::HashMap;
 
 use async_trait::async_trait;
+use platform::filesystem::make_file_name_safe;
 use platform::persistence::s3;
+use platform::persistence::s3::make_s3_key_safe;
 use std::fmt::Debug;
 use std::io::BufReader;
-use platform::filesystem::make_file_name_safe;
-use platform::persistence::s3::make_s3_key_safe;
 
 use crate::entities::enrichments::Vulnerability;
 use crate::entities::xrefs;
@@ -127,11 +121,7 @@ impl StorageProvider for S3StorageProvider {
         let s3_store = s3::Store::new_from_env().await?;
         let bucket_name = config::harbor_bucket()?;
 
-        let object_key = format!(
-            "vulnerabilities-{}-{}",
-            provider,
-            make_s3_key_safe(purl)?
-        );
+        let object_key = format!("vulnerabilities-{}-{}", provider, make_s3_key_safe(purl)?);
 
         let json_raw = serde_json::to_vec(vulnerabilities)
             .map_err(|e| Error::Serde(format!("write::to_string::{}", e)))?;

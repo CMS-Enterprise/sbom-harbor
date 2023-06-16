@@ -10,15 +10,15 @@ use platform::persistence::mongodb::{Service, Store};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-/// Analyzes the full set of [Vulnerability] entries and retrieves an EPSS Score by CVE ID.
+/// Synchronizes the full set of [Vulnerability] entries with their current EPSS Score.
 #[derive(Debug)]
-pub struct EpssScoreTask {
+pub struct SyncTask {
     store: Arc<Store>,
     client: Client,
 }
 
 #[async_trait]
-impl TaskProvider for EpssScoreTask {
+impl TaskProvider for SyncTask {
     async fn run(&self, task: &mut Task) -> Result<HashMap<String, String>, Error> {
         println!("==> fetching vulnerabilities");
 
@@ -60,27 +60,27 @@ impl TaskProvider for EpssScoreTask {
     }
 }
 
-impl Service<Vulnerability> for EpssScoreTask {
+impl Service<Vulnerability> for SyncTask {
     fn store(&self) -> Arc<Store> {
         self.store.clone()
     }
 }
 
-impl Service<Task> for EpssScoreTask {
+impl Service<Task> for SyncTask {
     fn store(&self) -> Arc<Store> {
         self.store.clone()
     }
 }
 
-impl EpssScoreTask {
+impl SyncTask {
     /// Factory method to create new instance of type.
-    pub fn new(store: Arc<Store>) -> EpssScoreTask {
+    pub fn new(store: Arc<Store>) -> SyncTask {
         let client = Client::new();
 
-        EpssScoreTask { store, client }
+        SyncTask { store, client }
     }
 
-    pub(in crate::services::enrichments::vulnerabilities::epss) async fn process_target(
+    pub(in crate::tasks::enrichments::vulnerabilities::epss) async fn process_target(
         &self,
         vulnerability: &mut Vulnerability,
     ) -> Result<(), Error> {

@@ -2,9 +2,9 @@ use crate::entities::enrichments::Vulnerability;
 use crate::entities::packages::Package;
 use crate::entities::tasks::Task;
 use crate::entities::xrefs::XrefKind;
-use crate::services::enrichments::vulnerabilities::VulnerabilityService;
 use crate::services::packages::PackageService;
 use crate::services::snyk::{SnykService, SNYK_DISCRIMINATOR};
+use crate::services::vulnerabilities::VulnerabilityService;
 use crate::tasks::TaskProvider;
 use crate::Error;
 use async_trait::async_trait;
@@ -14,15 +14,15 @@ use std::sync::Arc;
 
 /// Analyzes the full set of [Purl] entities that have a Snyk [Xref] for new [Vulnerability]s.
 #[derive(Debug)]
-pub struct VulnerabilityScanTask {
+pub struct SyncTask {
     store: Arc<Store>,
     snyk: SnykService,
-    pub(in crate::services::enrichments::vulnerabilities::snyk) packages: PackageService,
+    pub(in crate::tasks::enrichments::vulnerabilities::snyk) packages: PackageService,
     vulnerabilities: VulnerabilityService,
 }
 
 #[async_trait]
-impl TaskProvider for VulnerabilityScanTask {
+impl TaskProvider for SyncTask {
     /// Builds the [Task] and [Vulnerability] results.
     async fn run(&self, task: &mut Task) -> Result<HashMap<String, String>, Error> {
         println!("==> fetching purls");
@@ -78,27 +78,27 @@ impl TaskProvider for VulnerabilityScanTask {
     }
 }
 
-impl Service<Vulnerability> for VulnerabilityScanTask {
+impl Service<Vulnerability> for SyncTask {
     fn store(&self) -> Arc<Store> {
         self.store.clone()
     }
 }
 
-impl Service<Task> for VulnerabilityScanTask {
+impl Service<Task> for SyncTask {
     fn store(&self) -> Arc<Store> {
         self.store.clone()
     }
 }
 
-impl VulnerabilityScanTask {
+impl SyncTask {
     /// Factory method to create new instance of type.
     pub fn new(
         store: Arc<Store>,
         snyk: SnykService,
         packages: PackageService,
         vulnerabilities: VulnerabilityService,
-    ) -> Result<VulnerabilityScanTask, Error> {
-        Ok(VulnerabilityScanTask {
+    ) -> Result<SyncTask, Error> {
+        Ok(SyncTask {
             store,
             snyk,
             packages,
@@ -106,7 +106,7 @@ impl VulnerabilityScanTask {
         })
     }
 
-    pub(in crate::services::enrichments::vulnerabilities::snyk) async fn process_target(
+    pub(in crate::tasks::enrichments::vulnerabilities::snyk) async fn process_target(
         &self,
         package: &mut Package,
         task: &Task,

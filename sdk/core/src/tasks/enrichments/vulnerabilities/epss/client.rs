@@ -3,7 +3,7 @@ use platform::hyper::ContentType;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
-pub(in crate::services::enrichments::vulnerabilities::epss) struct Client {
+pub(in crate::tasks::enrichments::vulnerabilities::epss) struct Client {
     inner: platform::hyper::Client,
 }
 

@@ -14,7 +14,7 @@ use platform::persistence::mongodb::{Context, Service, Store};
 
 use crate::services::snyk::{extract_xref, SnykService};
 
-/// Example of how to implement a [TaskProvider] that can interact with the Harbor backend.
+/// Adds FISMA ID as an [Xref] to primary packages.
 #[derive(Debug)]
 pub struct FismaTask {
     store: Arc<Store>,

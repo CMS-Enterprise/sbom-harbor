@@ -4,12 +4,12 @@ use crate::commands::enrich::EnrichArgs;
 use clap::Parser;
 use harbcore::entities::enrichments::VulnerabilityProviderKind;
 use harbcore::entities::tasks::{Task, TaskKind};
-use harbcore::services::enrichments::vulnerabilities::snyk::VulnerabilityScanTask;
-use harbcore::services::enrichments::vulnerabilities::{
-    FileSystemStorageProvider, S3StorageProvider, StorageProvider, VulnerabilityService,
-};
 use harbcore::services::packages::PackageService;
 use harbcore::services::snyk::SnykService;
+use harbcore::services::vulnerabilities::{
+    FileSystemStorageProvider, S3StorageProvider, StorageProvider, VulnerabilityService,
+};
+use harbcore::tasks::enrichments::vulnerabilities::snyk::SyncTask;
 use harbcore::tasks::TaskProvider;
 use platform::persistence::mongodb::{Context, Store};
 
@@ -34,7 +34,7 @@ impl SnykProvider {
     async fn new_provider(
         cx: Context,
         storage: Box<dyn StorageProvider>,
-    ) -> Result<VulnerabilityScanTask, Error> {
+    ) -> Result<SyncTask, Error> {
         let token = harbcore::config::snyk_token().map_err(|e| Error::Config(e.to_string()))?;
         let store = Arc::new(
             Store::new(&cx)
@@ -42,7 +42,7 @@ impl SnykProvider {
                 .map_err(|e| Error::Sbom(e.to_string()))?,
         );
 
-        let provider = VulnerabilityScanTask::new(
+        let provider = SyncTask::new(
             store.clone(),
             SnykService::new(token),
             PackageService::new(store.clone()),

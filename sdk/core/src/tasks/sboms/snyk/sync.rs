@@ -17,15 +17,15 @@ use tracing::debug;
 
 /// Synchronizes SBOMS for a Snyk Group with Harbor.
 #[derive(Debug)]
-pub struct SbomSyncTask {
+pub struct SyncTask {
     store: Arc<Store>,
-    pub(in crate::services::sboms::snyk) snyk: SnykService,
+    pub(in crate::tasks::sboms::snyk) snyk: SnykService,
     packages: PackageService,
     sboms: SbomService,
 }
 
 #[async_trait]
-impl TaskProvider for SbomSyncTask {
+impl TaskProvider for SyncTask {
     /// Builds the Packages Dependencies, Purls, and Unsupported from the Snyk API.
     async fn run(&self, task: &mut Task) -> Result<HashMap<String, String>, Error> {
         println!("==> fetching projects");
@@ -72,21 +72,21 @@ impl TaskProvider for SbomSyncTask {
     }
 }
 
-impl Service<Task> for SbomSyncTask {
+impl Service<Task> for SyncTask {
     fn store(&self) -> Arc<Store> {
         self.store.clone()
     }
 }
 
-impl SbomSyncTask {
+impl SyncTask {
     /// Factory method to create new instance of type.
     pub fn new(
         store: Arc<Store>,
         snyk: SnykService,
         packages: PackageService,
         sboms: SbomService,
-    ) -> Result<SbomSyncTask, Error> {
-        Ok(SbomSyncTask {
+    ) -> Result<SyncTask, Error> {
+        Ok(SyncTask {
             store,
             snyk,
             packages,
