@@ -3,7 +3,7 @@ use crate::services::analytics::sboms::service::AnalyticService;
 use crate::services::tasks::TaskProvider;
 use crate::Error;
 use async_trait::async_trait;
-use platform::mongodb::{Service, Store};
+use platform::persistence::mongodb::{Service, Store};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;

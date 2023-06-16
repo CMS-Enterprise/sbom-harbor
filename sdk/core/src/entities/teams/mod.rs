@@ -13,7 +13,7 @@ pub use team::*;
 mod token;
 pub use token::*;
 
-use platform::mongodb::{mongo_doc, MongoDocument};
+use platform::persistence::mongodb::{mongo_doc, MongoDocument};
 
 mongo_doc!(Codebase);
 mongo_doc!(Member);

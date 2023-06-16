@@ -1,6 +1,6 @@
-use platform::mongodb::auth::init_default_auth::apply_all;
-use platform::mongodb::migrations::{LogEntry, MigrationService};
-use platform::mongodb::Context;
+use platform::persistence::mongodb::auth::init_default_auth::apply_all;
+use platform::persistence::mongodb::migrations::{LogEntry, MigrationService};
+use platform::persistence::mongodb::Context;
 use platform::Error;
 
 #[allow(dead_code)]

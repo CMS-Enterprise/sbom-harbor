@@ -12,7 +12,7 @@ use harbcore::services::sboms::{
 };
 use harbcore::services::snyk::SnykService;
 use harbcore::services::tasks::TaskProvider;
-use platform::mongodb::{Context, Store};
+use platform::persistence::mongodb::{Context, Store};
 
 use crate::Error;
 

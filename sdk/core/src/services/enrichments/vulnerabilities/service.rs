@@ -2,7 +2,7 @@ use crate::entities::enrichments::Vulnerability;
 use crate::entities::packages::Package;
 use crate::services::enrichments::vulnerabilities::StorageProvider;
 use crate::Error;
-use platform::mongodb::{Service, Store};
+use platform::persistence::mongodb::{Service, Store};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;

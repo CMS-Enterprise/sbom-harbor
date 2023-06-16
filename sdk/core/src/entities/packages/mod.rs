@@ -9,7 +9,7 @@ pub use unsupported::*;
 
 use super::xrefs::xref;
 use super::xrefs::{Xref, Xrefs};
-use platform::mongodb::{mongo_doc, MongoDocument};
+use platform::persistence::mongodb::{mongo_doc, MongoDocument};
 
 mongo_doc!(Package);
 mongo_doc!(Unsupported);

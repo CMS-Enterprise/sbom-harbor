@@ -10,7 +10,7 @@ use crate::services::packages::PackageService;
 use crate::services::sboms::SbomService;
 use crate::services::tasks::TaskProvider;
 use async_trait::async_trait;
-use platform::mongodb::{Service, Store};
+use platform::persistence::mongodb::{Service, Store};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::debug;

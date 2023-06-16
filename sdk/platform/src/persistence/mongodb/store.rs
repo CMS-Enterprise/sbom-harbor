@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use tracing::instrument;
 
-use crate::mongodb::{Context, MongoDocument};
+use crate::persistence::mongodb::{Context, MongoDocument};
 use crate::Error;
 
 /// Default client factory method. Allows callers to avoid a direct dependency on the Mongo Driver.

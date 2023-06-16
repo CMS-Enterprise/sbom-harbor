@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 use chrono::Utc;
-use platform::mongodb::Service;
+use platform::persistence::mongodb::Service;
 use tracing::log::debug;
 
 /// Provides a [Template Method](https://en.wikipedia.org/wiki/Template_method_pattern) for running

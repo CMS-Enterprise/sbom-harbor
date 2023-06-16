@@ -11,7 +11,7 @@ mod tests {
     use crate::services::snyk::SnykService;
     use crate::services::tasks::TaskProvider;
     use crate::{entities, Error};
-    use platform::mongodb::Store;
+    use platform::persistence::mongodb::Store;
     use std::sync::Arc;
 
     #[async_std::test]

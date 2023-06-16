@@ -6,7 +6,7 @@ pub mod cvss;
 pub mod vulnerabilities;
 
 use platform::mongo_doc;
-use platform::mongodb::MongoDocument;
+use platform::persistence::mongodb::MongoDocument;
 pub use vulnerabilities::*;
 
 mongo_doc!(Vulnerability);

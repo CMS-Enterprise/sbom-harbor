@@ -16,8 +16,7 @@ use tracing::{info, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use harbor_api::controllers;
-use platform::mongodb::Store;
-// use harbcore::config::sdk_config_from_env;
+use platform::persistence::mongodb::Store;
 
 const X_API_KEY: &str = "x-api-key";
 const X_AMZ_DATE: &str = "x-amz-date";

@@ -14,9 +14,6 @@ use crate::entities::enrichments::{
     Cwe, Remediation, Severity, Vulnerability, VulnerabilityProviderKind,
 };
 use crate::Error;
-use platform::mongodb::{mongo_doc, MongoDocument};
-
-mongo_doc!(Project);
 
 /// Adapter over a native Snyk Group.
 pub(crate) struct Group {

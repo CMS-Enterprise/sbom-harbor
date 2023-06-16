@@ -1,7 +1,7 @@
 use crate::Error;
 use platform::config::from_env;
 use platform::encoding::url_encode;
-use platform::mongodb::Context;
+use platform::persistence::mongodb::Context;
 use serde::{Deserialize, Serialize};
 
 /// Returns the Snyk API token from an environment variable.
@@ -67,7 +67,6 @@ struct DocDbConfig {
 
 impl DocDbConfig {
     fn to_context(&self) -> Context {
-
         let mut connection_uri = format!(
             "mongodb://{}:{}@{}:{}",
             url_encode(self.username.as_str()),
@@ -81,10 +80,7 @@ impl DocDbConfig {
                 "{}/?ssl=true&tlsCAFile=rds-combined-ca-bundle.pem&retryWrites=false",
                 connection_uri
             ),
-            false => format!(
-                "{}/?ssl=false&retryWrites=false",
-                connection_uri
-            )
+            false => format!("{}/?ssl=false&retryWrites=false", connection_uri),
         };
 
         Context {

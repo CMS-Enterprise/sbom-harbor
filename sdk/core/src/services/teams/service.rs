@@ -1,4 +1,4 @@
-use platform::mongodb::{Service, Store};
+use platform::persistence::mongodb::{Service, Store};
 use std::sync::Arc;
 
 use crate::entities::teams::Team;

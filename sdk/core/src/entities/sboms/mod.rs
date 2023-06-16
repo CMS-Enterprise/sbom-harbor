@@ -3,7 +3,7 @@ pub use sbom::*;
 
 use crate::entities::xrefs::{Xref, Xrefs};
 use crate::xref;
-use platform::mongodb::{mongo_doc, MongoDocument};
+use platform::persistence::mongodb::{mongo_doc, MongoDocument};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 

@@ -1,18 +1,16 @@
-use std::sync::{Arc, Mutex};
-use mongodb::bson;
-use mongodb::bson::{Document};
-use mongodb::options::AggregateOptions;
 use futures_util::StreamExt;
+use mongodb::bson;
+use mongodb::bson::Document;
+use mongodb::options::AggregateOptions;
+use std::sync::{Arc, Mutex};
 
 #[allow(unused_imports)]
 use serde_json::{json, Value};
 
+use crate::persistence::mongodb::{Context, Store};
+use crate::Error;
 #[allow(unused_imports)]
 use tracing::trace;
-use crate::Error;
-use crate::mongodb::Context;
-
-use crate::mongodb::store::Store;
 
 /// Analytic struct uses stages to execute a MongoDB Aggregate Pipeline
 #[derive(Debug)]
@@ -21,11 +19,10 @@ pub struct Pipeline {
     store: Arc<Store>,
     /// This variable holds all of the Stages to be executed
     /// in the pipeline.
-    stages: Mutex<Vec<Stage>>
+    stages: Mutex<Vec<Stage>>,
 }
 
 impl Pipeline {
-
     /// Creates a new Analytic type
     pub fn new(store: Arc<Store>) -> Self {
         Pipeline {
@@ -46,13 +43,10 @@ impl Pipeline {
 
     /// This method executes the Analytic and returns the results as a Serde Value
     pub async fn execute_on(&self, collection: &str) -> Result<Value, Error> {
-
         if self.stages.lock().unwrap().len() == 0 {
-            return Err(
-                Error::Mongo(
-                    String::from("The Aggregation Pipeline is empty")
-                )
-            )
+            return Err(Error::Mongo(String::from(
+                "The Aggregation Pipeline is empty",
+            )));
         }
 
         let client = &self.store.client();
@@ -63,7 +57,8 @@ impl Pipeline {
         let options = AggregateOptions::builder().build();
 
         // Map the stages over to Documents
-        let doc_pipeline = self.stages
+        let doc_pipeline = self
+            .stages
             .lock()
             .unwrap()
             .iter()
@@ -76,34 +71,27 @@ impl Pipeline {
         // Process the results
         match cursor.next().await {
             Some(result) => {
-
                 self.clear();
 
                 match result {
                     Ok(doc) => match serde_json::to_value(&doc) {
                         Ok(value) => Ok(value),
-                        Err(err) => Err(
-                            Error::Mongo(
-                                format!("Error serializing to Json: {}", err)
-                            )
-                        )
+                        Err(err) => {
+                            Err(Error::Mongo(format!("Error serializing to Json: {}", err)))
+                        }
                     },
-                    Err(err) => Err(
-                        Error::Mongo(
-                            format!("Error extracting document from MongoDB Result: {}", err)
-                        )
-                    )
+                    Err(err) => Err(Error::Mongo(format!(
+                        "Error extracting document from MongoDB Result: {}",
+                        err
+                    ))),
                 }
-            },
+            }
             None => {
-
                 self.clear();
 
-                Err(
-                    Error::Mongo(
-                        String::from("No result from DocumentDB Aggregate")
-                    )
-                )
+                Err(Error::Mongo(String::from(
+                    "No result from DocumentDB Aggregate",
+                )))
             }
         }
     }
@@ -112,11 +100,10 @@ impl Pipeline {
 /// Stage represents a Stage of a MongoDB Aggregation Pipeline
 #[derive(Debug, PartialEq, Clone)]
 pub struct Stage {
-    json: Value
+    json: Value,
 }
 
 impl Stage {
-
     /// Method to create a new Stage
     pub fn new(json: Value) -> Self {
         Self { json }
@@ -125,7 +112,7 @@ impl Stage {
     fn get_document(&self) -> Document {
         match bson::to_document(&self.json) {
             Ok(doc) => doc,
-            Err(err) => panic!("Failed to create BSON document: {}", err)
+            Err(err) => panic!("Failed to create BSON document: {}", err),
         }
     }
 }
@@ -133,7 +120,6 @@ impl Stage {
 #[tokio::test]
 #[ignore = "debug manual only"]
 async fn analytic_test() {
-
     let cx = match test_context(None) {
         Ok(cx) => cx,
         Err(e) => {
@@ -157,7 +143,7 @@ async fn analytic_test() {
 
     match analytic.execute_on("Sbom").await {
         Ok(value) => println!("Value: {:#?}", value),
-        Err(_) => assert!(false, "Test Failed, got error")
+        Err(_) => assert!(false, "Test Failed, got error"),
     };
 }
 
@@ -169,8 +155,7 @@ pub fn test_context(db_name: Option<&str>) -> Result<Context, Error> {
         Some(db_name) => db_name,
     };
 
-    Ok(
-        Context {
+    Ok(Context {
         host: "mongo".to_string(),
         username: "root".to_string(),
         password: "harbor".to_string(),

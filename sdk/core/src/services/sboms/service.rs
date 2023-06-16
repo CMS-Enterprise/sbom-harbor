@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use platform::mongodb::{Service, Store};
+use platform::persistence::mongodb::{Service, Store};
 
 use crate::entities::sboms::Sbom;
 use crate::entities::xrefs::Xref;

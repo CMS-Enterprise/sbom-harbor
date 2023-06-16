@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::mongodb::Context;
+use crate::persistence::mongodb::Context;
 use crate::Error;
 
 /// LogEntry represents an applied DB Migration operation.

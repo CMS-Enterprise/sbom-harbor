@@ -2,7 +2,7 @@ use harbcore::config::dev_context;
 use harbcore::entities::teams::*;
 use harbcore::services::teams::TeamService;
 use harbcore::Error;
-use platform::mongodb::{Service, Store};
+use platform::persistence::mongodb::{Service, Store};
 use std::sync::Arc;
 
 fn test_team_model(test_name: &str) -> Team {

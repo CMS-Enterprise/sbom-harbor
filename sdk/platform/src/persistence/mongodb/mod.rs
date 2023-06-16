@@ -9,6 +9,8 @@ pub use store::*;
 use crate::auth::*;
 use crate::Error;
 
+/// Provides analytics tooling for creating DocumentDB Aggregation pipelines
+pub mod analytics;
 /// Provides a row-level authorization mechanism for controlling access to entries in a [Collection].
 pub mod auth;
 /// Provides MongoDB db migrations support.
@@ -17,8 +19,6 @@ pub mod migrations;
 pub mod service;
 /// Provides a generics-based [Store] trait for handling CRUD based operations against a [Collection].
 pub mod store;
-/// Provides analytics tooling for creating DocumentDB Aggregation pipelines
-pub mod analytics;
 
 // TODO: Make Context a trait and split these up in to purpose build contexts instead of a single type.
 /// Provides connection information and schema conventions for a MongoDB/DocumentDB backed [Store].
@@ -104,7 +104,7 @@ mongo_doc!(migrations::LogEntry);
 #[cfg(test)]
 mod tests {
     use crate::auth::Group;
-    use crate::mongodb::{Context, Store};
+    use crate::persistence::mongodb::{Context, Store};
     use crate::Error;
     use std::collections::HashMap;
     use uuid::Uuid;

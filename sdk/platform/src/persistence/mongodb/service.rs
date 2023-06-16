@@ -1,11 +1,11 @@
+use async_trait::async_trait;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
-use async_trait::async_trait;
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::mongodb::{MongoDocument, Store};
+use crate::persistence::mongodb::{MongoDocument, Store};
 use crate::Error;
 
 /// [Service] provides consistent, generic persistence capabilities for types that implement the

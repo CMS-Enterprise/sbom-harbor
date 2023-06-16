@@ -32,14 +32,10 @@ pub mod errors;
 /// The `hyper` module provides a lightweight HTTP client facade based on the `hyper` SDK.
 pub mod hyper;
 
-/// The `mongodb` module provides a `Service` and `Store` abstraction over common CRUD based operations
-/// against a MongoDB or DocumentDB back end.
-pub mod mongodb;
-
 /// Implementation of the `thiserror` enum.
 pub use errors::Error;
 
-/// S3 Provider module
+/// Namespace for various persistence infrastructure providers like S3 or MongoDB.
 pub mod persistence;
 
 /// Extensions to `std::time`.
@@ -47,6 +43,3 @@ pub mod time;
 
 /// Start of a Filesystem module
 pub mod filesystem;
-
-
-

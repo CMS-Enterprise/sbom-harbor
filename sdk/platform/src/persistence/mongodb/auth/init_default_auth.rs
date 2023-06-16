@@ -3,10 +3,10 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::auth::{Action, Effect, Group, Policy, Resource, Role, ANY_RESOURCE_KIND};
-use crate::mongodb::migrations::{
+use crate::persistence::mongodb::migrations::{
     Effect as MigrationEffect, LogEntry, Migration, MigrationService,
 };
-use crate::mongodb::Store;
+use crate::persistence::mongodb::Store;
 use crate::Error;
 
 /// Applies the default set of migrations.

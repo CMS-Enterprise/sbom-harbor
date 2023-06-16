@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use tracing::instrument;
 
 use crate::auth::{Action, Authorizer, Effect, Group, Policy, Resource, Role, User};
-use crate::mongodb::Store;
+use crate::persistence::mongodb::Store;
 use crate::Error;
 
 /// Allows quick categorization of an assertion effect. Useful for exiting early when explicit

@@ -4,8 +4,8 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use platform::auth::*;
-use platform::mongodb::auth::DefaultAuthorizer;
-use platform::mongodb::{Context, MongoDocument, Store};
+use platform::persistence::mongodb::auth::DefaultAuthorizer;
+use platform::persistence::mongodb::{Context, MongoDocument, Store};
 use platform::Error;
 
 pub const DB_IDENTIFIER: &str = "platform";

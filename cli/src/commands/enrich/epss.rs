@@ -5,7 +5,7 @@ use crate::commands::enrich::EnrichArgs;
 use harbcore::entities::tasks::{Task, TaskKind};
 use harbcore::services::enrichments::vulnerabilities::epss::EpssScoreTask;
 use harbcore::services::tasks::TaskProvider;
-use platform::mongodb::{Context, Store};
+use platform::persistence::mongodb::{Context, Store};
 
 use crate::Error;
 

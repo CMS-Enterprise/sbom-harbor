@@ -1,3 +1,7 @@
+/// Provides a a micro-object-data-mapping framework for common CRUD based operations against a
+/// MongoDB or DocumentDB data store.
+pub mod mongodb;
+
 /// Provides AWS S3 specific persistence capabilities.
 pub mod s3;
 

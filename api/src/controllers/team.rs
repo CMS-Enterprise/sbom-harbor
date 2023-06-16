@@ -5,7 +5,7 @@ use tracing::instrument;
 
 use harbcore::entities::teams::Team;
 use harbcore::services::teams::TeamService;
-use platform::mongodb::{Service, Store};
+use platform::persistence::mongodb::{Service, Store};
 
 use crate::auth::Claims;
 use crate::Error;

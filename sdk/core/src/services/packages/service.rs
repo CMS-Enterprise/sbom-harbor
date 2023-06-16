@@ -2,7 +2,7 @@ use crate::entities::packages::{Package, Unsupported};
 use crate::entities::xrefs::{Xref, Xrefs};
 use crate::services::xrefs::XrefService;
 use crate::Error;
-use platform::mongodb::{Service, Store};
+use platform::persistence::mongodb::{Service, Store};
 use std::collections::HashMap;
 use std::sync::Arc;
 

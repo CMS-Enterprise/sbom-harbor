@@ -6,7 +6,7 @@ use crate::services::tasks::TaskProvider;
 use crate::Error;
 use async_trait::async_trait;
 use client::Client;
-use platform::mongodb::{Service, Store};
+use platform::persistence::mongodb::{Service, Store};
 use std::collections::HashMap;
 use std::sync::Arc;
 

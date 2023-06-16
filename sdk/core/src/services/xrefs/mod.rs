@@ -1,7 +1,7 @@
 use crate::entities::xrefs::{Xref, Xrefs};
 use crate::Error;
 use async_trait::async_trait;
-use platform::mongodb::{MongoDocument, Service};
+use platform::persistence::mongodb::{MongoDocument, Service};
 use std::collections::HashMap;
 
 #[async_trait]

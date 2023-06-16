@@ -11,7 +11,7 @@ use harbcore::services::enrichments::vulnerabilities::{
 use harbcore::services::packages::PackageService;
 use harbcore::services::snyk::SnykService;
 use harbcore::services::tasks::TaskProvider;
-use platform::mongodb::{Context, Store};
+use platform::persistence::mongodb::{Context, Store};
 
 use crate::Error;
 
