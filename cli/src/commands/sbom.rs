@@ -11,7 +11,7 @@ use harbcore::services::sboms::{
     FileSystemStorageProvider, S3StorageProvider, SbomService, StorageProvider,
 };
 use harbcore::services::snyk::SnykService;
-use harbcore::services::tasks::TaskProvider;
+use harbcore::tasks::TaskProvider;
 use platform::persistence::mongodb::{Context, Store};
 
 use crate::Error;

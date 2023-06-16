@@ -6,7 +6,7 @@ use harbcore::entities::packages::Package;
 use harbcore::entities::tasks::Task;
 use harbcore::errors::Error;
 use harbcore::services::packages::PackageService;
-use harbcore::services::tasks::TaskProvider;
+use harbcore::tasks::TaskProvider;
 use platform::persistence::mongodb::{Context, Service, Store};
 
 /// Example of how to implement a [TaskProvider] that can interact with the Harbor backend.

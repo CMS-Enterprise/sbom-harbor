@@ -8,7 +8,7 @@ use crate::entities::tasks::Task;
 use crate::entities::xrefs::Xref;
 use crate::services::packages::PackageService;
 use crate::services::sboms::SbomService;
-use crate::services::tasks::TaskProvider;
+use crate::tasks::TaskProvider;
 use async_trait::async_trait;
 use platform::persistence::mongodb::{Service, Store};
 use std::collections::HashMap;

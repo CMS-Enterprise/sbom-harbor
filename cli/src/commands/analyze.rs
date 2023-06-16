@@ -8,7 +8,7 @@ use harbcore::services::analytics::sboms::service::AnalyticService;
 use harbcore::services::analytics::{
     FileSystemStorageProvider, S3StorageProvider, StorageProvider,
 };
-use harbcore::services::tasks::TaskProvider;
+use harbcore::tasks::TaskProvider;
 use platform::persistence::mongodb::{Context, Store};
 use std::sync::Arc;
 

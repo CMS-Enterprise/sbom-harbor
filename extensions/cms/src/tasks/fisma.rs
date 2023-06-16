@@ -8,8 +8,8 @@ use harbcore::entities::xrefs::XrefKind;
 use harbcore::errors::Error;
 use harbcore::services::packages::PackageService;
 use harbcore::services::snyk::SNYK_DISCRIMINATOR;
-use harbcore::services::tasks::TaskProvider;
 use harbcore::services::xrefs::XrefService;
+use harbcore::tasks::TaskProvider;
 use platform::persistence::mongodb::{Context, Service, Store};
 
 use crate::services::snyk::{extract_xref, SnykService};

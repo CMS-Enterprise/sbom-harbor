@@ -1,6 +1,6 @@
 use clap::Parser;
 use harbcore::entities::tasks::{Task, TaskKind};
-use harbcore::services::tasks::TaskProvider;
+use harbcore::tasks::TaskProvider;
 
 use crate::tasks::fisma::FismaTask;
 use crate::Error;

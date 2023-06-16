@@ -1,6 +1,6 @@
 use crate::entities::tasks::{Task, TaskStatus};
 use crate::services::analytics::sboms::service::AnalyticService;
-use crate::services::tasks::TaskProvider;
+use crate::tasks::TaskProvider;
 use crate::Error;
 use async_trait::async_trait;
 use platform::persistence::mongodb::{Service, Store};

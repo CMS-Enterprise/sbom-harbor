@@ -9,7 +9,7 @@ mod tests {
     use crate::services::sboms::snyk::provider::SbomSyncTask;
     use crate::services::sboms::{FileSystemStorageProvider, SbomService};
     use crate::services::snyk::SnykService;
-    use crate::services::tasks::TaskProvider;
+    use crate::tasks::TaskProvider;
     use crate::{entities, Error};
     use platform::persistence::mongodb::Store;
     use std::sync::Arc;

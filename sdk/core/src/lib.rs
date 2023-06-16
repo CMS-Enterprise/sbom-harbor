@@ -66,11 +66,14 @@
 ///     }
 /// }
 /// ```
-
 pub mod entities;
 
 /// The [Services] module is responsible for exposing domain logic for the Harbor runtime.
 pub mod services;
+
+/// The [tasks] module contains domain logic and traits related to executing long running tasks
+/// or batch processes.
+pub mod tasks;
 
 /// Errors exposed by this crate.
 pub mod errors;
