@@ -88,7 +88,7 @@ impl Sbom {
         raw: &str,
         format: CdxFormat,
         author: Author,
-        package_manager: &Option<String>,
+        package_manager: Option<String>,
         xref: Xref,
         task: &Task,
     ) -> Result<Sbom, Error> {
@@ -137,7 +137,7 @@ impl Sbom {
             component_name,
             version,
             supplier_name,
-            package_manager: package_manager.clone(),
+            package_manager,
             provider: Some(provider),
             timestamp: platform::time::timestamp()?,
             checksum_sha256: "".to_string(),

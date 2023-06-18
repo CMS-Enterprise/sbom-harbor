@@ -51,6 +51,21 @@ impl ValueEnum for IngestionProviderKind {
     }
 }
 
+impl FromStr for IngestionProviderKind {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let value = s.to_lowercase();
+        let value = value.as_str();
+        match value {
+            "filesystem" | "f" => Ok(IngestionProviderKind::FileSystem),
+            "github" | "gh" | "g" => Ok(IngestionProviderKind::GitHub),
+            "snyk" | "s" => Ok(IngestionProviderKind::Snyk),
+            _ => Err(()),
+        }
+    }
+}
+
 /// Specifies the CLI args for the `ingest` command.
 #[derive(Debug, Parser)]
 pub struct IngestArgs {
@@ -73,21 +88,6 @@ pub struct IngestArgs {
     /// Flattened args for use with the Snyk SBOM provider.
     #[command(flatten)]
     pub snyk_args: Option<SnykArgs>,
-}
-
-impl FromStr for IngestionProviderKind {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let value = s.to_lowercase();
-        let value = value.as_str();
-        match value {
-            "filesystem" | "f" => Ok(IngestionProviderKind::FileSystem),
-            "github" | "gh" | "g" => Ok(IngestionProviderKind::GitHub),
-            "snyk" | "s" => Ok(IngestionProviderKind::Snyk),
-            _ => Err(()),
-        }
-    }
 }
 
 #[cfg(test)]
@@ -115,7 +115,7 @@ mod tests {
             Ok(_) => Ok(()),
             Err(e) => {
                 let msg = e.to_string();
-                Err(Error::Sbom(msg))
+                Err(Error::Ingest(msg))
             }
         }
     }

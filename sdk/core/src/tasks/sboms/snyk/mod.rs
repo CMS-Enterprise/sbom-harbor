@@ -18,7 +18,6 @@ mod tests {
     #[ignore = "manual_debug_test"]
     async fn can_process_sboms() -> Result<(), Error> {
         let provider = test_provider().await?;
-
         let mut task = Task::new(TaskKind::Sbom(entities::sboms::SbomProviderKind::Snyk))?;
 
         match provider.execute(&mut task).await {
@@ -41,10 +40,11 @@ mod tests {
             SnykService::new(token),
             PackageService::new(store.clone()),
             SbomService::new(
-                store,
+                store.clone(),
                 Box::new(FileSystemStorageProvider::new(
                     "/tmp/harbor/sboms".to_string(),
                 )),
+                PackageService::new(store.clone()),
             ),
         )?;
 

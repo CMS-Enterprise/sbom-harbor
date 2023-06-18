@@ -15,7 +15,8 @@
     "component": {
       "bom-ref": "8329a07b4eb8eac",
       "type": "file",
-      "name": "./"
+      "name": "harbor",
+      "version": "0.1.0"
     }
   },
   "components": [

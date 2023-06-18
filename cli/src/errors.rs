@@ -12,13 +12,13 @@ pub enum Error {
     /// Enrich runtime error.
     #[error("enrich: {0}")]
     Enrich(String),
+    /// Ingest runtime error.
+    #[error("ingest: {0}")]
+    Ingest(String),
     /// Invalid argument.
     #[error("invalid argument: {0}")]
     InvalidArg(String),
     /// Invalid subcommand.
     #[error("invalid subcommand: {0}")]
     InvalidSubcommand(String),
-    /// Sbom runtime error.
-    #[error("sbom: {0}")]
-    Sbom(String),
 }

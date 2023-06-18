@@ -1,0 +1,59 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "serialNumber": "urn:uuid:b8699292-d7ee-4eb0-9e54-332ff9e2be1b",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2023-01-04T03:36:42-05:00",
+    "tools": [
+      {
+        "vendor": "anchore",
+        "name": "syft",
+        "version": "0.60.3"
+      }
+    ],
+    "component": {
+      "bom-ref": "8329a07b4eb8eac",
+      "type": "file",
+      "name": "harbor"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:cargo/adler@1.0.2?package-id=634586ec7671cbd4",
+      "type": "library",
+      "name": "adler",
+      "version": "1.0.2",
+      "cpe": "cpe:2.3:a:adler:adler:1.0.2:*:*:*:*:*:*:*",
+      "purl": "pkg:cargo/adler@1.0.2",
+      "externalReferences": [
+        {
+          "url": "registry+https://github.com/rust-lang/crates.io-index",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "rust-cargo-lock-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "rust"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "RustCargoPackageMetadata"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "rust-crate"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "Cargo.lock"
+        }
+      ]
+    }
+  ]
+}

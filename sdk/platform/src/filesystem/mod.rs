@@ -1,5 +1,5 @@
-use regex::Regex;
 use crate::Error;
+use regex::Regex;
 
 /// Function to make the file name safe
 pub fn make_file_name_safe(purl: &str) -> Result<String, Error> {

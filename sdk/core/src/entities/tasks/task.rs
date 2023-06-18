@@ -1,3 +1,4 @@
+use crate::entities::analytics::AnalyticProviderKind;
 use crate::entities::enrichments::VulnerabilityProviderKind;
 use crate::entities::sboms::SbomProviderKind;
 use crate::Error;
@@ -6,7 +7,6 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use crate::entities::analytics::AnalyticProviderKind;
 
 /// A [Task] is a value type that allows tracking and correlating operations performed by Harbor.
 #[derive(Clone, Debug, Deserialize, Serialize)]

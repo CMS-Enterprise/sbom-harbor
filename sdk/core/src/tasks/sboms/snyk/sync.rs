@@ -1,4 +1,4 @@
-use crate::entities::sboms::{Author, CdxFormat, Sbom, SbomProviderKind};
+use crate::entities::sboms::SbomProviderKind;
 use crate::services::snyk::adapters::Project;
 use crate::services::snyk::ProjectStatus;
 use crate::services::snyk::{SnykService, SUPPORTED_SBOM_PROJECT_TYPES};
@@ -130,60 +130,15 @@ impl SyncTask {
             }
         };
 
-        // Load the raw Snyk result into the Harbor model.
-        let mut sbom = match Sbom::from_raw_cdx(
-            raw.as_str(),
-            CdxFormat::Json,
-            Author::Harbor(SbomProviderKind::Snyk),
-            &package_manager,
-            Xref::from(snyk_ref.clone()),
-            task,
-        ) {
-            Ok(sbom) => sbom,
-            Err(e) => {
-                let msg = format!("process_target::from_raw_cdx::{}", e);
-                debug!("{}", msg);
-                return Err(Error::Sbom(msg));
-            }
-        };
-
-        // Determine how many times this Sbom has been synced.
-        match self.sboms.set_instance_by_purl(&mut sbom).await {
-            Ok(_) => {}
-            Err(e) => {
-                let msg = format!("process_target::from_raw_cdx::{}", e);
-                debug!("{}", msg);
-                return Err(Error::Sbom(msg));
-            }
-        }
-
-        // Write the sbom to the storage provider.
-        match self
-            .sboms
-            .write_to_storage(
-                raw.as_bytes().to_vec(),
-                &mut sbom,
-                Some(Xref::from(snyk_ref.clone())),
+        self.sboms
+            .ingest(
+                raw,
+                package_manager,
+                SbomProviderKind::Snyk,
+                Xref::from(snyk_ref),
+                task,
             )
-            .await
-        {
-            Ok(()) => {
-                // TODO: Emit Metric.
-                debug!("process_target::write_to_storage::success");
-            }
-            Err(e) => {
-                // TODO: Emit Metric.
-                let msg = format!("process_target::write_to_storage::{}", e);
-                debug!("{}", msg);
-                return Err(Error::Sbom(msg));
-            }
-        };
-
-        // Ensure the timestamp is set if successful.
-        sbom.timestamp = platform::time::timestamp()?;
-
-        // Commit the Sbom.
-        self.commit_target(&mut sbom, Xref::from(snyk_ref)).await?;
+            .await?;
 
         Ok(())
     }
@@ -193,70 +148,6 @@ impl SyncTask {
         let msg = "handle_inactive::inactive";
         debug!("{}::{}", msg, project.project_name);
         // TODO: Track inactive?
-        Ok(())
-    }
-
-    /// [Transaction script](https://martinfowler.com/eaaCatalog/transactionScript.html) for saving
-    /// Sbom results to data store. If change_set None, indicates Sbom has errors and dependent
-    /// entities should not be committed.
-    pub(crate) async fn commit_target(&self, sbom: &mut Sbom, xref: Xref) -> Result<(), Error> {
-        let mut errs = HashMap::<String, String>::new();
-
-        // Should always insert Sbom. It should never be a duplicate, but a new instance from task.
-        match self.sboms.insert(sbom).await {
-            Ok(_) => {}
-            Err(e) => {
-                return Err(Error::Sbom(e.to_string()));
-            }
-        }
-
-        let mut package = match sbom.package.clone() {
-            Some(package) => package,
-            None => {
-                return Err(Error::Sbom("sbom_package_none".to_string()));
-            }
-        };
-
-        match self
-            .packages
-            .upsert_package_by_purl(&mut package, Some(&xref))
-            .await
-        {
-            Ok(_) => {}
-            Err(e) => {
-                errs.insert("package".to_string(), e.to_string());
-            }
-        }
-
-        if !errs.is_empty() {
-            let errs = match serde_json::to_string(&errs) {
-                Ok(errs) => errs,
-                Err(e) => format!("error serializing errs {}", e),
-            };
-            return Err(Error::Sbom(errs));
-        }
-
-        for dependency in package.dependencies.iter_mut() {
-            match self
-                .packages
-                .upsert_package_by_purl(dependency, Some(&xref))
-                .await
-            {
-                Ok(_) => {}
-                Err(e) => {
-                    errs.insert("package".to_string(), e.to_string());
-                }
-            }
-        }
-
-        if !errs.is_empty() {
-            let errs = match serde_json::to_string(&errs) {
-                Ok(errs) => errs,
-                Err(e) => format!("error serializing errs {}", e),
-            };
-            return Err(Error::Sbom(errs));
-        }
-
         Ok(())
     }
 }
