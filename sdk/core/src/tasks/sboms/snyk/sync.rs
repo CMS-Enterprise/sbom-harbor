@@ -182,6 +182,9 @@ impl SyncTask {
         // Ensure the timestamp is set if successful.
         sbom.timestamp = platform::time::timestamp()?;
 
+        // Ensure the display timestamp is set if successful.
+        sbom.created = platform::time::iso8601_timestamp()?;
+
         // Commit the Sbom.
         self.commit_target(&mut sbom, Xref::from(snyk_ref)).await?;
 
