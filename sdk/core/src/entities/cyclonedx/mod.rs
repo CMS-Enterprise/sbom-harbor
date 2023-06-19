@@ -97,16 +97,15 @@ impl Bom {
         let name = component.name;
         let version = component.version.unwrap_or("0.0.0".to_string());
 
+        // TODO: This doesn't work reliably at all.
         let components = self.components.clone()?;
-
-        let component_purl = components
-            .iter()
-            .next()
-            .map(|component| component.purl.clone().unwrap());
-
+        if components.is_empty() {
+            return None;
+        }
+        let component_purl = components[0].purl.clone();
         let component_purl = component_purl.unwrap();
         let component_purl_parts = component_purl.split('/').collect::<Vec<&str>>();
-        let package_manager = component_purl_parts[0].clone();
+        let package_manager = component_purl_parts[0];
 
         let purl = format!("{package_manager}/{name}@{version}");
 

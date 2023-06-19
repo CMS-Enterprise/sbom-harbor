@@ -40,6 +40,10 @@ pub enum Error {
     /// Error in OpenTelemetry provider.
     #[error("error in opentelemetry provider: {0}")]
     OpenTelemetry(String),
+    /// Error running external process.
+    #[error("error in external process: {0}")]
+    Process(String),
+    /// Error executing query.    
     /// Error executing query.
     #[error("error executing query: {0}")]
     Query(String),

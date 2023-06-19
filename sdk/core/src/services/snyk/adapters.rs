@@ -149,14 +149,13 @@ impl IssueSnyk {
             Err(_) => None,
         };
 
-        let severity = self.severity();
         let purl = purl.to_string();
 
         Vulnerability {
             id: "".to_string(),
             purl,
             provider: VulnerabilityProviderKind::Snyk,
-            severity,
+            severity: self.severity(),
             cve: self.cve(),
             epss_score: None,
             description: self.description(),

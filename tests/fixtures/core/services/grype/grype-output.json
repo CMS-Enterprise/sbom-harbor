@@ -1,0 +1,794 @@
+{
+  "matches": [
+    {
+      "vulnerability": {
+        "id": "CVE-2023-22466",
+        "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2023-22466",
+        "namespace": "nvd:cpe",
+        "severity": "Medium",
+        "urls": [
+          "https://github.com/tokio-rs/tokio/pull/5336",
+          "https://github.com/tokio-rs/tokio/releases/tag/tokio-1.23.1",
+          "https://github.com/tokio-rs/tokio/security/advisories/GHSA-7rrj-xr53-82p7",
+          "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createnamedpipea#pipe_reject_remote_clients"
+        ],
+        "description": "Tokio is a runtime for writing applications with Rust. Starting with version 1.7.0 and prior to versions 1.18.4, 1.20.3, and 1.23.1, when configuring a Windows named pipe server, setting `pipe_mode` will reset `reject_remote_clients` to `false`. If the application has previously configured `reject_remote_clients` to `true`, this effectively undoes the configuration. Remote clients may only access the named pipe if the named pipe's associated path is accessible via a publicly shared folder (SMB). Versions 1.23.1, 1.20.3, and 1.18.4 have been patched. The fix will also be present in all releases starting from version 1.24.0. Named pipes were introduced to Tokio in version 1.7.0, so releases older than 1.7.0 are not affected. As a workaround, ensure that `pipe_mode` is set first after initializing a `ServerOptions`.",
+        "cvss": [
+          {
+            "source": "nvd@nist.gov",
+            "type": "Primary",
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N",
+            "metrics": {
+              "baseScore": 5.4,
+              "exploitabilityScore": 2.8,
+              "impactScore": 2.5
+            },
+            "vendorMetadata": {}
+          },
+          {
+            "source": "security-advisories@github.com",
+            "type": "Secondary",
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:L",
+            "metrics": {
+              "baseScore": 5.4,
+              "exploitabilityScore": 2.8,
+              "impactScore": 2.5
+            },
+            "vendorMetadata": {}
+          }
+        ],
+        "fix": {
+          "versions": [],
+          "state": "unknown"
+        },
+        "advisories": []
+      },
+      "relatedVulnerabilities": [],
+      "matchDetails": [
+        {
+          "type": "cpe-match",
+          "matcher": "stock-matcher",
+          "searchedBy": {
+            "namespace": "nvd:cpe",
+            "cpes": [
+              "cpe:2.3:a:tokio:tokio:1.23.0:*:*:*:*:*:*:*"
+            ]
+          },
+          "found": {
+            "vulnerabilityID": "CVE-2023-22466",
+            "versionConstraint": ">= 1.7.0, < 1.18.4 || >= 1.19.0, < 1.20.3 || >= 1.21.0, < 1.23.1 (unknown)",
+            "cpes": [
+              "cpe:2.3:a:tokio:tokio:*:*:*:*:*:rust:*:*"
+            ]
+          }
+        }
+      ],
+      "artifact": {
+        "id": "241378d8cd1192a4",
+        "name": "tokio",
+        "version": "1.23.0",
+        "type": "rust-crate",
+        "locations": [
+          {
+            "path": "Cargo.lock"
+          }
+        ],
+        "language": "rust",
+        "licenses": [],
+        "cpes": [
+          "cpe:2.3:a:tokio:tokio:1.23.0:*:*:*:*:*:*:*"
+        ],
+        "purl": "pkg:cargo/tokio@1.23.0",
+        "upstreams": []
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "GHSA-4q83-7cq4-p6wg",
+        "dataSource": "https://github.com/advisories/GHSA-4q83-7cq4-p6wg",
+        "namespace": "github:language:rust",
+        "severity": "Low",
+        "urls": [
+          "https://github.com/advisories/GHSA-4q83-7cq4-p6wg"
+        ],
+        "description": "`tokio::io::ReadHalf<T>::unsplit` is Unsound",
+        "cvss": [],
+        "fix": {
+          "versions": [
+            "1.24.2"
+          ],
+          "state": "fixed"
+        },
+        "advisories": []
+      },
+      "relatedVulnerabilities": [],
+      "matchDetails": [
+        {
+          "type": "exact-direct-match",
+          "matcher": "stock-matcher",
+          "searchedBy": {
+            "language": "rust",
+            "namespace": "github:language:rust"
+          },
+          "found": {
+            "versionConstraint": ">=1.21.0,<1.24.2 (unknown)",
+            "vulnerabilityID": "GHSA-4q83-7cq4-p6wg"
+          }
+        }
+      ],
+      "artifact": {
+        "id": "241378d8cd1192a4",
+        "name": "tokio",
+        "version": "1.23.0",
+        "type": "rust-crate",
+        "locations": [
+          {
+            "path": "Cargo.lock"
+          }
+        ],
+        "language": "rust",
+        "licenses": [],
+        "cpes": [
+          "cpe:2.3:a:tokio:tokio:1.23.0:*:*:*:*:*:*:*"
+        ],
+        "purl": "pkg:cargo/tokio@1.23.0",
+        "upstreams": []
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "GHSA-7rrj-xr53-82p7",
+        "dataSource": "https://github.com/advisories/GHSA-7rrj-xr53-82p7",
+        "namespace": "github:language:rust",
+        "severity": "Medium",
+        "urls": [
+          "https://github.com/advisories/GHSA-7rrj-xr53-82p7"
+        ],
+        "description": "Tokio reject_remote_clients configuration may get dropped when creating a Windows named pipe",
+        "cvss": [
+          {
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:L",
+            "metrics": {
+              "baseScore": 5.4,
+              "exploitabilityScore": 2.8,
+              "impactScore": 2.5
+            },
+            "vendorMetadata": {
+              "base_severity": "Medium",
+              "status": "N/A"
+            }
+          }
+        ],
+        "fix": {
+          "versions": [
+            "1.23.1"
+          ],
+          "state": "fixed"
+        },
+        "advisories": []
+      },
+      "relatedVulnerabilities": [
+        {
+          "id": "CVE-2023-22466",
+          "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2023-22466",
+          "namespace": "nvd:cpe",
+          "severity": "Medium",
+          "urls": [
+            "https://github.com/tokio-rs/tokio/pull/5336",
+            "https://github.com/tokio-rs/tokio/releases/tag/tokio-1.23.1",
+            "https://github.com/tokio-rs/tokio/security/advisories/GHSA-7rrj-xr53-82p7",
+            "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createnamedpipea#pipe_reject_remote_clients"
+          ],
+          "description": "Tokio is a runtime for writing applications with Rust. Starting with version 1.7.0 and prior to versions 1.18.4, 1.20.3, and 1.23.1, when configuring a Windows named pipe server, setting `pipe_mode` will reset `reject_remote_clients` to `false`. If the application has previously configured `reject_remote_clients` to `true`, this effectively undoes the configuration. Remote clients may only access the named pipe if the named pipe's associated path is accessible via a publicly shared folder (SMB). Versions 1.23.1, 1.20.3, and 1.18.4 have been patched. The fix will also be present in all releases starting from version 1.24.0. Named pipes were introduced to Tokio in version 1.7.0, so releases older than 1.7.0 are not affected. As a workaround, ensure that `pipe_mode` is set first after initializing a `ServerOptions`.",
+          "cvss": [
+            {
+              "source": "nvd@nist.gov",
+              "type": "Primary",
+              "version": "3.1",
+              "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N",
+              "metrics": {
+                "baseScore": 5.4,
+                "exploitabilityScore": 2.8,
+                "impactScore": 2.5
+              },
+              "vendorMetadata": {}
+            },
+            {
+              "source": "security-advisories@github.com",
+              "type": "Secondary",
+              "version": "3.1",
+              "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:L",
+              "metrics": {
+                "baseScore": 5.4,
+                "exploitabilityScore": 2.8,
+                "impactScore": 2.5
+              },
+              "vendorMetadata": {}
+            }
+          ]
+        }
+      ],
+      "matchDetails": [
+        {
+          "type": "exact-direct-match",
+          "matcher": "stock-matcher",
+          "searchedBy": {
+            "language": "rust",
+            "namespace": "github:language:rust"
+          },
+          "found": {
+            "versionConstraint": ">=1.21.0,<1.23.1 (unknown)",
+            "vulnerabilityID": "GHSA-7rrj-xr53-82p7"
+          }
+        }
+      ],
+      "artifact": {
+        "id": "241378d8cd1192a4",
+        "name": "tokio",
+        "version": "1.23.0",
+        "type": "rust-crate",
+        "locations": [
+          {
+            "path": "Cargo.lock"
+          }
+        ],
+        "language": "rust",
+        "licenses": [],
+        "cpes": [
+          "cpe:2.3:a:tokio:tokio:1.23.0:*:*:*:*:*:*:*"
+        ],
+        "purl": "pkg:cargo/tokio@1.23.0",
+        "upstreams": []
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "GHSA-f8vr-r385-rh5r",
+        "dataSource": "https://github.com/advisories/GHSA-f8vr-r385-rh5r",
+        "namespace": "github:language:rust",
+        "severity": "Medium",
+        "urls": [
+          "https://github.com/advisories/GHSA-f8vr-r385-rh5r"
+        ],
+        "description": "h2 vulnerable to denial of service",
+        "cvss": [],
+        "fix": {
+          "versions": [
+            "0.3.17"
+          ],
+          "state": "fixed"
+        },
+        "advisories": []
+      },
+      "relatedVulnerabilities": [
+        {
+          "id": "CVE-2023-26964",
+          "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2023-26964",
+          "namespace": "nvd:cpe",
+          "severity": "High",
+          "urls": [
+            "https://github.com/hyperium/hyper/issues/2877",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/ZHBAE7LQARMPUEEV4TWET4D7G6WCWBUD/",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/ZYRZ5Y2ALATKKPIITAFAJIS4TR4LUAHO/"
+          ],
+          "description": "An issue was discovered in hyper v0.13.7. h2-0.2.4 Stream stacking occurs when the H2 component processes HTTP2 RST_STREAM frames. As a result, the memory and CPU usage are high which can lead to a Denial of Service (DoS).",
+          "cvss": [
+            {
+              "source": "nvd@nist.gov",
+              "type": "Primary",
+              "version": "3.1",
+              "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "metrics": {
+                "baseScore": 7.5,
+                "exploitabilityScore": 3.9,
+                "impactScore": 3.6
+              },
+              "vendorMetadata": {}
+            }
+          ]
+        }
+      ],
+      "matchDetails": [
+        {
+          "type": "exact-direct-match",
+          "matcher": "stock-matcher",
+          "searchedBy": {
+            "language": "rust",
+            "namespace": "github:language:rust"
+          },
+          "found": {
+            "versionConstraint": "<0.3.17 (unknown)",
+            "vulnerabilityID": "GHSA-f8vr-r385-rh5r"
+          }
+        }
+      ],
+      "artifact": {
+        "id": "f8f2e4c7be57e7fe",
+        "name": "h2",
+        "version": "0.3.15",
+        "type": "rust-crate",
+        "locations": [
+          {
+            "path": "Cargo.lock"
+          }
+        ],
+        "language": "rust",
+        "licenses": [],
+        "cpes": [
+          "cpe:2.3:a:h2:h2:0.3.15:*:*:*:*:*:*:*"
+        ],
+        "purl": "pkg:cargo/h2@0.3.15",
+        "upstreams": []
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "GHSA-m4ch-rfv5-x5g3",
+        "dataSource": "https://github.com/advisories/GHSA-m4ch-rfv5-x5g3",
+        "namespace": "github:language:rust",
+        "severity": "Medium",
+        "urls": [
+          "https://github.com/advisories/GHSA-m4ch-rfv5-x5g3"
+        ],
+        "description": "git2-rs fails to verify SSH keys by default",
+        "cvss": [
+          {
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N",
+            "metrics": {
+              "baseScore": 6.8,
+              "exploitabilityScore": 1.6,
+              "impactScore": 5.2
+            },
+            "vendorMetadata": {
+              "base_severity": "Medium",
+              "status": "N/A"
+            }
+          }
+        ],
+        "fix": {
+          "versions": [
+            "0.16.1"
+          ],
+          "state": "fixed"
+        },
+        "advisories": []
+      },
+      "relatedVulnerabilities": [],
+      "matchDetails": [
+        {
+          "type": "exact-direct-match",
+          "matcher": "stock-matcher",
+          "searchedBy": {
+            "language": "rust",
+            "namespace": "github:language:rust"
+          },
+          "found": {
+            "versionConstraint": "<0.16.1 (unknown)",
+            "vulnerabilityID": "GHSA-m4ch-rfv5-x5g3"
+          }
+        }
+      ],
+      "artifact": {
+        "id": "9c26fd0119324ada",
+        "name": "git2",
+        "version": "0.15.0",
+        "type": "rust-crate",
+        "locations": [
+          {
+            "path": "Cargo.lock"
+          }
+        ],
+        "language": "rust",
+        "licenses": [],
+        "cpes": [
+          "cpe:2.3:a:git2:git2:0.15.0:*:*:*:*:*:*:*"
+        ],
+        "purl": "pkg:cargo/git2@0.15.0",
+        "upstreams": []
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "GHSA-m4ch-rfv5-x5g3",
+        "dataSource": "https://github.com/advisories/GHSA-m4ch-rfv5-x5g3",
+        "namespace": "github:language:rust",
+        "severity": "Medium",
+        "urls": [
+          "https://github.com/advisories/GHSA-m4ch-rfv5-x5g3"
+        ],
+        "description": "git2-rs fails to verify SSH keys by default",
+        "cvss": [
+          {
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N",
+            "metrics": {
+              "baseScore": 6.8,
+              "exploitabilityScore": 1.6,
+              "impactScore": 5.2
+            },
+            "vendorMetadata": {
+              "base_severity": "Medium",
+              "status": "N/A"
+            }
+          }
+        ],
+        "fix": {
+          "versions": [
+            "0.14.2"
+          ],
+          "state": "fixed"
+        },
+        "advisories": []
+      },
+      "relatedVulnerabilities": [],
+      "matchDetails": [
+        {
+          "type": "exact-direct-match",
+          "matcher": "stock-matcher",
+          "searchedBy": {
+            "language": "rust",
+            "namespace": "github:language:rust"
+          },
+          "found": {
+            "versionConstraint": ">=0.14.0,<0.14.2 (unknown)",
+            "vulnerabilityID": "GHSA-m4ch-rfv5-x5g3"
+          }
+        }
+      ],
+      "artifact": {
+        "id": "3b534ebad5a3cde",
+        "name": "libgit2-sys",
+        "version": "0.14.0+1.5.0",
+        "type": "rust-crate",
+        "locations": [
+          {
+            "path": "Cargo.lock"
+          }
+        ],
+        "language": "rust",
+        "licenses": [],
+        "cpes": [
+          "cpe:2.3:a:libgit2-sys:libgit2-sys:0.14.0+1.5.0:*:*:*:*:*:*:*",
+          "cpe:2.3:a:libgit2-sys:libgit2_sys:0.14.0+1.5.0:*:*:*:*:*:*:*",
+          "cpe:2.3:a:libgit2_sys:libgit2-sys:0.14.0+1.5.0:*:*:*:*:*:*:*",
+          "cpe:2.3:a:libgit2_sys:libgit2_sys:0.14.0+1.5.0:*:*:*:*:*:*:*",
+          "cpe:2.3:a:libgit2:libgit2-sys:0.14.0+1.5.0:*:*:*:*:*:*:*",
+          "cpe:2.3:a:libgit2:libgit2_sys:0.14.0+1.5.0:*:*:*:*:*:*:*"
+        ],
+        "purl": "pkg:cargo/libgit2-sys@0.14.0+1.5.0",
+        "upstreams": []
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "GHSA-mjv9-vp6w-3rc9",
+        "dataSource": "https://github.com/advisories/GHSA-mjv9-vp6w-3rc9",
+        "namespace": "github:language:rust",
+        "severity": "Medium",
+        "urls": [
+          "https://github.com/advisories/GHSA-mjv9-vp6w-3rc9"
+        ],
+        "description": "AWS SDK for Rust will log AWS credentials when TRACE-level logging is enabled for request sending",
+        "cvss": [
+          {
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+            "metrics": {
+              "baseScore": 5.5,
+              "exploitabilityScore": 1.8,
+              "impactScore": 3.6
+            },
+            "vendorMetadata": {
+              "base_severity": "Medium",
+              "status": "N/A"
+            }
+          }
+        ],
+        "fix": {
+          "versions": [
+            "0.51.1"
+          ],
+          "state": "fixed"
+        },
+        "advisories": []
+      },
+      "relatedVulnerabilities": [
+        {
+          "id": "CVE-2023-30610",
+          "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2023-30610",
+          "namespace": "nvd:cpe",
+          "severity": "Medium",
+          "urls": [
+            "https://github.com/awslabs/aws-sdk-rust/security/advisories/GHSA-mjv9-vp6w-3rc9"
+          ],
+          "description": "aws-sigv4 is a rust library for low level request signing in the aws cloud platform. The `aws_sigv4::SigningParams` struct had a derived `Debug` implementation. When debug-formatted, it would include a user's AWS access key, AWS secret key, and security token in plaintext. When TRACE-level logging is enabled for an SDK, `SigningParams` is printed, thereby revealing those credentials to anyone with access to logs. All users of the AWS SDK for Rust who enabled TRACE-level logging, either globally (e.g. `RUST_LOG=trace`), or for the `aws-sigv4` crate specifically are affected. This issue has been addressed in a set of new releases. Users are advised to upgrade. Users unable to upgrade should disable TRACE-level logging for AWS Rust SDK crates.\n",
+          "cvss": [
+            {
+              "source": "nvd@nist.gov",
+              "type": "Primary",
+              "version": "3.1",
+              "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+              "metrics": {
+                "baseScore": 5.5,
+                "exploitabilityScore": 1.8,
+                "impactScore": 3.6
+              },
+              "vendorMetadata": {}
+            },
+            {
+              "source": "security-advisories@github.com",
+              "type": "Secondary",
+              "version": "3.1",
+              "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+              "metrics": {
+                "baseScore": 5.5,
+                "exploitabilityScore": 1.8,
+                "impactScore": 3.6
+              },
+              "vendorMetadata": {}
+            }
+          ]
+        }
+      ],
+      "matchDetails": [
+        {
+          "type": "exact-direct-match",
+          "matcher": "stock-matcher",
+          "searchedBy": {
+            "language": "rust",
+            "namespace": "github:language:rust"
+          },
+          "found": {
+            "versionConstraint": "=0.51.0 (unknown)",
+            "vulnerabilityID": "GHSA-mjv9-vp6w-3rc9"
+          }
+        }
+      ],
+      "artifact": {
+        "id": "c5d61509474d40d2",
+        "name": "aws-sigv4",
+        "version": "0.51.0",
+        "type": "rust-crate",
+        "locations": [
+          {
+            "path": "Cargo.lock"
+          }
+        ],
+        "language": "rust",
+        "licenses": [],
+        "cpes": [
+          "cpe:2.3:a:aws-sigv4:aws-sigv4:0.51.0:*:*:*:*:*:*:*",
+          "cpe:2.3:a:aws-sigv4:aws_sigv4:0.51.0:*:*:*:*:*:*:*",
+          "cpe:2.3:a:aws_sigv4:aws-sigv4:0.51.0:*:*:*:*:*:*:*",
+          "cpe:2.3:a:aws_sigv4:aws_sigv4:0.51.0:*:*:*:*:*:*:*",
+          "cpe:2.3:a:aws:aws-sigv4:0.51.0:*:*:*:*:*:*:*",
+          "cpe:2.3:a:aws:aws_sigv4:0.51.0:*:*:*:*:*:*:*"
+        ],
+        "purl": "pkg:cargo/aws-sigv4@0.51.0",
+        "upstreams": []
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "GHSA-wcg3-cvx6-7396",
+        "dataSource": "https://github.com/advisories/GHSA-wcg3-cvx6-7396",
+        "namespace": "github:language:rust",
+        "severity": "Medium",
+        "urls": [
+          "https://github.com/advisories/GHSA-wcg3-cvx6-7396"
+        ],
+        "description": "Segmentation fault in time",
+        "cvss": [
+          {
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "metrics": {
+              "baseScore": 6.2,
+              "exploitabilityScore": 2.5,
+              "impactScore": 3.6
+            },
+            "vendorMetadata": {
+              "base_severity": "Medium",
+              "status": "N/A"
+            }
+          }
+        ],
+        "fix": {
+          "versions": [
+            "0.2.23"
+          ],
+          "state": "fixed"
+        },
+        "advisories": []
+      },
+      "relatedVulnerabilities": [
+        {
+          "id": "CVE-2020-26235",
+          "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2020-26235",
+          "namespace": "nvd:cpe",
+          "severity": "Medium",
+          "urls": [
+            "https://crates.io/crates/time/0.2.23",
+            "https://github.com/time-rs/time/issues/293",
+            "https://github.com/time-rs/time/security/advisories/GHSA-wcg3-cvx6-7396"
+          ],
+          "description": "In Rust time crate from version 0.2.7 and before version 0.2.23, unix-like operating systems may segfault due to dereferencing a dangling pointer in specific circumstances. This requires the user to set any environment variable in a different thread than the affected functions. The affected functions are time::UtcOffset::local_offset_at, time::UtcOffset::try_local_offset_at, time::UtcOffset::current_local_offset, time::UtcOffset::try_current_local_offset, time::OffsetDateTime::now_local and time::OffsetDateTime::try_now_local. Non-Unix targets are unaffected. This includes Windows and wasm. The issue was introduced in version 0.2.7 and fixed in version 0.2.23.",
+          "cvss": [
+            {
+              "source": "nvd@nist.gov",
+              "type": "Primary",
+              "version": "2.0",
+              "vector": "AV:N/AC:M/Au:S/C:N/I:N/A:P",
+              "metrics": {
+                "baseScore": 3.5,
+                "exploitabilityScore": 6.8,
+                "impactScore": 2.9
+              },
+              "vendorMetadata": {}
+            },
+            {
+              "source": "nvd@nist.gov",
+              "type": "Primary",
+              "version": "3.1",
+              "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:H",
+              "metrics": {
+                "baseScore": 5.3,
+                "exploitabilityScore": 1.6,
+                "impactScore": 3.6
+              },
+              "vendorMetadata": {}
+            },
+            {
+              "source": "security-advisories@github.com",
+              "type": "Secondary",
+              "version": "3.1",
+              "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:H",
+              "metrics": {
+                "baseScore": 5.3,
+                "exploitabilityScore": 1.6,
+                "impactScore": 3.6
+              },
+              "vendorMetadata": {}
+            }
+          ]
+        }
+      ],
+      "matchDetails": [
+        {
+          "type": "exact-direct-match",
+          "matcher": "stock-matcher",
+          "searchedBy": {
+            "language": "rust",
+            "namespace": "github:language:rust"
+          },
+          "found": {
+            "versionConstraint": ">=0.1.0,<0.2.0 (unknown)",
+            "vulnerabilityID": "GHSA-wcg3-cvx6-7396"
+          }
+        }
+      ],
+      "artifact": {
+        "id": "95d8228beb1a6353",
+        "name": "time",
+        "version": "0.1.45",
+        "type": "rust-crate",
+        "locations": [
+          {
+            "path": "Cargo.lock"
+          }
+        ],
+        "language": "rust",
+        "licenses": [],
+        "cpes": [
+          "cpe:2.3:a:time:time:0.1.45:*:*:*:*:*:*:*"
+        ],
+        "purl": "pkg:cargo/time@0.1.45",
+        "upstreams": []
+      }
+    }
+  ],
+  "source": {
+    "type": "file",
+    "target": "harbor"
+  },
+  "distro": {
+    "name": "",
+    "version": "",
+    "idLike": null
+  },
+  "descriptor": {
+    "name": "grype",
+    "version": "0.62.3",
+    "configuration": {
+      "configPath": "",
+      "verbosity": 0,
+      "output": "json",
+      "file": "",
+      "distro": "",
+      "add-cpes-if-none": false,
+      "output-template-file": "",
+      "quiet": false,
+      "check-for-app-update": true,
+      "only-fixed": false,
+      "only-notfixed": false,
+      "platform": "",
+      "search": {
+        "scope": "Squashed",
+        "unindexed-archives": false,
+        "indexed-archives": true
+      },
+      "ignore": null,
+      "exclude": [],
+      "db": {
+        "cache-dir": "~/Library/Caches/grype/db",
+        "update-url": "https://toolbox-data.anchore.io/grype/databases/listing.json",
+        "ca-cert": "",
+        "auto-update": true,
+        "validate-by-hash-on-start": false,
+        "validate-age": true,
+        "max-allowed-built-age": 432000000000000
+      },
+      "externalSources": {
+        "enable": false,
+        "maven": {
+          "searchUpstreamBySha1": true,
+          "baseUrl": "https://search.maven.org/solrsearch/select"
+        }
+      },
+      "match": {
+        "java": {
+          "using-cpes": true
+        },
+        "dotnet": {
+          "using-cpes": true
+        },
+        "golang": {
+          "using-cpes": true
+        },
+        "javascript": {
+          "using-cpes": false
+        },
+        "python": {
+          "using-cpes": true
+        },
+        "ruby": {
+          "using-cpes": true
+        },
+        "stock": {
+          "using-cpes": true
+        }
+      },
+      "dev": {
+        "profile-cpu": false,
+        "profile-mem": false
+      },
+      "fail-on-severity": "",
+      "registry": {
+        "insecure-skip-tls-verify": false,
+        "insecure-use-http": false,
+        "auth": []
+      },
+      "log": {
+        "structured": false,
+        "level": "warn",
+        "file": ""
+      },
+      "show-suppressed": false,
+      "by-cve": false,
+      "name": "",
+      "default-image-pull-source": ""
+    },
+    "db": {
+      "built": "2023-06-18T01:34:20Z",
+      "schemaVersion": 5,
+      "location": "~/Library/Caches/grype/db/5",
+      "checksum": "sha256:2009d7cf9f5c6d305f7a8cc54559ab617763c07158786dcd799e5d0f54d6bad6",
+      "error": null
+    },
+    "timestamp": "2023-06-18T10:16:32.83706-04:00"
+  }
+}

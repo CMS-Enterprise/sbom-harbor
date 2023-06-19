@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
 /// Summary of relevant CVSS data points.
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -53,6 +54,23 @@ pub enum Version {
     V3_1,
     /// CVSS Version 4.0.
     V4,
+    /// Unknown CVSS version.
+    Unknown,
+}
+
+impl FromStr for Version {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "1.0" => Ok(Version::V1),
+            "2.0" => Ok(Version::V2),
+            "3.0" => Ok(Version::V3),
+            "3.1" => Ok(Version::V3_1),
+            "4.0" => Ok(Version::V4),
+            _ => Err(()),
+        }
+    }
 }
 
 impl Display for Version {
@@ -63,6 +81,7 @@ impl Display for Version {
             Version::V3 => write!(f, "3.0"),
             Version::V3_1 => write!(f, "3.1"),
             Version::V4 => write!(f, "4.0"),
+            Version::Unknown => write!(f, "unknown"),
         }
     }
 }

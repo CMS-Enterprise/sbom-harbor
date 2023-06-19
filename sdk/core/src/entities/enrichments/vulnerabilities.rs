@@ -4,9 +4,29 @@ use crate::Error;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
 /// Alias for the native CycloneDx Severity enum.
 pub type Severity = crate::entities::cyclonedx::Severity;
+
+impl FromStr for Severity {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let value = s.to_lowercase();
+        let value = value.as_str();
+
+        match value {
+            "critical" => Ok(Severity::Critical),
+            "high" => Ok(Severity::High),
+            "medium" => Ok(Severity::Medium),
+            "low" => Ok(Severity::Low),
+            "info" => Ok(Severity::Info),
+            "none" => Ok(Severity::None),
+            _ => Ok(Severity::Unknown),
+        }
+    }
+}
 
 /// Identified security issue for a [Package].
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -81,6 +101,8 @@ impl Vulnerability {
 pub enum VulnerabilityProviderKind {
     /// EPSS Score provider.
     Epss,
+    /// Grype provider.
+    Grype,
     /// Ion Channel provider.
     IonChannel,
     /// Snyk provider.
@@ -93,6 +115,7 @@ impl Display for VulnerabilityProviderKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             VulnerabilityProviderKind::Epss => write!(f, "epss"),
+            VulnerabilityProviderKind::Grype => write!(f, "grype"),
             VulnerabilityProviderKind::IonChannel => write!(f, "ion-channel"),
             VulnerabilityProviderKind::Snyk => write!(f, "snyk"),
             VulnerabilityProviderKind::Custom(name) => write!(f, "custom-{}", name),

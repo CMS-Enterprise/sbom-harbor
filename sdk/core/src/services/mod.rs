@@ -14,10 +14,6 @@ pub mod sboms;
 /// a [Vulnerability] related to a [Package].
 pub mod vulnerabilities;
 
-/// The Snyk module contains integration logic related to the management of [Packages],
-/// and [SBOMs] when an organization is using the Snyk application.
-pub mod snyk;
-
 /// The [teams] module contains domain and persistence logic related to the management of
 /// [Teams]. A [Team] is used to group [Members] and [Projects].
 ///
@@ -32,3 +28,11 @@ pub mod xrefs;
 
 /// The [analytics] module contains reporting services to make the data useful.
 pub mod analytics;
+
+/// The [`snyk`] module contains integration logic related to the management of [Packages],
+/// and [SBOMs] when an organization is using the Snyk application.
+pub mod snyk;
+
+/// The grype module contains integration logic related to the management of [Vulnerability],
+/// data related to an [SBOM].
+pub mod grype;

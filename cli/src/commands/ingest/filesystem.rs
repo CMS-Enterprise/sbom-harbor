@@ -232,7 +232,7 @@ mod tests {
             std::env::var("CARGO_MANIFEST_DIR").expect("cannot access CARGO_MANIFEST_DIR");
         let manifest_dir = manifest_dir.replace("/cli", "");
 
-        let sbom = ingest_by_path(
+        let _sbom = ingest_by_path(
             &PathArgs {
                 path: manifest_dir,
                 source_name: "harbor".to_string(),
