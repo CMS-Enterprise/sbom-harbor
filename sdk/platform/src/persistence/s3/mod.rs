@@ -1,12 +1,12 @@
 use crate::config::sdk_config_from_env;
+use crate::Error;
 use aws_sdk_s3::error::PutObjectError;
 use aws_sdk_s3::types::{ByteStream, DisplayErrorContext};
 use aws_sdk_s3::Client;
 use aws_types::SdkConfig;
-use std::collections::HashMap;
 use regex::Regex;
+use std::collections::HashMap;
 use tracing::instrument;
-use crate::Error;
 
 /// Ensuring the s3 key is safe
 pub fn make_s3_key_safe(purl: &str) -> Result<String, Error> {
@@ -79,7 +79,6 @@ impl Store {
                 let mut result = HashMap::<String, String>::new();
 
                 for (k, v) in incoming.iter() {
-
                     let safe_s3_key_name = make_s3_key_safe(k)?;
 
                     result.insert(safe_s3_key_name, v.to_string());

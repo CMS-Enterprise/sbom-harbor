@@ -1,17 +1,16 @@
-
 /// Module to support analysis on SBOMs
 pub mod sboms;
 
 use std::collections::HashMap;
 
+use crate::{config, Error};
 use async_trait::async_trait;
+use platform::filesystem::make_file_name_safe;
 use platform::persistence::s3;
+use platform::persistence::s3::make_s3_key_safe;
+use serde_json::Value;
 use std::fmt::Debug;
 use std::io::{BufReader, Cursor};
-use serde_json::Value;
-use platform::filesystem::make_file_name_safe;
-use platform::persistence::s3::make_s3_key_safe;
-use crate::{config, Error};
 
 /// Ensuring the file name is safe
 fn get_file_name(provider_name: &str, purl: &str) -> Result<String, Error> {
@@ -30,12 +29,7 @@ fn get_s3_key_name(provider_name: &str, purl: &str) -> Result<String, Error> {
 #[async_trait]
 pub trait StorageProvider: Debug + Send + Sync {
     /// Write vulnerabilities to storage provider and return output path.
-    async fn write(
-        &self,
-        purl: &str,
-        json: Value,
-        provider_name: &str,
-    ) -> Result<String, Error>;
+    async fn write(&self, purl: &str, json: Value, provider_name: &str) -> Result<String, Error>;
 }
 
 /// Saves Analytics results to the local filesystem.
@@ -58,13 +52,7 @@ impl FileSystemStorageProvider {
 
 #[async_trait]
 impl StorageProvider for FileSystemStorageProvider {
-    async fn write(
-        &self,
-        purl: &str,
-        json: Value,
-        provider_name: &str,
-    ) -> Result<String, Error> {
-
+    async fn write(&self, purl: &str, json: Value, provider_name: &str) -> Result<String, Error> {
         let file_name = get_file_name(provider_name, purl)?;
         let file_path = format!("{}/{}", self.out_dir, file_name);
         let json_raw = serde_json::to_string(&json)
@@ -80,11 +68,7 @@ impl StorageProvider for FileSystemStorageProvider {
         match std::fs::write(file_path.as_str(), json_raw) {
             Ok(_) => {}
             Err(e) => {
-                return Err(
-                    Error::Runtime(
-                        format!("write::{}", e)
-                    )
-                );
+                return Err(Error::Runtime(format!("write::{}", e)));
             }
         }
 
@@ -98,13 +82,7 @@ pub struct S3StorageProvider {}
 
 #[async_trait]
 impl StorageProvider for S3StorageProvider {
-    async fn write(
-        &self,
-        purl: &str,
-        json: Value,
-        provider_name: &str,
-    ) -> Result<String, Error> {
-
+    async fn write(&self, purl: &str, json: Value, provider_name: &str) -> Result<String, Error> {
         let metadata = HashMap::<String, String>::new();
         let s3_store = s3::Store::new_from_env().await?;
         let bucket_name = config::harbor_bucket()?;
@@ -118,13 +96,15 @@ impl StorageProvider for S3StorageProvider {
         let checksum = platform::cryptography::sha256::reader_checksum_sha256(reader)?;
         let checksum = platform::encoding::base64::standard_encode(checksum.as_str());
 
-        s3_store.put(
-            bucket_name,
-            object_key.clone(),
-            Some(checksum),
-            json_raw,
-            Some(metadata),
-        ).await?;
+        s3_store
+            .put(
+                bucket_name,
+                object_key.clone(),
+                Some(checksum),
+                json_raw,
+                Some(metadata),
+            )
+            .await?;
 
         Ok(object_key)
     }

@@ -1,5 +1,5 @@
-use std::fmt::{Display, Formatter};
 use serde_derive::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 
 /// Enum to specify the Analytic kind.
 #[derive(Clone, Debug, Deserialize, Serialize)]

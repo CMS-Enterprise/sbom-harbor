@@ -216,4 +216,3 @@ impl From<InvalidUri> for Error {
         Error::InvalidUri(err.to_string())
     }
 }
-

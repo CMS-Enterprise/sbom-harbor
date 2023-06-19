@@ -42,7 +42,6 @@ pub enum Error {
     /// Analytic provider error.
     #[error("analytic provider error: {0}")]
     Analytic(String),
-
 }
 
 impl From<platform::Error> for Error {
