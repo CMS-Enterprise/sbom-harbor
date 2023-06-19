@@ -8,13 +8,13 @@ use harbcore::entities::xrefs::XrefKind;
 use harbcore::errors::Error;
 use harbcore::services::packages::PackageService;
 use harbcore::services::snyk::SNYK_DISCRIMINATOR;
-use harbcore::services::tasks::TaskProvider;
 use harbcore::services::xrefs::XrefService;
-use platform::mongodb::{Context, Service, Store};
+use harbcore::tasks::TaskProvider;
+use platform::persistence::mongodb::{Context, Service, Store};
 
 use crate::services::snyk::{extract_xref, SnykService};
 
-/// Example of how to implement a [TaskProvider] that can interact with the Harbor backend.
+/// Adds FISMA ID as an [Xref] to primary packages.
 #[derive(Debug)]
 pub struct FismaTask {
     store: Arc<Store>,

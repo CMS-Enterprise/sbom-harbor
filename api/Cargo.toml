@@ -34,11 +34,11 @@ dotenv = "0.15.0"
 tokio-test = "*"
 
 [dependencies.harbcore]
-path = "../core"
+path = "../sdk/core"
 version = "0.1.0"
 
 [dependencies.platform]
-path = "../platform"
+path = "../sdk/platform"
 version = "0.1.0"
 
 [[bin]]

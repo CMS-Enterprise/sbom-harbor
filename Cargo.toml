@@ -1,9 +1,9 @@
 [workspace]
 members = [
     "api",
-    "core",
+    "sdk/core",
     "extensions/cms",
-    "platform",
+    "sdk/platform",
     "cli",
     "sdk/extension-template"
 ]

@@ -1,5 +1,4 @@
-use crate::commands::enrich::epss::EpssProvider;
-use crate::commands::enrich::snyk::{SnykArgs, SnykProvider};
+use crate::commands::enrich::snyk::SnykArgs;
 use crate::Error;
 use clap::builder::PossibleValue;
 use clap::{Parser, ValueEnum};
@@ -19,11 +18,11 @@ pub enum EnrichmentProviderKind {
     Snyk,
 }
 
-/// The Enrich Command handler.
+/// The CommandFactory function for the `enrich` command.
 pub async fn execute(args: &EnrichArgs) -> Result<(), Error> {
     match args.provider {
-        EnrichmentProviderKind::Epss => EpssProvider::execute(args).await,
-        EnrichmentProviderKind::Snyk => SnykProvider::execute(args).await,
+        EnrichmentProviderKind::Epss => epss::execute(args).await,
+        EnrichmentProviderKind::Snyk => snyk::execute(args).await,
     }
 }
 
@@ -54,7 +53,7 @@ impl FromStr for EnrichmentProviderKind {
     }
 }
 
-/// Specifies the CLI args for the Enrich command.
+/// Specifies the CLI args for the `enrich` command.
 #[derive(Debug, Parser)]
 pub struct EnrichArgs {
     /// Specifies with Enrichment Provider to invoke.
