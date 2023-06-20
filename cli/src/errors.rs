@@ -9,6 +9,9 @@ pub enum Error {
     /// Configuration error.
     #[error("config: {0}")]
     Config(String),
+    #[error(transparent)]
+    /// Core pass through.
+    Core(#[from] harbcore::Error),
     /// Enrich runtime error.
     #[error("enrich: {0}")]
     Enrich(String),
@@ -21,4 +24,10 @@ pub enum Error {
     /// Invalid subcommand.
     #[error("invalid subcommand: {0}")]
     InvalidSubcommand(String),
+    #[error(transparent)]
+    /// Platform pass through.
+    Platform(#[from] platform::Error),
+    /// Runtime error.
+    #[error("Runtime error: {0}")]
+    Runtime(String),
 }

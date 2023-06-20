@@ -41,6 +41,9 @@ pub mod persistence;
 /// Provides utility functions for running external shell commands.
 pub mod process;
 
+/// Provides utility functions for use in tests.
+pub mod testing;
+
 /// Extensions to `std::time`.
 pub mod time;
 

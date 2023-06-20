@@ -119,9 +119,7 @@ mod tests {
 
     #[async_std::test]
     async fn can_ingest_by_path() -> Result<(), Error> {
-        let manifest_dir =
-            std::env::var("CARGO_MANIFEST_DIR").expect("cannot access CARGO_MANIFEST_DIR");
-        let manifest_dir = manifest_dir.replace("/cli", "");
+        let manifest_dir = platform::testing::manifest_dir()?;
 
         let _sbom = ingest_repository(&RepositoryOpts {
             path: manifest_dir,

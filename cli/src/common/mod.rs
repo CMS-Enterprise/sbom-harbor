@@ -10,6 +10,9 @@ pub mod enrichments;
 /// Application logic related to the ingestion and management of sboms.
 pub mod ingestion;
 
+/// Testing logic and types related to testing the cli application.
+pub mod testing;
+
 /// Encapsulates the execution context of a CLI command.
 pub(crate) struct CommandContext {
     pub store: Arc<Store>,
@@ -44,6 +47,8 @@ pub(crate) fn pretty_print_json(raw: &str) {
         }
     };
 
+    println!("{:#?}", value);
+
     let mut buf = Vec::new();
 
     let formatter = PrettyFormatter::with_indent(b"    ");
@@ -52,4 +57,20 @@ pub(crate) fn pretty_print_json(raw: &str) {
     value.serialize(&mut ser).unwrap();
 
     println!("{}", String::from_utf8(buf).unwrap());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Error;
+
+    #[test]
+    #[ignore = "debug"]
+    fn debug_pretty_print_json() -> Result<(), Error> {
+        let raw = testing::sbom_raw()?;
+
+        pretty_print_json(raw.as_str());
+
+        Ok(())
+    }
 }

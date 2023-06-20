@@ -46,10 +46,12 @@ pub enum Error {
     /// Error running external process.
     #[error("error in external process: {0}")]
     Process(String),
-    /// Error executing query.    
     /// Error executing query.
     #[error("error executing query: {0}")]
     Query(String),
+    /// Runtime error.
+    #[error("error in runtime: {0}")]
+    Runtime(String),
     /// Error serializing item.
     #[error("error serializing item: {0}")]
     Serde(String),
