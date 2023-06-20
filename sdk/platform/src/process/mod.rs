@@ -29,7 +29,7 @@ pub fn execute(cmd: &mut Command, name: &str) -> Result<String, Error> {
     }
 
     match String::from_utf8(output.stdout) {
-        Ok(sbom) => Ok(sbom),
+        Ok(stdout) => Ok(stdout),
         Err(e) => Err(Error::Process(format!(
             "error reading {} stdout: {}",
             name, e

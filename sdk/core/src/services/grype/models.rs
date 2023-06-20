@@ -323,10 +323,8 @@ mod tests {
     fn can_adapt_grype_vulnerabilities() -> Result<(), Error> {
         let manifest_dir =
             std::env::var("CARGO_MANIFEST_DIR").expect("cannot access CARGO_MANIFEST_DIR");
-        println!("{}", manifest_dir);
 
         let manifest_dir = manifest_dir.replace("sdk/core", "tests/fixtures/core/services/grype");
-        println!("{}", manifest_dir);
 
         let fixture_path = format!("{}/grype-output.json", manifest_dir);
 

@@ -132,7 +132,7 @@ impl SyncTask {
 
         self.sboms
             .ingest(
-                raw,
+                raw.as_str(),
                 package_manager,
                 SbomProviderKind::Snyk,
                 Xref::from(snyk_ref),

@@ -125,11 +125,9 @@ mod tests {
     fn can_infer_purl_from_sbom() -> Result<(), Error> {
         let manifest_dir =
             std::env::var("CARGO_MANIFEST_DIR").expect("cannot access CARGO_MANIFEST_DIR");
-        println!("{}", manifest_dir);
 
         let manifest_dir =
             manifest_dir.replace("sdk/core", "tests/fixtures/core/entities/cyclonedx");
-        println!("{}", manifest_dir);
 
         struct TestCase {
             file_name: String,

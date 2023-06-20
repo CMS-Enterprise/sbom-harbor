@@ -25,6 +25,9 @@ pub enum Error {
     /// Error with entity specification.
     #[error("error with entity specification: {0}")]
     Entity(String),
+    /// Error performing filesystem operation.
+    #[error("error in filesystem operation: {0}")]
+    FileSystem(String),
     /// Error making HTTP Request.
     #[error("error in HTTP request: {0}")]
     Http(String),

@@ -13,6 +13,9 @@ pub mod commands;
 /// Errors defined for this crate.
 pub mod errors;
 
+/// Shared utility functions used by multiple commands.
+pub mod common;
+
 /// Error exposed by this crate.
 pub use errors::Error;
 

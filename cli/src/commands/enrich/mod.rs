@@ -6,6 +6,7 @@ use std::str::FromStr;
 
 /// EPSS enrichment command handler.
 pub mod epss;
+
 /// Snyk enrichment command handler.
 pub mod snyk;
 

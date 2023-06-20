@@ -63,7 +63,7 @@ impl SbomService {
     /// Processes a raw SBOM and loads it into the Harbor data and file stores.
     pub async fn ingest(
         &self,
-        raw: String,
+        raw: &str,
         package_manager: Option<String>,
         provider: SbomProviderKind,
         xref: Xref,
@@ -71,7 +71,7 @@ impl SbomService {
     ) -> Result<Sbom, Error> {
         // Load the raw SBOM into the Harbor model.
         let mut sbom = match Sbom::from_raw_cdx(
-            raw.as_str(),
+            raw,
             CdxFormat::Json,
             Author::Harbor(provider),
             package_manager,

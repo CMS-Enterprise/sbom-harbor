@@ -1,5 +1,5 @@
 use crate::commands::ingest::IngestArgs;
-use crate::commands::CliContext;
+use crate::common::CommandContext;
 use crate::Error;
 use clap::Parser;
 use harbcore::entities;
@@ -27,7 +27,7 @@ pub struct SnykArgs {
 /// dispatching command to the correct logic handler based on args passed.
 pub(crate) async fn execute(args: &IngestArgs) -> Result<(), Error> {
     let token = harbcore::config::snyk_token().map_err(|e| Error::Config(e.to_string()))?;
-    let cx = CliContext::new(args.debug).await?;
+    let cx = CommandContext::new(args.debug).await?;
 
     let storage: Box<dyn StorageProvider> = match &args.debug {
         false => Box::new(S3StorageProvider {}),
