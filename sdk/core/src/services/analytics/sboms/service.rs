@@ -204,26 +204,7 @@ fn report_analytic_stage_11() -> Stage {
                 "$first": "$version"
             },
             "created": {
-                "$first": {
-                    "$dateFromString": {
-                        "dateString": {
-                            "$concat": [
-                                {
-                                    "$concat": [
-                                        {
-                                            "$multiply": [
-                                                "$timestamp",
-                                                1000
-                                            ]
-                                        },
-                                        ""
-                                    ]
-                                },
-                                "Z"
-                            ]
-                        }
-                    }
-                }
+                "$first": "$timestamp"
             },
             "report": {
                 "$push": {
