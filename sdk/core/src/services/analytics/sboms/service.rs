@@ -114,6 +114,24 @@ fn report_analytic_stage_6() -> Stage {
     Stage::new(json!({
         "$group": {
           "_id": "$_id",
+          "name": {
+            "$first": "$name"
+          },
+          "packageManager": {
+            "$first": "$packageManager"
+          },
+          "purl": {
+            "$first": "$purl"
+          },
+          "provider": {
+            "$first": "$provider"
+          },
+          "version": {
+            "$first": "$version"
+          },
+          "timestamp": {
+            "$first": "$timestamp"
+          },
           "report": {
             "$push": "$report",
           },
