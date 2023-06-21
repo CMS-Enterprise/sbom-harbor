@@ -25,26 +25,36 @@ pub fn replace_dir(old_path: &str, new_path: &str) -> Result<String, Error> {
     Ok(manifest_dir.replace(old_path, new_path))
 }
 
-/// Gets the path to the well-known test fixture directory.
-pub fn fixture_dir() -> Result<String, Error> {
-    let manifest_dir = manifest_dir()?;
+/// Gets the path to the workspace root.
+pub fn workspace_dir() -> Result<String, Error> {
+    let mut workspace_dir = manifest_dir()?;
 
     // strip all possible source paths to get to workspace root.
-    let mut root = manifest_dir.replace("/sdk/core", "");
-    root = root.split("api").next().unwrap().to_string();
-    root = root.split("cli").next().unwrap().to_string();
-    root = root.split("extensions").next().unwrap().to_string();
-    root = root.split("sdk").next().unwrap().to_string();
+    workspace_dir = workspace_dir.split("api").next().unwrap().to_string();
+    workspace_dir = workspace_dir.split("cli").next().unwrap().to_string();
+    workspace_dir = workspace_dir
+        .split("extensions")
+        .next()
+        .unwrap()
+        .to_string();
+    workspace_dir = workspace_dir.split("sdk").next().unwrap().to_string();
 
-    root = format!("{}tests/fixtures", root);
+    Ok(workspace_dir)
+}
 
-    Ok(root)
+/// Gets the path to the well-known test fixture directory.
+pub fn fixture_dir() -> Result<String, Error> {
+    let mut fixture_dir = workspace_dir()?;
+
+    fixture_dir = format!("{}tests/fixtures", fixture_dir);
+
+    Ok(fixture_dir)
 }
 
 /// Appends a path to the well test-fixture directory.
 pub fn fixture_path(path: &str) -> Result<String, Error> {
     let fixture_dir = fixture_dir()?;
-    let path = path.trim_start_matches("/");
+    let path = path.trim_start_matches('/');
 
     Ok(format!("{}/{path}", fixture_dir))
 }

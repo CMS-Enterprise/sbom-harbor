@@ -12,39 +12,39 @@ pub struct FileSystemArgs {
     /// Syft CLI. It will then process the SBOM and store the raw file using the configured
     /// storage provider.
     #[arg(long)]
-    path: String,
+    pub(crate) path: String,
 
-    /// The name of the repository being processed.
+    /// The name of the package the SBOM represents.
     #[arg(long)]
-    source_name: String,
+    pub(crate) package_name: String,
 
-    /// The version of the repository being processed. If not set, the CLI will use a shortened
+    /// The version of the package the SBOM represents. If not set, the CLI will use a shortened
     /// version of the current commit hash.
     #[arg(long)]
-    source_version: Option<String>,
+    pub(crate) package_version: Option<String>,
 
     /// Path to a pre-processed SBOM file. The CLI will process the SBOM and store the raw file
     /// using the configured storage provider. Requires the `source` flag also be specified.
     #[arg(long)]
-    file: Option<String>,
+    pub(crate) file: Option<String>,
 
     /// Source of the pre-processed SBOM file. Ignored if the `path` flag is specified.
     #[arg(long)]
-    source: Option<String>,
+    pub(crate) source: Option<String>,
 
     // TODO Add dir flag to support ingesting a set of pre-generated SBOMs.
     /// Indicates whether to enrich the SBOM once it has been ingested. Defaults to false if
     /// omitted.
     #[arg(short, long)]
-    enrich: bool,
+    pub(crate) enrich: bool,
 }
 
 impl FileSystemArgs {
     fn to_opts(&self, debug: bool) -> Result<ingestion::RepositoryOpts, Error> {
         Ok(ingestion::RepositoryOpts {
             path: self.path.clone(),
-            source_name: self.source_name.clone(),
-            source_version: self.source_version.clone(),
+            source_name: self.package_name.clone(),
+            source_version: self.package_version.clone(),
             debug,
         })
     }

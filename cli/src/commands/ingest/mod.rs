@@ -92,14 +92,16 @@ pub struct IngestArgs {
 
 #[cfg(test)]
 mod tests {
+    use super::filesystem;
     use super::snyk;
+    use crate::commands::ingest::filesystem::FileSystemArgs;
     use crate::commands::ingest::snyk::SnykArgs;
     use crate::commands::ingest::{IngestArgs, IngestionProviderKind};
     use crate::Error;
 
     #[async_std::test]
-    #[ignore = "debug manual only"]
-    async fn can_execute_snyk() -> Result<(), Error> {
+    #[ignore = "debug"]
+    async fn debug_snyk() -> Result<(), Error> {
         match snyk::execute(&IngestArgs {
             provider: IngestionProviderKind::Snyk,
             debug: true,
@@ -109,6 +111,35 @@ mod tests {
                 org_id: None,
                 project_id: None,
             }),
+        })
+        .await
+        {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                let msg = e.to_string();
+                Err(Error::Ingest(msg))
+            }
+        }
+    }
+
+    #[async_std::test]
+    #[ignore = "debug"]
+    async fn debug_filesystem() -> Result<(), Error> {
+        let manifest_dir = platform::testing::workspace_dir()?;
+
+        match filesystem::execute(&IngestArgs {
+            provider: IngestionProviderKind::FileSystem,
+            debug: true,
+            filesystem_args: Some(FileSystemArgs {
+                path: manifest_dir,
+                package_name: "harbor".to_string(),
+                package_version: None,
+                file: None,
+                source: None,
+                enrich: false,
+            }),
+            github_args: None,
+            snyk_args: None,
         })
         .await
         {

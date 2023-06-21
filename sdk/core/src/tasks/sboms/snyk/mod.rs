@@ -44,7 +44,7 @@ mod tests {
                 Box::new(FileSystemStorageProvider::new(
                     "/tmp/harbor/sboms".to_string(),
                 )),
-                PackageService::new(store.clone()),
+                PackageService::new(store),
             ),
         )?;
 

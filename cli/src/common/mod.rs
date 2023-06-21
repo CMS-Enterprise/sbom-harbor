@@ -47,8 +47,6 @@ pub(crate) fn pretty_print_json(raw: &str) {
         }
     };
 
-    println!("{:#?}", value);
-
     let mut buf = Vec::new();
 
     let formatter = PrettyFormatter::with_indent(b"    ");
