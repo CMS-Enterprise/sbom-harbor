@@ -1,4 +1,8 @@
 mod service;
+
+/// Support for generating a score for a sbom file
+pub mod scorecard;
+
 pub use service::*;
 use std::fmt::Debug;
 use std::io::BufReader;
