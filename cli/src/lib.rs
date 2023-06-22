@@ -35,6 +35,8 @@ pub enum Commands {
     Ingest(commands::ingest::IngestArgs),
     /// Generate reports from SBOM data
     Analyze(commands::analyze::AnalyzeArgs),
+    /// Test db and internet connections and report success or error
+    Health(commands::health::HealthArgs),
 }
 
 /// Allows specifying the output format.
