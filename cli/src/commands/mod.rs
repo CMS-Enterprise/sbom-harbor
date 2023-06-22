@@ -6,3 +6,6 @@ pub mod ingest;
 
 /// Contains the type and functions to support `analyze` Command.
 pub mod analyze;
+
+/// Contains functions to support the `health` Command.
+pub mod health;

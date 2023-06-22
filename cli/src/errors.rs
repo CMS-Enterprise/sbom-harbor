@@ -21,4 +21,13 @@ pub enum Error {
     /// Sbom runtime error.
     #[error("sbom: {0}")]
     Sbom(String),
+    /// System error.
+    #[error("system: {0}")]
+    System(String),
+}
+
+impl From<platform::Error> for Error {
+    fn from(error: platform::Error) -> Self {
+        Error::System(error.to_string())
+    }
 }
