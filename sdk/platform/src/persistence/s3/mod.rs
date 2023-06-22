@@ -150,4 +150,29 @@ impl Store {
             }
         }
     }
+
+    /// Lists objects in a bucket
+    pub async fn list(&self, bucket_name: String) -> Result<Vec<String>, Error> {
+        let client = Client::new(&self.config);
+
+        match client
+            .list_objects_v2()
+            .set_bucket(Some(bucket_name))
+            .send()
+            .await
+        {
+            Ok(r) => {
+                let mut objects = vec![];
+                for obj in r.contents().unwrap_or_default() {
+                    objects.push(obj.key().unwrap().to_string())
+                }
+                Ok(objects)
+            }
+            Err(e) => {
+                let msg = e.into_service_error();
+                let msg = msg.message().unwrap();
+                Err(Error::S3(msg.to_string()))
+            }
+        }
+    }
 }

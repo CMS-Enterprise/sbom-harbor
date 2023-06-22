@@ -24,4 +24,13 @@ pub enum Error {
     /// Sbom Scorecard processing error
     #[error("Sbom Scorecard command error: {0}")]
     SbomScorecard(String),
+    /// System error.
+    #[error("system: {0}")]
+    System(String),
+}
+
+impl From<platform::Error> for Error {
+    fn from(error: platform::Error) -> Self {
+        Error::System(error.to_string())
+    }
 }
