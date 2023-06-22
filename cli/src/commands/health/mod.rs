@@ -37,6 +37,9 @@ pub async fn execute(args: &HealthArgs) -> Result<(), Error> {
             return Err(Error::System(e.to_string()));
         }
     }
+
+    println!("HEALTHY");
+
     Ok(())
 }
 /// Specifies the CLI args for the `health` command.
