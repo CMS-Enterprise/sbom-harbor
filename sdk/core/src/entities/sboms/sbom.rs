@@ -57,6 +57,9 @@ pub struct Sbom {
     /// Denormalized list of dependency refs as specified by the NTIA SBOM Minimum Elements.
     pub dependency_refs: Option<Vec<String>>,
 
+    /// The iso8601 timestamp. for when the [Sbom] was created and used for display.
+    pub created: String,
+
     /// The unix timestamp for when the [Sbom] was created as specified by the NTIA SBOM Minimum Elements.
     pub timestamp: u64,
 
@@ -139,6 +142,7 @@ impl Sbom {
             supplier_name,
             package_manager: package_manager.clone(),
             provider: Some(provider),
+            created: platform::time::iso8601_timestamp()?,
             timestamp: platform::time::timestamp()?,
             checksum_sha256: "".to_string(),
             task_refs: vec![],

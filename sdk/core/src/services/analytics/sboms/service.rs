@@ -64,7 +64,7 @@ fn report_analytic_stage_2() -> Stage {
             "name": "$componentName",
             "version": 1,
             "purl": 1,
-            "timestamp": 1,
+            "created": 1,
             "packageManager": 1,
             "provider": 1,
             "dependencyRefs": 1
@@ -129,8 +129,8 @@ fn report_analytic_stage_6() -> Stage {
           "version": {
             "$first": "$version"
           },
-          "timestamp": {
-            "$first": "$timestamp"
+          "created": {
+            "$first": "$created"
           },
           "report": {
             "$push": "$report",
@@ -204,7 +204,7 @@ fn report_analytic_stage_11() -> Stage {
                 "$first": "$version"
             },
             "created": {
-                "$first": "$timestamp"
+                "$first": "$created"
             },
             "report": {
                 "$push": {
