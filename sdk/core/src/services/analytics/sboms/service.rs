@@ -173,6 +173,7 @@ fn report_analytic_stage_10() -> Stage {
                    "severity":"$$this.severity",
                    "cve":"$$this.cve",
                    "description":"$$this.description",
+                   "epssScore":"$$this.epssScore",
                    "cvss":"$$this.cvss",
                    "cwes":"$$this.cwes",
                    "remediation":"$$this.remediation"
