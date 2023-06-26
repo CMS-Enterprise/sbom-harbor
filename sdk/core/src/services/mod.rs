@@ -32,3 +32,7 @@ pub mod xrefs;
 
 /// The [analytics] module contains reporting services to make the data useful.
 pub mod analytics;
+
+/// The GitHub module contains integration logic related to the management of [Packages],
+/// and [SBOMs] leveraging GitHub organizations.
+pub mod github;

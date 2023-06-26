@@ -12,6 +12,14 @@ pub fn snyk_token() -> Result<String, Error> {
     }
 }
 
+/// Returns the GitHub PAT token from an environment variable.
+pub fn github_pat() -> Result<String, Error> {
+    match from_env("GITHUB_PAT") {
+        None => Err(Error::Config("GITHUB_PAT token not set".to_string())),
+        Some(v) => Ok(v),
+    }
+}
+
 /// Returns the Harbor S3 bucket name.
 pub fn harbor_bucket() -> Result<String, Error> {
     match from_env("HARBOR_FILE_STORE") {

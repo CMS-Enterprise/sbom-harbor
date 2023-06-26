@@ -68,7 +68,8 @@ impl SbomService {
         provider: SbomProviderKind,
         xref: Xref,
         task: &Task,
-    ) -> Result<Sbom, Error> {
+    ) -> Result<Option<Sbom>, Error> {
+
         // Load the raw SBOM into the Harbor model.
         let mut sbom = match Sbom::from_raw_cdx(
             raw,
@@ -113,13 +114,16 @@ impl SbomService {
             }
         };
 
+        // Ensure the display timestamp is set if successful.
+        sbom.created = platform::time::iso8601_timestamp()?;
+
         // Ensure the timestamp is set if successful.
         sbom.timestamp = platform::time::timestamp()?;
 
         // Commit the Sbom.
         self.commit(&mut sbom, xref).await?;
 
-        Ok(sbom)
+        Ok(Some(sbom))
     }
 
     /// [Transaction script](https://martinfowler.com/eaaCatalog/transactionScript.html) for saving

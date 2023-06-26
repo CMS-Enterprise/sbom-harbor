@@ -30,6 +30,9 @@ pub enum Error {
     /// Serialization error.
     #[error("serialization error: {0}")]
     Serde(String),
+    /// GitHub provider error.
+    #[error("github error: {0}")]
+    GitHub(String),
     /// Snyk provider error.
     #[error("snyk error: {0}")]
     Snyk(String),
