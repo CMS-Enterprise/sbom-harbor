@@ -47,11 +47,11 @@ fn csv_headers() -> Vec<&'static str> {
         "sbom_purl",
         "author",
         "provider",
-        "supplier_name",
-        "package_id",
-        "package_purl",
-        "package_version",
-        "package_cpe",
+        //"supplier_name",
+        "dependency_id",
+        "dependency_purl",
+        "dependency_version",
+        //"dependency_cpe",
         "vulnerability_id",
         "vulnerability_provider",
         "severity",
@@ -115,13 +115,13 @@ fn format_row(
         sbom.purl.clone().unwrap_or("NULL".to_string()),
         sbom.author.clone().to_string(),
         sbom_provider,
-        sbom.supplier_name.clone().unwrap_or("NULL".to_string()),
+        // sbom.supplier_name.clone().unwrap_or("NULL".to_string()),
         package.id.clone(),
         package.purl.clone().unwrap_or("NULL".to_string()),
         package.version.clone().unwrap_or("NULL".to_string()),
-        package.cpe.clone().unwrap_or("NULL".to_string()),
+        // package.cpe.clone().unwrap_or("NULL".to_string()),
         vuln.id.clone(),
-        vuln.provider.clone().to_string(),
+        format_vulnerability_provider(vuln),
         vuln.severity.unwrap_or(Severity::None).to_string(),
         vuln.cve.clone().unwrap_or("NULL".to_string()),
         vuln.epss_score.unwrap_or(0.0_f32).to_string(),
@@ -169,5 +169,12 @@ fn format_cvss(cvss: &Option<Cvss>) -> String {
                 scores
             )
         }
+    }
+}
+
+fn format_vulnerability_provider(vuln: &VulnerabilitySummary) -> String {
+    match vuln.id.is_empty() {
+        true => "NULL".to_string(),
+        false => vuln.provider.clone().to_string(),
     }
 }
