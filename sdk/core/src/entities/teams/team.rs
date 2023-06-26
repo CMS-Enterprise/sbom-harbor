@@ -1,9 +1,11 @@
-use crate::entities::teams::{Member, Project, Token};
+use crate::entities::teams::{Repository, Token};
+use crate::entities::vendors::Product;
+use crate::entities::xrefs::Xref;
+use platform::auth::User;
 use serde::{Deserialize, Serialize};
 
-///  A Team is a named entity that can contain 3 child types:
-/// - [Project]
-/// - [Member]
+///  A Team is a named entity that can contain 2 child types:
+/// - [Repository]
 /// - [Token]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -12,15 +14,22 @@ pub struct Team {
     pub id: String,
     /// The name of the team.
     pub name: String,
-    /// Members of the Team.
-    #[serde(default = "Vec::new")]
-    pub members: Vec<Member>,
     /// Projects that are owned by the Team.
     #[serde(default = "Vec::new")]
-    pub projects: Vec<Project>,
+    pub repositories: Vec<Repository>,
     /// Tokens associated with the Team.
     #[serde(default = "Vec::new")]
     pub tokens: Vec<Token>,
+    /// A map of cross-references to internal and external systems.
+    pub xrefs: Vec<Xref>,
+    /// [User] instances that represent users that are members of the Team. Hydrated at
+    /// runtime from auth configuration.
+    #[serde(skip)]
+    pub members: Option<Vec<User>>,
+    /// [Product] instances that represent products that are managed by members of the Team.
+    /// Hydrated at runtime from auth configuration.
+    #[serde(skip)]
+    pub products: Option<Vec<Product>>,
 }
 
 impl Team {
@@ -29,21 +38,17 @@ impl Team {
         Self {
             id: "".to_string(),
             name,
-            members: Default::default(),
-            projects: Default::default(),
+            repositories: Default::default(),
             tokens: Default::default(),
+            xrefs: vec![],
+            members: None,
+            products: None,
         }
     }
 
-    /// Add a member to the members Vector.
-    pub fn members(&mut self, member: Member) -> &Self {
-        self.members.push(member);
-        self
-    }
-
-    /// Add a project to the projects Vector.
-    pub fn projects(&mut self, project: Project) -> &Self {
-        self.projects.push(project);
+    /// Add a repository to the repositories Vector.
+    pub fn repositories(&mut self, project: Repository) -> &Self {
+        self.repositories.push(project);
         self
     }
 
@@ -53,12 +58,8 @@ impl Team {
         self
     }
 
-    /// Determines if the specified codebase id is owned by a given project.
-    pub fn owns_project_and_codebase(&self, project_id: String, codebase_id: String) -> bool {
-        self.projects
-            .iter()
-            .find(|p| p.id == *project_id)
-            .and_then(|p: &Project| p.codebases.iter().find(|c| c.id == *codebase_id))
-            .is_some()
+    /// Determines if the specified repository is owned by a team instance.
+    pub fn owns_repository(&self, repository_id: String) -> bool {
+        self.repositories.iter().any(|p| p.id == repository_id)
     }
 }

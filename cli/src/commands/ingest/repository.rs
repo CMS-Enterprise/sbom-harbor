@@ -4,21 +4,24 @@ use crate::common::enrichments;
 use crate::common::ingestion;
 use crate::Error;
 use clap::Parser;
-use harbcore::entities::vendors::{Product, Vendor};
 
-// TODO: Refactor to handle vendors.
-
-/// Args for generating an SBOM from the filesystem.
+/// Args for generating an SBOM from a git repository.
 #[derive(Clone, Debug, Parser)]
-pub struct FileSystemArgs {
-    /// Path to a pre-processed SBOM file. The CLI will process the SBOM and store the raw file
-    /// using the configured storage provider. Requires the `source` flag also be specified.
+pub struct RepositoryArgs {
+    /// Path to a git repository. The CLI will attempt to generate an SBOM for it using the
+    /// Syft CLI. It will then process the SBOM and store the raw file using the configured
+    /// storage provider.
     #[arg(long)]
-    pub(crate) file: Option<String>,
+    pub(crate) path: String,
 
-    /// Source of the pre-processed SBOM file. Ignored if the `path` flag is specified.
+    /// The name of the package the SBOM represents.
     #[arg(long)]
-    pub(crate) source: Option<String>,
+    pub(crate) name: String,
+
+    /// The version of the package the SBOM represents. If not set, the CLI will use a shortened
+    /// version of the current commit hash.
+    #[arg(long)]
+    pub(crate) version: Option<String>,
 
     /// Indicates whether to enrich the SBOM once it has been ingested. Defaults to false if
     /// omitted.
@@ -26,23 +29,13 @@ pub struct FileSystemArgs {
     pub(crate) enrich: bool,
 }
 
-impl FileSystemArgs {
-    pub fn to_opts(&self, debug: bool) -> Result<ingestion::VendorOpts, Error> {
-        Ok(ingestion::VendorOpts {
-            file: "".to_string(),
-            vendor: Vendor {
-                id: "".to_string(),
-                name: "".to_string(),
-                products: vec![],
-            },
-            product: Product {
-                id: "".to_string(),
-                name: "".to_string(),
-                version: "".to_string(),
-            },
-            name: "".to_string(),
+impl RepositoryArgs {
+    pub fn to_opts(&self, debug: bool) -> Result<ingestion::RepositoryOpts, Error> {
+        Ok(ingestion::RepositoryOpts {
+            path: self.path.clone(),
+            package_name: self.name.clone(),
+            package_version: self.version.clone(),
             debug,
-            version: "".to_string(),
         })
     }
 }
@@ -51,9 +44,9 @@ pub(crate) async fn execute(args: &IngestArgs) -> Result<(), Error> {
     // TODO: this debug passing is a recognized code smell. We need to get the StorageProviders
     // consolidated and then we can handle everything in one place in the CommandContext.
     let debug = args.debug;
-    let args = match &args.filesystem_args {
+    let args = match &args.repository_args {
         None => {
-            return Err(Error::InvalidArg("filesystem args required".to_string()));
+            return Err(Error::InvalidArg("repository args required".to_string()));
         }
         Some(args) => args,
     };
@@ -62,13 +55,13 @@ pub(crate) async fn execute(args: &IngestArgs) -> Result<(), Error> {
         Ok(args) => args,
         Err(e) => {
             return Err(Error::Ingest(format!(
-                "error parsing filesystem args: {}",
+                "error parsing repository args: {}",
                 e
             )));
         }
     };
 
-    let (raw, sbom) = ingestion::ingest_vendor_supplied(&opts).await?;
+    let (raw, sbom) = ingestion::ingest_repository(&opts).await?;
     if debug {
         common::pretty_print_json(raw.as_str());
     }

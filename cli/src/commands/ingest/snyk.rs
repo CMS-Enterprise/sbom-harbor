@@ -42,8 +42,8 @@ pub(crate) async fn execute(args: &IngestArgs) -> Result<(), Error> {
         PackageService::new(cx.store.clone()),
         SbomService::new(
             cx.store.clone(),
-            storage,
-            PackageService::new(cx.store.clone()),
+            Some(storage),
+            Some(PackageService::new(cx.store.clone())),
         ),
     )
     .map_err(|e| Error::Ingest(e.to_string()))?;

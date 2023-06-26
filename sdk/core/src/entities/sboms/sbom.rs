@@ -90,7 +90,7 @@ impl Sbom {
         author: Author,
         package_manager: Option<String>,
         xref: Xref,
-        task: &Task,
+        task: Option<&Task>,
     ) -> Result<Sbom, Error> {
         let bom: Bom = match Bom::parse(raw, CdxFormat::Json) {
             Ok(bom) => bom,
@@ -150,7 +150,12 @@ impl Sbom {
             dependencies: None,
         };
 
-        sbom.join_task(purl, task)?;
+        match task {
+            None => {}
+            Some(task) => {
+                sbom.join_task(purl, task)?;
+            }
+        }
 
         Ok(sbom)
     }

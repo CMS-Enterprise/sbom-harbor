@@ -24,3 +24,6 @@ pub mod enrichments;
 
 /// Models for Analytics
 pub mod analytics;
+
+/// Persistence models that support storing and managing SBOMs for vendor products.
+pub mod vendors;

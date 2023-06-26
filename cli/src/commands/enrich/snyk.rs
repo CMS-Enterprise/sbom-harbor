@@ -55,7 +55,7 @@ pub async fn execute(args: &EnrichArgs) -> Result<(), Error> {
         store.clone(),
         SnykService::new(token),
         PackageService::new(store.clone()),
-        VulnerabilityService::new(store, storage),
+        VulnerabilityService::new(store, Some(storage)),
     )
     .map_err(|e| Error::Enrich(e.to_string()))?;
 

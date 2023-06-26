@@ -10,7 +10,7 @@ fn test_team_model(test_name: &str) -> Team {
         id: "".to_string(),
         name: test_name.to_string(),
         members: vec![],
-        projects: vec![],
+        repositories: vec![],
         tokens: vec![],
     }
 }

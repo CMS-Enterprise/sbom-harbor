@@ -11,7 +11,7 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct VulnerabilityService {
     store: Arc<Store>,
-    pub(crate) storage: Box<dyn StorageProvider>,
+    pub(crate) storage: Option<Box<dyn StorageProvider>>,
 }
 
 impl Service<Vulnerability> for VulnerabilityService {
@@ -22,8 +22,14 @@ impl Service<Vulnerability> for VulnerabilityService {
 
 impl VulnerabilityService {
     /// Factory method to create new instances of type.
-    pub fn new(store: Arc<Store>, storage: Box<dyn StorageProvider>) -> Self {
+    pub fn new(store: Arc<Store>, storage: Option<Box<dyn StorageProvider>>) -> Self {
         Self { store, storage }
+    }
+
+    /// Queries the data store for vulnerabilities related to a Purl.
+    pub async fn find_by_purl(&self, purl: &str) -> Result<Vec<Vulnerability>, Error> {
+        let result = self.query(HashMap::from([("purl", purl)])).await?;
+        Ok(result)
     }
 
     /// Stores the set of [Vulnerability] instances for a [Package] using the configured
@@ -40,8 +46,14 @@ impl VulnerabilityService {
             Some(purl) => purl.as_str(),
         };
 
-        match self
-            .storage
+        let storage = match &self.storage {
+            None => {
+                return Err(Error::Config("storage_provider_none".to_string()));
+            }
+            Some(storage) => storage,
+        };
+
+        match storage
             .write(purl, package.vulnerabilities.as_slice(), &package.xrefs)
             .await
         {

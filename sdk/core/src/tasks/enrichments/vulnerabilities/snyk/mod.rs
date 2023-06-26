@@ -43,9 +43,9 @@ mod tests {
             PackageService::new(store.clone()),
             VulnerabilityService::new(
                 store,
-                Box::new(FileSystemStorageProvider::new(
+                Some(Box::new(FileSystemStorageProvider::new(
                     "/tmp/harbor/vulnerabilities".to_string(),
-                )),
+                ))),
             ),
         )?;
 

@@ -36,8 +36,8 @@ impl XrefService<Sbom> for SbomService {}
 #[derive(Debug)]
 pub struct SbomService {
     store: Arc<Store>,
-    storage: Box<dyn StorageProvider>,
-    packages: PackageService,
+    storage: Option<Box<dyn StorageProvider>>,
+    packages: Option<PackageService>,
 }
 
 impl Service<Sbom> for SbomService {
@@ -50,8 +50,8 @@ impl SbomService {
     /// Factory method for creating new instance of type.
     pub fn new(
         store: Arc<Store>,
-        storage: Box<dyn StorageProvider>,
-        packages: PackageService,
+        storage: Option<Box<dyn StorageProvider>>,
+        packages: Option<PackageService>,
     ) -> Self {
         Self {
             store,
@@ -67,7 +67,7 @@ impl SbomService {
         package_manager: Option<String>,
         provider: SbomProviderKind,
         xref: Xref,
-        task: &Task,
+        task: Option<&Task>,
     ) -> Result<Sbom, Error> {
         // Load the raw SBOM into the Harbor model.
         let mut sbom = match Sbom::from_raw_cdx(
@@ -143,9 +143,15 @@ impl SbomService {
             }
         };
 
+        let packages = match &self.packages {
+            None => {
+                return Err(Error::Config("package_service_none".to_string()));
+            }
+            Some(packages) => packages,
+        };
+
         // Upsert the Package for the SBOM target
-        match self
-            .packages
+        match packages
             .upsert_package_by_purl(&mut package, Some(&xref))
             .await
         {
@@ -165,8 +171,7 @@ impl SbomService {
 
         // Upsert packages for each dependency.
         for dependency in package.dependencies.iter_mut() {
-            match self
-                .packages
+            match packages
                 .upsert_package_by_purl(dependency, Some(&xref))
                 .await
             {
@@ -196,8 +201,15 @@ impl SbomService {
         sbom: &mut Sbom,
         xref: Option<Xref>,
     ) -> Result<(), Error> {
+        let storage = match &self.storage {
+            None => {
+                return Err(Error::Config("storage_none".to_string()));
+            }
+            Some(storage) => storage,
+        };
+
         // Persist to some sort of permanent storage.
-        self.storage.write(raw, sbom, &xref).await?;
+        storage.write(raw, sbom, &xref).await?;
 
         Ok(())
     }

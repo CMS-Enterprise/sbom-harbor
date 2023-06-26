@@ -119,3 +119,15 @@ pub enum Maturity {
     /// No exploit code is available, or an exploit is theoretical.
     Unproven,
 }
+
+impl Display for Maturity {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Maturity::NotDefined => write!(f, "notDefined"),
+            Maturity::High => write!(f, "high"),
+            Maturity::Functional => write!(f, "functional"),
+            Maturity::ProofOfConcept => write!(f, "proofOfConcept"),
+            Maturity::Unproven => write!(f, "unproven"),
+        }
+    }
+}

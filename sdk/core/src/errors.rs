@@ -3,6 +3,9 @@ use thiserror::Error;
 /// Represents all exposed Errors for this crate.
 #[derive(Error, Debug)]
 pub enum Error {
+    /// Analytic provider error.
+    #[error("analytic provider error: {0}")]
+    Analytic(String),
     /// Configuration error.
     #[error("config error: {0}")]
     Config(String),
@@ -18,6 +21,9 @@ pub enum Error {
     /// Error during db migrations.
     #[error("migrations error: {0}")]
     Migrations(String),
+    /// Platform pass through.
+    #[error("platform error: {0}")]
+    Platform(#[from] platform::Error),
     /// Error calling remote resource.
     #[error("remote error: {0}")]
     Remote(String),
@@ -39,15 +45,6 @@ pub enum Error {
     /// Vulnerability provider error.
     #[error("vulnerability provider error: {0}")]
     Vulnerability(String),
-    /// Analytic provider error.
-    #[error("analytic provider error: {0}")]
-    Analytic(String),
-}
-
-impl From<platform::Error> for Error {
-    fn from(value: platform::Error) -> Self {
-        Error::Runtime(format!("{:?}", value))
-    }
 }
 
 impl From<platform::hyper::Error> for Error {

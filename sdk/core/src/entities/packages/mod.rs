@@ -6,6 +6,7 @@ mod xrefs;
 pub use cdx::*;
 pub use package::*;
 pub use unsupported::*;
+pub use xrefs::*;
 
 use super::xrefs::xref;
 use super::xrefs::{Xref, Xrefs};

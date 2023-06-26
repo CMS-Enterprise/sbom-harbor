@@ -33,6 +33,12 @@ impl PackageService {
         Self { store }
     }
 
+    /// Queries the data store for packages related to a Purl.
+    pub async fn find_by_purl(&self, purl: &str) -> Result<Vec<Package>, Error> {
+        let result = self.query(HashMap::from([("purl", purl)])).await?;
+        Ok(result)
+    }
+
     /// Transaction logic for upserting a detected [Package].
     pub(crate) async fn upsert_package_by_purl(
         &self,

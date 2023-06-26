@@ -7,11 +7,15 @@ use std::sync::Arc;
 
 /// Application logic related to enrichments.
 pub mod enrichments;
+
 /// Application logic related to the ingestion and management of sboms.
 pub mod ingestion;
 
 /// Testing logic and types related to testing the cli application.
 pub mod testing;
+
+/// Application logic related to the analysis of sboms and related enrichment data.
+pub mod analytics;
 
 /// Encapsulates the execution context of a CLI command.
 pub(crate) struct CommandContext {

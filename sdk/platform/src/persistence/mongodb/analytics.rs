@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 #[allow(unused_imports)]
 use serde_json::{json, Value};
 
-use crate::persistence::mongodb::{Context, Store};
+use crate::persistence::mongodb::Store;
 use crate::Error;
 #[allow(unused_imports)]
 use tracing::trace;
@@ -115,53 +115,4 @@ impl Stage {
             Err(err) => panic!("Failed to create BSON document: {}", err),
         }
     }
-}
-
-#[tokio::test]
-#[ignore = "debug manual only"]
-async fn analytic_test() {
-    let cx = match test_context(None) {
-        Ok(cx) => cx,
-        Err(e) => {
-            trace!("unable to retrieve connection config: {}", e);
-            return;
-        }
-    };
-
-    let store = Arc::new(Store::new(&cx).await.unwrap());
-    let analytic = Pipeline::new(store);
-
-    let json: Value = json!({
-        "$match": {
-            "purl": "pkg:npm/bic-api@1.0.0"
-        }
-    });
-
-    let stage = Stage::new(json);
-
-    analytic.add_stage(stage);
-
-    match analytic.execute_on("Sbom").await {
-        Ok(value) => println!("Value: {:#?}", value),
-        Err(_) => assert!(false, "Test Failed, got error"),
-    };
-}
-
-/// Create a test context for the test above.
-/// For the CODE REVIEW: How should this be done?
-pub fn test_context(db_name: Option<&str>) -> Result<Context, Error> {
-    let db_name = match db_name {
-        None => "harbor",
-        Some(db_name) => db_name,
-    };
-
-    Ok(Context {
-        host: "mongo".to_string(),
-        username: "root".to_string(),
-        password: "harbor".to_string(),
-        port: 27017,
-        db_name: db_name.to_string(),
-        key_name: "id".to_string(),
-        connection_uri: None,
-    })
 }

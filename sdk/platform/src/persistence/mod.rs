@@ -5,6 +5,9 @@ pub mod mongodb;
 /// Provides AWS S3 specific persistence capabilities.
 pub mod s3;
 
+/// Provides csv persistence capabilities.
+pub mod csv;
+
 #[cfg(test)]
 mod tests {
     use crate::config::from_env;

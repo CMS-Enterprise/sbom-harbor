@@ -1,5 +1,9 @@
 use platform::auth::{Action, Effect};
+use platform::persistence::mongodb::analytics::{Pipeline, Stage};
+use platform::persistence::mongodb::Store;
 use platform::Error;
+use serde_json::{json, Value};
+use std::sync::Arc;
 
 mod common;
 use crate::common::mongodb::{local_context, AuthScenario};
@@ -20,6 +24,30 @@ async fn can_create_local_cluster() -> Result<(), Error> {
 async fn can_crud() -> Result<(), Error> {
     println!("can_crud not implemented");
     Ok(())
+}
+
+#[async_std::test]
+#[ignore = "debug manual only"]
+async fn analytic_test() {
+    let cx = local_context().await?;
+
+    let store = Arc::new(Store::new(&cx).await.unwrap());
+    let analytic = Pipeline::new(store);
+
+    let json: Value = json!({
+        "$match": {
+            "purl": "pkg:npm/bic-api@1.0.0"
+        }
+    });
+
+    let stage = Stage::new(json);
+
+    analytic.add_stage(stage);
+
+    match analytic.execute_on("Sbom").await {
+        Ok(value) => println!("Value: {:#?}", value),
+        Err(_) => assert!(false, "Test Failed, got error"),
+    };
 }
 
 // Tests that if a user has no policy assigned for the default scenario resource they are denied.

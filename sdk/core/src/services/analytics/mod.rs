@@ -1,3 +1,6 @@
+/// Export models useful for analytics and reporting (e.g. SbomSummary, PackageSummary)
+pub mod models;
+
 /// Module to support analysis on SBOMs
 pub mod sboms;
 

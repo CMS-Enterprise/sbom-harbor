@@ -2,27 +2,30 @@ use crate::entities::xrefs::{Xref, XrefKind};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// Set of ids used to cross-reference an entity to a [Codebase].
+/// Set of ids used to cross-reference an entity to a [BuildTarget].
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CodebaseRef {
-    /// Id of the Team that contains the [Project] that contains the [Codebase].
+pub struct BuildTargetRef {
+    /// Id of the Team that contains the [Repository] that contains the [BuildTarget].
     pub team_id: String,
-    /// Id of the [Project] that contains the [Codebase]
-    pub project_id: String,
-    /// Id of the [Codebase].
-    pub codebase_id: String,
+    /// Id of the [Repository] that contains the [BuildTarget]
+    pub repository_id: String,
+    /// Id of the [BuildTarget].
+    pub build_target_id: String,
 }
 
-impl From<CodebaseRef> for Xref {
-    fn from(codebase_ref: CodebaseRef) -> Xref {
+impl From<BuildTargetRef> for Xref {
+    fn from(build_target_ref: BuildTargetRef) -> Xref {
         Xref {
-            kind: XrefKind::Codebase,
+            kind: XrefKind::BuildTarget,
             map: {
                 HashMap::from([
-                    ("team_id".to_string(), codebase_ref.team_id.clone()),
-                    ("project_id".to_string(), codebase_ref.project_id.clone()),
-                    ("codebase_id".to_string(), codebase_ref.codebase_id),
+                    ("team_id".to_string(), build_target_ref.team_id.clone()),
+                    (
+                        "project_id".to_string(),
+                        build_target_ref.repository_id.clone(),
+                    ),
+                    ("codebase_id".to_string(), build_target_ref.build_target_id),
                 ])
             },
         }

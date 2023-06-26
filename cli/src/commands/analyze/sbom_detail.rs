@@ -38,7 +38,7 @@ pub(crate) async fn execute(args: &AnalyzeArgs) -> Result<(), Error> {
             .map_err(|e| Error::Analyze(e.to_string()))?,
     );
 
-    let provider = DetailTask::new(AnalyticService::new(store, storage));
+    let provider = DetailTask::new(AnalyticService::new(store, Some(storage)));
 
     match &args.detail_args {
         None => {

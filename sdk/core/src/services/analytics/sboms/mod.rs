@@ -1,2 +1,2 @@
-/// Expose the Analytic Service.
+/// Export the Analytic Service.
 pub mod service;

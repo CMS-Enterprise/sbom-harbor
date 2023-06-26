@@ -43,6 +43,8 @@ pub enum Commands {
 /// Allows specifying the output format.
 #[derive(Clone, Debug)]
 pub enum OutputFormat {
+    /// Output as CSV,
+    Csv,
     /// Output as JSON.
     Json,
     /// Output as plaintext.
@@ -51,15 +53,14 @@ pub enum OutputFormat {
 
 impl ValueEnum for OutputFormat {
     fn value_variants<'a>() -> &'a [Self] {
-        &[Self::Json, Self::Text]
+        &[Self::Csv, Self::Json, Self::Text]
     }
 
     fn to_possible_value(&self) -> Option<PossibleValue> {
         Some(match self {
-            OutputFormat::Json => PossibleValue::new("json").help("print output as json to stdout"),
-            OutputFormat::Text => {
-                PossibleValue::new("text").help("print output as plain text to stdout")
-            }
+            OutputFormat::Csv => PossibleValue::new("csv").help("return output as csv"),
+            OutputFormat::Json => PossibleValue::new("json").help("return output as json"),
+            OutputFormat::Text => PossibleValue::new("text").help("return output as plain text"),
         })
     }
 }

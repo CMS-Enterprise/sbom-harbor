@@ -3,7 +3,13 @@ use serde_derive::{Deserialize, Serialize};
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 
+use crate::entities::enrichments::Vulnerability;
+use crate::entities::packages::Package;
+use crate::services::analytics::models::{PackageSummary, SbomSummary, VulnerabilitySummary};
 use crate::services::analytics::StorageProvider;
+use crate::services::packages::PackageService;
+use crate::services::sboms::SbomService;
+use crate::services::vulnerabilities::VulnerabilityService;
 use crate::Error;
 use platform::mongo_doc;
 use platform::persistence::mongodb::analytics::{Pipeline, Stage};
@@ -225,13 +231,13 @@ fn report_analytic_stage_11() -> Stage {
 /// Service to create and run analytics on DocumentDB
 pub struct AnalyticService {
     pub(crate) store: Arc<MongoStore>,
-    pub(crate) storage: Arc<dyn StorageProvider>,
+    pub(crate) storage: Option<Arc<dyn StorageProvider>>,
     pub(crate) pipeline: Pipeline,
 }
 
 impl AnalyticService {
     /// Creates a new AnalyticService
-    pub fn new(store: Arc<MongoStore>, storage: Arc<dyn StorageProvider>) -> Self {
+    pub fn new(store: Arc<MongoStore>, storage: Option<Arc<dyn StorageProvider>>) -> Self {
         let pipeline = Pipeline::new(store.clone());
 
         AnalyticService {
@@ -315,17 +321,66 @@ impl AnalyticService {
             }
         };
 
-        match self
-            .storage
-            .write(purl.as_str(), json, "detailed-report")
-            .await
-        {
+        let storage = match &self.storage {
+            None => {
+                return Err(Error::Config("storage_provider_none".to_string()));
+            }
+            Some(storage) => storage,
+        };
+
+        match storage.write(purl.as_str(), json, "detailed-report").await {
             Ok(path) => Ok(Some(path)),
             Err(e) => Err(Error::Analytic(format!(
                 "vulnerability::store_by_purl::write::{}",
                 e
             ))),
         }
+    }
+
+    /// Gets a summary of Sboms and their related vulnerability data by package.
+    pub async fn sbom_vulnerabilities(&self) -> Result<Vec<SbomSummary>, Error> {
+        let mut summaries = vec![];
+        let vulnerability_service = VulnerabilityService::new(self.store.clone(), None);
+        let package_service = PackageService::new(self.store.clone());
+        let sbom_service = SbomService::new(self.store.clone(), None, None);
+
+        let sboms = sbom_service.list().await?;
+        let packages: Vec<Package> = package_service.list().await?;
+        let vulns = vulnerability_service.list().await?;
+
+        for sbom in sboms.iter() {
+            let mut summary = SbomSummary::from_entity(sbom);
+            for purl in &summary.dependency_refs {
+                let package = match packages
+                    .iter()
+                    .find(|p| p.purl.is_some() && p.purl.clone().unwrap().as_str() == purl)
+                {
+                    Some(p) => p,
+                    None => {
+                        println!("package_none::{}", purl);
+                        continue;
+                    }
+                };
+
+                let mut package_summary = PackageSummary::from_entity(package);
+
+                for vuln in vulns
+                    .iter()
+                    .filter(|v| v.purl.as_str() == purl)
+                    .collect::<Vec<&Vulnerability>>()
+                {
+                    package_summary
+                        .vulnerabilities
+                        .push(VulnerabilitySummary::from_entity(vuln));
+                }
+
+                summary.dependencies.push(package_summary);
+            }
+
+            summaries.push(summary);
+        }
+
+        Ok(summaries)
     }
 }
 
@@ -351,7 +406,7 @@ impl Debug for AnalyticService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use platform::persistence::mongodb::analytics::test_context;
+    use crate::config::dev_context;
     use platform::persistence::mongodb::{Context, Store as MongoStore};
 
     // Mock StorageProvider implementation for testing
@@ -375,15 +430,15 @@ mod tests {
     #[ignore = "debug manual only"]
     async fn test_get_primary_purls() {
         // Mock store and storage provider
-        let cxt: &Context = &test_context(Some("harbor")).expect("Unable to create a test context");
-        let raw_store = MongoStore::new(cxt)
+        let cx: Context = dev_context(Some("harbor")).expect("Unable to create a test context");
+        let raw_store = MongoStore::new(&cx)
             .await
             .expect("Unable to unwrap MongoStore");
         let store = Arc::new(raw_store);
         let storage = Arc::new(MockStorageProvider);
 
         // Create AnalyticService
-        let analytic_service = AnalyticService::new(store, storage);
+        let analytic_service = AnalyticService::new(store, Some(storage));
 
         // Execute get_primary_purls
         let result = analytic_service.get_primary_purls().await;
@@ -396,15 +451,15 @@ mod tests {
     #[ignore = "debug manual only"]
     async fn test_generate_detail() {
         // Mock store and storage provider
-        let cxt: &Context = &test_context(Some("harbor")).expect("Unable to create a test context");
-        let raw_store = MongoStore::new(cxt)
+        let cx: Context = dev_context(Some("harbor")).expect("Unable to create a test context");
+        let raw_store = MongoStore::new(&cx)
             .await
             .expect("Unable to unwrap MongoStore");
         let store = Arc::new(raw_store);
         let storage = Arc::new(MockStorageProvider);
 
         // Create AnalyticService
-        let analytic_service = AnalyticService::new(store, storage);
+        let analytic_service = AnalyticService::new(store, Some(storage));
 
         // Execute generate_detail
         let result = analytic_service
@@ -415,5 +470,27 @@ mod tests {
         assert!(result.is_ok());
         let path = result.unwrap().unwrap();
         assert!(path.contains("pkg:npm/bic-api@1.0.0"));
+    }
+
+    #[tokio::test]
+    #[ignore = "debug manual only"]
+    async fn can_get_sbom_vulnerabilities() -> Result<(), Error> {
+        let cx: Context = dev_context(Some("harbor")).expect("Unable to create a test context");
+        let raw_store = MongoStore::new(&cx)
+            .await
+            .expect("Unable to unwrap MongoStore");
+
+        let store = Arc::new(raw_store);
+
+        // Create AnalyticService
+        let analytic_service = AnalyticService::new(store, None);
+
+        // Execute generate_detail
+        let result = analytic_service.sbom_vulnerabilities().await?;
+
+        // Check the result
+        assert!(!result.is_empty());
+
+        Ok(())
     }
 }

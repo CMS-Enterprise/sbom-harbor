@@ -43,20 +43,23 @@ impl PartialEq<Self> for Xref {
 #[serde(rename_all = "lowercase")]
 #[serde(remote = "XrefKind")]
 pub enum XrefKind {
-    /// [Xref] references a [Codebase] entity.
-    Codebase,
-    /// [Xref] references a [Product] entity.
-    Product,
+    /// [Xref] references a [BuildTarget] entity.
+    BuildTarget,
     /// [Xref] references values from an external system.
     External(String),
+    /// [Xref] references a [Product] entity.
+    Product,
+    /// [Xref] references a [Repository] entity.
+    Repository,
 }
 
 impl Display for XrefKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            XrefKind::Codebase => write!(f, "codebase"),
-            XrefKind::Product => write!(f, "product"),
+            XrefKind::BuildTarget => write!(f, "build-target"),
             XrefKind::External(name) => write!(f, "external::{}", name.to_lowercase()),
+            XrefKind::Product => write!(f, "product"),
+            XrefKind::Repository => write!(f, "repository"),
         }
     }
 }
