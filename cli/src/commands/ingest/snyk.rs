@@ -53,7 +53,11 @@ pub(crate) async fn execute(args: &IngestArgs) -> Result<(), Error> {
         store.clone(),
         SnykService::new(token),
         PackageService::new(store.clone()),
-        SbomService::new(store, storage),
+        SbomService::new(
+            store.clone(),
+            storage,
+            Some(PackageService::new(store.clone())),
+        ),
     )
     .map_err(|e| Error::Sbom(e.to_string()))?;
 
