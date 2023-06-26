@@ -41,10 +41,11 @@ mod tests {
             SnykService::new(token),
             PackageService::new(store.clone()),
             SbomService::new(
-                store,
+                store.clone(),
                 Box::new(FileSystemStorageProvider::new(
                     "/tmp/harbor/sboms".to_string(),
                 )),
+                Some(PackageService::new(store.clone())),
             ),
         )?;
 
