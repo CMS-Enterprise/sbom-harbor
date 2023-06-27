@@ -4,10 +4,7 @@ use axum::response::{IntoResponse, Response};
 
 /// Health check handler.
 pub async fn get() -> Result<Response, Error> {
-    harbcore::health::check(false).await?;
-
     let response = healthy();
-
     Ok(response.into_response())
 }
 
