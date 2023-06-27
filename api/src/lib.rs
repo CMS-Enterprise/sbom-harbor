@@ -12,5 +12,6 @@ pub mod controllers;
 
 /// Error module for the crate.
 mod errors;
+
 /// Error type for the crate.
 pub use errors::Error;

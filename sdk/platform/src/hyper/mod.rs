@@ -8,8 +8,12 @@ use std::fmt::{Display, Formatter};
 use thiserror::Error;
 
 mod client;
+
 pub use client::Client;
 pub use hyper::{Method, StatusCode};
+
+/// Utility functions for interacting with a Hyper HttpBody.
+pub mod body;
 
 const CONTENT_TYPE: &str = "content-type";
 

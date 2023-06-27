@@ -1,6 +1,6 @@
 use crate::Error;
-use std::time::{SystemTime, UNIX_EPOCH};
 use chrono::{DateTime, NaiveDateTime, Utc};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Generates a timestamp in seconds since `UNIX_EPOCH`.
 pub fn timestamp() -> Result<u64, Error> {
@@ -15,7 +15,6 @@ pub fn timestamp() -> Result<u64, Error> {
 /// Generates an rfc3339 time stamp which is an implementation of
 /// a iso8601 timestamp.
 pub fn iso8601_timestamp() -> Result<String, Error> {
-
     let unix_timestamp: u64 = timestamp()?;
 
     // if the u64 is greater than the maximum value an i64 can hold
@@ -25,11 +24,10 @@ pub fn iso8601_timestamp() -> Result<String, Error> {
     // we get a reasonable value for the timestamp.
     let i64_unix_ts = unix_timestamp as i64;
     if i64_unix_ts <= 0 {
-        return Err(
-            Error::Time(
-                format!("Unix timestamp is too large: {}", unix_timestamp)
-            )
-        )
+        return Err(Error::Time(format!(
+            "Unix timestamp is too large: {}",
+            unix_timestamp
+        )));
     }
 
     let naive_datetime = NaiveDateTime::from_timestamp_opt(i64_unix_ts, 0).unwrap();
