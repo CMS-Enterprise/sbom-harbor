@@ -2,7 +2,7 @@
 generatorName: typescript-fetch
 gitUserId: CMS-Enterprise
 gitRepoId: sbom-harbor/openapi/client
-inputSpec: /local/spec-v2.yaml
+inputSpec: /local/spec.yaml
 outputDir: /local/client/gen
 packageName: harbor-client
 packageVersion: 2.0.0
