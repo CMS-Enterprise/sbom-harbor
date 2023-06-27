@@ -18,16 +18,22 @@ pub enum Error {
     /// Invalid subcommand.
     #[error("invalid subcommand: {0}")]
     InvalidSubcommand(String),
+    /// Runtime error.
+    #[error("Runtime error: {0}")]
+    Runtime(String),
     /// Sbom runtime error.
     #[error("sbom: {0}")]
     Sbom(String),
-    /// System error.
-    #[error("system: {0}")]
-    System(String),
+}
+
+impl From<harbcore::Error> for Error {
+    fn from(value: harbcore::Error) -> Self {
+        Error::Runtime(value.to_string())
+    }
 }
 
 impl From<platform::Error> for Error {
-    fn from(error: platform::Error) -> Self {
-        Error::System(error.to_string())
+    fn from(value: platform::Error) -> Self {
+        Error::Runtime(value.to_string())
     }
 }

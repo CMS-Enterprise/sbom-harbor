@@ -91,6 +91,7 @@ async fn main() {
 
     let harbor = Router::new()
         .fallback(handler_404)
+        .route("/health", get(controllers::health::get))
         .route("/teams", get(controllers::team::list))
         .route("/team/:id", get(controllers::team::get))
         .route("/team", post(controllers::team::post))
@@ -100,7 +101,7 @@ async fn main() {
         .layer(cors)
         .layer(tracer);
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 5000));
     info!("harbor listening on {}", addr);
 
     axum::Server::bind(&addr)

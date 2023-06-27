@@ -34,6 +34,8 @@ pub enum Error {
 
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
+        let status_message = self.to_string();
+
         let (status_code, message) = match self {
             Error::InvalidParameters(m) => (StatusCode::UNPROCESSABLE_ENTITY, m),
             Error::InvalidToken(m) => (StatusCode::BAD_REQUEST, m),
@@ -47,6 +49,37 @@ impl IntoResponse for Error {
 
         info!("{}: {}", status_code, message);
 
-        (status_code, message).into_response()
+        // Send back the string representation of the enum to make sure server side errors aren't
+        // leaked to clients.
+        (status_code, status_message).into_response()
+    }
+}
+
+impl From<harbcore::Error> for Error {
+    fn from(value: harbcore::Error) -> Self {
+        Error::InternalServerError(value.to_string())
+    }
+}
+
+impl From<platform::Error> for Error {
+    fn from(value: platform::Error) -> Self {
+        Error::InternalServerError(value.to_string())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[async_std::test]
+    pub async fn can_mask_error_message() -> Result<(), Error> {
+        let error = Error::InternalServerError("leak".to_string());
+
+        let response = error.into_response();
+        let body = platform::hyper::body::to_string(response.into_body()).await?;
+
+        assert!(!body.contains("leak"));
+
+        Ok(())
     }
 }

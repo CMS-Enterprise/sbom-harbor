@@ -89,3 +89,6 @@ mod migrations;
 
 /// Runtime configuration helpers.
 pub mod config;
+
+/// Runtime health check helpers.
+pub mod health;
