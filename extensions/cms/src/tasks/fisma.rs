@@ -7,6 +7,7 @@ use harbcore::entities::tasks::Task;
 use harbcore::entities::xrefs::XrefKind;
 use harbcore::errors::Error;
 use harbcore::services::packages::PackageService;
+use harbcore::services::sboms::SbomService;
 use harbcore::services::snyk::SNYK_DISCRIMINATOR;
 use harbcore::services::xrefs::XrefService;
 use harbcore::tasks::TaskProvider;
@@ -19,6 +20,7 @@ use crate::services::snyk::{extract_xref, SnykService};
 pub struct FismaTask {
     store: Arc<Store>,
     packages: PackageService,
+    sboms: SbomService,
     snyk: SnykService,
 }
 
@@ -33,7 +35,8 @@ impl FismaTask {
 
         Ok(FismaTask {
             store: store.clone(),
-            packages: PackageService::new(store),
+            packages: PackageService::new(store.clone()),
+            sboms: SbomService::new(store.clone(), None, Some(PackageService::new(store))),
             snyk: SnykService::new(token),
         })
     }
@@ -149,18 +152,52 @@ impl TaskProvider for FismaTask {
                 }
             };
 
+            // Apply the Xref to the package instance.
             match self
                 .packages
                 .save_xref(HashMap::from([("id", package.id.as_str())]), &xref)
                 .await
             {
                 Ok(_) => {
-                    println!("==> fisma xref save succeeded for {}", purl);
+                    println!("==> package fisma xref save succeeded for {}", purl);
                 }
                 Err(e) => {
-                    println!("==> fisma xref save failed for {} with: {}", purl, e);
+                    println!(
+                        "==> package fisma xref save failed for {} with: {}",
+                        purl, e
+                    );
                     errors.insert(purl.clone(), e.to_string());
                     continue;
+                }
+            }
+
+            // Now add the same Xref to all Sbom instances.
+            let sboms = match self.sboms.find_by_purl(&package.purl).await {
+                Ok(sboms) => {
+                    println!("==> found {} sboms for package purl {}", sboms.len(), purl);
+                    sboms
+                }
+                Err(e) => {
+                    println!("==> sbom lookup failed for purl {} with: {}", purl, e);
+                    errors.insert(purl.clone(), e.to_string());
+                    continue;
+                }
+            };
+
+            for sbom in sboms.iter() {
+                match self
+                    .sboms
+                    .save_xref(HashMap::from([("id", sbom.id.as_str())]), &xref)
+                    .await
+                {
+                    Ok(_) => {
+                        println!("==> sbom fisma xref save succeeded for {}", purl);
+                    }
+                    Err(e) => {
+                        println!("==> sbom fisma xref save failed for {} with: {}", purl, e);
+                        errors.insert(purl.clone(), e.to_string());
+                        continue;
+                    }
                 }
             }
         }

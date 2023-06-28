@@ -11,7 +11,17 @@ use tracing::instrument;
 /// Ensuring the s3 key is safe
 pub fn make_s3_key_safe(purl: &str) -> Result<String, Error> {
     let re = Regex::new(r"[^A-Za-z0-9]").unwrap();
-    Ok(re.replace_all(purl, "-").to_string())
+    let result = re.replace_all(purl, "-");
+    let mut result = result.as_ref();
+    result = result.trim_end_matches('-');
+
+    let mut result = result.trim_start_matches('-').to_string();
+
+    while result.contains("--") {
+        result = result.replace("--", "-");
+    }
+
+    Ok(result)
 }
 
 /// Provides a coarse-grained abstraction over S3 that conforms to the conventions of this crate.
@@ -175,4 +185,211 @@ impl Store {
             }
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Error;
+    use serde::{Deserialize, Serialize};
+
+    #[test]
+    pub fn can_format_purls_for_s3() -> Result<(), Error> {
+        let test_cases: Vec<PurlTestCase> =
+            serde_json::from_str(TEST_PURLS).map_err(|e| Error::Serde(e.to_string()))?;
+
+        for test_case in test_cases.iter() {
+            let result = make_s3_key_safe(test_case.purl.as_str())?;
+
+            println!("{}", result);
+
+            assert!(!result.starts_with('-'));
+            assert!(!result.ends_with('-'));
+            assert!(!result.contains("--"));
+            assert!(!result.contains("@"));
+            assert!(!result.contains('/'));
+            assert!(!result.contains("//"));
+            assert!(!result.contains("."));
+            assert!(!result.contains(","));
+            assert!(!result.contains("+"));
+            assert!(!result.contains("^"));
+            assert!(!result.contains("#"));
+            assert!(!result.contains("$"));
+            assert!(!result.contains("!"));
+            assert!(!result.contains("%"));
+            assert!(!result.contains("*"));
+            assert!(!result.contains("("));
+            assert!(!result.contains(")"));
+            assert!(!result.contains("{"));
+            assert!(!result.contains("}"));
+        }
+
+        Ok(())
+    }
+
+    #[derive(Clone, Debug, Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct PurlTestCase {
+        purl: String,
+    }
+
+    const TEST_PURLS: &str = r#"[{
+        "purl": "pkg:npm/foo-api@1.0.0"
+        },
+        {
+        "purl": "pkg:npm/foo-daily-redshift-foo@1.0.0"
+        },
+        {
+        "purl": "pkg:npm/foo@0.0.0"
+        },
+        {
+        "purl": "pkg:npm/foo-bar-baz@1.0.0"
+        },
+        {
+        "purl": "pkg:npm/foo@1.0.0"
+        },
+        {
+        "purl": "pkg:npm/%40sfoo/kubernetes-monitor"
+        },
+        {
+        "purl": "pkg:npm/foo-static-site@1.0.0"
+        },
+        {
+        "purl": "pkg:npm/foo-adminv2@0.1.0"
+        },
+        {
+        "purl": "pkg:npm/foo-ui@0.1.0"
+        },
+        {
+        "purl": "pkg:npm/foo-saf@1.0.0"
+        },
+        {
+        "purl": "pkg:npm/vue-project@0.1.0"
+        },
+        {
+        "purl": "pkg:maven/bar_baz/foo_138_master//aws/apache-jmeter-5.5/lib"
+        },
+        {
+        "purl": "pkg:maven/foo_jmeter/bar_138_master//aws/apache-jmeter-5.5/lib/ext"
+        },
+        {
+        "purl": "pkg:maven/foo_jmeter/bar//root/.bzt/bar-baz/5.4.3/lib"
+        },
+        {
+        "purl": "pkg:maven/foo_jmeter/taurus//root/.bzt/selenium-baz"
+        },
+        {
+        "purl": "pkg:maven/bar_jmeter/baz//root/.bzt/foo-bar/5.4.3/lib/ext"
+        },
+        {
+        "purl": "pkg:maven/foo/bar//home/baz-user/wf/standalone/blick"
+        },        
+        {
+        "purl": "pkg:maven/foo/bar//baz/newrelic"
+        },
+        {
+        "purl": "pkg:maven/foo/bar//baz/foo-bar/wf/modules/system/layers/base/org/wildfly/transaction/client/main"
+        },
+        {
+        "purl": "pkg:maven/com.hhs.cms.foo/bar-baz.it.blick@0.0.1-SNAPSHOT"
+        },
+        {
+        "purl": "pkg:maven/gov.hhs.cms.any/foo-bar-baz.ui.blick@1.1.20"
+        },
+        {
+        "purl": "pkg:maven/gov.hhs.cms.any/foo-bar-baz.ui.blick@1.1.20"
+        },
+        {
+        "purl": "pkg:maven/gov.hhs.cms.any/foo-bar-baz.it.blick@1.1.20"
+        },
+        {
+        "purl": "pkg:nuget/project"
+        },
+        {
+        "purl": "pkg:npm/single-module-nodejs@1.0.0"
+        },
+        {
+        "purl": "pkg:npm/demo-demo@0.1.0"
+        },
+        {
+        "purl": "pkg:npm/%40foo/7i-baz-lib@0.0.161"
+        },
+        {
+        "purl": "pkg:npm/7i-baz-lib@0.0.0"
+        },
+        {
+        "purl": "pkg:npm/foo-api@0.0.126"
+        },
+        {
+        "purl": "pkg:npm/7i-api-lookup-lib@0.0.0"
+        },
+        {
+        "purl": "pkg:npm/foo-lookup-api@0.0.99"
+        },
+        {
+        "purl": "pkg:npm/dksw-sf-rrr-foobar@0.1.0"
+        },
+        {
+        "purl": "pkg:npm/cdk@0.1.0"
+        },
+        {
+        "purl": "pkg:npm/foo-bar-data-runner@0.1.0"
+        },
+        {
+        "purl": "pkg:npm/foo-bar-data-runner"
+        },
+        {
+        "purl": "pkg:npm/foo@5.2.0"
+        },
+        {
+        "purl": "pkg:npm/%40foo-bar/bits-layout@BITS_VERSION"
+        },
+        {
+        "purl": "pkg:maven/org.foo.bar/bar-air-jordan@1.0.69-SNAPSHOT"
+        },
+        {
+        "purl": "pkg:npm/rrg@1.0.0"
+        },
+        {
+        "purl": "pkg:maven/org.foo.bar/FHIR-RGB-UI@8.1.26-SNAPSHOT"
+        },
+        {
+        "purl": "pkg:maven/org.foo.bar/FHIR-RGB-UI@5.1.9"
+        },
+        {
+        "purl": "pkg:composer/drupal/recommended-project@0.0.0"
+        },
+        {
+        "purl": "pkg:composer/drupal/recommended-project@0.0.0"
+        },
+        {
+        "purl": "pkg:maven/prod/foo-to-bar-orchestrator/latest//home/baz/analyzer/.developer/splunk/lib"
+        },
+        {
+        "purl": "pkg:npm/bar-infrastructure@0.0.1"
+        },
+        {
+        "purl": "pkg:npm/qpp-ui@0.0.1"
+        },
+        {
+        "purl": "pkg:npm/qpp-ui@0.0.1"
+        },
+        {
+        "purl": "pkg:npm/qpp-style@9.28.4"
+        },
+        {
+        "purl": "pkg:npm/foo-files@1.0.1-ds.2"
+        },
+        {
+        "purl": "pkg:npm/foo-bar-baz-docker@1.0.0"
+        },
+        {
+        "purl": "pkg:maven/foo/bar-tool/prod/latest//root/.baz/repository/org/springframework/spring-context/4.0.9.RELEASE"
+        },
+        {
+        "purl": "pkg:maven/foo/bar-baz/prod/latest//usr/src/run/newrelic"
+        },
+        {
+        "purl": "pkg:maven/foo/bar-baz/prod/latest//root/.m2/repository/org/springframework/boot/spring-boot-loader-tools/2.2.2.RELEASE"
+        }]"#;
 }

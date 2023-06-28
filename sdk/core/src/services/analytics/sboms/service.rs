@@ -56,6 +56,35 @@ fn report_analytic_stage_1(purl: String) -> Stage {
     }))
 }
 
+fn fisma_xref() -> Stage {
+    Stage::new(json!({
+        "$addFields": {
+          "fismaXref": {
+            "$filter": {
+                    "input": "$xrefs",
+                    "as": "xref",
+                    "cond": {
+                        "$eq": [
+                            "$$xref.kind",
+                            "external::fisma"
+                        ]
+                    }
+                }
+          },
+        }
+    }))
+}
+
+fn fisma_id() -> Stage {
+    Stage::new(json!({
+        "$addFields": {
+          "fismaId": {
+            "$first": "$fismaXref.map.id",
+          },
+        }
+    }))
+}
+
 /// Stage 2 in the Report analytic
 fn report_analytic_stage_2() -> Stage {
     Stage::new(json!({
@@ -67,7 +96,8 @@ fn report_analytic_stage_2() -> Stage {
             "created": 1,
             "packageManager": 1,
             "provider": 1,
-            "dependencyRefs": 1
+            "dependencyRefs": 1,
+            "fismaId": "$fismaId",
         }
     }))
 }
@@ -131,6 +161,9 @@ fn report_analytic_stage_6() -> Stage {
           },
           "created": {
             "$first": "$created"
+          },
+          "fismaId": {
+            "$first": "$fismaId"
           },
           "report": {
             "$push": "$report",
@@ -206,6 +239,9 @@ fn report_analytic_stage_11() -> Stage {
             },
             "created": {
                 "$first": "$created"
+            },
+            "fismaId": {
+                "$first": "$fismaId"
             },
             "report": {
                 "$push": {
@@ -284,6 +320,10 @@ impl AnalyticService {
     pub(crate) async fn generate_detail(&self, purl: String) -> Result<Option<String>, Error> {
         self.pipeline
             .add_stage(report_analytic_stage_1(purl.clone()));
+
+        self.pipeline.add_stage(fisma_xref());
+
+        self.pipeline.add_stage(fisma_id());
 
         self.pipeline.add_stage(report_analytic_stage_2());
 

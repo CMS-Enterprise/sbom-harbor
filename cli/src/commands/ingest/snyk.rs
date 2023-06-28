@@ -55,7 +55,7 @@ pub(crate) async fn execute(args: &IngestArgs) -> Result<(), Error> {
         PackageService::new(store.clone()),
         SbomService::new(
             store.clone(),
-            storage,
+            Some(storage),
             Some(PackageService::new(store.clone())),
         ),
     )

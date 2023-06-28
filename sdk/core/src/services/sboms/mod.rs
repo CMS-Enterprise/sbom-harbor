@@ -96,7 +96,9 @@ impl StorageProvider for S3StorageProvider {
         // TODO: Probably want to inject these values.
         let s3_store = s3::Store::new_from_env().await?;
         let bucket_name = config::harbor_bucket()?;
-        let object_key = format!("sbom-{}-{}", purl, sbom.instance);
+        let mut object_key = format!("{}-{}", purl, sbom.instance);
+        object_key = make_s3_key_safe(object_key.as_str())?;
+        object_key = format!("sboms/{}.json", object_key);
 
         let reader = BufReader::new(raw.as_slice());
 

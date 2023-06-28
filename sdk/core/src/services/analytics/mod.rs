@@ -21,7 +21,7 @@ fn get_file_name(provider_name: &str, purl: &str) -> Result<String, Error> {
 /// Ensuring the s3 key is safe
 fn get_s3_key_name(provider_name: &str, purl: &str) -> Result<String, Error> {
     let safe_purl = make_s3_key_safe(purl)?;
-    Ok(format!("analytic-{}-{}", provider_name, safe_purl))
+    Ok(format!("analytic-{}/{}.json", provider_name, safe_purl))
 }
 
 // TODO: This could maybe be generalized and combined with Sbom version.
