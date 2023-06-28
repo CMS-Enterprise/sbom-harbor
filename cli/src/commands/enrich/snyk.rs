@@ -93,6 +93,7 @@ mod tests {
                 org_id: None,
                 project_id: None,
             }),
+            sbom_scorecard_args: None,
         })
         .await
     }
