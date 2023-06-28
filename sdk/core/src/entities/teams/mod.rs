@@ -1,11 +1,8 @@
-mod codebase;
-pub use codebase::*;
+mod build_target;
+pub use build_target::*;
 
-mod member;
-pub use member::*;
-
-mod project;
-pub use project::*;
+mod repository;
+pub use repository::*;
 
 mod team;
 pub use team::*;
@@ -15,8 +12,4 @@ pub use token::*;
 
 use platform::persistence::mongodb::{mongo_doc, MongoDocument};
 
-mongo_doc!(Codebase);
-mongo_doc!(Member);
-mongo_doc!(Project);
 mongo_doc!(Team);
-mongo_doc!(Token);
