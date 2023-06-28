@@ -37,7 +37,7 @@ pub(crate) enum IngestionProviderKind {
 
 impl ValueEnum for IngestionProviderKind {
     fn value_variants<'a>() -> &'a [Self] {
-        &[Self::FileSystem, Self::GitHub, Self::Snyk]
+        &[Self::FileSystem, Self::GitHub, Self::Repository, Self::Snyk]
     }
 
     fn to_possible_value(&self) -> Option<PossibleValue> {
@@ -151,7 +151,7 @@ mod tests {
                 path: manifest_dir,
                 name: "harbor".to_string(),
                 version: None,
-                enrich: true,
+                auto_enrich: true,
             }),
             snyk_args: None,
         })

@@ -26,7 +26,7 @@ pub struct RepositoryArgs {
     /// Indicates whether to enrich the SBOM once it has been ingested. Defaults to false if
     /// omitted.
     #[arg(short, long)]
-    pub(crate) enrich: bool,
+    pub(crate) auto_enrich: bool,
 }
 
 impl RepositoryArgs {
@@ -68,7 +68,7 @@ pub(crate) async fn execute(args: &IngestArgs) -> Result<(), Error> {
 
     println!("==> success: SBOM ingested {}", sbom.id);
 
-    if args.enrich {
+    if args.auto_enrich {
         let vulns = enrichments::grype::from_raw_sbom(raw.as_bytes())?;
         if debug {
             let json = match serde_json::to_string(&vulns) {

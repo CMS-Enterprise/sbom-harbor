@@ -56,7 +56,7 @@ pub enum XrefKind {
 impl Display for XrefKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            XrefKind::BuildTarget => write!(f, "build-target"),
+            XrefKind::BuildTarget => write!(f, "buildTarget"),
             XrefKind::External(name) => write!(f, "external::{}", name.to_lowercase()),
             XrefKind::Product => write!(f, "product"),
             XrefKind::Repository => write!(f, "repository"),
