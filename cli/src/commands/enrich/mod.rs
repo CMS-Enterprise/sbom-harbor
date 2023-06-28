@@ -1,4 +1,5 @@
 use crate::commands::enrich::snyk::SnykArgs;
+use crate::commands::enrich::sbom_scorecard::{SbomScorecardArgs, SbomScorecardProvider};
 use crate::Error;
 use clap::builder::PossibleValue;
 use clap::{Parser, ValueEnum};
@@ -6,6 +7,8 @@ use std::str::FromStr;
 
 /// EPSS enrichment command handler.
 pub mod epss;
+/// Sbom Scorecard enrichment command handler.
+pub mod sbom_scorecard;
 /// Snyk enrichment command handler.
 pub mod snyk;
 
@@ -16,6 +19,8 @@ pub enum EnrichmentProviderKind {
     Epss,
     /// Use the Snyk enrichment provider.
     Snyk,
+    /// Use the sbom-scorecard enrichment provider
+    SbomScorecard,
 }
 
 /// The CommandFactory function for the `enrich` command.
@@ -23,18 +28,20 @@ pub async fn execute(args: &EnrichArgs) -> Result<(), Error> {
     match args.provider {
         EnrichmentProviderKind::Epss => epss::execute(args).await,
         EnrichmentProviderKind::Snyk => snyk::execute(args).await,
+        EnrichmentProviderKind::SbomScorecard => SbomScorecardProvider::execute(args).await,
     }
 }
 
 impl ValueEnum for EnrichmentProviderKind {
     fn value_variants<'a>() -> &'a [Self] {
-        &[Self::Epss, Self::Snyk]
+        &[Self::Epss, Self::Snyk, Self::SbomScorecard]
     }
 
     fn to_possible_value(&self) -> Option<PossibleValue> {
         Some(match self {
             Self::Epss => PossibleValue::new("epss").help("Run EPSS enrichment"),
             Self::Snyk => PossibleValue::new("snyk").help("Run Snyk enrichment"),
+            Self::SbomScorecard => PossibleValue::new("sbom-scorecard").help("Run Sbom Scorecard"),
         })
     }
 }
@@ -48,6 +55,7 @@ impl FromStr for EnrichmentProviderKind {
         match value {
             "epss" => Ok(EnrichmentProviderKind::Epss),
             "snyk" | "s" => Ok(EnrichmentProviderKind::Snyk),
+            "sbom-scorecard" | "score" => Ok(EnrichmentProviderKind::SbomScorecard),
             _ => Err(()),
         }
     }
@@ -67,4 +75,8 @@ pub struct EnrichArgs {
     /// Flattened args for use with the Snyk enrichment provider.
     #[command(flatten)]
     pub snyk_args: Option<SnykArgs>,
+
+    /// Flattened args for use with the Sbom Scorecard enrichment
+    #[command(flatten)]
+    pub sbom_scorecard_args: Option<SbomScorecardArgs>,
 }

@@ -21,6 +21,9 @@ pub enum Error {
     /// Runtime error.
     #[error("Runtime error: {0}")]
     Runtime(String),
+    /// Sbom Scorecard processing error
+    #[error("Sbom Scorecard command error: {0}")]
+    SbomScorecard(String),
     /// Sbom runtime error.
     #[error("sbom: {0}")]
     Sbom(String),

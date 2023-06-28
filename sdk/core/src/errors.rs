@@ -42,6 +42,9 @@ pub enum Error {
     /// Analytic provider error.
     #[error("analytic provider error: {0}")]
     Analytic(String),
+    /// Sbom Scorecard processing error
+    #[error("Sbom Scorecard processing error: {0}")]
+    SbomScorecard(String),
 }
 
 impl From<platform::Error> for Error {
