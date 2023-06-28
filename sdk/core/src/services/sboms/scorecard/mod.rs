@@ -243,7 +243,7 @@ pub fn test_get_orgs() {
         "Compliance ratio should be 1"
     );
     assert!(
-        unwrapped_scorecard.compliance.reasoning == "",
+        unwrapped_scorecard.compliance.reasoning.is_empty(),
         "Compliance reasoning should be an empty string"
     );
     assert!(
