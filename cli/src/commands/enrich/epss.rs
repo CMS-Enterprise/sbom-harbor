@@ -47,6 +47,7 @@ mod tests {
             provider: EnrichmentProviderKind::Epss,
             debug: true,
             snyk_args: None,
+            sbom_scorecard_args: None,
         })
         .await
     }

@@ -29,6 +29,11 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
+      - name: Install latest sbom-scorecard
+        run: |
+          wget -O /usr/local/bin/scorecard https://github.com/eBay/sbom-scorecard/releases/download/0.0.7/sbom-scorecard-linux-amd64
+          chmod u+x /usr/local/bin/scorecard
+
       - name: CHECKOUT
         uses: actions/checkout@v3
 
@@ -51,3 +56,5 @@ jobs:
 
       - name: TEST - unit & integration
         run: cargo test
+        env:
+          SBOM_SCORECARD: /usr/local/bin/scorecard
