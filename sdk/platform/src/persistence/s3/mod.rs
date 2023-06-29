@@ -8,7 +8,7 @@ use regex::Regex;
 use std::collections::HashMap;
 use tracing::instrument;
 
-/// Ensuring the s3 key is safe
+/// Format a string so that it can be used as an object key in S3.
 pub fn make_s3_key_safe(purl: &str) -> Result<String, Error> {
     let re = Regex::new(r"[^A-Za-z0-9]").unwrap();
     let result = re.replace_all(purl, "-");
