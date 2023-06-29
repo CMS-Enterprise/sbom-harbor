@@ -58,7 +58,7 @@ pub struct Sbom {
     pub dependency_refs: Option<Vec<String>>,
 
     /// The iso8601 timestamp. for when the [Sbom] was created and used for display.
-    pub created: String,
+    pub created: Option<String>,
 
     /// The unix timestamp for when the [Sbom] was created as specified by the NTIA SBOM Minimum Elements.
     pub timestamp: u64,
@@ -131,6 +131,14 @@ impl Sbom {
 
         let dependency_refs = package.dependency_refs.clone();
 
+        let created = match platform::time::iso8601_timestamp() {
+            Ok(created) => Some(created),
+            Err(e) => {
+                println!("timestamp creation failed with {}", e);
+                None
+            }
+        };
+
         let mut sbom = Sbom {
             id: "".to_string(),
             purl: Some(purl.clone()),
@@ -142,7 +150,7 @@ impl Sbom {
             supplier_name,
             package_manager: package_manager.clone(),
             provider: Some(provider),
-            created: platform::time::iso8601_timestamp()?,
+            created,
             timestamp: platform::time::timestamp()?,
             checksum_sha256: "".to_string(),
             task_refs: vec![],

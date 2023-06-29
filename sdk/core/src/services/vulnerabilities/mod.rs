@@ -63,15 +63,14 @@ impl StorageProvider for FileSystemStorageProvider {
         match std::fs::create_dir_all(&self.out_dir) {
             Ok(_) => {}
             Err(e) => {
-                return Err(Error::Runtime(format!("write::create_dir_all::{}", e)));
+                return Err(Error::Runtime(format!(
+                    "write::create_dir_all::{} - {}",
+                    &self.out_dir, e
+                )));
             }
         }
 
-        let file_name = format!(
-            "vulnerabilities-{}-{}",
-            provider,
-            make_file_name_safe(purl)?
-        );
+        let file_name = format!("{}-{}.json", provider, make_file_name_safe(purl)?);
         let file_path = format!("{}/{}", self.out_dir, file_name);
 
         let json_raw = serde_json::to_string(vulnerabilities)
