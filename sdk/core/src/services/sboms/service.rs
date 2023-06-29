@@ -36,7 +36,7 @@ impl XrefService<Sbom> for SbomService {}
 #[derive(Debug)]
 pub struct SbomService {
     store: Arc<Store>,
-    storage: Box<dyn StorageProvider>,
+    storage: Option<Box<dyn StorageProvider>>,
     packages: Option<PackageService>,
 }
 
@@ -50,7 +50,7 @@ impl SbomService {
     /// Factory method for creating new instance of type.
     pub fn new(
         store: Arc<Store>,
-        storage: Box<dyn StorageProvider>,
+        storage: Option<Box<dyn StorageProvider>>,
         packages: Option<PackageService>,
     ) -> Self {
         Self {
@@ -201,8 +201,15 @@ impl SbomService {
         sbom: &mut Sbom,
         xref: Option<Xref>,
     ) -> Result<(), Error> {
+        let storage = match &self.storage {
+            None => {
+                return Err(Error::Config("storage provider required".to_string()));
+            }
+            Some(storage) => storage,
+        };
+
         // Persist to some sort of permanent storage.
-        self.storage.write(raw, sbom, &xref).await?;
+        storage.write(raw, sbom, &xref).await?;
 
         Ok(())
     }

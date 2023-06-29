@@ -42,9 +42,9 @@ mod tests {
             PackageService::new(store.clone()),
             SbomService::new(
                 store.clone(),
-                Box::new(FileSystemStorageProvider::new(
+                Some(Box::new(FileSystemStorageProvider::new(
                     "/tmp/harbor/sboms".to_string(),
-                )),
+                ))),
                 Some(PackageService::new(store)),
             ),
         )?;

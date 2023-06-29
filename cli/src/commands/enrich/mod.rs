@@ -1,5 +1,5 @@
-use crate::commands::enrich::snyk::SnykArgs;
 use crate::commands::enrich::sbom_scorecard::{SbomScorecardArgs, SbomScorecardProvider};
+use crate::commands::enrich::snyk::SnykArgs;
 use crate::Error;
 use clap::builder::PossibleValue;
 use clap::{Parser, ValueEnum};

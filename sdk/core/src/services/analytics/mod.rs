@@ -13,15 +13,15 @@ use std::fmt::Debug;
 use std::io::{BufReader, Cursor};
 
 /// Ensuring the file name is safe
-fn get_file_name(provider_name: &str, purl: &str) -> Result<String, Error> {
+fn get_file_name(purl: &str) -> Result<String, Error> {
     let safe_purl = make_file_name_safe(purl)?;
-    Ok(format!("analytic-{}-{}", provider_name, safe_purl))
+    Ok(format!("{}.json", safe_purl))
 }
 
 /// Ensuring the s3 key is safe
-fn get_s3_key_name(provider_name: &str, purl: &str) -> Result<String, Error> {
+fn get_s3_key_name(purl: &str) -> Result<String, Error> {
     let safe_purl = make_s3_key_safe(purl)?;
-    Ok(format!("analytic-{}-{}", provider_name, safe_purl))
+    Ok(format!("{}.json", safe_purl))
 }
 
 // TODO: This could maybe be generalized and combined with Sbom version.
@@ -53,15 +53,19 @@ impl FileSystemStorageProvider {
 #[async_trait]
 impl StorageProvider for FileSystemStorageProvider {
     async fn write(&self, purl: &str, json: Value, provider_name: &str) -> Result<String, Error> {
-        let file_name = get_file_name(provider_name, purl)?;
-        let file_path = format!("{}/{}", self.out_dir, file_name);
+        let target_dir = format!("{}/analytic-{}", self.out_dir, provider_name);
+        let file_name = get_file_name(purl)?;
+        let file_path = format!("{}/{}", target_dir, file_name);
         let json_raw = serde_json::to_string(&json)
             .map_err(|e| Error::Serde(format!("write::to_string::{}", e)))?;
 
-        match std::fs::create_dir_all(&self.out_dir) {
+        match std::fs::create_dir_all(target_dir.clone()) {
             Ok(_) => {}
             Err(e) => {
-                return Err(Error::Runtime(format!("write::create_dir_all::{}", e)));
+                return Err(Error::Runtime(format!(
+                    "write::create_dir_all:: {} - {}",
+                    target_dir, e
+                )));
             }
         }
 
@@ -86,7 +90,8 @@ impl StorageProvider for S3StorageProvider {
         let metadata = HashMap::<String, String>::new();
         let s3_store = s3::Store::new_from_env().await?;
         let bucket_name = config::harbor_bucket()?;
-        let object_key = get_s3_key_name(provider_name, purl)?;
+        let object_key = get_s3_key_name(purl)?;
+        let object_key = format!("analytic-{}/{}", provider_name, object_key);
         let json_raw = serde_json::to_vec(&json)
             .map_err(|e| Error::Serde(format!("write::to_string::{}", e)))?;
 

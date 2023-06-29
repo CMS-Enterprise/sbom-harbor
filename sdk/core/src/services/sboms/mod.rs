@@ -63,8 +63,7 @@ impl StorageProvider for FileSystemStorageProvider {
             }
         }
 
-        // TODO: This area likely needs to be dynamically invoked when Quinn handles storage.
-        let file_name = format!("sbom-{}-{}", purl, sbom.instance);
+        let file_name = format!("{}-{}", purl, sbom.instance);
         let file_path = format!("{}/{}", self.out_dir, file_name);
         match std::fs::write(file_path.as_str(), raw) {
             Ok(_) => {}
@@ -100,7 +99,9 @@ impl StorageProvider for S3StorageProvider {
         // TODO: Probably want to inject these values.
         let s3_store = s3::Store::new_from_env().await?;
         let bucket_name = config::harbor_bucket()?;
-        let object_key = format!("sbom-{}-{}", purl, sbom.instance);
+        let mut object_key = format!("{}-{}", purl, sbom.instance);
+        object_key = make_s3_key_safe(object_key.as_str())?;
+        object_key = format!("sboms/{}.json", object_key);
 
         let reader = BufReader::new(raw.as_slice());
 
