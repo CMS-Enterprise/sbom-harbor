@@ -115,7 +115,7 @@ impl SbomService {
         };
 
         // Ensure the display timestamp is set if successful.
-        sbom.created = platform::time::iso8601_timestamp()?;
+        sbom.created = Some(platform::time::iso8601_timestamp()?);
 
         // Ensure the timestamp is set if successful.
         sbom.timestamp = platform::time::timestamp()?;

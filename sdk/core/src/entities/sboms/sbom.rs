@@ -132,7 +132,7 @@ impl Sbom {
         let dependency_refs = package.dependency_refs.clone();
 
         let created = match platform::time::iso8601_timestamp() {
-            Ok(created) => created,
+            Ok(created) => Some(created),
             Err(e) => {
                 println!("timestamp creation failed with {}", e);
                 None
