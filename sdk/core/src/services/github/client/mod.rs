@@ -51,7 +51,7 @@ impl Client {
             Ok(option) => match option {
                 Some(value) => Ok(value.public_repos),
                 None => Err(
-                    Error::GitHubEmptyResponse(
+                    Error::GitHubErrorResponse(
                         "Get request from GitHub had an empty response".to_string()
                     )
                 ),
@@ -80,7 +80,11 @@ impl Client {
         let gh_commits_rsp = match response {
             Ok(option) => match option {
                 Some(last_hash) => last_hash,
-                None => panic!("Nothing in here!"),
+                None => return Err(
+                    Error::GitHubErrorResponse(
+                        "==> Last hash is missing:".to_string()
+                    )
+                )
             },
             Err(err) => {
                 if let HyperError::Remote(status, msg) = err {
@@ -148,7 +152,7 @@ impl Client {
             Ok(option) => match option {
                 Some(value) => Ok(value),
                 None => Err(
-                    Error::GitHubEmptyResponse(
+                    Error::GitHubErrorResponse(
                         "Get request from GitHub had an empty response".to_string()
                     )
                 ),
@@ -178,9 +182,11 @@ impl Client {
         println!("PROCESSING> Cloning repo: {}", url);
 
         match Repository::clone(url, clone_path) {
-            Err(err) => {
-                panic!("error cloning repository from {}: {}", url, err);
-            }
+            Err(err) => return Err(
+                Error::GitHubErrorResponse(
+                    format!("==> error cloning repository from {}: {}", url, err)
+                )
+            ),
             _ => info!("Successfully cloned repo"),
         };
 

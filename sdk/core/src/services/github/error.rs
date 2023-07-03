@@ -21,7 +21,7 @@ pub enum Error {
     /// This error is raised when there is a problem communicating
     /// with GitHub over HTTP.
     #[error("empty response from Github: {0}")]
-    GitHubEmptyResponse(String),
+    GitHubErrorResponse(String),
     /// Error thrown only if the client is having trouble getting the last
     /// commit has from a given GetHub Repo
     #[error("error getting last hash from Github: {0}")]

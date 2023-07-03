@@ -31,7 +31,11 @@ impl GitHubService {
 
         let mut pages = match self.client.get_pages(&self.org).await {
             Ok(pages) => pages,
-            Err(err) => panic!("Unable to get pages of repos from GitHub: {:#?}", err)
+            Err(err) => return Err(
+                Error::GitHubErrorResponse(
+                    format!("Unable to get pages of repos from GitHub: {:#?}", err)
+                )
+            )
         };
 
         let mut repo_vec: Vec<Repo> = Vec::new();
@@ -41,7 +45,7 @@ impl GitHubService {
 
             for (repo_num, repo) in gh_org_rsp.iter_mut().enumerate() {
 
-                print!("Repo number: {}, ", repo_num);
+                println!("Repo number: {}, ", repo_num);
                 let result = self.client.get_last_commit(repo).await;
                 let repo_name = repo.full_name.clone().unwrap();
 
@@ -56,7 +60,8 @@ impl GitHubService {
                                 repo.mark_repo_empty();
                             }
                         } else {
-                            panic!("Unexpected error: {:#?}", err)
+                            println!("Unexpected error: {:#?}", err);
+                            continue
                         }
                     }
                 }
@@ -100,7 +105,7 @@ mod tests {
 
         let test_pat = match from_env("TEST_PAT") {
             Some(v) => v,
-            None => panic!("No TEST_PAT in environment")
+            None => panic!("No TEST_PAT in environment") // test panic
         };
 
         let client = Client::new(test_pat);

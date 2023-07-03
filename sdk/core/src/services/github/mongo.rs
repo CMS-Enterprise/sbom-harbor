@@ -125,7 +125,7 @@ async fn test_add_document() {
         store: Arc::new(
             match MongoStore::new(&ctx).await {
                 Ok(store) => store,
-                Err(err) => panic!("Error getting store: {}", err)
+                Err(err) => panic!("Error getting store: {}", err) // test panic
             }
         )
     };
@@ -146,11 +146,11 @@ async fn test_add_document() {
                         assert_eq!(id, doc.id.clone());
                         assert_eq!(last_hash, doc.last_hash);
                     },
-                    None => panic!("No value in Option: Missing GitHubSbomProviderEntry")
+                    None => panic!("No value in Option: Missing GitHubSbomProviderEntry") // test panic
                 },
-                Err(err) => panic!("Error getting GitHubSbomProviderEntry: {}", err)
+                Err(err) => panic!("Error getting GitHubSbomProviderEntry: {}", err) // test panic
             }
         },
-        Err(err) => panic!("Unable to insert document into Mongo: {}", err)
+        Err(err) => panic!("Unable to insert document into Mongo: {}", err) // test panic
     }
 }
