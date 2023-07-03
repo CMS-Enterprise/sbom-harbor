@@ -170,7 +170,7 @@ impl Client {
     }
 
     /// Clones a git repository to the specified clone path.
-    pub fn clone_repo(&self, clone_path: &str, url: &str) -> Result<(), Error> {
+    pub fn clone_repo(&self, clone_path: &str, url: &str) -> Result<String, Error> {
 
         println!("==> Cloning repo: {}", url);
 
@@ -183,7 +183,7 @@ impl Client {
             _ => info!("Successfully cloned repo"),
         };
 
-        Ok(())
+        Ok(clone_path.to_string())
     }
 
     /// Removes a cloned repository from the filesystem.

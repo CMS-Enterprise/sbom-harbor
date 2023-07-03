@@ -294,12 +294,15 @@ impl SyncTask {
 
         return if *last_hash != document.last_hash {
 
-            let clone_path = self.github.clone_path(&document.id, last_hash);
+            let url = &document.id;
 
-            match self.github.clone_repo(&clone_path, document.id.as_str()) {
-                Ok(()) => println!("==> {} Cloned Successfully", document.id),
+            let clone_path = match self.github.clone_repo(url.as_str(), last_hash) {
+                Ok(clone_path) => {
+                    println!("==> {} Cloned Successfully", url);
+                    clone_path
+                }
                 Err(err) => return Err(Error::GitHub(format!("Unable to clone Repo: {}", err)))
-            }
+            };
 
             let syft_result = match self.syft(
                 &clone_path,

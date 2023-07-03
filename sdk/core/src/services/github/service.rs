@@ -73,12 +73,13 @@ impl GitHubService {
     }
 
     /// Clones a git repository to the specified clone path.
-    pub fn clone_repo(&self, clone_path: &str, url: &str) -> Result<(), Error> {
-        self.client.clone_repo(clone_path, url)
+    pub fn clone_repo(&self, url: &str, last_hash: &str) -> Result<String, Error> {
+        let clone_path = self.clone_path(url, &last_hash.to_string())?;
+        self.client.clone_repo(clone_path.as_str(), url)
     }
 
     /// Generates a unique clone path for a repository.
-    pub fn clone_path(&self, url: &str, hash: &String) -> String {
+    pub fn clone_path(&self, url: &str, hash: &String) -> Result<String, Error> {
 
         let repo_name = url
             .split('/')
@@ -87,7 +88,7 @@ impl GitHubService {
             .unwrap()
             .replace(".git", "");
 
-        format!("/tmp/harbor-debug/{}/{}", hash, repo_name)
+        Ok(format!("/tmp/harbor-debug/{}/{}", hash, repo_name))
     }
 
     /// Removes a cloned repository from the filesystem.
