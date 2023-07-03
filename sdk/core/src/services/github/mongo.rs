@@ -17,8 +17,8 @@ use platform::persistence::mongodb::{
     MongoDocument,
     Store as MongoStore,
     mongo_doc,
-    Context
 };
+#[allow(unused_imports)]
 use crate::config::dev_context;
 use crate::services::github::error::Error;
 
@@ -107,8 +107,8 @@ mongo_doc!(GitHubSbomProviderEntry);
 #[ignore = "manual_debug_test"]
 async fn test_add_document() {
 
-    let ctx = match dev_context(Some(harbor)) {
-      Ok(ctx) => ctx,
+    let ctx = match dev_context(Some("harbor")) {
+        Ok(ctx) => ctx,
         Err(err) => panic!("{}", err)
     };
 
