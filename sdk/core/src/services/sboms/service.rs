@@ -68,7 +68,7 @@ impl SbomService {
         provider: SbomProviderKind,
         xref: Xref,
         task: &Task,
-    ) -> Result<Option<Sbom>, Error> {
+    ) -> Result<Sbom, Error> {
 
         // Load the raw SBOM into the Harbor model.
         let mut sbom = match Sbom::from_raw_cdx(
@@ -123,7 +123,7 @@ impl SbomService {
         // Commit the Sbom.
         self.commit(&mut sbom, xref).await?;
 
-        Ok(Some(sbom))
+        Ok(sbom)
     }
 
     /// [Transaction script](https://martinfowler.com/eaaCatalog/transactionScript.html) for saving

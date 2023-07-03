@@ -115,7 +115,7 @@ mod tests {
     #[ignore = "debug manual only"]
     async fn test_get_repos() {
 
-        let test_pat = match from_env("TEST_PAT") {
+        let test_pat = match from_env("GITHUB_PAT") {
             Some(v) => v,
             None => panic!("No TEST_PAT in environment") // test panic
         };
@@ -135,19 +135,29 @@ mod tests {
     #[test]
     fn test_clone_repo() {
 
-        let clone_path = "/tmp/clone-test";
-        let eslint_repo = "https://github.com/eslint/eslint.git";
+        let test_pat = match from_env("GITHUB_PAT") {
+            Some(v) => v,
+            None => panic!("No GITHUB_PAT in environment") // test panic
+        };
 
-        let client = Client::new("test_pat".to_string());
+        let last_hash = "BSLASTHASH";
+        let repo = "https://github.com/harbor-test-org/java-repo.git";
+
+        let client = Client::new(test_pat);
         let service = GitHubService {
-            org: "test_org".to_string(),
+            org: "harbor-test-org".to_string(),
             client,
         };
 
-        let result = service.clone_repo(clone_path, eslint_repo);
-        assert!(result.is_ok());
-        service.remove_clone(clone_path).expect(
-            format!("Unable to remove clone path: {}", clone_path).as_str()
+        let clone_path = match service.clone_repo(repo, last_hash) {
+            Ok(clone_path) => clone_path,
+            Err(err) => panic!("{}", err)
+        };
+
+        println!("THE FUCKING RESULT: {:#?}", clone_path);
+
+        service.remove_clone(clone_path.as_str()).expect(
+            format!("Unable to remove clone path: {}", last_hash).as_str()
         );
     }
 }
