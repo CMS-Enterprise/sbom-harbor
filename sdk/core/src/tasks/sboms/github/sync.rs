@@ -205,12 +205,12 @@ impl SyncTask {
         match &repo.archived {
             Some(archived) => {
                 if *archived {
-                    println!("{} at {} is archived, skipping", repo_name, url);
+                    println!("==> {} at {} is archived, skipping", repo_name, url);
                     skip = true;
                 }
             },
             None => {
-                println!("No value to determine if the repo is archived");
+                println!("==> No value to determine if the repo is archived");
             }
         }
 
@@ -263,7 +263,7 @@ impl SyncTask {
         let full_name: &String = match &repo.full_name {
             Some(full_name) => full_name,
             None => return Err(
-                Error::GitHub("Repo is missing full_name".to_string())
+                Error::GitHub("==> Repo is missing full_name".to_string())
             )
         };
 

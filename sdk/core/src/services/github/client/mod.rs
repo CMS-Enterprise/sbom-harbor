@@ -179,7 +179,7 @@ impl Client {
             .unwrap()
             .replace(".git", "");
 
-        format!("/harbor-output/{}/{}", hash, repo_name)
+        format!("/tmp/harbor-debug/{}/{}", hash, repo_name)
     }
 
     /// Clones a git repository to the specified clone path.

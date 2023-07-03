@@ -43,16 +43,15 @@ impl GitHubService {
 
             let mut gh_org_rsp = self.client.get_page_of_repos(&self.org, page + 1, per_page).await?;
 
-            for (repo_num, repo) in gh_org_rsp.iter_mut().enumerate() {
+            for repo in gh_org_rsp.iter_mut() {
 
-                println!("Repo number: {}, ", repo_num);
                 let result = self.client.get_last_commit(repo).await;
                 let repo_name = repo.full_name.clone().unwrap();
 
                 match result {
                     Ok(option) => match option {
                         Some(last_hash) => repo.add_last_hash(last_hash),
-                        None => println!("No last commit has found for Repo: {}", &repo_name)
+                        None => println!("==> No last commit has found for Repo: {}", &repo_name)
                     },
                     Err(err) => {
                         if let Error::LastCommitHashError(status, _msg) = err {
