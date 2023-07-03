@@ -16,6 +16,8 @@ pub use hyper::{Method, StatusCode};
 pub mod body;
 
 const CONTENT_TYPE: &str = "content-type";
+const USER_AGENT: &str = "User-Agent";
+const HYPER_CLIENT: &str = "Hyper-Client";
 
 /// HTTP Content Types.
 pub enum ContentType {
@@ -113,6 +115,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
         .method(method)
         .uri(uri)
         .header(CONTENT_TYPE, content_type.to_string())
+        .header(USER_AGENT, HYPER_CLIENT)
         .body(req_body)?;
 
     if !token.is_empty() {
@@ -130,7 +133,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
     let resp = match client.request(req).await {
         Ok(r) => r,
         Err(err) => {
-            return Err(Error::Remote(err.to_string()));
+            return Err(Error::Hyper(err.to_string()));
         }
     };
 
@@ -138,13 +141,11 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
     let resp_body = hyper::body::to_bytes(resp.into_body()).await?;
     let resp_body = match String::from_utf8(resp_body.to_vec()) {
         Ok(body) => body,
-        Err(err) => {
-            return Err(Error::Body(err.to_string()));
-        }
+        Err(err) => return Err(Error::Body(err.to_string())),
     };
 
     if resp_status != StatusCode::OK {
-        return Err(Error::Remote(resp_body));
+        return Err(Error::Remote(resp_status.as_u16(), resp_body));
     }
 
     // TODO: This a hack around empty JSON.
@@ -179,7 +180,7 @@ pub enum Error {
     Hyper(String),
     /// Error calling remote resource.
     #[error("error from remote resource: {0}")]
-    Remote(String),
+    Remote(u16, String),
     /// Error serializing types.
     #[error("error serializing types: {0}")]
     Serde(String),

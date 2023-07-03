@@ -15,6 +15,7 @@ pub fn timestamp() -> Result<u64, Error> {
 /// Generates an rfc3339 time stamp which is an implementation of
 /// a iso8601 timestamp.
 pub fn iso8601_timestamp() -> Result<String, Error> {
+    // Get the unix timestamp
     let unix_timestamp: u64 = timestamp()?;
 
     // if the u64 is greater than the maximum value an i64 can hold
