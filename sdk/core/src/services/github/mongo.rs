@@ -54,7 +54,7 @@ impl GitHubProviderMongoService {
             Err(err) => return Err(Error::MongoDb(err)),
         };
 
-        println!("==> Added NEW Document to MongoDB: {:#?}", document);
+        println!("==> Added NEW Document to MongoDB for: {}", url);
 
         Ok(document)
     }

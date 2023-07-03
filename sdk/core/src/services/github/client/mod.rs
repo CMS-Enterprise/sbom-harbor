@@ -43,6 +43,8 @@ impl Client {
 
         let org_url: String = format!("{GH_URL}/orgs/{org}");
 
+        println!("==> Getting repositories from org, url: {} ", org_url);
+
         let response: Result<Option<Org>, HyperError> = self.http_client.get(
             org_url.as_str(),
             ContentType::Json,
@@ -55,7 +57,7 @@ impl Client {
                 Some(value) => Ok(value.public_repo_count),
                 None => Err(
                     Error::GitHubErrorResponse(
-                        "Get request from GitHub had an empty response".to_string()
+                        "==> Get request from GitHub had an empty response".to_string()
                     )
                 ),
             },
@@ -119,7 +121,7 @@ impl Client {
 
         let num_repos = self.get_num_pub_repos(org.to_string()).await?.unwrap_or(0);
 
-        println!("Number of Repositories in {org}: {:#?}", num_repos);
+        println!("==> Number of Repositories in {}: {}", org, num_repos);
 
         let num_calls = ((num_repos/100) as i8) + 1;
         let num_last_call = num_repos % 100;
@@ -199,6 +201,7 @@ impl Client {
 pub struct Org {
     /// The number of Public Repos in
     /// this organization
+    #[serde(alias = "public_repos")]
     public_repo_count: Option<u32>
 }
 
