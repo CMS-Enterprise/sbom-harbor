@@ -124,7 +124,7 @@ mod tests {
         let _repos = repos.unwrap();
     }
 
-    #[tokio::test]
+    #[test]
     #[ignore = "debug manual only"]
     fn test_clone_repo() {
         let test_pat = match from_env("GITHUB_PAT") {
