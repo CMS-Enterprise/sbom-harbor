@@ -12,6 +12,7 @@ use platform::hyper::{
 };
 
 use platform::hyper::{Client as HttpClient};
+use crate::services::github::Commit;
 
 use crate::services::github::error::Error;
 
@@ -89,19 +90,15 @@ impl Client {
                 )
             },
             Err(err) => {
-                if let HyperError::Remote(status, msg) = err {
-                    return Err(
-                        Error::LastCommitHashError(status, msg)
-                    )
-                }
-
-                Commit {
-                    sha: None,
+                return if let HyperError::Remote(status, msg) = err {
+                    Err(Error::LastCommitHashError(status, msg))
+                } else {
+                    Err(Error::GitHubErrorResponse(format!("{}", err)))
                 }
             },
         };
 
-        match gh_commits_rsp.sha {
+        match gh_commits_rsp.last_hash {
             Some(val) => Ok(Some(val)),
             None => Ok(None),
         }
@@ -194,14 +191,6 @@ impl Client {
 
         Ok(())
     }
-}
-
-/// Commit represents the returned Json from a commits
-/// request from the GitHub API.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Commit {
-    /// Commit hash of main branch in repository
-    pub sha: Option<String>
 }
 
 /// Org is used to extract the number of Public Repos

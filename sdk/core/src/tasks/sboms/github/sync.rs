@@ -290,9 +290,9 @@ impl SyncTask {
             )
         };
 
-        println!("==> Comparing Repo({}) to MongoDB({})", last_hash, document.last_hash);
+        println!("==> Comparing Repo({}) to MongoDB({:#?})", last_hash, document.last_hash);
 
-        return if *last_hash != document.last_hash {
+        return if *last_hash != document.last_hash.unwrap() {
 
             let url = &document.id;
 
@@ -318,7 +318,7 @@ impl SyncTask {
                 Err(err) => return Err(Error::GitHub(format!("Unable to remove Repo: {}", err)))
             };
 
-            document.last_hash = last_hash.to_string();
+            document.last_hash = Some(last_hash.to_string());
             match self.mongo_svc.update(&document).await {
                 Ok(_) => {}
                 Err(err) => {

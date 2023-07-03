@@ -2,6 +2,7 @@ use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 use async_trait::async_trait;
 
+#[allow(unused_imports)]
 use serde::{
     Deserialize,
     Serialize
@@ -16,10 +17,10 @@ use platform::persistence::mongodb::{
     Service as MongoService,
     MongoDocument,
     Store as MongoStore,
-    mongo_doc,
 };
 #[allow(unused_imports)]
 use crate::config::dev_context;
+use crate::services::github::Commit;
 use crate::services::github::error::Error;
 
 #[derive(Clone)]
@@ -41,11 +42,11 @@ impl GitHubProviderMongoService {
     /// and the Harbor Entities, put this document in Mongo
     pub(crate) async fn create_document(
         &self, url: String, last_hash: String
-    ) -> Result<GitHubSbomProviderEntry, Error> {
+    ) -> Result<Commit, Error> {
 
-        let mut document = GitHubSbomProviderEntry {
+        let mut document = Commit {
             id: url.to_string(),
-            last_hash: last_hash.to_string(),
+            last_hash: Some(last_hash.to_string()),
         };
 
         match self.insert(&mut document).await {
@@ -60,7 +61,7 @@ impl GitHubProviderMongoService {
 }
 
 #[async_trait]
-impl MongoService<GitHubSbomProviderEntry>
+impl MongoService<Commit>
     for GitHubProviderMongoService {
 
     fn store(&self) -> Arc<MongoStore> {
@@ -69,17 +70,17 @@ impl MongoService<GitHubSbomProviderEntry>
 
     /// Insert a document into a [Collection].
     async fn insert<'a>(
-        &self, doc: & mut GitHubSbomProviderEntry
+        &self, doc: &mut Commit
     ) -> Result<(), PlatformError> {
 
-        let id = doc.id();
+        let id = doc.id.clone();
         if id.is_empty() {
             doc.set_id(
                 Uuid::new_v4().to_string()
             );
         }
 
-        return match self.store().insert::<GitHubSbomProviderEntry>(doc).await {
+        return match self.store().insert::<Commit>(doc).await {
             Ok(_rsp) => Ok(()),
             Err(err) => Err(err)
         }
@@ -91,17 +92,6 @@ impl Debug for GitHubProviderMongoService {
         write!(f, "GitHubProvider")
     }
 }
-
-/// Struct to define a GitHub Provider document in Mongo
-///
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct GitHubSbomProviderEntry {
-    /// Url of the GitHub Repository
-    pub id: String,
-    /// Last commit hash of the repository
-    pub last_hash: String,
-}
-mongo_doc!(GitHubSbomProviderEntry);
 
 #[tokio::test]
 #[ignore = "manual_debug_test"]
@@ -124,9 +114,9 @@ async fn test_add_document() {
     let id = String::from("test-url-id");
     let last_hash = String::from("test-last-hash");
 
-    let entry = &mut GitHubSbomProviderEntry {
+    let entry = &mut Commit {
         id: id.clone(),
-        last_hash: last_hash.clone(),
+        last_hash: Some(last_hash.clone()),
     };
 
     match svc.insert(entry).await {
@@ -135,7 +125,7 @@ async fn test_add_document() {
                 Ok(opt) => match opt {
                     Some(doc) => {
                         assert_eq!(id, doc.id.clone());
-                        assert_eq!(last_hash, doc.last_hash);
+                        assert_eq!(last_hash, doc.last_hash.unwrap());
                     },
                     None => panic!("No value in Option: Missing GitHubSbomProviderEntry") // test panic
                 },
