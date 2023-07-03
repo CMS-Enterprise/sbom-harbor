@@ -19,6 +19,7 @@ use platform::persistence::mongodb::{
     mongo_doc,
     Context
 };
+use crate::config::dev_context;
 use crate::services::github::error::Error;
 
 #[derive(Clone)]
@@ -91,19 +92,6 @@ impl Debug for GitHubProviderMongoService {
     }
 }
 
-/// Get the default context.  Probably a better one somewhere else
-pub fn get_default_context() -> Context {
-    Context {
-        host: "localhost".to_string(),
-        db_name: "harbor".to_string(),
-        key_name: "id".to_string(),
-        username: "root".to_string(),
-        password: "harbor".to_string(),
-        port: 27017,
-        connection_uri: None,
-    }
-}
-
 /// Struct to define a GitHub Provider document in Mongo
 ///
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -119,7 +107,10 @@ mongo_doc!(GitHubSbomProviderEntry);
 #[ignore = "manual_debug_test"]
 async fn test_add_document() {
 
-    let ctx = get_default_context();
+    let ctx = match dev_context(Some(harbor)) {
+      Ok(ctx) => ctx,
+        Err(err) => panic!("{}", err)
+    };
 
     let svc = GitHubProviderMongoService {
         store: Arc::new(
