@@ -3,7 +3,7 @@ use platform::{Error as PlatformError};
 use platform::hyper::{Error as PlatformHttpError};
 use crate::{Error as CoreError};
 
-/// Represents all handled Errors for the GitHub Crawler.
+/// Represents all handled Errors for the GitHub Provider.
 ///
 #[derive(Error, Debug)]
 pub enum Error {
