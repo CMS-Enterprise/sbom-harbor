@@ -1,19 +1,19 @@
-use crate::entities::sboms::{SbomProviderKind};
+use crate::entities::sboms::SbomProviderKind;
 use crate::Error;
 
 use crate::entities::tasks::Task;
 use crate::entities::xrefs::{Xref, XrefKind};
+use crate::services::github::client::Repo;
+use crate::services::github::mongo::GitHubProviderMongoService;
+use crate::services::github::service::GitHubService;
 use crate::services::sboms::SbomService;
 use crate::tasks::TaskProvider;
 use async_trait::async_trait;
 use platform::persistence::mongodb::{Service, Store};
+use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::process::Command;
 use std::sync::Arc;
-use serde_json::{json, Value};
-use crate::services::github::client::Repo;
-use crate::services::github::mongo::GitHubProviderMongoService;
-use crate::services::github::service::GitHubService;
 
 const CYCLONEDX_JSON_FORMAT: &str = "cyclonedx-json";
 
@@ -32,10 +32,8 @@ pub struct SyncTask {
 
 #[async_trait]
 impl TaskProvider for SyncTask {
-
     /// Builds the Packages Dependencies, Purls, and Unsupported from the GitHub API.
     async fn run(&self, task: &mut Task) -> Result<HashMap<String, String>, Error> {
-
         let mut errors = HashMap::new();
 
         let mut repos: Vec<Repo> = match self.github.get_repos().await {
@@ -52,38 +50,39 @@ impl TaskProvider for SyncTask {
         let mut skipped = 0;
 
         for repo in &mut repos {
-
-            let name = repo.full_name.clone().unwrap_or(
-                String::from("name/missing")
-            );
+            let name = repo
+                .full_name
+                .clone()
+                .unwrap_or(String::from("name/missing"));
 
             let url = match repo.html_url.clone() {
                 Some(url) => url,
-                None => continue
+                None => continue,
             };
 
             if !SyncTask::should_skip(repo, name, url.clone()) {
-
                 match self.process_repo(repo, task).await {
-
                     Ok(option) => match option {
                         Some(raw) => {
-                            match self.sboms.ingest(
+                            match self
+                                .sboms
+                                .ingest(
                                     raw.as_str(),
                                     None,
                                     SbomProviderKind::GitHub,
                                     Xref {
                                         kind: XrefKind::Product,
-                                        map: HashMap::new()
+                                        map: HashMap::new(),
                                     },
                                     task,
                                 )
-                                .await {
+                                .await
+                            {
                                 Ok(sbom) => {
                                     let opt = Some(sbom);
                                     println!("==> SBOM Ingestion went OK");
                                     opt
-                                },
+                                }
                                 Err(err) => {
                                     task.err_total += 1;
                                     errors.insert(url.clone(), err.to_string());
@@ -93,9 +92,9 @@ impl TaskProvider for SyncTask {
                                 }
                             };
                         }
-                        None => println!("==> No work to do because the hashes matched")
-                    }
-                    Err(err) => println!("==> Repo processing failure: {}", err)
+                        None => println!("==> No work to do because the hashes matched"),
+                    },
+                    Err(err) => println!("==> Repo processing failure: {}", err),
                 };
             } else {
                 skipped += 1;
@@ -104,7 +103,10 @@ impl TaskProvider for SyncTask {
         }
 
         // TODO How should I actually report these?
-        println!("==> FINISHED PROCESSING, total: {}, failed: {}, skipped: {}", total, failed, skipped);
+        println!(
+            "==> FINISHED PROCESSING, total: {}, failed: {}, skipped: {}",
+            total, failed, skipped
+        );
 
         Ok(errors)
     }
@@ -117,7 +119,6 @@ impl Service<Task> for SyncTask {
 }
 
 impl SyncTask {
-
     /* PRIVATE */
 
     /// Invokes the syft CLI against the cloned repository to generate an SBOM.
@@ -125,66 +126,43 @@ impl SyncTask {
         &self,
         source_path: &str,
         full_name: &String,
-        commit_hash: String
+        commit_hash: String,
     ) -> Result<String, Error> {
-
         let output = match Command::new("syft")
             .arg("--output")
             .arg(CYCLONEDX_JSON_FORMAT)
             .arg(source_path)
-            .output() {
+            .output()
+        {
             Ok(output) => output,
-            Err(err) => {
-                return Err(
-                    Error::GitHub(
-                        format!("Error executing Syft: {}", err)
-                    )
-                )
-            }
+            Err(err) => return Err(Error::GitHub(format!("Error executing Syft: {}", err))),
         };
 
         // Handle error generated by syft.
         if !&output.status.success() {
             return match String::from_utf8(output.stderr) {
-                Ok(stderr) => {
-                    Err(
-                        Error::GitHub(
-                            format!("Error executing Syft: {}", stderr)
-                        )
-                    )
-                }
-                Err(err) => {
-                    Err(
-                        Error::GitHub(
-                            format!("Error executing Syft and reading stderr: {}", err)
-                        )
-                    )
-                }
+                Ok(stderr) => Err(Error::GitHub(format!("Error executing Syft: {}", stderr))),
+                Err(err) => Err(Error::GitHub(format!(
+                    "Error executing Syft and reading stderr: {}",
+                    err
+                ))),
             };
         }
 
         if output.stdout.is_empty() {
-            return Err(
-                Error::GitHub(
-                    "syft generated empty SBOM".to_string()
-                )
-            );
+            return Err(Error::GitHub("syft generated empty SBOM".to_string()));
         };
 
         let output: String = String::from_utf8_lossy(&output.stdout).to_string();
-        let mut json: Value = serde_json::from_str(&output)
-            .map_err(|e| Error::GitHub(e.to_string()))?;
+        let mut json: Value =
+            serde_json::from_str(&output).map_err(|e| Error::GitHub(e.to_string()))?;
 
         // Access the nested "component" object
         if let Some(metadata) = json.get_mut("metadata").and_then(Value::as_object_mut) {
             if let Some(component) = metadata.get_mut("component").and_then(Value::as_object_mut) {
-                component.insert(String::from("purl"),
-                    json!(
-                        generate_stopgap_purl(
-                            full_name.to_string(),
-                            commit_hash
-                        )
-                    )
+                component.insert(
+                    String::from("purl"),
+                    json!(generate_stopgap_purl(full_name.to_string(), commit_hash)),
                 );
             }
         }
@@ -194,12 +172,7 @@ impl SyncTask {
 
     /// Should skip determines if the repository is disabled or
     /// archived and if so, skips processing them.
-    fn should_skip(
-        repo: &Repo,
-        repo_name: String,
-        url: String,
-    ) -> bool {
-
+    fn should_skip(repo: &Repo, repo_name: String, url: String) -> bool {
         let mut skip: bool = false;
 
         match &repo.archived {
@@ -208,7 +181,7 @@ impl SyncTask {
                     println!("==> {} at {} is archived, skipping", repo_name, url);
                     skip = true;
                 }
-            },
+            }
             None => {
                 println!("==> No value to determine if the repo is archived");
             }
@@ -220,7 +193,7 @@ impl SyncTask {
                     println!("{} at {} is disabled, skipping", repo_name, url);
                     skip = true;
                 }
-            },
+            }
             None => {
                 println!("No value to determine if the repo is disabled, processing");
             }
@@ -232,7 +205,6 @@ impl SyncTask {
 
         skip
     }
-
 
     /// Factory method to create new instance of type.
     pub fn new(
@@ -252,24 +224,22 @@ impl SyncTask {
         repo: &mut Repo,
         _task: &mut Task,
     ) -> Result<Option<String>, Error> {
-
         let url: &String = match &repo.html_url {
             Some(url) => url,
-            None => return Err(
-                Error::GitHub("==> No URL for Repository".to_string())
-            )
+            None => return Err(Error::GitHub("==> No URL for Repository".to_string())),
         };
 
         let full_name: &String = match &repo.full_name {
             Some(full_name) => full_name,
-            None => return Err(
-                Error::GitHub("==> Repo is missing full_name".to_string())
-            )
+            None => return Err(Error::GitHub("==> Repo is missing full_name".to_string())),
         };
 
         let last_hash: &String = &repo.last_hash;
 
-        println!("==> Looking in Mongo for the document with repo url: {}", url);
+        println!(
+            "==> Looking in Mongo for the document with repo url: {}",
+            url
+        );
 
         let mut document = match self.mongo_svc.find(url).await {
             Ok(option) => match option {
@@ -279,21 +249,26 @@ impl SyncTask {
                 }
                 None => {
                     println!("==> No document exists in mongo with the id: {}", url);
-                    self.mongo_svc.create_document(url.clone(), String::from(""))
-                        .await.map_err(|e| Error::GitHub(e.to_string()))?
+                    self.mongo_svc
+                        .create_document(url.clone(), String::from(""))
+                        .await
+                        .map_err(|e| Error::GitHub(e.to_string()))?
                 }
+            },
+            Err(err) => {
+                return Err(Error::GitHub(format!(
+                    "==> Unable to find document in mongo with url: {}({})",
+                    url, err
+                )))
             }
-            Err(err) => return Err(
-                Error::GitHub(
-                    format!("==> Unable to find document in mongo with url: {}({})", url, err)
-                )
-            )
         };
 
-        println!("==> Comparing Repo({}) to MongoDB({:#?})", last_hash, document.last_hash);
+        println!(
+            "==> Comparing Repo({}) to MongoDB({:#?})",
+            last_hash, document.last_hash
+        );
 
         return if *last_hash != document.last_hash.unwrap() {
-
             let url = &document.id;
 
             let clone_path = match self.github.clone_repo(url.as_str(), last_hash) {
@@ -301,21 +276,17 @@ impl SyncTask {
                     println!("==> {} Cloned Successfully", url);
                     clone_path
                 }
-                Err(err) => return Err(Error::GitHub(format!("Unable to clone Repo: {}", err)))
+                Err(err) => return Err(Error::GitHub(format!("Unable to clone Repo: {}", err))),
             };
 
-            let syft_result = match self.syft(
-                &clone_path,
-                full_name,
-                last_hash.to_string()
-            ) {
+            let syft_result = match self.syft(&clone_path, full_name, last_hash.to_string()) {
                 Ok(map) => map,
-                Err(err) => return Err(Error::GitHub(format!("Unable to syft Repo: {}", err)))
+                Err(err) => return Err(Error::GitHub(format!("Unable to syft Repo: {}", err))),
             };
 
             match self.github.remove_clone(&clone_path) {
                 Ok(()) => println!("==> Clone removed successfully"),
-                Err(err) => return Err(Error::GitHub(format!("Unable to remove Repo: {}", err)))
+                Err(err) => return Err(Error::GitHub(format!("Unable to remove Repo: {}", err))),
             };
 
             document.last_hash = Some(last_hash.to_string());
@@ -323,14 +294,13 @@ impl SyncTask {
                 Ok(_) => {}
                 Err(err) => {
                     println!("==> Mongo service error!! {:#?}", err);
-                    return Err(Error::GitHub(err.to_string()))
+                    return Err(Error::GitHub(err.to_string()));
                 }
             };
 
             println!("==> Updated Mongo, returning Syft Result");
             Ok(Some(syft_result))
         }
-
         // The last commit hash on the master/main GitHub matched the one in Mongo
         else {
             println!("==> Hashes are equal, skipping.");
@@ -341,7 +311,6 @@ impl SyncTask {
 
 #[tokio::test]
 async fn test_should_skip_archived() {
-
     let test_name = String::from("test name, ignore");
     let test_url = String::from("test url, ignore");
 
@@ -365,7 +334,6 @@ async fn test_should_skip_archived() {
 
 #[tokio::test]
 async fn test_should_skip_disabled() {
-
     let test_name = String::from("test name, ignore");
     let test_url = String::from("test url, ignore");
 
@@ -389,7 +357,6 @@ async fn test_should_skip_disabled() {
 
 #[tokio::test]
 async fn test_should_skip_empty() {
-
     let test_name = String::from("test name, ignore");
     let test_url = String::from("test url, ignore");
 

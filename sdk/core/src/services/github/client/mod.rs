@@ -6,13 +6,10 @@ use serde;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
-use platform::hyper::{
-    ContentType,
-    Error as HyperError,
-};
+use platform::hyper::{ContentType, Error as HyperError};
 
-use platform::hyper::{Client as HttpClient};
 use crate::services::github::Commit;
+use platform::hyper::Client as HttpClient;
 
 use crate::services::github::error::Error;
 
@@ -23,11 +20,10 @@ const GH_URL: &str = "https://api.github.com";
 pub struct Client {
     /// GitHub PAT
     token: String,
-    http_client: HttpClient
+    http_client: HttpClient,
 }
 
 impl Client {
-
     /* Private */
 
     /// Creates the URL one must use in an http request for
@@ -40,56 +36,55 @@ impl Client {
 
     /// Function to get the number of public repos in the associated organization
     async fn get_num_pub_repos(&self, org: String) -> Result<Option<u32>, Error> {
-
         let org_url: String = format!("{GH_URL}/orgs/{org}");
 
         println!("==> Getting repositories from org, url: {} ", org_url);
 
-        let response: Result<Option<Org>, HyperError> = self.http_client.get(
-            org_url.as_str(),
-            ContentType::Json,
-            self.token.as_str(),
-            None::<String>,
-        ).await;
+        let response: Result<Option<Org>, HyperError> = self
+            .http_client
+            .get(
+                org_url.as_str(),
+                ContentType::Json,
+                self.token.as_str(),
+                None::<String>,
+            )
+            .await;
 
         match response {
             Ok(option) => match option {
                 Some(value) => Ok(value.public_repo_count),
-                None => Err(
-                    Error::GitHubErrorResponse(
-                        "==> Get request from GitHub had an empty response".to_string()
-                    )
-                ),
+                None => Err(Error::GitHubErrorResponse(
+                    "==> Get request from GitHub had an empty response".to_string(),
+                )),
             },
-            Err(err) => Err(
-                Error::GitHubResponse(err)
-            ),
+            Err(err) => Err(Error::GitHubResponse(err)),
         }
     }
 
     /* Public */
 
     /// Get the last commit for a given Repo
-    pub async fn get_last_commit(&self, repo: &mut Repo)
-        -> Result<Option<String>, Error> {
-
+    pub async fn get_last_commit(&self, repo: &mut Repo) -> Result<Option<String>, Error> {
         let github_last_commit_url = self.get_last_commit_url(repo);
 
-        let response: Result<Option<Commit>, HyperError> = self.http_client.get(
-            github_last_commit_url.as_str(),
-            ContentType::Json,
-            self.token.as_str(),
-            None::<String>,
-        ).await;
+        let response: Result<Option<Commit>, HyperError> = self
+            .http_client
+            .get(
+                github_last_commit_url.as_str(),
+                ContentType::Json,
+                self.token.as_str(),
+                None::<String>,
+            )
+            .await;
 
         let gh_commits_rsp = match response {
             Ok(option) => match option {
                 Some(last_hash) => last_hash,
-                None => return Err(
-                    Error::GitHubErrorResponse(
-                        "==> Last hash is missing:".to_string()
-                    )
-                )
+                None => {
+                    return Err(Error::GitHubErrorResponse(
+                        "==> Last hash is missing:".to_string(),
+                    ))
+                }
             },
             Err(err) => {
                 return if let HyperError::Remote(status, msg) = err {
@@ -97,7 +92,7 @@ impl Client {
                 } else {
                     Err(Error::GitHubErrorResponse(format!("{}", err)))
                 }
-            },
+            }
         };
 
         match gh_commits_rsp.last_hash {
@@ -110,20 +105,16 @@ impl Client {
     pub fn new(pat: String) -> Self {
         let token = format!("Bearer {}", pat);
         let http_client = HttpClient::new();
-        Client {
-            token,
-            http_client
-        }
+        Client { token, http_client }
     }
 
     /// Function to get the number of repos per page
     pub async fn get_pages(&self, org: &String) -> Result<Vec<u32>, Error> {
-
         let num_repos = self.get_num_pub_repos(org.to_string()).await?.unwrap_or(0);
 
         println!("==> Number of Repositories in {}: {}", org, num_repos);
 
-        let num_calls = ((num_repos/100) as i8) + 1;
+        let num_calls = ((num_repos / 100) as i8) + 1;
         let num_last_call = num_repos % 100;
 
         let mut vector = vec![100; usize::try_from(num_calls).unwrap()];
@@ -141,44 +132,43 @@ impl Client {
         page: usize,
         per_page: &u32,
     ) -> Result<Vec<Repo>, Error> {
-
-        let github_org_url = format!("{GH_URL}/orgs/{org}/repos?type=sources&page={page}&per_page={per_page}");
+        let github_org_url =
+            format!("{GH_URL}/orgs/{org}/repos?type=sources&page={page}&per_page={per_page}");
 
         println!("Calling({})", github_org_url);
 
-        let response: Result<Option<Vec<Repo>>, HyperError> = self.http_client.get(
-            github_org_url.as_str(),
-            ContentType::Json,
-            self.token.as_str(),
-            None::<String>,
-        ).await;
+        let response: Result<Option<Vec<Repo>>, HyperError> = self
+            .http_client
+            .get(
+                github_org_url.as_str(),
+                ContentType::Json,
+                self.token.as_str(),
+                None::<String>,
+            )
+            .await;
 
         match response {
             Ok(option) => match option {
                 Some(value) => Ok(value),
-                None => Err(
-                    Error::GitHubErrorResponse(
-                        "Get request from GitHub had an empty response".to_string()
-                    )
-                ),
+                None => Err(Error::GitHubErrorResponse(
+                    "Get request from GitHub had an empty response".to_string(),
+                )),
             },
-            Err(err) => Err(
-                Error::GitHubResponse(err)
-            ),
+            Err(err) => Err(Error::GitHubResponse(err)),
         }
     }
 
     /// Clones a git repository to the specified clone path.
     pub fn clone_repo(&self, clone_path: &str, url: &str) -> Result<String, Error> {
-
         println!("==> Cloning repo: {}", url);
 
         match Repository::clone(url, clone_path) {
-            Err(err) => return Err(
-                Error::GitHubErrorResponse(
-                    format!("==> error cloning repository from {}: {}", url, err)
-                )
-            ),
+            Err(err) => {
+                return Err(Error::GitHubErrorResponse(format!(
+                    "==> error cloning repository from {}: {}",
+                    url, err
+                )))
+            }
             _ => info!("Successfully cloned repo"),
         };
 
@@ -202,7 +192,7 @@ pub struct Org {
     /// The number of Public Repos in
     /// this organization
     #[serde(alias = "public_repos")]
-    public_repo_count: Option<u32>
+    public_repo_count: Option<u32>,
 }
 
 /// Repo is used to extract several values from a Request for
@@ -230,7 +220,6 @@ pub struct Repo {
     /// hash of the default branch
     #[serde(default = "empty_string")]
     pub last_hash: String,
-
 }
 
 /// Little function to define default booleans
@@ -247,7 +236,6 @@ fn empty_string() -> String {
 
 /// Repo impl
 impl Repo {
-
     /// This method allows us to add the last hash to a
     /// Repo if it is newer that what is already in Mongo
     ///

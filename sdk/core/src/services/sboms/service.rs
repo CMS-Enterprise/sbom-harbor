@@ -69,7 +69,6 @@ impl SbomService {
         xref: Xref,
         task: &Task,
     ) -> Result<Sbom, Error> {
-
         // Load the raw SBOM into the Harbor model.
         let mut sbom = match Sbom::from_raw_cdx(
             raw,

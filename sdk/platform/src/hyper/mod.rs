@@ -133,11 +133,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
     let resp = match client.request(req).await {
         Ok(r) => r,
         Err(err) => {
-            return Err(
-                Error::Hyper(
-                    err.to_string()
-                )
-            );
+            return Err(Error::Hyper(err.to_string()));
         }
     };
 

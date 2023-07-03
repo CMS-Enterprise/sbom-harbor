@@ -1,5 +1,5 @@
+use platform::persistence::mongodb::{mongo_doc, MongoDocument};
 use serde_derive::{Deserialize, Serialize};
-use platform::persistence::mongodb::{MongoDocument, mongo_doc};
 
 /// Publish the service module
 pub mod service;

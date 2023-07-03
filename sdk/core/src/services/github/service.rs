@@ -1,9 +1,6 @@
-use std::path::Path;
+use crate::services::github::client::{Client as GitHubClient, Repo};
 use crate::services::github::error::Error;
-use crate::services::github::client::{
-    Client as GitHubClient,
-    Repo,
-};
+use std::path::Path;
 
 /// Definition of the GitHubProvider
 #[derive(Debug)]
@@ -19,39 +16,37 @@ impl GitHubService {
     ///
     pub fn new(org: String, pat: String) -> Self {
         let client = GitHubClient::new(pat);
-        GitHubService {
-            org,
-            client,
-        }
+        GitHubService { org, client }
     }
 
     /// Use the GitHub Client to get all of the repositories
     /// from the GitHub Organization
     pub(crate) async fn get_repos(&self) -> Result<Vec<Repo>, Error> {
-
         let mut pages = match self.client.get_pages(&self.org).await {
             Ok(pages) => pages,
-            Err(err) => return Err(
-                Error::GitHubErrorResponse(
-                    format!("Unable to get pages of repos from GitHub: {:#?}", err)
-                )
-            )
+            Err(err) => {
+                return Err(Error::GitHubErrorResponse(format!(
+                    "Unable to get pages of repos from GitHub: {:#?}",
+                    err
+                )))
+            }
         };
 
         let mut repo_vec: Vec<Repo> = Vec::new();
         for (page, per_page) in pages.iter_mut().enumerate() {
-
-            let mut gh_org_rsp = self.client.get_page_of_repos(&self.org, page + 1, per_page).await?;
+            let mut gh_org_rsp = self
+                .client
+                .get_page_of_repos(&self.org, page + 1, per_page)
+                .await?;
 
             for repo in gh_org_rsp.iter_mut() {
-
                 let result = self.client.get_last_commit(repo).await;
                 let repo_name = repo.full_name.clone().unwrap();
 
                 match result {
                     Ok(option) => match option {
                         Some(last_hash) => repo.add_last_hash(last_hash),
-                        None => println!("==> No last commit has found for Repo: {}", &repo_name)
+                        None => println!("==> No last commit has found for Repo: {}", &repo_name),
                     },
                     Err(err) => {
                         if let Error::LastCommitHashError(status, _msg) = err {
@@ -60,7 +55,7 @@ impl GitHubService {
                             }
                         } else {
                             println!("Unexpected error: {:#?}", err);
-                            continue
+                            continue;
                         }
                     }
                 }
@@ -80,7 +75,6 @@ impl GitHubService {
 
     /// Generates a unique clone path for a repository.
     pub fn clone_path(&self, url: &str, hash: &String) -> Result<String, Error> {
-
         let repo_name = url
             .split('/')
             .collect::<Vec<&str>>()
@@ -101,12 +95,11 @@ impl GitHubService {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use platform::config::from_env;
-    use crate::services::github::service::GitHubService;
     use crate::services::github::client::Client;
+    use crate::services::github::service::GitHubService;
+    use platform::config::from_env;
 
     /// For this test to work, one must be in the harbor-test-org
     /// and have a test PAT in their environment with permissions
@@ -114,10 +107,9 @@ mod tests {
     #[tokio::test]
     #[ignore = "debug manual only"]
     async fn test_get_repos() {
-
         let test_pat = match from_env("GITHUB_PAT") {
             Some(v) => v,
-            None => panic!("No TEST_PAT in environment") // test panic
+            None => panic!("No TEST_PAT in environment"), // test panic
         };
 
         let client = Client::new(test_pat);
@@ -135,10 +127,9 @@ mod tests {
     #[tokio::test]
     #[ignore = "debug manual only"]
     fn test_clone_repo() {
-
         let test_pat = match from_env("GITHUB_PAT") {
             Some(v) => v,
-            None => panic!("No GITHUB_PAT in environment") // test panic
+            None => panic!("No GITHUB_PAT in environment"), // test panic
         };
 
         let last_hash = "BSLASTHASH";
@@ -152,13 +143,13 @@ mod tests {
 
         let clone_path = match service.clone_repo(repo, last_hash) {
             Ok(clone_path) => clone_path,
-            Err(err) => panic!("{}", err)
+            Err(err) => panic!("{}", err),
         };
 
         println!("THE FUCKING RESULT: {:#?}", clone_path);
 
-        service.remove_clone(clone_path.as_str()).expect(
-            format!("Unable to remove clone path: {}", last_hash).as_str()
-        );
+        service
+            .remove_clone(clone_path.as_str())
+            .expect(format!("Unable to remove clone path: {}", last_hash).as_str());
     }
 }

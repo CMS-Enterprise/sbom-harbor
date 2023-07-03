@@ -1,4 +1,3 @@
-
 /// Publish the GitHub sync module
 pub mod sync;
 pub use sync::*;
@@ -7,6 +6,8 @@ pub use sync::*;
 mod tests {
     use crate::config::{dev_context, snyk_token};
     use crate::entities::tasks::{Task, TaskKind};
+    use crate::services::github::mongo::GitHubProviderMongoService;
+    use crate::services::github::service::GitHubService;
     use crate::services::packages::PackageService;
     use crate::services::sboms::{FileSystemStorageProvider, SbomService};
     use crate::tasks::sboms::github::sync::SyncTask;
@@ -14,8 +15,6 @@ mod tests {
     use crate::{entities, Error};
     use platform::persistence::mongodb::Store;
     use std::sync::Arc;
-    use crate::services::github::mongo::GitHubProviderMongoService;
-    use crate::services::github::service::GitHubService;
 
     #[async_std::test]
     #[ignore = "manual_debug_test"]
@@ -37,7 +36,6 @@ mod tests {
     }
 
     async fn test_provider() -> Result<SyncTask, Error> {
-
         let org = String::from("cmsgov");
 
         let token = snyk_token()?;
@@ -52,10 +50,7 @@ mod tests {
         let provider = SyncTask::new(
             mongo_service,
             GitHubService::new(org, token),
-            SbomService::new(
-                store.clone(),
-                Some(storage),
-                Some(package_service)),
+            SbomService::new(store.clone(), Some(storage), Some(package_service)),
         )?;
 
         Ok(provider)

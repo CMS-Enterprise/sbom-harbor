@@ -1,7 +1,7 @@
+use crate::Error as CoreError;
+use platform::hyper::Error as PlatformHttpError;
+use platform::Error as PlatformError;
 use thiserror::Error;
-use platform::{Error as PlatformError};
-use platform::hyper::{Error as PlatformHttpError};
-use crate::{Error as CoreError};
 
 /// Represents all handled Errors for the GitHub Provider.
 ///
