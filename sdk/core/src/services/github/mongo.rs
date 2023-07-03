@@ -116,6 +116,7 @@ pub struct GitHubSbomProviderEntry {
 mongo_doc!(GitHubSbomProviderEntry);
 
 #[tokio::test]
+#[ignore = "manual_debug_test"]
 async fn test_add_document() {
 
     let ctx = get_default_context();
