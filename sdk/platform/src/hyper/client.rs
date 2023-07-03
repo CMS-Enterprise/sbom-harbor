@@ -5,6 +5,9 @@ use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
+const USER_AGENT: &str = "User-Agent";
+const HARBOR: &str = "SBOM-Harbor";
+
 /// Wrapper type over a native Hyper Client. Allows for consistent, concise instance construction
 /// and a conventional set of abstractions over low level methods.
 #[derive(Debug)]
@@ -147,6 +150,7 @@ impl Client {
             .method(method)
             .uri(uri)
             .header(CONTENT_TYPE, content_type.to_string())
+            .header(USER_AGENT, HARBOR)
             .body(req_body)?;
 
         if !token.is_empty() {

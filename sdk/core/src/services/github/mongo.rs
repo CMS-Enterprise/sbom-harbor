@@ -52,7 +52,7 @@ impl GitHubProviderMongoService {
             Err(err) => return Err(Error::MongoDb(err)),
         };
 
-        println!("PROCESSING> Added NEW Document to MongoDB: {:#?}", document);
+        println!("==> Added NEW Document to MongoDB: {:#?}", document);
 
         Ok(document)
     }

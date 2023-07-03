@@ -9,8 +9,9 @@ use tracing::info;
 use platform::hyper::{
     ContentType,
     Error as HyperError,
-    get
 };
+
+use platform::hyper::{Client as HttpClient};
 
 use crate::services::github::error::Error;
 
@@ -20,7 +21,8 @@ const GH_URL: &str = "https://api.github.com";
 /// GitHub Client for hitting teh HTTP API
 pub struct Client {
     /// GitHub PAT
-    token: String
+    token: String,
+    http_client: HttpClient
 }
 
 impl Client {
@@ -40,7 +42,7 @@ impl Client {
 
         let org_url: String = format!("{GH_URL}/orgs/{org}");
 
-        let response: Result<Option<Org>, HyperError> = get(
+        let response: Result<Option<Org>, HyperError> = self.http_client.get(
             org_url.as_str(),
             ContentType::Json,
             self.token.as_str(),
@@ -70,7 +72,7 @@ impl Client {
 
         let github_last_commit_url = self.get_last_commit_url(repo);
 
-        let response: Result<Option<Commit>, HyperError> = get(
+        let response: Result<Option<Commit>, HyperError> = self.http_client.get(
             github_last_commit_url.as_str(),
             ContentType::Json,
             self.token.as_str(),
@@ -108,7 +110,11 @@ impl Client {
     /// Conventional Constructor.
     pub fn new(pat: String) -> Self {
         let token = format!("Bearer {}", pat);
-        Client { token }
+        let http_client = HttpClient::new();
+        Client {
+            token,
+            http_client
+        }
     }
 
     /// Function to get the number of repos per page
@@ -141,7 +147,7 @@ impl Client {
 
         println!("Calling({})", github_org_url);
 
-        let response: Result<Option<Vec<Repo>>, HyperError> = get(
+        let response: Result<Option<Vec<Repo>>, HyperError> = self.http_client.get(
             github_org_url.as_str(),
             ContentType::Json,
             self.token.as_str(),
@@ -179,7 +185,7 @@ impl Client {
     /// Clones a git repository to the specified clone path.
     pub fn clone_repo(&self, clone_path: &str, url: &str) -> Result<(), Error> {
 
-        println!("PROCESSING> Cloning repo: {}", url);
+        println!("==> Cloning repo: {}", url);
 
         match Repository::clone(url, clone_path) {
             Err(err) => return Err(

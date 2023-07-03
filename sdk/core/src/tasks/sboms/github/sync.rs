@@ -81,7 +81,7 @@ impl TaskProvider for SyncTask {
                                 .await {
                                 Ok(sbom) => {
                                     let opt = Some(sbom);
-                                    println!("SBOM Ingestion went OK");
+                                    println!("==> SBOM Ingestion went OK");
                                     opt
                                 },
                                 Err(err) => {
@@ -93,7 +93,7 @@ impl TaskProvider for SyncTask {
                                 }
                             };
                         }
-                        None => println!("No work to do because the hashes matched")
+                        None => println!("==> No work to do because the hashes matched")
                     }
                     Err(err) => println!("==> Repo processing failure: {}", err)
                 };
@@ -104,7 +104,7 @@ impl TaskProvider for SyncTask {
         }
 
         // TODO How should I actually report these?
-        println!("FINISHED PROCESSING, total: {}, failed: {}, skipped: {}", total, failed, skipped);
+        println!("==> FINISHED PROCESSING, total: {}, failed: {}, skipped: {}", total, failed, skipped);
 
         Ok(errors)
     }
