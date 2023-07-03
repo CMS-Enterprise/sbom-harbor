@@ -169,19 +169,6 @@ impl Client {
         }
     }
 
-    /// Generates a unique clone path for a repository.
-    pub fn clone_path(&self, url: &str, hash: &String) -> String {
-
-        let repo_name = url
-            .split('/')
-            .collect::<Vec<&str>>()
-            .pop()
-            .unwrap()
-            .replace(".git", "");
-
-        format!("/tmp/harbor-debug/{}/{}", hash, repo_name)
-    }
-
     /// Clones a git repository to the specified clone path.
     pub fn clone_repo(&self, clone_path: &str, url: &str) -> Result<(), Error> {
 

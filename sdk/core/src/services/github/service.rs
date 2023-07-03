@@ -79,7 +79,15 @@ impl GitHubService {
 
     /// Generates a unique clone path for a repository.
     pub fn clone_path(&self, url: &str, hash: &String) -> String {
-        self.client.clone_path(url, hash)
+
+        let repo_name = url
+            .split('/')
+            .collect::<Vec<&str>>()
+            .pop()
+            .unwrap()
+            .replace(".git", "");
+
+        format!("/tmp/harbor-debug/{}/{}", hash, repo_name)
     }
 
     /// Removes a cloned repository from the filesystem.
