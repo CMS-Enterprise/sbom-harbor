@@ -51,7 +51,7 @@ impl Client {
 
         match response {
             Ok(option) => match option {
-                Some(value) => Ok(value.public_repos),
+                Some(value) => Ok(value.public_repo_count),
                 None => Err(
                     Error::GitHubErrorResponse(
                         "Get request from GitHub had an empty response".to_string()
@@ -210,7 +210,7 @@ pub struct Commit {
 pub struct Org {
     /// The number of Public Repos in
     /// this organization
-    public_repos: Option<u32>
+    public_repo_count: Option<u32>
 }
 
 /// Repo is used to extract several values from a Request for
