@@ -1,4 +1,4 @@
-
+use std::path::Path;
 use crate::services::github::error::Error;
 use crate::services::github::client::{
     Client as GitHubClient,
@@ -93,7 +93,11 @@ impl GitHubService {
 
     /// Removes a cloned repository from the filesystem.
     pub fn remove_clone(&self, clone_path: &str) -> std::io::Result<()> {
-        self.client.remove_clone(clone_path)
+        if Path::new(&clone_path).is_dir() {
+            return std::fs::remove_dir_all(clone_path);
+        }
+
+        Ok(())
     }
 }
 
