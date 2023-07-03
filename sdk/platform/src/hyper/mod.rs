@@ -17,7 +17,7 @@ pub mod body;
 
 const CONTENT_TYPE: &str = "content-type";
 const USER_AGENT: &str = "User-Agent";
-const HARBOR: &str = "SBOM-Harbor";
+const HYPER_CLIENT: &str = "Hyper-Client";
 
 /// HTTP Content Types.
 pub enum ContentType {
@@ -115,7 +115,7 @@ pub async fn request<T: Serialize, U: DeserializeOwned>(
         .method(method)
         .uri(uri)
         .header(CONTENT_TYPE, content_type.to_string())
-        .header(USER_AGENT, HARBOR)
+        .header(USER_AGENT, HYPER_CLIENT)
         .body(req_body)?;
 
     if !token.is_empty() {
