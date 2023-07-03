@@ -13,8 +13,6 @@ use harbcore::services::packages::PackageService;
 use harbcore::tasks::sboms::github::SyncTask;
 use harbcore::tasks::TaskProvider;
 
-const DEFAULT_ORG: &str = "cmsgov";
-
 /// Args for generating one or more SBOMs from a GitHub Organization.
 #[derive(Clone, Debug, Parser)]
 pub struct GitHubArgs {
@@ -30,12 +28,16 @@ pub(crate) async fn execute(args: &IngestArgs) -> Result<(), Error> {
         Some(gh_args) => match &gh_args.org {
             Some(org) => org.to_string(),
 
-            // If no org in the arguments, default
-            None => DEFAULT_ORG.to_string()
+            // If no org in the arguments, error
+            None => return Err(Error::Sbom(
+                "GitHub organization not specified".to_string(),
+            ))
         },
 
-        // If no GitHub arguments, default.
-        None => DEFAULT_ORG.to_string()
+        // If no GitHub arguments, error.
+        None => return Err(Error::Sbom(
+            "GitHub organization not specified".to_string(),
+        ))
     }.to_string();
 
     let cx = match &args.debug {
@@ -67,23 +69,13 @@ pub(crate) async fn execute(args: &IngestArgs) -> Result<(), Error> {
         SbomService::new(store.clone(), Some(storage), Some(package_service)),
     ).map_err(|e| Error::Sbom(e.to_string()))?;
 
-    match &args.github_args {
-        None => {
+    let task_kind = TaskKind::Sbom(SbomProviderKind::GitHub);
 
-            let task_kind = TaskKind::Sbom(SbomProviderKind::GitHub);
+    let mut task: Task = Task::new(task_kind)
+        .map_err(|e| Error::Sbom(e.to_string()))?;
 
-            let mut task: Task = Task::new(task_kind)
-                .map_err(|e| Error::Sbom(e.to_string()))?;
-
-            provider
-                .execute(&mut task)
-                .await
-                .map_err(|e| Error::Sbom(e.to_string()))
-        }
-        Some(_) => {
-            Err(Error::Sbom(
-                "individual projects not yet implemented".to_string(),
-            ))
-        }
-    }
+    provider
+        .execute(&mut task)
+        .await
+        .map_err(|e| Error::Sbom(e.to_string()))
 }
