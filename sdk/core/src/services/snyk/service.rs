@@ -70,7 +70,7 @@ impl SnykService {
             // Get the projects for the org.
             match self.projects_by_org(org).await {
                 Ok(p) => {
-                    projects.extend(p.into_iter());
+                    projects.extend(p);
                 }
                 Err(e) => {
                     debug!("gather_projects::projects::{}", e);
