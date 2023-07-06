@@ -38,6 +38,9 @@ pub use errors::Error;
 /// Namespace for various persistence infrastructure providers like S3 or MongoDB.
 pub mod persistence;
 
+/// Provides utility functions for use in tests.
+pub mod testing;
+
 /// Extensions to `std::time`.
 pub mod time;
 
