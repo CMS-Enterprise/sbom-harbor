@@ -1416,10 +1416,10 @@ components:
         application/json:
           schema:
             type: string
-            oneOf:
-              - $ref: 'https://gist.githubusercontent.com/DerekStrickland/9b9c4997b68b278e1f9835e235a87e52/raw/917863e9233c15af783cbab33655a53496e9e84e/cyclonedx-1.4.json'
-              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.3/schema/bom-1.3.schema.json'
-              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.2/schema/bom-1.2.schema.json'
+#            oneOf:
+#              - $ref: 'https://gist.githubusercontent.com/DerekStrickland/9b9c4997b68b278e1f9835e235a87e52/raw/917863e9233c15af783cbab33655a53496e9e84e/cyclonedx-1.4.json'
+#              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.3/schema/bom-1.3.schema.json'
+#              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.2/schema/bom-1.2.schema.json'
 
   responses:
     badRequest:

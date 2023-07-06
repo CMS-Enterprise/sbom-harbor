@@ -1,0 +1,3 @@
+[placeholders.service_type]
+type = "string"
+prompt = "What type does this service manage?"

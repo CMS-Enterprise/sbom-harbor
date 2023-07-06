@@ -14,8 +14,8 @@ use crate::Error;
 pub type DynTeamService = Arc<TeamService>;
 
 /// Factory method for a new instance of a TeamService.
-pub fn new_service(store: Arc<Store>) -> Arc<TeamService> {
-    Arc::new(TeamService::new(store))
+pub fn new(store: Arc<Store>) -> Arc<TeamService> {
+    Arc::new(TeamService::new(store.clone()))
 }
 
 // WATCH: Trying to get by without a custom extractor.

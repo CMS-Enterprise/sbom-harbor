@@ -4,12 +4,12 @@ use axum::extract::{Path, State};
 use tracing::instrument;
 
 {% if request_type != "()" %}
-use harbcore::models::{{ request_type }};
+use harbcore::entities::{{ request_type }};
 use harbcore::services::{{ request_type }}Service;
-use platform::mongodb::{Service, Store};
+use platform::persistence::mongodb::{Service, Store};
 {% endif %}
 {% if response_type != "()" %}
-use harbcore::models::{{ response_type }};
+use harbcore::entities::{{ response_type }};
 {% endif %}
 
 use crate::auth::Claims;
@@ -18,8 +18,8 @@ use crate::Error;
 {% if response_type != "()" %}
 pub type Dyn{{ response_type }}Service = Arc<{{ response_type }}Service>;
 
-pub fn new_service<'a>(store: Arc<Store>) -> Arc<{{ response_type }}Service> {
-    Arc::new({{ response_type }}Service::new(store))
+pub fn new(store: Arc<Store>) -> Arc<{{ response_type }}Service> {
+    Arc::new({{ response_type }}Service::new(store.clone()))
 }
 {% endif %}
 
@@ -46,13 +46,14 @@ pub async fn get(
         Some(t) => Ok(Json(t)),
     }
 }
-    {% when "post"%}
+    {% when "post" %}
 #[instrument]
 #[debug_handler]
 pub async fn post(
     _claims: Claims,
     State(service): State<Dyn{{ response_type }}Service>,
-    Json({{ response_type | downcase }}): Json<{{ response_type }}>) -> Result<Json<{{ response_type }}>, Error> {
+    Json({{ response_type | downcase }})Insert: Json<{{ response_type }}>) -> Result<Json<{{
+response_type }}>, Error> {
 
     if !{{ response_type | downcase }}.id.is_empty() {
         return Err(Error::InvalidParameters("client generated id invalid".to_string()));
@@ -67,7 +68,7 @@ pub async fn post(
 
     Ok(Json({{ response_type | downcase }}))
 }
-    {% when "put"%}
+    {% when "put" %}
 #[instrument]
 #[debug_handler]
 pub async fn put(
