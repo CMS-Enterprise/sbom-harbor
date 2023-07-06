@@ -1,7 +1,3 @@
-[template]
-include = ["commands", "controllers", "services"]
-
-
 [placeholders.operation_type]
 type = "string"
 prompt = "What type of operation is this?"
