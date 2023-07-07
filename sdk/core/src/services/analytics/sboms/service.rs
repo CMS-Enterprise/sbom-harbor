@@ -56,6 +56,22 @@ fn report_analytic_stage_1(purl: String) -> Stage {
     }))
 }
 
+/// True Stage 2 in the analytic - sort by timestamp desc to get latest Sbom at the top.
+fn sort_by_timestamp_desc() -> Stage {
+    Stage::new(json!({
+        "$sort": {
+            "timestamp": -1,
+        }
+    }))
+}
+
+/// True Stage 3 in the analytic - take only latest Sbom instead of all instances.
+fn limit_1() -> Stage {
+    Stage::new(json!({
+        "$limit": 1,
+    }))
+}
+
 /// Stage 2 in the Report analytic
 fn report_analytic_stage_2() -> Stage {
     Stage::new(json!({
@@ -284,6 +300,10 @@ impl AnalyticService {
     pub(crate) async fn generate_detail(&self, purl: String) -> Result<Option<String>, Error> {
         self.pipeline
             .add_stage(report_analytic_stage_1(purl.clone()));
+
+        self.pipeline.add_stage(sort_by_timestamp_desc());
+
+        self.pipeline.add_stage(limit_1());
 
         self.pipeline.add_stage(report_analytic_stage_2());
 
