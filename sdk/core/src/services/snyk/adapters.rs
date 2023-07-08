@@ -217,8 +217,11 @@ impl IssueSnyk {
         }
     }
 
+    // We are using the title as the description. The full description can contain any kind of
+    // data which makes it very difficult to store without significant work. We can always look
+    // this up.
     fn description(&self) -> Option<String> {
-        self.attributes.as_deref()?.description.as_ref().cloned()
+        self.attributes.as_deref()?.title.as_ref().cloned()
     }
 
     fn cvss(&self) -> Option<Cvss> {

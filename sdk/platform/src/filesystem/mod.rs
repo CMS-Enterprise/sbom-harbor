@@ -1,8 +1,8 @@
 use crate::Error;
 use regex::Regex;
 
-/// Function to make the file name safe
-pub fn make_file_name_safe(purl: &str) -> Result<String, Error> {
+/// Sanitize a string so that it can be used as a filename.
+pub fn to_safe_file_name(purl: &str) -> Result<String, Error> {
     let re = Regex::new(r"[^A-Za-z0-9]").unwrap();
     let result = re.replace_all(purl, "-");
     let mut result = result.as_ref();

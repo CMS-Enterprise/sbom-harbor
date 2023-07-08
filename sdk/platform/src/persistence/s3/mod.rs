@@ -8,8 +8,8 @@ use regex::Regex;
 use std::collections::HashMap;
 use tracing::instrument;
 
-/// Format a string so that it can be used as an object key in S3.
-pub fn make_s3_key_safe(purl: &str) -> Result<String, Error> {
+/// Sanitize a string so that it can be used as an object key in S3.
+pub fn to_safe_object_key(purl: &str) -> Result<String, Error> {
     let re = Regex::new(r"[^A-Za-z0-9]").unwrap();
     let result = re.replace_all(purl, "-");
     let mut result = result.as_ref();
@@ -89,7 +89,7 @@ impl Store {
                 let mut result = HashMap::<String, String>::new();
 
                 for (k, v) in incoming.iter() {
-                    let safe_s3_key_name = make_s3_key_safe(k)?;
+                    let safe_s3_key_name = to_safe_object_key(k)?;
 
                     result.insert(safe_s3_key_name, v.to_string());
                 }
@@ -199,7 +199,7 @@ mod tests {
             serde_json::from_str(TEST_PURLS).map_err(|e| Error::Serde(e.to_string()))?;
 
         for test_case in test_cases.iter() {
-            let result = make_s3_key_safe(test_case.purl.as_str())?;
+            let result = to_safe_object_key(test_case.purl.as_str())?;
 
             println!("{}", result);
 
