@@ -51,14 +51,20 @@ impl TaskProvider for DetailTask {
 
         task.count = primary_purls.len() as u64;
 
+        println!("==> processing {} sboms for detail report", task.count);
+
         for purl in primary_purls {
+            println!("==> generating detail report for purl {}", purl);
+
             match self.service.generate_detail(purl.clone()).await {
                 Ok(file_path_option) => {
                     if let Some(file_path) = file_path_option {
+                        println!("==> Sbom detail report complete for {}", purl);
                         report_paths.push(file_path)
                     }
                 }
                 Err(err) => {
+                    println!("==> Sbom detail report complete for {}", purl);
                     errors.insert(purl, format!("{}", err));
                 }
             }

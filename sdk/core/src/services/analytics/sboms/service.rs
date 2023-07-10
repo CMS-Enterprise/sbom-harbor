@@ -68,12 +68,45 @@ fn sort_by_timestamp_desc() -> Stage {
 /// True Stage 3 in the analytic - take only latest Sbom instead of all instances.
 fn limit_1() -> Stage {
     Stage::new(json!({
-        "$limit": 1,
+    "$limit": 1,
+    }))
+}
+
+/// Adds the Fisma Xref from the xrefs vector as a field on the document.
+fn fisma_xref_array() -> Stage {
+    Stage::new(json!({
+        "$addFields": {
+          "fismaXref": {
+            "$filter": {
+                    "input": "$xrefs",
+                    "as": "xref",
+                    "cond": {
+                        "$eq": [
+                            "$$xref.kind",
+                            "external::fisma"
+                        ]
+                    }
+                }
+          },
+        }
+    }))
+}
+
+/// Adds the first element of the Xref array as a field on the document.
+fn fisma_xref() -> Stage {
+    Stage::new(json!({
+        "$addFields": {
+          "fismaId": {
+            "$arrayElemAt": ["$fismaXref", 0],
+          },
+        }
     }))
 }
 
 /// Stage 2 in the Report analytic
 fn report_analytic_stage_2() -> Stage {
+    // Notice in that we are completing the extraction of the FISMA ID from the previous step, in
+    // this projection.
     Stage::new(json!({
         "$project": {
             "_id": 0,
@@ -83,7 +116,8 @@ fn report_analytic_stage_2() -> Stage {
             "created": 1,
             "packageManager": 1,
             "provider": 1,
-            "dependencyRefs": 1
+            "dependencyRefs": 1,
+            "fismaId": "$fismaId.map.id" // project the id from the map
         }
     }))
 }
@@ -147,6 +181,9 @@ fn report_analytic_stage_6() -> Stage {
           },
           "created": {
             "$first": "$created"
+          },
+          "fismaId": {
+            "$first": "$fismaId"
           },
           "report": {
             "$push": "$report",
@@ -222,6 +259,9 @@ fn report_analytic_stage_11() -> Stage {
             },
             "created": {
                 "$first": "$created"
+            },
+            "fismaId": {
+                "$first": "$fismaId"
             },
             "report": {
                 "$push": {
@@ -304,6 +344,10 @@ impl AnalyticService {
         self.pipeline.add_stage(sort_by_timestamp_desc());
 
         self.pipeline.add_stage(limit_1());
+
+        self.pipeline.add_stage(fisma_xref_array());
+
+        self.pipeline.add_stage(fisma_xref());
 
         self.pipeline.add_stage(report_analytic_stage_2());
 

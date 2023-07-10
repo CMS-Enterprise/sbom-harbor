@@ -17,6 +17,8 @@ use std::sync::Arc;
 pub struct DetailArgs {}
 
 pub(crate) async fn execute(args: &AnalyzeArgs) -> Result<(), Error> {
+    println!("==> Beginning sbom detail report");
+
     let storage: Arc<dyn StorageProvider>;
 
     let cx = match &args.debug {
@@ -48,10 +50,15 @@ pub(crate) async fn execute(args: &AnalyzeArgs) -> Result<(), Error> {
             provider
                 .execute(&mut task)
                 .await
-                .map_err(|e| Error::Analyze(e.to_string()))
+                .map_err(|e| Error::Analyze(e.to_string()))?
         }
-        Some(_a) => Err(Error::Analyze(String::from(
-            "other analysis not yet implemented",
-        ))),
+        Some(_a) => {
+            return Err(Error::Analyze(String::from(
+                "other analysis not yet implemented",
+            )));
+        }
     }
+
+    println!("==> Sbom detail report complete");
+    Ok(())
 }

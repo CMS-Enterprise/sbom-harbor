@@ -123,7 +123,7 @@ async fn analytic_test() {
     let cx = match test_context(None) {
         Ok(cx) => cx,
         Err(e) => {
-            trace!("unable to retrieve connection config: {}", e);
+            println!("unable to retrieve connection config: {}", e);
             return;
         }
     };

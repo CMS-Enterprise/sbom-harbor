@@ -13,9 +13,9 @@ use crate::entities::sboms::Sbom;
 use crate::entities::xrefs;
 use crate::entities::xrefs::Xref;
 use async_trait::async_trait;
-use platform::filesystem::make_file_name_safe;
+use platform::filesystem::to_safe_file_name;
 use platform::persistence::s3;
-use platform::persistence::s3::make_s3_key_safe;
+use platform::persistence::s3::to_safe_object_key;
 
 /// Abstract storage provider for [Sboms].
 #[async_trait]
@@ -54,7 +54,7 @@ impl StorageProvider for FileSystemStorageProvider {
         sbom: &mut Sbom,
         _xref: &Option<Xref>,
     ) -> Result<String, Error> {
-        let purl = make_file_name_safe(&sbom.purl()?)?;
+        let purl = to_safe_file_name(&sbom.purl()?)?;
 
         match std::fs::create_dir_all(&self.out_dir) {
             Ok(_) => {}
@@ -92,7 +92,7 @@ impl StorageProvider for S3StorageProvider {
         sbom: &mut Sbom,
         xref: &Option<Xref>,
     ) -> Result<String, Error> {
-        let purl = make_s3_key_safe(&sbom.purl()?)?;
+        let purl = to_safe_object_key(&sbom.purl()?)?;
 
         let metadata = xref.as_ref().map(xrefs::flatten);
 
@@ -100,7 +100,7 @@ impl StorageProvider for S3StorageProvider {
         let s3_store = s3::Store::new_from_env().await?;
         let bucket_name = config::harbor_bucket()?;
         let mut object_key = format!("{}-{}", purl, sbom.instance);
-        object_key = make_s3_key_safe(object_key.as_str())?;
+        object_key = to_safe_object_key(object_key.as_str())?;
         object_key = format!("sboms/{}.json", object_key);
 
         let reader = BufReader::new(raw.as_slice());
