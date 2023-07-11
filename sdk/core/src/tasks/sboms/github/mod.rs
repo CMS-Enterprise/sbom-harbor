@@ -1,6 +1,35 @@
 /// Publish the GitHub sync module
 pub mod sync;
+
+use std::collections::HashMap;
 pub use sync::*;
+
+/// Temporary way to associate build files with Syft catalogers.  Syft
+/// can use the same cataloger for multiple types of files, that is the reason
+/// we need to use a vector to manage them.
+pub fn get_cataloger_to_build_target_map() -> HashMap<String, Vec<String>> {
+    let mut map = HashMap::new();
+
+    // Add java pom.xml
+    map.insert("java-pom".to_string(), vec!["pom.xml".to_string()]);
+
+    // Add support for finding javascript build files
+    map.insert(
+        "javascript-package".to_string(),
+        vec!["package.json".to_string()],
+    );
+
+    // Add support for python requirements.txt build files
+    map.insert(
+        "python-index".to_string(),
+        vec!["requirements.txt".to_string()],
+    );
+
+    // Add support for Ruby Gemfiles
+    map.insert("ruby-gemfile".to_string(), vec!["Gemfile".to_string()]);
+
+    map
+}
 
 #[cfg(test)]
 mod tests {

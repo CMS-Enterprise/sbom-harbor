@@ -1,10 +1,10 @@
 use crate::Error as CoreError;
+use platform::git::error::Error as GitServiceError;
 use platform::hyper::Error as PlatformHttpError;
 use platform::Error as PlatformError;
 use thiserror::Error;
 
 /// Represents all handled Errors for the GitHub Provider.
-///
 #[derive(Error, Debug)]
 pub enum Error {
     /// Raised when we have a generic MongoDB Error
@@ -26,4 +26,10 @@ pub enum Error {
     /// commit has from a given GetHub Repo
     #[error("error getting last hash from Github: {0}")]
     LastCommitHashError(u16, String),
+    /// Error cloning repository
+    #[error(transparent)]
+    CloneRepo(#[from] GitServiceError),
+    /// Error cloning repository
+    #[error("error finding build targets")]
+    Find(),
 }

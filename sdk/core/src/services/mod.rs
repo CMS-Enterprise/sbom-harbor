@@ -36,3 +36,6 @@ pub mod analytics;
 /// The GitHub module contains integration logic related to the management of [Packages],
 /// and [SBOMs] leveraging GitHub organizations.
 pub mod github;
+
+/// Module for Syft: library for generating a Software Bill of Materials (SBOM)
+pub(crate) mod syft;

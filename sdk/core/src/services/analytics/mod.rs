@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use crate::{config, Error};
 use async_trait::async_trait;
-use platform::filesystem::to_safe_file_name;
+use platform::filesystem::make_file_name_safe;
 use platform::persistence::s3;
 use platform::persistence::s3::to_safe_object_key;
 use serde_json::Value;
@@ -14,7 +14,7 @@ use std::io::{BufReader, Cursor};
 
 /// Ensuring the file name is safe
 fn get_file_name(purl: &str) -> Result<String, Error> {
-    let safe_purl = to_safe_file_name(purl)?;
+    let safe_purl = make_file_name_safe(purl)?;
     Ok(format!("{}.json", safe_purl))
 }
 

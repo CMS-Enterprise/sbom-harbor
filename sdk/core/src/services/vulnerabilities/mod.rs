@@ -4,7 +4,7 @@ pub use service::*;
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use platform::filesystem::to_safe_file_name;
+use platform::filesystem::make_file_name_safe;
 use platform::persistence::s3;
 use platform::persistence::s3::to_safe_object_key;
 use std::fmt::Debug;
@@ -70,7 +70,7 @@ impl StorageProvider for FileSystemStorageProvider {
             }
         }
 
-        let file_name = format!("{}-{}.json", provider, to_safe_file_name(purl)?);
+        let file_name = format!("{}-{}.json", provider, make_file_name_safe(purl)?);
         let file_path = format!("{}/{}", self.out_dir, file_name);
 
         let json_raw = serde_json::to_string(vulnerabilities)

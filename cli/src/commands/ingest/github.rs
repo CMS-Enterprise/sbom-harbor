@@ -68,7 +68,7 @@ pub(crate) async fn execute(args: &IngestArgs) -> Result<(), Error> {
     )
     .map_err(|e| Error::Sbom(e.to_string()))?;
 
-    let task_kind = TaskKind::Sbom(SbomProviderKind::GitHub);
+    let task_kind = TaskKind::Sbom(SbomProviderKind::HarborSyft);
 
     let mut task: Task = Task::new(task_kind).map_err(|e| Error::Sbom(e.to_string()))?;
 
@@ -76,4 +76,31 @@ pub(crate) async fn execute(args: &IngestArgs) -> Result<(), Error> {
         .execute(&mut task)
         .await
         .map_err(|e| Error::Sbom(e.to_string()))
+}
+
+#[cfg(test)]
+mod test {
+    use crate::commands::ingest::github::{execute, GitHubArgs};
+    use crate::commands::ingest::{IngestArgs, IngestionProviderKind};
+    use crate::Error;
+
+    #[tokio::test]
+    #[ignore = "manual_debug_test"]
+    async fn execute_on_harbor_test_org() -> Result<(), Error> {
+        let gh_args = GitHubArgs {
+            org: Some("harbor-test-org".to_string()),
+        };
+
+        let ingest_args = IngestArgs {
+            provider: IngestionProviderKind::GitHub,
+            debug: true,
+            filesystem_args: None,
+            github_args: Some(gh_args),
+            snyk_args: None,
+        };
+
+        Ok(execute(&ingest_args)
+            .await
+            .expect("Panic at github ingest provider execute!"))
+    }
 }
