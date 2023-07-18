@@ -85,7 +85,6 @@ mod test {
     use crate::Error;
 
     #[tokio::test]
-    #[ignore = "manual_debug_test"]
     async fn execute_on_harbor_test_org() -> Result<(), Error> {
         let gh_args = GitHubArgs {
             org: Some("harbor-test-org".to_string()),
