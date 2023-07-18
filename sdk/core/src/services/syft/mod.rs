@@ -6,6 +6,8 @@ use thiserror::Error;
 
 const CYCLONEDX_JSON_FORMAT: &str = "cyclonedx-json";
 
+// TODO This method is still stopgap because it is using the actual cataloger as the type rather than
+//  the correct type that the cataloger *maps* to.
 /*
    =============================================================
    ==> scheme:type/namespace/name@version?qualifiers#subpath <==
