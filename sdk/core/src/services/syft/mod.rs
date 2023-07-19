@@ -122,6 +122,7 @@ impl Service {
                 }
             };
 
+            println!("==> about to run Syft in: {:#?}", file_path);
             env::set_current_dir(file_path).map_err(|err| {
                 Error::SyftError(format!(
                     "Unable to change directories to build target location: {}",
@@ -129,8 +130,6 @@ impl Service {
                 ))
             })?
         }
-
-        println!("==> about to run Syft in: {}", file_path);
 
         let output = match cataloger.clone() {
             Some(cataloger) => self.run_syft_with_cataloger(cataloger),
