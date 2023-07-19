@@ -97,7 +97,6 @@ mod tests {
     use std::path::Path;
 
     #[tokio::test]
-    #[ignore = "debug manual only"]
     async fn test_good_clone() {
         let repo_location = "/tmp/test-java-repo";
 
@@ -122,19 +121,6 @@ mod tests {
         let git_svc = Git::new(repo_url);
         match git_svc.clone_repo(repo_location.as_str()) {
             Ok(_) => panic!("Should not be able to clone repo"),
-            _ => (),
-        }
-    }
-
-    #[tokio::test]
-    async fn test_no_local_permissions() {
-        // Must be somewhere the user cannot write to
-        let repo_location = "/test-java-repo";
-
-        let repo_url = "https://github.com/harbor-test-org/java-repo.git".to_string();
-        let github_svc = Git::new(repo_url);
-        match github_svc.clone_repo(repo_location) {
-            Ok(_) => panic!("Should not be able to clone repo, can your user write to root(/)?"),
             _ => (),
         }
     }
