@@ -1,10 +1,8 @@
 use std::convert::TryFrom;
 use std::path::Path;
 
-use git2::Repository;
 use serde;
 use serde::{Deserialize, Serialize};
-use tracing::info;
 
 use platform::hyper::{ContentType, Error as HyperError};
 
@@ -16,7 +14,7 @@ use crate::services::github::error::Error;
 const GH_URL: &str = "https://api.github.com";
 
 #[derive(Debug)]
-/// GitHub Client for hitting teh HTTP API
+/// GitHub Client for hitting the HTTP API
 pub struct Client {
     /// GitHub PAT
     token: String,
@@ -28,7 +26,7 @@ impl Client {
 
     /// Creates the URL one must use in an http request for
     /// acquiring the latest commit hash from a given branch
-    fn get_last_commit_url(&self, repo: &mut Repo) -> String {
+    fn get_last_commit_url(&self, repo: &Repo) -> String {
         let repo_name = repo.full_name.as_ref().unwrap();
         let default_branch = repo.default_branch.as_ref().unwrap();
         format!("{GH_URL}/repos/{repo_name}/commits/{default_branch}")
@@ -156,23 +154,6 @@ impl Client {
             },
             Err(err) => Err(Error::GitHubResponse(err)),
         }
-    }
-
-    /// Clones a git repository to the specified clone path.
-    pub fn clone_repo(&self, clone_path: &str, url: &str) -> Result<String, Error> {
-        println!("==> Cloning repo: {}", url);
-
-        match Repository::clone(url, clone_path) {
-            Err(err) => {
-                return Err(Error::GitHubErrorResponse(format!(
-                    "==> error cloning repository from {}: {}",
-                    url, err
-                )))
-            }
-            _ => info!("Successfully cloned repo"),
-        };
-
-        Ok(clone_path.to_string())
     }
 
     /// Removes a cloned repository from the filesystem.

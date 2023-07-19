@@ -193,7 +193,7 @@ impl Sbom {
     }
 
     /// Add a [TaskRef] to the [Sbom].
-    pub fn task_refs(&mut self, task_ref: &mut TaskRef) {
+    pub fn task_refs(&mut self, task_ref: &TaskRef) {
         self.task_refs.push(task_ref.to_owned());
     }
 

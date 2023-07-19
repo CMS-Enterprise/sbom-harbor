@@ -43,3 +43,9 @@ pub mod time;
 
 /// Start of a Filesystem module
 pub mod filesystem;
+
+/// The Git module contains an opinionated api for using git locally
+pub mod git;
+
+/// Module for common string generating functions
+pub mod str;

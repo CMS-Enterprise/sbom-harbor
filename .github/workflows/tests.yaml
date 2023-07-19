@@ -1,5 +1,8 @@
 name: TESTS
 
+env:
+  GITHUB_PAT: notarealpat
+
 on:
   push:
     branches:
@@ -33,6 +36,11 @@ jobs:
         run: |
           wget -O /usr/local/bin/scorecard https://github.com/eBay/sbom-scorecard/releases/download/0.0.7/sbom-scorecard-linux-amd64
           chmod u+x /usr/local/bin/scorecard
+
+      - name: Install latest syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          chmod u+x /usr/local/bin/syft
 
       - name: CHECKOUT
         uses: actions/checkout@v3

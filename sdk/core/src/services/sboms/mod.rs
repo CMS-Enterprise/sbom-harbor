@@ -13,7 +13,7 @@ use crate::entities::sboms::Sbom;
 use crate::entities::xrefs;
 use crate::entities::xrefs::Xref;
 use async_trait::async_trait;
-use platform::filesystem::to_safe_file_name;
+use platform::filesystem::make_file_name_safe;
 use platform::persistence::s3;
 use platform::persistence::s3::to_safe_object_key;
 
@@ -54,7 +54,7 @@ impl StorageProvider for FileSystemStorageProvider {
         sbom: &mut Sbom,
         _xref: &Option<Xref>,
     ) -> Result<String, Error> {
-        let purl = to_safe_file_name(&sbom.purl()?)?;
+        let purl = make_file_name_safe(&sbom.purl()?)?;
 
         match std::fs::create_dir_all(&self.out_dir) {
             Ok(_) => {}

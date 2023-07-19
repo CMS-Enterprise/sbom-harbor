@@ -1,6 +1,7 @@
 use crate::services::github::client::{Client as GitHubClient, Repo};
 use crate::services::github::error::Error;
-use std::path::Path;
+use platform::git::Service as Git;
+use platform::str::get_random_string;
 
 /// Definition of the GitHubProvider
 #[derive(Debug)]
@@ -10,13 +11,14 @@ pub struct GitHubService {
 }
 
 /// Impl for GitHubSbomProvider
-///
 impl GitHubService {
     /// new method sets the organization for the struct
-    ///
     pub fn new(org: String, pat: String) -> Self {
-        let client = GitHubClient::new(pat);
-        GitHubService { org, client }
+        let github_client = GitHubClient::new(pat);
+        GitHubService {
+            org,
+            client: github_client,
+        }
     }
 
     /// Use the GitHub Client to get all of the repositories
@@ -31,6 +33,8 @@ impl GitHubService {
                 )))
             }
         };
+
+        println!("Looking at pages: {:#?}", pages);
 
         let mut repo_vec: Vec<Repo> = Vec::new();
         for (page, per_page) in pages.iter_mut().enumerate() {
@@ -67,14 +71,28 @@ impl GitHubService {
         Ok(repo_vec)
     }
 
+    /// Find files of a certain name in a git repo using the git2 crate
+    pub fn find(
+        &self,
+        url: String,
+        file_name: String,
+        clone_path: String,
+    ) -> Result<Vec<String>, Error> {
+        Git::new(url)
+            .find(file_name, clone_path)
+            .map_err(|_err| Error::Find())
+    }
+
     /// Clones a git repository to the specified clone path.
-    pub fn clone_repo(&self, url: &str, last_hash: &str) -> Result<String, Error> {
-        let clone_path = self.clone_path(url, &last_hash.to_string())?;
-        self.client.clone_repo(clone_path.as_str(), url)
+    pub fn clone_repo(&self, url: &str) -> Result<String, Error> {
+        let clone_path = self.clone_path(url, &get_random_string())?;
+        let git_service = Git::new(String::from(url));
+        git_service.clone_repo(clone_path.as_str())?;
+        Ok(clone_path)
     }
 
     /// Generates a unique clone path for a repository.
-    pub fn clone_path(&self, url: &str, hash: &String) -> Result<String, Error> {
+    fn clone_path(&self, url: &str, rand: &String) -> Result<String, Error> {
         let repo_name = url
             .split('/')
             .collect::<Vec<&str>>()
@@ -82,16 +100,13 @@ impl GitHubService {
             .unwrap()
             .replace(".git", "");
 
-        Ok(format!("/tmp/harbor-debug/{}/{}", hash, repo_name))
+        Ok(format!("/tmp/harbor/{}/{}", rand, repo_name))
     }
 
     /// Removes a cloned repository from the filesystem.
-    pub fn remove_clone(&self, clone_path: &str) -> std::io::Result<()> {
-        if Path::new(&clone_path).is_dir() {
-            return std::fs::remove_dir_all(clone_path);
-        }
-
-        Ok(())
+    pub fn remove_clone(&self, clone_path: &str) -> Result<(), Error> {
+        // Clippy insight made this very clean. Lets focus on using thiserror like this.
+        Git::remove_clone(clone_path).map_err(Error::CloneRepo)
     }
 }
 
@@ -132,24 +147,17 @@ mod tests {
             None => panic!("No GITHUB_PAT in environment"), // test panic
         };
 
-        let last_hash = "BSLASTHASH";
         let repo = "https://github.com/harbor-test-org/java-repo.git";
 
-        let client = Client::new(test_pat);
-        let service = GitHubService {
-            org: "harbor-test-org".to_string(),
-            client,
-        };
+        let service = GitHubService::new("harbor-test-org".to_string(), test_pat);
 
-        let clone_path = match service.clone_repo(repo, last_hash) {
+        let clone_path = match service.clone_repo(repo) {
             Ok(clone_path) => clone_path,
-            Err(err) => panic!("{}", err),
+            Err(err) => panic!("{:#?}", err),
         };
-
-        println!("THE FUCKING RESULT: {:#?}", clone_path);
 
         service
             .remove_clone(clone_path.as_str())
-            .expect(format!("Unable to remove clone path: {}", last_hash).as_str());
+            .expect(format!("Unable to remove clone path: {}", clone_path).as_str());
     }
 }

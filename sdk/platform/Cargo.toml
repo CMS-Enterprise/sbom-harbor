@@ -22,9 +22,11 @@ data-encoding = "2.3.3"
 chrono = "0.4.5"
 futures = "0.3.19"
 futures-util = "0.3.19"
+git2 = "0.16.1"
 hyper = { version = "0.14", features = ["full"] }
 hyper-rustls = { version = "0.23.1", features =["http2"] }
 mongodb = { version = "2.3.1", features = ["aws-auth", "tokio-runtime"] }
+rand = "0.8.5"
 regex = "1.7.3"
 ring = "0.16.20"
 serde = "1.0.147"
