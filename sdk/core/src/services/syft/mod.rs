@@ -174,6 +174,7 @@ impl Service {
         }
 
         if let Some(path) = orig_dir {
+            println!("==> about to change directories back to: {:#?}", orig_dir);
             env::set_current_dir(path).map_err(|err| {
                 Error::SyftError(format!(
                     "Unable to change directories back to original location: {}",
