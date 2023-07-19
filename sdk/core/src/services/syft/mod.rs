@@ -130,6 +130,8 @@ impl Service {
             })?
         }
 
+        println!("==> about to run Syft in: {}", file_path);
+
         let output = match cataloger.clone() {
             Some(cataloger) => self.run_syft_with_cataloger(cataloger),
             None => self.run_syft(),
