@@ -26,7 +26,7 @@ impl Client {
 
     /// Creates the URL one must use in an http request for
     /// acquiring the latest commit hash from a given branch
-    fn get_last_commit_url(&self, repo: &mut Repo) -> String {
+    fn get_last_commit_url(&self, repo: &Repo) -> String {
         let repo_name = repo.full_name.as_ref().unwrap();
         let default_branch = repo.default_branch.as_ref().unwrap();
         format!("{GH_URL}/repos/{repo_name}/commits/{default_branch}")

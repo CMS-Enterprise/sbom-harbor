@@ -144,7 +144,7 @@ impl SyncTask {
         Ok(())
     }
 
-    fn handle_inactive(&self, project: &mut Project) -> Result<(), Error> {
+    fn handle_inactive(&self, project: &Project) -> Result<(), Error> {
         // TODO: Track if a project went from Active to Inactive.
         let msg = "handle_inactive::inactive";
         debug!("{}::{}", msg, project.project_name);
