@@ -1,5 +1,8 @@
 name: TESTS
 
+env:
+  GITHUB_PAT: notarealpat
+
 on:
   push:
     branches:
