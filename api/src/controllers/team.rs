@@ -15,7 +15,7 @@ pub type DynTeamService = Arc<TeamService>;
 
 /// Factory method for a new instance of a TeamService.
 pub fn new(store: Arc<Store>) -> Arc<TeamService> {
-    Arc::new(TeamService::new(store.clone()))
+    Arc::new(TeamService::new(store))
 }
 
 // WATCH: Trying to get by without a custom extractor.
