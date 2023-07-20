@@ -1,23 +1,32 @@
+use std::sync::Arc;
+use async_trait::async_trait;
 use crate::services::github::client::{Client as GitHubClient, Repo};
 use crate::services::github::error::Error;
 use platform::git::Service as Git;
+use platform::persistence::mongodb::Store;
 use platform::str::get_random_string;
+use crate::services::github::Commit;
+use platform::persistence::mongodb::Service as MongoService;
+use platform::Error as PlatformError;
+
 
 /// Definition of the GitHubProvider
 #[derive(Debug)]
 pub struct GitHubService {
     org: String,
     client: GitHubClient,
+    pub(crate) store: Arc<Store>
 }
 
 /// Impl for GitHubSbomProvider
 impl GitHubService {
     /// new method sets the organization for the struct
-    pub fn new(org: String, pat: String) -> Self {
-        let github_client = GitHubClient::new(pat);
+    pub fn new(org: String, pat: String, store: Arc<Store>) -> Self {
+        let client = GitHubClient::new(pat);
         GitHubService {
             org,
-            client: github_client,
+            client,
+            store
         }
     }
 
@@ -49,13 +58,7 @@ impl GitHubService {
 
                 let last_hash_result = self.client.get_last_commit(repo).await;
                 match last_hash_result {
-                    Ok(option) => match option {
-                        Some(last_hash) => repo.add_last_hash(last_hash),
-                        None => println!(
-                            "==> No last commit has found for Repo: {}",
-                            repo.full_name.clone()
-                        ),
-                    },
+                    Ok(last_hash) => repo.add_last_hash(last_hash),
                     Err(err) => {
                         if let Error::LastCommitHashError(status, _msg) = err {
                             if status == 409 {
@@ -76,7 +79,7 @@ impl GitHubService {
     }
 
     /// Find files of a certain name in a git repo using the git2 crate
-    pub fn find(
+    pub fn find_build_targets(
         &self,
         url: String,
         file_name: String,
@@ -114,11 +117,33 @@ impl GitHubService {
     }
 }
 
+#[async_trait]
+impl MongoService<Commit> for GitHubService {
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
+    }
+
+    /// Insert a document into a [Collection].
+    async fn insert<'a>(&self, doc: &mut Commit) -> Result<(), PlatformError> {
+        self.store.insert(doc).await?;
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use crate::services::github::error::Error;
     use crate::services::github::service::GitHubService;
     use platform::config::from_env;
+    use platform::persistence::mongodb::Store;
+    use crate::config::dev_context;
+
+    async fn test_store() -> Arc<Store> {
+        let ctx = dev_context(None).unwrap();
+        let store = Store::new(&ctx).await.unwrap();
+        Arc::new(store)
+    }
 
     /// Ensure version exists in repos
     /// Requires GITHUB_PAT environment variable!
@@ -130,7 +155,11 @@ mod tests {
             None => panic!("No TEST_PAT in environment"), // test panic
         };
 
-        let service = GitHubService::new(String::from("harbor-test-org"), test_pat);
+        let service = GitHubService::new(
+            String::from("harbor-test-org"),
+            test_pat,
+            test_store().await
+        );
 
         service
             .get_repos()
@@ -152,7 +181,11 @@ mod tests {
             None => panic!("No TEST_PAT in environment"), // test panic
         };
 
-        let service = GitHubService::new(String::from("harbor-test-org"), test_pat);
+        let service = GitHubService::new(
+            String::from("harbor-test-org"),
+            test_pat,
+            test_store().await
+        );
 
         let repos = service.get_repos().await;
         println!("Repos: {:#?}", repos);
@@ -160,9 +193,9 @@ mod tests {
         let _repos = repos.unwrap();
     }
 
-    #[test]
+    #[tokio::test]
     #[ignore = "debug manual only"]
-    fn test_clone_repo() {
+    async fn test_clone_repo() {
         let test_pat = match from_env("GITHUB_PAT") {
             Some(v) => v,
             None => panic!("No GITHUB_PAT in environment"), // test panic
@@ -170,7 +203,11 @@ mod tests {
 
         let repo = "https://github.com/harbor-test-org/java-repo.git";
 
-        let service = GitHubService::new("harbor-test-org".to_string(), test_pat.clone());
+        let service = GitHubService::new(
+            String::from("harbor-test-org"),
+            test_pat.clone(),
+            test_store().await
+        );
 
         let clone_path = match service.clone_repo(repo, Some(test_pat)) {
             Ok(clone_path) => clone_path,

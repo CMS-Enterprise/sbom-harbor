@@ -79,7 +79,7 @@ impl Client {
     /* Public */
 
     /// Get the last commit for a given Repo
-    pub async fn get_last_commit(&self, repo: &Repo) -> Result<Option<String>, Error> {
+    pub async fn get_last_commit(&self, repo: &Repo) -> Result<String, Error> {
         let github_last_commit_url = self.get_last_commit_url(repo);
 
         println!(
@@ -97,7 +97,7 @@ impl Client {
             )
             .await;
 
-        let gh_commits_rsp = match response {
+        let gh_commit = match response {
             Ok(option) => match option {
                 Some(last_hash) => last_hash,
                 None => {
@@ -115,7 +115,7 @@ impl Client {
             }
         };
 
-        Ok(gh_commits_rsp.last_hash)
+        Ok(gh_commit.id)
     }
 
     /// Gets the latest release tag name from the GitHub repo
@@ -242,7 +242,7 @@ pub struct Repo {
     /// Ex: CMSgov/design-system.git
     pub full_name: String,
     /// Url of the repository.
-    pub html_url: Option<String>,
+    pub html_url: String,
     /// The default branch of the repo, usually master or main
     pub default_branch: Option<String>,
     /// The language of the code in the repo.
@@ -268,8 +268,8 @@ impl Repo {
     /// Conventional Constructor
     pub fn new() -> Self {
         Repo {
-            full_name: String::from(""),
-            html_url: None,
+            full_name: empty_string(),
+            html_url: empty_string(),
             default_branch: None,
             language: None,
             archived: None,
@@ -329,7 +329,7 @@ fn default_bool() -> bool {
 
 /// Little function to define default Strings
 /// for struct values that are to be used to collect Json
-fn empty_string() -> String {
+pub fn empty_string() -> String {
     "".to_string()
 }
 
@@ -363,7 +363,6 @@ mod test {
 
         let mut repo: Repo = Repo::default();
         repo.full_name = String::from("harbor-test-org/java-multi-module");
-
         let release = client.get_latest_release_tag(&repo).await?;
 
         assert_eq!("0.0.2", release);

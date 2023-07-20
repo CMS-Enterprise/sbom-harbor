@@ -3,7 +3,6 @@ use crate::Error;
 use clap::Parser;
 use harbcore::entities::sboms::SbomProviderKind;
 use harbcore::entities::tasks::{Task, TaskKind};
-use harbcore::services::github::mongo::GitHubProviderMongoService;
 use harbcore::services::github::service::GitHubService;
 use harbcore::services::packages::PackageService;
 use harbcore::services::sboms::{
@@ -59,11 +58,8 @@ pub(crate) async fn execute(args: &IngestArgs) -> Result<(), Error> {
 
     let package_service = PackageService::new(store.clone());
 
-    let mongo_service = GitHubProviderMongoService::new(store.clone());
-
     let provider = SyncTask::new(
-        mongo_service,
-        GitHubService::new(org, token),
+        GitHubService::new(org, token, store.clone()),
         SbomService::new(store.clone(), Some(storage), Some(package_service)),
     )
     .map_err(|e| Error::Sbom(e.to_string()))?;

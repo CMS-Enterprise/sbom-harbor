@@ -5,7 +5,6 @@ use crate::config::github_pat;
 use crate::entities::tasks::Task;
 use crate::entities::xrefs::{Xref, XrefKind};
 use crate::services::github::client::Repo;
-use crate::services::github::mongo::GitHubProviderMongoService;
 use crate::services::github::service::GitHubService;
 use crate::services::github::Commit;
 use crate::services::sboms::SbomService;
@@ -55,7 +54,6 @@ fn location_under_ignored_dir(build_target_location: String) -> bool {
 /// Synchronizes SBOMS for a GitHub Group with Harbor.
 #[derive(Debug)]
 pub struct SyncTask {
-    mongo_svc: GitHubProviderMongoService,
     pub(in crate::tasks::sboms::github) github: GitHubService,
     sboms: SbomService,
 }
@@ -77,11 +75,7 @@ impl TaskProvider for SyncTask {
 
         for repo in &mut repos {
             let name = repo.full_name.clone();
-
-            let url = match repo.html_url.clone() {
-                Some(url) => url,
-                None => continue,
-            };
+            let url = repo.html_url.clone();
 
             if !SyncTask::should_skip(repo, name, url.clone()) {
                 match self.process_repo(repo, task).await {
@@ -106,7 +100,7 @@ impl TaskProvider for SyncTask {
 
 impl Service<Task> for SyncTask {
     fn store(&self) -> Arc<Store> {
-        self.mongo_svc.store.clone()
+        self.github.store.clone()
     }
 }
 
@@ -153,38 +147,18 @@ impl SyncTask {
         Ok(errors)
     }
 
-    fn get_state_values(&self, repo: &Repo) -> Result<(String, String, String), Error> {
-        let url: String = match repo.html_url.clone() {
-            Some(url) => url,
-            None => return Err(Error::GitHub("==> No URL for Repository".to_string())),
-        };
+    fn get_state_values(&self, repo: &Repo) -> Result<(String, String, String, String), Error> {
+        let url: String = repo.html_url.clone();
+        let full_name: String = repo.full_name.clone();
 
-        Ok((url, repo.full_name.clone(), repo.version.clone()))
+        Ok((url, full_name, repo.version.clone(), repo.last_hash.clone()))
     }
 
     /// Method to help finding documents in DocumentDB
-    async fn find_document(&self, id: &str) -> Result<Commit, Error> {
-        println!("==> Looking in Mongo for the document with id: {id}");
-
-        match self.mongo_svc.find(id).await {
-            Ok(option) => match option {
-                Some(document) => {
-                    println!("==> Got a Document From Mongo!");
-                    Ok(document)
-                }
-                None => {
-                    println!("==> No document exists in mongo with the id: {}", id);
-                    self.mongo_svc
-                        .create_document(String::from(id), String::from(""))
-                        .await
-                        .map_err(|e| Error::GitHub(e.to_string()))
-                }
-            },
-            Err(err) => Err(Error::GitHub(format!(
-                "==> Unable to find document in mongo with url: {}({})",
-                id, err
-            ))),
-        }
+    async fn find_commit(&self, last_hash: &str) -> Result<Option<Commit>, Error> {
+        println!("==> Looking in Mongo for the document with id: {last_hash}");
+        let option = self.github.find(last_hash).await?;
+        Ok(option)
     }
 
     /// Should skip determines if the repository is disabled or
@@ -227,15 +201,28 @@ impl SyncTask {
 
     /// Factory method to create new instance of type.
     pub fn new(
-        mongo_svc: GitHubProviderMongoService,
         github: GitHubService,
         sboms: SbomService,
     ) -> Result<SyncTask, Error> {
         Ok(SyncTask {
-            mongo_svc,
             github,
             sboms,
         })
+    }
+
+    async fn update_db(&self, last_hash: &str, url: &str) -> Result<(), Error> {
+        let mut commit = Commit {
+            id: String::from(last_hash),
+            url: String::from(url)
+        };
+
+        self.github.insert(&mut commit).await.map_err(
+            |err| Error::GitHub(format!(
+                "==> Failed to insert Commit into mongo with url: {}({})",
+                url, err
+            )))?;
+
+        Ok(())
     }
 
     async fn process_repo(
@@ -243,146 +230,127 @@ impl SyncTask {
         repo: &Repo,
         task: &mut Task,
     ) -> Result<Option<Vec<String>>, Error> {
-        let (url, full_name, version) = self.get_state_values(repo)?;
 
-        // The url is the id of the document
-        let mut document = match self.find_document(url.as_str()).await {
-            Ok(document) => document,
-            Err(err) => {
-                return Err(Error::GitHub(format!(
-                    "Error attempting to find document: {}",
-                    err
-                )))
-            }
-        };
+        let (url, full_name, version, last_hash) = self.get_state_values(repo)?;
 
-        let last_hash: &String = &repo.last_hash;
+        match self.find_commit(last_hash.as_str()).await? {
 
-        println!(
-            "==> Comparing Repo({}) to MongoDB({})",
-            last_hash,
-            document.last_hash.clone().unwrap()
-        );
+            // No Commit exists in the database, so it should be processed
+            None => {
 
-        if *last_hash != document.last_hash.unwrap() {
-            let url = &document.id;
+                println!("==> No document exists in mongo with last_hash({}), creating", last_hash);
 
-            let clone_path = self
-                .github
-                .clone_repo(url.as_str(), Some(github_pat()?))
-                .map_err(|err| Error::GitHub(format!("Error attempting clone repo: {}", err)))?;
+                let pat = Some(github_pat()?);
+                let clone_path = self.github
+                    .clone_repo(url.as_str(), pat)
+                    .map_err(|err| Error::GitHub(
+                        format!("Error cloning Repo: {}", err)
+                    ))?;
+                let syft = Syft::new(clone_path.clone());
 
-            let syft = Syft::new(clone_path.clone());
+                let mut syft_results: Vec<String> = vec![];
+                let mut total_build_targets = 0;
 
-            let mut syft_results: Vec<String> = vec![];
+                for (cataloger, build_targets) in BUILD_TARGETS.iter() {
+                    for build_target in build_targets {
+                        println!(
+                            "==> Looking for build targets named: {}, using cataloger: {}",
+                            build_target, cataloger
+                        );
 
-            let mut total_build_targets = 0;
+                        // TODO refactor find_build_targets() to take a &str
+                        let build_target_locations_result = self.github.find_build_targets(
+                            url.to_string(),
+                            String::from(*build_target),
+                            clone_path.clone(),
+                        );
 
-            for (cataloger, build_targets) in BUILD_TARGETS.iter() {
-                for build_target in build_targets {
-                    println!(
-                        "==> Looking for build targets named: {}, using cataloger: {}",
-                        build_target, cataloger
-                    );
+                        let build_target_locations = match build_target_locations_result {
+                            Ok(build_target_locations) => build_target_locations,
+                            Err(err) => {
+                                task.count += 1;
+                                task.ref_errs(build_target.to_string(), err.to_string());
+                                continue;
+                            }
+                        };
 
-                    // TODO refactor .find() to take a &str
-                    let build_target_locations_result = self.github.find(
-                        url.to_string(),
-                        String::from(*build_target),
-                        clone_path.clone(),
-                    );
+                        println!(
+                            "==> Found ({}) build targets named: {}, using cataloger: {}",
+                            build_target_locations.len(),
+                            build_target,
+                            cataloger
+                        );
 
-                    let build_target_locations = match build_target_locations_result {
-                        Ok(build_target_locations) => build_target_locations,
-                        Err(err) => {
-                            task.count += 1;
-                            task.ref_errs(build_target.to_string(), err.to_string());
-                            continue;
-                        }
-                    };
+                        if !build_target_locations.is_empty() {
+                            total_build_targets += build_target_locations.len();
 
-                    println!(
-                        "==> Found ({}) build targets named: {}, using cataloger: {}",
-                        build_target_locations.len(),
-                        build_target,
-                        cataloger
-                    );
+                            for build_target_location in build_target_locations {
+                                if !location_under_ignored_dir(build_target_location.clone()) {
+                                    // Slice off the name of the file and the leading '/' as
+                                    // execute() function only takes a path
+                                    let search_string = format!("/{}", build_target);
+                                    let trimmed_build_target_location =
+                                        build_target_location.replace(search_string.as_str(), "");
 
-                    if !build_target_locations.is_empty() {
-                        total_build_targets += build_target_locations.len();
+                                    println!(
+                                        "==> Running Syft in build target location ({}), using cataloger ({})",
+                                        build_target_location, cataloger
+                                    );
 
-                        for build_target_location in build_target_locations {
-                            if !location_under_ignored_dir(build_target_location.clone()) {
-                                // Slice off the name of the file and the leading '/' as
-                                // execute() function only takes a path
-                                let search_string = format!("/{}", build_target);
-                                let trimmed_build_target_location =
-                                    build_target_location.replace(search_string.as_str(), "");
+                                    // TODO Refactor execute() to take &str
+                                    let syft_result = syft.execute(
+                                        full_name.to_owned(),
+                                        version.to_owned(),
+                                        Some(String::from(*cataloger)),
+                                        Some(trimmed_build_target_location),
+                                    );
 
-                                println!(
-                                    "==> Running Syft in build target location ({}), using cataloger ({})",
-                                    build_target_location, cataloger
-                                );
+                                    let syft_result_value = match syft_result {
+                                        Ok(value) => value,
+                                        Err(err) => {
+                                            task.ref_errs(build_target.to_string(), err.to_string());
+                                            continue;
+                                        }
+                                    };
 
-                                // TODO Refactor execute() to take &str
-                                let syft_result = syft.execute(
-                                    full_name.to_owned(),
-                                    version.to_owned(),
-                                    Some(String::from(*cataloger)),
-                                    Some(trimmed_build_target_location),
-                                );
-
-                                let syft_result_value = match syft_result {
-                                    Ok(value) => value,
-                                    Err(err) => {
-                                        task.count += 1;
-                                        task.ref_errs(build_target.to_string(), err.to_string());
-                                        continue;
-                                    }
-                                };
-
-                                syft_results.push(syft_result_value);
+                                    syft_results.push(syft_result_value);
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            // If no build targets are found, run Syft without
-            // a cataloger at the top level of the repo
-            if total_build_targets == 0 {
-                println!(
-                    "==> No build targets found in ({url}) hail mary using default cataloger at root",
-                );
+                // If no build targets are found, run Syft without
+                // a cataloger at the top level of the repo
+                if total_build_targets == 0 {
+                    println!(
+                        "==> No build targets found in ({url}) hail mary using default cataloger at root",
+                    );
 
-                syft_results.push(
-                    syft.execute(full_name.to_owned(), version.to_string(), None, None)
-                        .map_err(|err| {
-                            Error::GitHub(format!("Error using Syft on a Repo: {}", err))
-                        })?,
-                );
-            }
-
-            self.github.remove_clone(&clone_path).map_err(|err| {
-                Error::GitHub(format!("Error attempting to remove cloned Repo: {}", err))
-            })?;
-
-            document.last_hash = Some(last_hash.to_string());
-            match self.mongo_svc.update(&document).await {
-                Ok(_) => {}
-                Err(err) => {
-                    println!("==> Mongo service error!! {}", err);
-                    return Err(Error::GitHub(err.to_string()));
+                    syft_results.push(
+                        syft.execute(full_name.to_owned(), version.to_string(), None, None)
+                            .map_err(|err| {
+                                Error::GitHub(format!("Error using Syft on a Repo: {}", err))
+                            })?,
+                    );
                 }
-            };
 
-            println!("==> Updated Mongo, returning Syft Result");
-            Ok(Some(syft_results))
-        }
-        // The last commit hash on the master/main GitHub matched the one in Mongo
-        else {
-            println!("==> Hashes are equal, skipping.");
-            Ok(None)
+                self.github.remove_clone(&clone_path).map_err(|err| {
+                    Error::GitHub(format!("Error attempting to remove cloned Repo: {}", err))
+                })?;
+
+                self.update_db(last_hash.as_str(), url.as_str()).await?;
+                println!("==> Updated Mongo, returning Syft Result");
+
+                Ok(Some(syft_results))
+            }
+
+            // If a commit with that id exists already, then the repo has
+            // already been processed and we can skip it.
+            Some(_) => {
+                println!("==> latest commit from repo ({}) has been found, skipping", repo.html_url);
+                Ok(None)
+            }
         }
     }
 }
@@ -390,7 +358,7 @@ impl SyncTask {
 #[cfg(test)]
 mod test {
 
-    use crate::services::github::client::{default_version, Repo};
+    use crate::services::github::client::{default_version, empty_string, Repo};
     use crate::tasks::sboms::github::sync::location_under_ignored_dir;
     use crate::tasks::sboms::github::SyncTask;
 
@@ -412,14 +380,14 @@ mod test {
         let test_url = String::from("test url, ignore");
 
         let test_repo = Repo {
-            full_name: String::from(""),
-            html_url: None,
+            full_name: empty_string(),
+            html_url: empty_string(),
             default_branch: None,
             language: None,
             archived: Some(true),
             disabled: None,
             empty: false,
-            last_hash: String::from(""),
+            last_hash: empty_string(),
             version: default_version(),
         };
 
@@ -436,14 +404,14 @@ mod test {
         let test_url = String::from("test url, ignore");
 
         let test_repo = Repo {
-            full_name: String::from(""),
-            html_url: None,
+            full_name: empty_string(),
+            html_url: empty_string(),
             default_branch: None,
             language: None,
             archived: None,
             disabled: Some(true),
             empty: false,
-            last_hash: String::from(""),
+            last_hash: empty_string(),
             version: default_version(),
         };
 
@@ -460,14 +428,14 @@ mod test {
         let test_url = String::from("test url, ignore");
 
         let test_repo = Repo {
-            full_name: String::from(""),
-            html_url: None,
+            full_name: empty_string(),
+            html_url: empty_string(),
             default_branch: None,
             language: None,
             archived: None,
             disabled: None,
             empty: true,
-            last_hash: String::from(""),
+            last_hash: empty_string(),
             version: default_version(),
         };
 
