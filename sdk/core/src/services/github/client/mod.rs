@@ -32,8 +32,9 @@ impl Client {
         format!("{GH_URL}/repos/{repo_name}/commits/{default_branch}")
     }
 
-    /// Function to get the number of public repos in the associated organization
-    async fn get_num_pub_repos(&self, org: String) -> Result<Option<u32>, Error> {
+    /// Function to get the number of repos in the associated organization
+    /// gets public, private and forked repos.
+    async fn get_num_repos(&self, org: String) -> Result<Option<u32>, Error> {
         let org_url: String = format!("{GH_URL}/orgs/{org}");
 
         println!("==> Getting repositories from org, url: {} ", org_url);
@@ -50,7 +51,19 @@ impl Client {
 
         match response {
             Ok(option) => match option {
-                Some(value) => Ok(value.public_repo_count),
+                Some(value) => {
+
+                    let num_public_repos = value.public_repo_count;
+                    let num_private_repos = value.private_repo_count;
+
+                    println!(
+                        "Found {} public repos and {} private repos",
+                        num_public_repos,
+                        num_private_repos
+                    );
+
+                    Ok(Some(num_public_repos + num_private_repos))
+                },
                 None => Err(Error::GitHubErrorResponse(
                     "==> Get request from GitHub had an empty response".to_string(),
                 )),
@@ -108,7 +121,7 @@ impl Client {
 
     /// Function to get the number of repos per page
     pub async fn get_pages(&self, org: &String) -> Result<Vec<u32>, Error> {
-        let num_repos = self.get_num_pub_repos(org.to_string()).await?.unwrap_or(0);
+        let num_repos = self.get_num_repos(org.to_string()).await?.unwrap_or(0);
 
         println!("==> Number of Repositories in {}: {}", org, num_repos);
 
@@ -131,9 +144,9 @@ impl Client {
         per_page: &u32,
     ) -> Result<Vec<Repo>, Error> {
         let github_org_url =
-            format!("{GH_URL}/orgs/{org}/repos?type=sources&page={page}&per_page={per_page}");
+            format!("{GH_URL}/orgs/{org}/repos?type=all&page={page}&per_page={per_page}");
 
-        println!("Calling({})", github_org_url);
+        println!("==> calling: {}", github_org_url);
 
         let response: Result<Option<Vec<Repo>>, HyperError> = self
             .http_client
@@ -147,7 +160,10 @@ impl Client {
 
         match response {
             Ok(option) => match option {
-                Some(value) => Ok(value),
+                Some(value) => {
+                    println!("==> response is ok, {} repos returned", value.len());
+                    Ok(value)
+                },
                 None => Err(Error::GitHubErrorResponse(
                     "Get request from GitHub had an empty response".to_string(),
                 )),
@@ -172,8 +188,18 @@ impl Client {
 pub struct Org {
     /// The number of Public Repos in
     /// this organization
+    #[serde(default = "default_num_repos")]
     #[serde(alias = "public_repos")]
-    public_repo_count: Option<u32>,
+    public_repo_count: u32,
+
+    /// Number of Private repos
+    #[serde(default = "default_num_repos")]
+    #[serde(alias = "total_private_repos")]
+    private_repo_count: u32,
+}
+
+fn default_num_repos() ->u32 {
+    0
 }
 
 /// Repo is used to extract several values from a Request for
@@ -231,8 +257,47 @@ impl Repo {
     }
 }
 
-#[test]
-fn test_remove_clone() {
-    let dir = std::env::temp_dir();
-    println!("Temp Directory: {:#?}", dir)
+#[cfg(test)]
+mod test {
+    use platform::config::from_env;
+    use crate::services::github::client::Client;
+    use crate::services::github::error::Error;
+
+    /// This test must be run with a GitHub PAT that has the correct permissions
+    /// Fine grained PATs do not work, the token must be a classic PAT with these perms:
+    /// - repo (all)
+    /// - admin:public_key
+    /// - admin:org, only read:org
+    /// This is a good place to test a PAT from GItHub
+    #[tokio::test]
+    #[ignore = "debug manual only"]
+    async fn test_get_page_repos() -> Result<(), Error>{
+
+        // https://github.com/orgs/harbor-test-org/repositories
+        let total_repos_in_harbor_test_org = 11;
+
+        let pat = match from_env("GITHUB_PAT") {
+            Some(v) => v,
+            None => panic!("No GITHUB_PAT in environment"), // test panic
+        };
+
+        let page_num = 1;
+        let num_per_page = 100 as u32;
+
+        let client = Client::new(pat);
+        let repo_page = client.get_page_of_repos(
+            &String::from("harbor-test-org"),
+            page_num,
+            &num_per_page
+        ).await;
+
+        match repo_page {
+            Ok(repos) => {
+                assert_eq!(repos.len(), total_repos_in_harbor_test_org);
+                Ok(())
+            },
+            Err(err) => Err(err)
+        }
+    }
 }
+
