@@ -38,6 +38,9 @@ pub use errors::Error;
 /// Namespace for various persistence infrastructure providers like S3 or MongoDB.
 pub mod persistence;
 
+/// Provides utility functions for running external shell commands.
+pub mod process;
+
 /// Provides utility functions for use in tests.
 pub mod testing;
 

@@ -1,5 +1,8 @@
 use crate::Error;
 
+/// Utility functions and types for testing persistence features.
+pub mod persistence;
+
 /// Gets the manifest directory for the currently executing binary.
 pub fn manifest_dir() -> Result<String, Error> {
     std::env::var("CARGO_MANIFEST_DIR")
@@ -12,11 +15,13 @@ pub fn manifest_dir() -> Result<String, Error> {
 /// # Example
 ///
 /// ```rust
+/// use platform::Error;
 /// use platform::testing;
 ///
-/// fn print_replace_dir() {
-///     let dir = testing::replace_dir("/sdk/core", "tests/fixtures/sbom-fixture.json");
+/// fn print_replace_dir() -> Result<(), Error> {
+///     let dir = testing::replace_dir("/sdk/core", "tests/fixtures/sbom-fixture.json")?;
 ///     println!("{}", dir);
+///     Ok(())
 /// }
 /// ```
 pub fn replace_dir(old_path: &str, new_path: &str) -> Result<String, Error> {
