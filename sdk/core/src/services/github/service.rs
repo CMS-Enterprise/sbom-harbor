@@ -44,18 +44,17 @@ impl GitHubService {
             println!("==> processing page {}. There are {} repos", page, per_page);
 
             for repo in gh_org_rsp.iter_mut() {
-                println!(
-                    "==> getting last commit for repo : {:#?}",
-                    repo.full_name.clone().unwrap()
-                );
+                let version = self.client.get_latest_release_tag(repo).await?;
+                repo.add_version(version);
 
-                let result = self.client.get_last_commit(repo).await;
-                let repo_name = repo.full_name.clone().unwrap();
-
-                match result {
+                let last_hash_result = self.client.get_last_commit(repo).await;
+                match last_hash_result {
                     Ok(option) => match option {
                         Some(last_hash) => repo.add_last_hash(last_hash),
-                        None => println!("==> No last commit has found for Repo: {}", &repo_name),
+                        None => println!(
+                            "==> No last commit has found for Repo: {}",
+                            repo.full_name.clone()
+                        ),
                     },
                     Err(err) => {
                         if let Error::LastCommitHashError(status, _msg) = err {
@@ -89,10 +88,10 @@ impl GitHubService {
     }
 
     /// Clones a git repository to the specified clone path.
-    pub fn clone_repo(&self, url: &str) -> Result<String, Error> {
+    pub fn clone_repo(&self, url: &str, pat: Option<String>) -> Result<String, Error> {
         let clone_path = self.clone_path(url, &get_random_string())?;
         let git_service = Git::new(String::from(url));
-        git_service.clone_repo(clone_path.as_str())?;
+        git_service.clone_repo(clone_path.as_str(), pat)?;
         Ok(clone_path)
     }
 
@@ -117,9 +116,30 @@ impl GitHubService {
 
 #[cfg(test)]
 mod tests {
-    use crate::services::github::client::Client;
+    use crate::services::github::error::Error;
     use crate::services::github::service::GitHubService;
     use platform::config::from_env;
+
+    /// Ensure version exists in repos
+    /// Requires GITHUB_PAT environment variable!
+    #[tokio::test]
+    #[ignore = "debug manual only"]
+    async fn test_ensure_release_not_empty() -> Result<(), Error> {
+        let test_pat = match from_env("GITHUB_PAT") {
+            Some(v) => v,
+            None => panic!("No TEST_PAT in environment"), // test panic
+        };
+
+        let service = GitHubService::new(String::from("harbor-test-org"), test_pat);
+
+        service
+            .get_repos()
+            .await?
+            .iter()
+            .for_each(|repo| assert!(!repo.version.is_empty()));
+
+        Ok(())
+    }
 
     /// For this test to work, one must be in the harbor-test-org
     /// and have a test PAT in their environment with permissions
@@ -132,11 +152,7 @@ mod tests {
             None => panic!("No TEST_PAT in environment"), // test panic
         };
 
-        let client = Client::new(test_pat);
-        let service = GitHubService {
-            org: "harbor-test-org".to_string(),
-            client,
-        };
+        let service = GitHubService::new(String::from("harbor-test-org"), test_pat);
 
         let repos = service.get_repos().await;
         println!("Repos: {:#?}", repos);
@@ -154,9 +170,9 @@ mod tests {
 
         let repo = "https://github.com/harbor-test-org/java-repo.git";
 
-        let service = GitHubService::new("harbor-test-org".to_string(), test_pat);
+        let service = GitHubService::new("harbor-test-org".to_string(), test_pat.clone());
 
-        let clone_path = match service.clone_repo(repo) {
+        let clone_path = match service.clone_repo(repo, Some(test_pat)) {
             Ok(clone_path) => clone_path,
             Err(err) => panic!("{:#?}", err),
         };

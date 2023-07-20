@@ -1,15 +1,16 @@
-
-use std::{env, io};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::string::FromUtf8Error;
+use std::{env, io};
 
-use serde_json::Value;
 use thiserror::Error;
 
-use crate::entities::cyclonedx::{Bom, Component, Metadata};
 use crate::entities::cyclonedx::component::ComponentType;
+use crate::entities::cyclonedx::{Bom, Component, Metadata};
+use crate::entities::sboms::CdxFormat;
+
+use crate::Error as CoreError;
 
 const CYCLONEDX_JSON_FORMAT: &str = "cyclonedx-json";
 lazy_static! {
@@ -54,8 +55,6 @@ lazy_static! {
     };
 }
 
-// TODO This method is still stopgap because it is using the actual cataloger as the type rather than
-//  the correct type that the cataloger *maps* to.
 /*
    =============================================================
    ==> scheme:type/namespace/name@version?qualifiers#subpath <==
@@ -82,9 +81,9 @@ lazy_static! {
 
    => subpath:    extra subpath within a package, relative to the package root. Optional.
 */
-fn generate_stopgap_purl(
+fn generate_purl(
     full_name: String,
-    commit_hash: String,
+    version: String,
     cataloger: Option<String>,
     sub_path: Option<String>,
 ) -> String {
@@ -93,7 +92,9 @@ fn generate_stopgap_purl(
         None => String::from("no-cataloger"),
     };
 
-    let purl = format!("pkg:{}:{}@{}", cataloger, full_name, commit_hash);
+    let purl_type_opt = CATALOGERS.get(cataloger.as_str());
+    let purl_type = purl_type_opt.unwrap_or(&"no-type");
+    let purl = format!("pkg:{}/{}@{}", purl_type, full_name, version);
 
     match sub_path {
         None => purl,
@@ -112,27 +113,22 @@ fn generate_stopgap_purl(
 fn ensure_purl_in_metadata(
     sbom: Bom,
     full_name: String,
-    commit_hash: String,
+    version: String,
     cataloger: Option<String>,
     sub_path: Option<String>,
 ) -> Metadata {
     match sbom.metadata {
-        None => create_metadata(full_name, commit_hash, cataloger, sub_path),
+        None => create_metadata(full_name, version, cataloger, sub_path),
         Some(metadata) => {
             let mut unboxed_metadata = *metadata;
 
             let component: Component = match unboxed_metadata.clone().component {
-                None => create_component(full_name, commit_hash, cataloger, sub_path),
+                None => create_component(full_name, version, cataloger, sub_path),
                 Some(component) => {
                     let mut unboxed_component = *component;
 
                     if unboxed_component.purl.is_none() {
-                        let purl = generate_stopgap_purl(
-                            full_name,
-                            commit_hash,
-                            cataloger,
-                            sub_path
-                        );
+                        let purl = generate_purl(full_name, version, cataloger, sub_path);
                         unboxed_component.purl = Some(purl);
                     }
 
@@ -169,7 +165,7 @@ fn create_component(
 ) -> Component {
     let component_type: ComponentType = ComponentType::Application;
     let name = String::from(".");
-    let purl = generate_stopgap_purl(full_name, commit_hash, cataloger, sub_path);
+    let purl = generate_purl(full_name, commit_hash, cataloger, sub_path);
 
     let mut component: Component = Component::new(component_type, name);
     component.purl = Some(purl);
@@ -183,26 +179,18 @@ pub(crate) struct Service {
 }
 
 impl Service {
-    fn run_syft(&self) -> Result<Output, Error> {
+    fn run_syft(&self, cataloger_opt: Option<String>) -> Result<Output, Error> {
+        let mut command = Command::new("syft");
+        let command = command.args(["--output", CYCLONEDX_JSON_FORMAT]);
 
-        let output = Command::new("syft")
-            .arg("--output")
-            .arg(CYCLONEDX_JSON_FORMAT)
+        if let Some(cataloger) = cataloger_opt {
+            command.args(["--catalogers", cataloger.as_str()]);
+        }
+
+        let output = command
             .arg(self.source_path.as_str())
-            .output().map_err(Error::Io)?;
-
-        Ok(output)
-    }
-
-    fn run_syft_with_cataloger(&self, cataloger: String) -> Result<Output, Error> {
-
-        let output = Command::new("syft")
-            .arg("--output")
-            .arg(CYCLONEDX_JSON_FORMAT)
-            .arg("--catalogers")
-            .arg(cataloger)
-            .arg(self.source_path.as_str())
-            .output().map_err(Error::Io)?;
+            .output()
+            .map_err(Error::Io)?;
 
         Ok(output)
     }
@@ -216,7 +204,7 @@ impl Service {
     pub(crate) fn execute(
         &self,
         full_name: String,
-        commit_hash: String,
+        version: String,
         cataloger: Option<String>,
         sub_path: Option<String>,
     ) -> Result<String, Error> {
@@ -231,15 +219,11 @@ impl Service {
             env::set_current_dir(absolute_path).map_err(Error::Io)?
         }
 
-        let output = match cataloger.clone() {
-            Some(cataloger) => self.run_syft_with_cataloger(cataloger),
-            None => self.run_syft(),
-        }?;
+        let output = self.run_syft(cataloger.clone())?;
 
         // Handle error generated by syft.
         if !&output.status.success() {
-            let error_msg = String::from_utf8(output.stderr)
-                .map_err(Error::Utf8Conversion)?;
+            let error_msg = String::from_utf8(output.stderr).map_err(Error::Utf8Conversion)?;
             return Err(Error::Syft(error_msg));
         }
 
@@ -247,19 +231,14 @@ impl Service {
             return Err(Error::Syft("syft generated empty SBOM".to_string()));
         };
 
-        let output: String = String::from_utf8_lossy(&output.stdout)
-            .to_string();
-
-        let json: Value = serde_json::from_str(&output)
-            .map_err(Error::Serde)?;
-
-        let mut sbom: Bom = serde_json::from_value(json)
-            .map_err(Error::Serde)?;
+        let output: String = String::from_utf8_lossy(&output.stdout).to_string();
+        let mut sbom: Bom = Bom::parse(output.as_str(), CdxFormat::Json)
+            .map_err(Error::Core)?;
 
         let metadata = ensure_purl_in_metadata(
             sbom.clone(),
             full_name,
-            commit_hash,
+            version,
             cataloger,
             sub_path
         );
@@ -376,7 +355,6 @@ pub fn try_extract_package_manager(bom: &Bom) -> String {
 /// Errors specific to Syft operations.
 #[derive(Error, Debug)]
 pub enum Error {
-
     /// Error used when an error is caused within the module that
     /// did not originate from another library or module.
     #[error("syft: {0}")]
@@ -393,6 +371,10 @@ pub enum Error {
     /// Handle errors that come from JSON Processing
     #[error(transparent)]
     Serde(#[from] serde_json::error::Error),
+
+    /// Handle errors from core functions
+    #[error(transparent)]
+    Core(#[from] CoreError)
 }
 
 /// Module for testing
@@ -403,18 +385,14 @@ mod test {
     use platform::git::Service as Git;
     use std::collections::HashMap;
 
-    use crate::entities::cyclonedx::{Bom, Component, Metadata};
     use crate::entities::cyclonedx::bom::BomFormat;
     use crate::entities::cyclonedx::component::ComponentType;
+    use crate::entities::cyclonedx::{Bom, Component, Metadata};
     use crate::entities::sboms::{Author, CdxFormat, Sbom};
     use crate::entities::xrefs::{Xref, XrefKind};
     use crate::services::syft::{
-        create_component,
-        create_metadata,
-        ensure_purl_in_metadata,
-        generate_stopgap_purl,
-        Service as Syft,
-        Error,
+        create_component, create_metadata, ensure_purl_in_metadata, generate_purl, Error,
+        Service as Syft, CATALOGERS,
     };
     use crate::testing::sbom_raw;
 
@@ -422,14 +400,14 @@ mod test {
         test_component: Component,
         full_name: String,
         commit_hash: String,
-        cataloger: Option<String>,
+        purl_type: Option<String>,
         sub_path: Option<String>,
     ) {
         let purl = test_component.purl.unwrap();
 
         assert!(purl.contains(full_name.as_str()));
         assert!(purl.contains(commit_hash.as_str()));
-        assert!(purl.contains(cataloger.unwrap().as_str()));
+        assert!(purl.contains(purl_type.unwrap().as_str()));
         assert!(purl.contains(sub_path.unwrap().as_str()));
     }
 
@@ -451,18 +429,24 @@ mod test {
         }
     }
 
-    fn get_test_data() -> (String, String, String, String) {
+    fn get_test_data(cataloger_opt: Option<&str>) -> (String, String, String, String, String) {
         let full_name = String::from("test/name");
         let commit_hash = String::from("abc123");
-        let cataloger = String::from("test-cataloger");
+
+        let cataloger = match cataloger_opt {
+            None => String::from("rust-cargo-lock-cataloger"),
+            Some(cataloger) => String::from(cataloger),
+        };
+
+        let purl_type = CATALOGERS.get(cataloger.as_str()).unwrap().to_string();
         let sub_path = String::from("sub/path");
-        (full_name, commit_hash, cataloger, sub_path)
+        (full_name, commit_hash, purl_type, cataloger, sub_path)
     }
 
     #[test]
     fn test_ensure_purl_no_metadata() {
         let sbom: Bom = get_test_bom(None);
-        let (full_name, commit_hash, cataloger, sub_path) = get_test_data();
+        let (full_name, commit_hash, purl_type, cataloger, sub_path) = get_test_data(None);
 
         let created_metadata = ensure_purl_in_metadata(
             sbom.clone(),
@@ -478,7 +462,7 @@ mod test {
             unboxed_component,
             full_name.clone(),
             commit_hash.clone(),
-            Some(cataloger.clone()),
+            Some(purl_type.clone()),
             Some(sub_path.clone()),
         );
     }
@@ -486,7 +470,7 @@ mod test {
     #[test]
     fn test_ensure_purl_no_component() {
         let sbom: Bom = get_test_bom(Some(Box::new(Metadata::new())));
-        let (full_name, commit_hash, cataloger, sub_path) = get_test_data();
+        let (full_name, commit_hash, purl_type, cataloger, sub_path) = get_test_data(None);
 
         let created_metadata = ensure_purl_in_metadata(
             sbom.clone(),
@@ -502,14 +486,14 @@ mod test {
             unboxed_component,
             full_name.clone(),
             commit_hash.clone(),
-            Some(cataloger.clone()),
+            Some(purl_type.clone()),
             Some(sub_path.clone()),
         );
     }
 
     #[test]
     fn test_ensure_purl_no_purl() {
-        let (full_name, commit_hash, cataloger, sub_path) = get_test_data();
+        let (full_name, commit_hash, purl_type, cataloger, sub_path) = get_test_data(None);
 
         let component_type: ComponentType = ComponentType::Application;
         let name = String::from(".");
@@ -534,14 +518,41 @@ mod test {
             unboxed_component,
             full_name.clone(),
             commit_hash.clone(),
+            Some(purl_type.clone()),
+            Some(sub_path.clone()),
+        );
+    }
+
+    #[test]
+    fn test_ensure_purl_unrecognized_cataloger() {
+        let sbom: Bom = get_test_bom(Some(Box::new(Metadata::new())));
+        let (full_name, commit_hash, _, _, sub_path) = get_test_data(None);
+
+        let cataloger = String::from("unrecognized_cataloger");
+        let purl_type = String::from("no-type");
+
+        let created_metadata = ensure_purl_in_metadata(
+            sbom.clone(),
+            full_name.clone(),
+            commit_hash.clone(),
             Some(cataloger.clone()),
+            Some(sub_path.clone()),
+        );
+
+        let unboxed_component = *created_metadata.component.unwrap();
+
+        test_created_component(
+            unboxed_component,
+            full_name.clone(),
+            commit_hash.clone(),
+            Some(purl_type.clone()),
             Some(sub_path.clone()),
         );
     }
 
     #[test]
     fn test_create_metadata() {
-        let (full_name, commit_hash, cataloger, sub_path) = get_test_data();
+        let (full_name, commit_hash, purl_type, cataloger, sub_path) = get_test_data(None);
 
         let test_metadata: Metadata = create_metadata(
             full_name.clone(),
@@ -558,14 +569,14 @@ mod test {
             test_component,
             full_name.clone(),
             commit_hash.clone(),
-            Some(cataloger.clone()),
+            Some(purl_type.clone()),
             Some(sub_path.clone()),
         );
     }
 
     #[test]
     fn test_create_component() {
-        let (full_name, commit_hash, cataloger, sub_path) = get_test_data();
+        let (full_name, commit_hash, purl_type, cataloger, sub_path) = get_test_data(None);
 
         let test_component: Component = create_component(
             full_name.clone(),
@@ -578,14 +589,14 @@ mod test {
             test_component,
             full_name.clone(),
             commit_hash.clone(),
-            Some(cataloger.clone()),
+            Some(purl_type.clone()),
             Some(sub_path.clone()),
         );
     }
 
     #[test]
     fn test_create_component_no_subpath() {
-        let (full_name, commit_hash, cataloger, _) = get_test_data();
+        let (full_name, commit_hash, purl_type, cataloger, _) = get_test_data(None);
 
         let test_component: Component = create_component(
             full_name.clone(),
@@ -598,20 +609,23 @@ mod test {
 
         assert!(purl.contains(full_name.as_str()));
         assert!(purl.contains(commit_hash.as_str()));
-        assert!(purl.contains(cataloger.as_str()));
+        assert!(purl.contains(purl_type.as_str()));
     }
 
     #[test]
-    fn test_generate_stopgap_purl_with_sub_path() -> Result<(), Error> {
-        let (full_name, commit_hash, cataloger, sub_path) = get_test_data();
+    fn test_generate_purl_with_sub_path() -> Result<(), Error> {
+        let cataloger_str = "java-pom-cataloger";
+
+        let (full_name, commit_hash, purl_type, cataloger, sub_path) =
+            get_test_data(Some(cataloger_str));
 
         let test_purl_with_sub_path = format!(
-            "pkg:{}:{}@{}#{}",
-            cataloger, full_name, commit_hash, sub_path
+            "pkg:{}/{}@{}#{}",
+            purl_type, full_name, commit_hash, sub_path
         );
 
         let purl_with_sub_path =
-            generate_stopgap_purl(full_name, commit_hash, Some(cataloger), Some(sub_path));
+            generate_purl(full_name, commit_hash, Some(cataloger), Some(sub_path));
 
         assert_eq!(purl_with_sub_path, test_purl_with_sub_path);
 
@@ -619,11 +633,12 @@ mod test {
     }
 
     #[test]
-    fn test_generate_stopgap_purl_no_sub_path() -> Result<(), Error> {
-        let (full_name, commit_hash, cataloger, _) = get_test_data();
+    fn test_generate_purl_no_sub_path() -> Result<(), Error> {
+        let (full_name, commit_hash, purl_type, cataloger, _) = get_test_data(None);
 
-        let test_purl_no_sub_path = format!("pkg:{}:{}@{}", cataloger, full_name, commit_hash);
-        let purl_no_sub_path = generate_stopgap_purl(
+        let test_purl_no_sub_path = format!("pkg:{}/{}@{}", purl_type, full_name, commit_hash);
+
+        let purl_no_sub_path = generate_purl(
             full_name.clone(),
             commit_hash.clone(),
             Some(cataloger),
@@ -636,13 +651,13 @@ mod test {
     }
 
     #[test]
-    fn test_generate_stopgap_purl_root_sub_path() -> Result<(), Error> {
-        let (full_name, commit_hash, cataloger, _) = get_test_data();
+    fn test_generate_purl_root_sub_path() -> Result<(), Error> {
+        let (full_name, commit_hash, purl_type, cataloger, _) = get_test_data(None);
 
         let sub_path = String::from("/");
 
-        let test_purl_root_sub_path = format!("pkg:{}:{}@{}", cataloger, full_name, commit_hash);
-        let purl_root_sub_path = generate_stopgap_purl(
+        let test_purl_root_sub_path = format!("pkg:{}/{}@{}", purl_type, full_name, commit_hash);
+        let purl_root_sub_path = generate_purl(
             full_name.clone(),
             commit_hash.clone(),
             Some(cataloger),
@@ -655,13 +670,13 @@ mod test {
     }
 
     #[test]
-    fn test_generate_stopgap_purl_root_empty_path() -> Result<(), Error> {
-        let (full_name, commit_hash, cataloger, _) = get_test_data();
+    fn test_generate_purl_root_empty_path() -> Result<(), Error> {
+        let (full_name, commit_hash, purl_type, cataloger, _) = get_test_data(None);
         let sub_path = String::from("");
 
-        let test_purl_empty_sub_path = format!("pkg:{}:{}@{}", cataloger, full_name, commit_hash);
+        let test_purl_empty_sub_path = format!("pkg:{}/{}@{}", purl_type, full_name, commit_hash);
         let purl_empty_sub_path =
-            generate_stopgap_purl(full_name, commit_hash, Some(cataloger), Some(sub_path));
+            generate_purl(full_name, commit_hash, Some(cataloger), Some(sub_path));
 
         assert_eq!(purl_empty_sub_path, test_purl_empty_sub_path);
 
@@ -675,16 +690,16 @@ mod test {
 
         let repo_loc = get_tmp_location();
 
-        let (full_name, commit_hash, cataloger, _) = get_test_data();
+        let (full_name, commit_hash, _purl_type, cataloger, _) = get_test_data(None);
 
-        let purl_under_test = generate_stopgap_purl(
+        let purl_under_test = generate_purl(
             full_name.to_string(),
             commit_hash.to_string(),
             Some(cataloger.clone()),
             None,
         );
 
-        git.clone_repo(repo_loc.as_str())
+        git.clone_repo(repo_loc.as_str(), None)
             .map_err(|err| Error::Syft(format!("{}", err)))?;
 
         let syft = Syft::new(repo_loc.clone());
@@ -699,7 +714,7 @@ mod test {
         Git::remove_clone(repo_loc.as_str()).map_err(|err| Error::Syft(format!("{}", err)))?;
 
         let sbom = Bom::parse(syft_result.unwrap().as_str(), CdxFormat::Json)
-            .map_err(|err| Error::Syft(format!("{}", err)))?;
+            .map_err(Error::Core)?;
 
         let metadata = sbom.metadata.unwrap();
         let component = metadata.component.unwrap();
@@ -717,9 +732,9 @@ mod test {
         let git = Git::new(repo_url);
 
         let repo_loc = get_tmp_location();
-        let (full_name, commit_hash, cataloger, _) = get_test_data();
+        let (full_name, commit_hash, _purl_type, cataloger, _) = get_test_data(None);
 
-        git.clone_repo(repo_loc.as_str())
+        git.clone_repo(repo_loc.as_str(), None)
             .map_err(|err| Error::Syft(format!("{}", err)))?;
 
         let poms: Vec<String> = git
@@ -738,7 +753,7 @@ mod test {
                 Some(trimmed_pom_path.clone()),
             ) {
                 Ok(sbom) => {
-                    let purl_under_test = generate_stopgap_purl(
+                    let purl_under_test = generate_purl(
                         full_name.clone(),
                         commit_hash.clone(),
                         Some(cataloger.clone()),
@@ -746,7 +761,7 @@ mod test {
                     );
 
                     let sbom = Bom::parse(sbom.as_str(), CdxFormat::Json)
-                        .map_err(|err| Error::Syft(format!("{}", err)))?;
+                        .map_err(Error::Core)?;
 
                     let metadata = sbom.metadata.unwrap();
                     let component = metadata.component.unwrap();
