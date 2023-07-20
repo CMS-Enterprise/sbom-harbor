@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 /// Service that is capable of creating, storing, and managing relationships between one or more
 /// types from the [package] module.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PackageService {
     store: Arc<Store>,
 }

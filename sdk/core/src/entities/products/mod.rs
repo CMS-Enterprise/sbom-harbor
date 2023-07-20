@@ -1,7 +1,7 @@
 use platform::mongo_doc;
 use platform::persistence::mongodb::MongoDocument;
 
-mod vendor;
-pub use vendor::*;
+mod product;
+pub use product::*;
 
-mongo_doc!(vendor::Vendor);
+mongo_doc!(product::Product);

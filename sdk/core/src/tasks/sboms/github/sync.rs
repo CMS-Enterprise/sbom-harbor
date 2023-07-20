@@ -74,7 +74,7 @@ impl TaskProvider for SyncTask {
                                         kind: XrefKind::Product,
                                         map: HashMap::new(),
                                     },
-                                    task,
+                                    Some(task),
                                 )
                                 .await
                             {

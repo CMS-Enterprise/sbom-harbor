@@ -1,6 +1,8 @@
+use crate::entities::xrefs::{Xref, XrefKind};
 use crate::Error;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+use std::collections::HashMap;
 
 /// The Product entity represents a specific product and version combination of a software or
 /// service a Vendor sells and is required to submit SBOMs for.
@@ -43,13 +45,27 @@ impl Product {
             vendor_id,
         })
     }
+
+    /// Returns an Xref to the [Product] instance.
+    pub fn as_xref(&self, vendor_name: &str) -> Xref {
+        Xref {
+            kind: XrefKind::Product,
+            map: HashMap::from([
+                ("vendorId".to_string(), self.vendor_id.clone()),
+                ("vendorName".to_string(), vendor_name.to_string()),
+                ("productId".to_string(), self.id.clone()),
+                ("productName".to_string(), self.name.clone()),
+                ("productVersion".to_string(), self.version.clone()),
+            ]),
+        }
+    }
 }
 
 /// Validatable insert type.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 #[skip_serializing_none]
-struct ProductInsert {
+pub struct ProductInsert {
     /// The name of the product.
     pub name: Option<String>,
 

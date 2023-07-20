@@ -18,12 +18,11 @@ pub mod vulnerabilities;
 /// and [SBOMs] when an organization is using the Snyk application.
 pub mod snyk;
 
+/// The Syft module contains logic related to the analysis and parsing of [SBOMs] with Syft.
+pub mod syft;
+
 /// The [teams] module contains domain and persistence logic related to the management of
-/// [Teams]. A [Team] is used to group [Members] and [Projects].
-///
-/// - [Members] are [Users] that belong to a [Team].
-/// - [Projects] are a way to group a related set of [Codebases].
-/// - [Codebases] represent one or more source code targets that are used to produce a [Package].
+/// [Team] entities.
 pub mod teams;
 
 /// The [xrefs] module contains domain and persistence logic related to the management of
@@ -36,3 +35,11 @@ pub mod analytics;
 /// The GitHub module contains integration logic related to the management of [Packages],
 /// and [SBOMs] leveraging GitHub organizations.
 pub mod github;
+
+/// The [vendors] module contains domain and persistence logic related to the management of
+/// [Vendor] entities.
+pub mod vendors;
+
+/// The [products] module contains domain and persistence logic related to the management of
+/// [Product] entities.
+pub mod products;

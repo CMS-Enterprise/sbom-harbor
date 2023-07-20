@@ -60,7 +60,7 @@ impl Package {
         bom: &Bom,
         package_manager: Option<String>,
         xref: Xref,
-        task: &Task,
+        task: Option<&Task>,
     ) -> Result<Package, Error> {
         let cdx = PackageCdx::from_bom(bom, package_manager.clone())?;
         let version = cdx.version.clone();
@@ -124,7 +124,12 @@ impl Package {
             vulnerabilities: vec![],
         };
 
-        package.join_task(purl, task)?;
+        match task {
+            None => {}
+            Some(task) => {
+                package.join_task(purl, task)?;
+            }
+        }
 
         Ok(package)
     }
@@ -134,7 +139,7 @@ impl Package {
         component: &Component,
         package_manager: Option<String>,
         xref: Xref,
-        task: &Task,
+        task: Option<&Task>,
     ) -> Result<Package, Error> {
         let cdx = PackageCdx::from_dependency(component, package_manager.clone());
         let version = cdx.version.clone();
@@ -163,7 +168,12 @@ impl Package {
             vulnerabilities: vec![],
         };
 
-        dependency.join_task(purl, task)?;
+        match task {
+            None => {}
+            Some(task) => {
+                dependency.join_task(purl, task)?;
+            }
+        }
 
         Ok(dependency)
     }
