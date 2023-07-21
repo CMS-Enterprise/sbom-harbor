@@ -52,18 +52,16 @@ impl Client {
         match response {
             Ok(option) => match option {
                 Some(value) => {
-
                     let num_public_repos = value.public_repo_count;
                     let num_private_repos = value.private_repo_count;
 
                     println!(
                         "Found {} public repos and {} private repos",
-                        num_public_repos,
-                        num_private_repos
+                        num_public_repos, num_private_repos
                     );
 
                     Ok(Some(num_public_repos + num_private_repos))
-                },
+                }
                 None => Err(Error::GitHubErrorResponse(
                     "==> Get request from GitHub had an empty response".to_string(),
                 )),
@@ -163,7 +161,7 @@ impl Client {
                 Some(value) => {
                     println!("==> response is ok, {} repos returned", value.len());
                     Ok(value)
-                },
+                }
                 None => Err(Error::GitHubErrorResponse(
                     "Get request from GitHub had an empty response".to_string(),
                 )),
@@ -198,7 +196,7 @@ pub struct Org {
     private_repo_count: u32,
 }
 
-fn default_num_repos() ->u32 {
+fn default_num_repos() -> u32 {
     0
 }
 
@@ -259,9 +257,9 @@ impl Repo {
 
 #[cfg(test)]
 mod test {
-    use platform::config::from_env;
     use crate::services::github::client::Client;
     use crate::services::github::error::Error;
+    use platform::config::from_env;
 
     /// This test must be run with a GitHub PAT that has the correct permissions
     /// Fine grained PATs do not work, the token must be a classic PAT with these perms:
@@ -271,8 +269,7 @@ mod test {
     /// This is a good place to test a PAT from GItHub
     #[tokio::test]
     #[ignore = "debug manual only"]
-    async fn test_get_page_repos() -> Result<(), Error>{
-
+    async fn test_get_page_repos() -> Result<(), Error> {
         // https://github.com/orgs/harbor-test-org/repositories
         let total_repos_in_harbor_test_org = 11;
 
@@ -285,19 +282,16 @@ mod test {
         let num_per_page = 100 as u32;
 
         let client = Client::new(pat);
-        let repo_page = client.get_page_of_repos(
-            &String::from("harbor-test-org"),
-            page_num,
-            &num_per_page
-        ).await;
+        let repo_page = client
+            .get_page_of_repos(&String::from("harbor-test-org"), page_num, &num_per_page)
+            .await;
 
         match repo_page {
             Ok(repos) => {
                 assert_eq!(repos.len(), total_repos_in_harbor_test_org);
                 Ok(())
-            },
-            Err(err) => Err(err)
+            }
+            Err(err) => Err(err),
         }
     }
 }
-

@@ -44,7 +44,6 @@ impl GitHubService {
             println!("==> processing page {}. There are {} repos", page, per_page);
 
             for repo in gh_org_rsp.iter_mut() {
-
                 println!(
                     "==> getting last commit for repo : {:#?}",
                     repo.full_name.clone().unwrap()
