@@ -173,8 +173,11 @@ impl Service {
             }
         }
 
-        if let Some(path) = orig_dir.clone() {
-            println!("==> about to change directories back to: {:#?}", orig_dir.clone());
+        if let Some(path) = orig_dir {
+            println!(
+                "==> about to change directories back to: {:#?}\n",
+                path.to_str().unwrap()
+            );
             env::set_current_dir(path).map_err(|err| {
                 Error::SyftError(format!(
                     "Unable to change directories back to original location: {}",

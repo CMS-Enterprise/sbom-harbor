@@ -34,8 +34,6 @@ impl GitHubService {
             }
         };
 
-        println!("Looking at pages: {:#?}", pages);
-
         let mut repo_vec: Vec<Repo> = Vec::new();
         for (page, per_page) in pages.iter_mut().enumerate() {
             let mut gh_org_rsp = self
@@ -43,7 +41,14 @@ impl GitHubService {
                 .get_page_of_repos(&self.org, page + 1, per_page)
                 .await?;
 
+            println!("==> processing page {}. There are {} repos", page, per_page);
+
             for repo in gh_org_rsp.iter_mut() {
+                println!(
+                    "==> getting last commit for repo : {:#?}",
+                    repo.full_name.clone().unwrap()
+                );
+
                 let result = self.client.get_last_commit(repo).await;
                 let repo_name = repo.full_name.clone().unwrap();
 
