@@ -140,7 +140,7 @@ impl Service<Product> for ProductService {
             }
         }
 
-        match <ProductService as Service<Product>>::insert_inner(self.store(), product).await {
+        match self.insert_inner(product).await {
             Ok(_) => {}
             Err(e) => {
                 return Err(Error::Mongo(e.to_string()));

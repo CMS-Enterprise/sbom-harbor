@@ -6,7 +6,6 @@ use harbcore::services::packages::PackageService;
 use harbcore::services::products::ProductService;
 use harbcore::services::sboms::{FileSystemStorageProvider, SbomService};
 use harbcore::services::vendors::VendorService;
-use harbcore::testing::sbom_raw;
 use harbcore::Error;
 use platform::persistence::mongodb::{Service, Store};
 use std::collections::HashMap;
@@ -14,50 +13,6 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 mod common;
-
-#[async_std::test]
-async fn can_ingest_sbom() -> Result<(), Error> {
-    let raw = sbom_raw()?;
-    let cx = dev_context(None)?;
-    let store = Arc::new(Store::new(&cx).await?);
-    let scenario = Scenario::new(Some(store.clone())).await?;
-
-    let service = ProductService::new(
-        store.clone(),
-        Some(Arc::new(VendorService::new(store.clone()))),
-        Some(Arc::new(SbomService::new(
-            store.clone(),
-            Some(Box::new(FileSystemStorageProvider::new(
-                "/tmp/harbor/sboms".to_string(),
-            ))),
-            Some(PackageService::new(store.clone())),
-        ))),
-    );
-
-    // Create a vendor.
-    let mut vendor = Vendor::new("core-ingest-test".to_string())?;
-    scenario.with_entity(&mut vendor)?;
-    assert!(!vendor.id.is_empty());
-
-    // Create a product
-    let mut product = Product::new(
-        "core-ingest-test".to_string(),
-        "1.0.0".to_string(),
-        vendor.id.clone(),
-    )?;
-    scenario.with_entity(&mut product)?;
-    assert!(!product.id.is_empty());
-
-    let sbom = service.ingest(product.id.as_str(), raw.as_str()).await?;
-
-    assert!(!sbom.id.is_empty());
-
-    scenario.cleanup(sbom).await?;
-    scenario.cleanup(product).await?;
-    scenario.cleanup(vendor).await?;
-
-    Ok(())
-}
 
 #[async_std::test]
 async fn can_validate_insert_product() -> Result<(), Error> {

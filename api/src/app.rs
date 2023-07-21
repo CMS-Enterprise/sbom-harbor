@@ -3,7 +3,9 @@ use axum::http::{Method, Request};
 use axum::response::{IntoResponse, Response};
 use axum::Router;
 use harbcore::services::packages::PackageService;
+use harbcore::services::products::ProductService;
 use harbcore::services::sboms::{FileSystemStorageProvider, SbomService};
+use harbcore::services::teams::TeamService;
 use harbcore::services::vendors::VendorService;
 use platform::hyper::StatusCode;
 use platform::persistence::mongodb::{Context, Store};
@@ -87,24 +89,24 @@ pub async fn app(config: Config) -> Router {
     // Load injectable types.
     // let authorizer = Authorizer::new(&config).unwrap().expect("failed to load authorizer");
     let store = Arc::new(Store::new(&config.cx).await.unwrap());
-    let vendors_core = VendorService::new(store.clone());
-    let packages_core = PackageService::new(store.clone());
 
+    let packages = PackageService::new(store.clone());
     // TODO: Inject StorageProvider from config.
-    let sboms_core = SbomService::new(
+    let sboms = Arc::new(SbomService::new(
         store.clone(),
         Some(Box::new(FileSystemStorageProvider::new(
             "/tmp/harbor-debug/sboms".to_string(),
         ))),
-        Some(packages_core),
-    );
+        Some(packages),
+    ));
 
-    let teams = controllers::team::new(store.clone());
-    let products = controllers::product::new(
+    let teams = Arc::new(TeamService::new(store.clone()));
+    let vendors = Arc::new(VendorService::new(store.clone()));
+    let products = Arc::new(ProductService::new(
         store,
-        Some(Arc::new(vendors_core)),
-        Some(Arc::new(sboms_core)),
-    );
+        Some(vendors.clone()),
+        Some(sboms),
+    ));
 
     Router::new()
         .fallback(handler_404)
@@ -118,6 +120,41 @@ pub async fn app(config: Config) -> Router {
             axum::routing::delete(controllers::team::delete),
         )
         .with_state(teams)
+        .route("/v1/vendors", axum::routing::get(controllers::vendor::list))
+        .route(
+            "/v1/vendor/:id",
+            axum::routing::get(controllers::vendor::get),
+        )
+        .route("/v1/vendor", axum::routing::post(controllers::vendor::post))
+        .route(
+            "/v1/vendor/:id",
+            axum::routing::put(controllers::vendor::put),
+        )
+        .route(
+            "/v1/vendor/:id",
+            axum::routing::delete(controllers::vendor::delete),
+        )
+        .with_state(vendors)
+        .route(
+            "/v1/products",
+            axum::routing::get(controllers::product::list),
+        )
+        .route(
+            "/v1/product/:id",
+            axum::routing::get(controllers::product::get),
+        )
+        .route(
+            "/v1/product",
+            axum::routing::post(controllers::product::post),
+        )
+        .route(
+            "/v1/product/:id",
+            axum::routing::put(controllers::product::put),
+        )
+        .route(
+            "/v1/product/:id",
+            axum::routing::delete(controllers::product::delete),
+        )
         .route(
             "/v1/product/:id/sbom",
             axum::routing::post(controllers::product::sbom),

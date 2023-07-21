@@ -11,6 +11,7 @@ use harbor_api::Error;
 use http::Method;
 use mime;
 use platform::persistence::mongodb::{MongoDocument, Store};
+use serde::Serialize;
 use serde_json::json;
 use std::sync::Arc;
 use tower::ServiceExt;
@@ -19,29 +20,25 @@ use uuid::Uuid;
 pub struct Scenario {
     router: Router,
     store: Arc<Store>,
-    method: Method,
 }
 
 impl Scenario {
-    pub async fn new(method: Method) -> Result<Scenario, Error> {
+    pub async fn new() -> Result<Scenario, Error> {
         let cx = dev_context(None)?;
         let router = router().await?;
         let store = Arc::new(Store::new(&cx).await?);
 
-        Ok(Self {
-            router,
-            store,
-            method,
-        })
+        Ok(Self { router, store })
     }
 
     pub async fn response(
         &self,
-        route: String,
+        method: Method,
+        route: &str,
         body: Option<Body>,
     ) -> Result<axum::response::Response, Error> {
         let router = self.router.clone();
-        let request = request(self.method.clone(), route, body);
+        let request = request(method, route, body);
 
         let response = router
             .oneshot(request)
@@ -51,6 +48,7 @@ impl Scenario {
         Ok(response)
     }
 
+    #[allow(dead_code)]
     pub async fn with_entity<E>(&self, entity: &mut E) -> Result<(), Error>
     where
         E: MongoDocument,
@@ -63,6 +61,7 @@ impl Scenario {
             .map_err(|e| Error::InternalServerError(e.to_string()))
     }
 
+    #[allow(dead_code)]
     pub async fn cleanup<E>(&self, entity: E) -> Result<(), Error>
     where
         E: MongoDocument,
@@ -74,7 +73,7 @@ impl Scenario {
             .map_err(|e| Error::InternalServerError(e.to_string()))
     }
 }
-
+#[allow(dead_code)]
 pub async fn router() -> Result<Router, Error> {
     let cx = match dev_context(None) {
         Ok(cx) => cx,
@@ -87,7 +86,8 @@ pub async fn router() -> Result<Router, Error> {
     Ok(harbor)
 }
 
-pub fn request(method: Method, route: String, body: Option<Body>) -> Request<Body> {
+#[allow(dead_code)]
+pub fn request(method: Method, route: &str, body: Option<Body>) -> Request<Body> {
     let body = match body {
         None => Body::from(""),
         Some(b) => b,
@@ -102,15 +102,27 @@ pub fn request(method: Method, route: String, body: Option<Body>) -> Request<Bod
         .unwrap()
 }
 
+#[allow(dead_code)]
 pub fn raw_sbom() -> Result<String, Error> {
     std::fs::read_to_string(sbom_fixture_path()?)
         .map_err(|e| Error::InternalServerError(e.to_string()))
 }
 
+#[allow(dead_code)]
 pub fn sbom_as_body() -> Result<Body, Error> {
     let raw = raw_sbom()?;
 
     Ok(Body::from(
         serde_json::to_vec(&json!(raw)).map_err(|e| Error::InternalServerError(e.to_string()))?,
+    ))
+}
+
+#[allow(dead_code)]
+pub fn as_body<T>(instance: &T) -> Result<Body, Error>
+where
+    T: Serialize,
+{
+    Ok(Body::from(
+        serde_json::to_vec(instance).map_err(|e| Error::InternalServerError(e.to_string()))?,
     ))
 }
