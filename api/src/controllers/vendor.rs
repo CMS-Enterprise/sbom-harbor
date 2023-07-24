@@ -1,111 +1,110 @@
+use std::sync::Arc;
+
 use axum::extract::{Path, State};
 use axum::{debug_handler, Json};
-use std::sync::Arc;
+use harbcore::entities::vendors::{Vendor, VendorInsert};
+use harbcore::services::vendors::VendorService;
+use platform::persistence::mongodb::{Service, Store};
 use tracing::instrument;
-
-use harbcore::entities::teams::Team;
-use harbcore::services::teams::TeamService;
-use platform::persistence::mongodb::Service;
 
 use crate::auth::Claims;
 use crate::Error;
 
-/// Type alias for the [TeamService] instance.
-pub type DynTeamService = Arc<TeamService>;
+/// Arc reference type to register with Axum.
+pub type DynVendorService = Arc<VendorService>;
+
+/// Factory method for new instance of type.
+pub fn new(store: Arc<Store>) -> Arc<VendorService> {
+    Arc::new(VendorService::new(store))
+}
 
 // WATCH: Trying to get by without a custom extractor.
-/// Get a [Team] by id.
+/// Get a [Vendor] by id.
 #[instrument]
 #[debug_handler]
 pub async fn get(
     _claims: Claims,
     Path(id): Path<String>,
-    State(service): State<DynTeamService>,
-) -> Result<Json<Team>, Error> {
+    State(service): State<DynVendorService>,
+) -> Result<Json<Vendor>, Error> {
     if id.is_empty() {
         return Err(Error::InvalidParameters("id invalid".to_string()));
     }
 
-    let team = service
+    let vendor = service
         .find(id.as_str())
         .await
         .map_err(|e| Error::InternalServerError(e.to_string()))?;
 
-    match team {
-        None => Err(Error::DoesNotExist(format!("team not found: {}", id))),
+    match vendor {
+        None => Err(Error::DoesNotExist(format!("vendor not found: {}", id))),
         Some(t) => Ok(Json(t)),
     }
 }
 
-/// List all [Teams].
+/// List all [Vendors].
 #[instrument]
 #[debug_handler]
 pub async fn list(
     _claims: Claims,
-    State(service): State<DynTeamService>,
-) -> Result<Json<Vec<Team>>, Error> {
-    let teams = service
+    State(service): State<DynVendorService>,
+) -> Result<Json<Vec<Vendor>>, Error> {
+    let vendors = service
         .list()
         .await
         .map_err(|e| Error::InternalServerError(e.to_string()))?;
 
-    Ok(Json(teams))
+    Ok(Json(vendors))
 }
 
-/// Post a new [Team].
+/// Post a new [Vendor].
 #[instrument]
 #[debug_handler]
 pub async fn post(
     _claims: Claims,
-    State(service): State<DynTeamService>,
-    Json(team): Json<Team>,
-) -> Result<Json<Team>, Error> {
-    if !team.id.is_empty() {
-        return Err(Error::InvalidParameters(
-            "client generated id invalid".to_string(),
-        ));
-    }
-
-    let mut team = team;
+    State(service): State<DynVendorService>,
+    Json(vendor): Json<VendorInsert>,
+) -> Result<Json<Vendor>, Error> {
+    let mut vendor = vendor.to_entity()?;
 
     service
-        .insert(&mut team)
+        .insert(&mut vendor)
         .await
         .map_err(|e| Error::InternalServerError(e.to_string()))?;
 
-    Ok(Json(team))
+    Ok(Json(vendor))
 }
 
-/// Put an updated [Team].
+/// Put an updated [Vendor].
 #[instrument]
 #[debug_handler]
 pub async fn put(
     _claims: Claims,
     Path(id): Path<String>,
-    State(service): State<DynTeamService>,
-    Json(team): Json<Team>,
-) -> Result<Json<Team>, Error> {
-    if id != team.id {
+    State(service): State<DynVendorService>,
+    Json(vendor): Json<Vendor>,
+) -> Result<Json<Vendor>, Error> {
+    if id != vendor.id {
         return Err(Error::InvalidParameters("id mismatch".to_string()));
     }
 
-    let team = team;
+    let vendor = vendor;
 
     service
-        .update(&team)
+        .update(&vendor)
         .await
         .map_err(|e| Error::InternalServerError(e.to_string()))?;
 
-    Ok(Json(team))
+    Ok(Json(vendor))
 }
 
-/// Delete and existing [Team].
+/// Delete and existing [Vendor].
 #[instrument]
 #[debug_handler]
 pub async fn delete(
     _claims: Claims,
     Path(id): Path<String>,
-    State(service): State<DynTeamService>,
+    State(service): State<DynVendorService>,
 ) -> Result<Json<()>, Error> {
     if id.is_empty() {
         return Err(Error::InvalidParameters("id invalid".to_string()));

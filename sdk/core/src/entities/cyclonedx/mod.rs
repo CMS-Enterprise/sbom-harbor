@@ -1,8 +1,10 @@
 #[allow(missing_docs)]
 /// Data structures generated from the CycloneDx JSON Spec.
 pub(crate) mod models;
+
 use crate::entities::cyclonedx::bom::BomFormat;
 use crate::entities::sboms::CdxFormat;
+use crate::services::syft::try_extract_package_manager;
 use crate::Error;
 pub use models::*;
 
@@ -87,5 +89,47 @@ impl Bom {
     /// Extracts the Purl for the Bom.
     pub fn purl(&self) -> Option<String> {
         self.metadata.clone()?.component?.purl
+    }
+
+    /// Best effort algorithm to build a valid Purl for the Sbom by extracting values from the
+    /// package metadata.
+    pub fn try_build_purl_from_metadata(
+        &self,
+        default_name: Option<String>,
+        default_version: Option<String>,
+    ) -> Option<String> {
+        // Try to get the name from the Sbom directly.
+        let component_name = match &self.metadata.clone()?.component {
+            None => "".to_string(),
+            Some(component) => component.name.clone(),
+        };
+
+        // If no component name, use name if passed. If name not resolvable, exit.
+        let name = match component_name.is_empty() {
+            false => component_name,
+            true => match default_name {
+                None => {
+                    return None;
+                }
+                Some(n) => n,
+            },
+        };
+
+        // set a default version if unable to resolve.
+        let version = match self.metadata.clone()?.component?.version {
+            None => match default_version {
+                None => "not-set".to_string(),
+                Some(c) => {
+                    if c.is_empty() {
+                        "not-set".to_string();
+                    }
+                    c
+                }
+            },
+            Some(v) => v,
+        };
+
+        let package_manager = try_extract_package_manager(self);
+        Some(format!("{}/{}@{}", package_manager, name, version))
     }
 }

@@ -1,5 +1,5 @@
+use crate::entities::products::Product;
 use crate::entities::teams::{Repository, Token};
-use crate::entities::vendors::Product;
 use crate::Error;
 use platform::auth::User;
 use serde::{Deserialize, Serialize};

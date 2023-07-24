@@ -137,7 +137,7 @@ impl SyncTask {
                 package_manager,
                 SbomProviderKind::Snyk,
                 Xref::from(snyk_ref),
-                task,
+                Some(task),
             )
             .await?;
 

@@ -36,12 +36,13 @@ where
     /// Insert a document into a [Collection].
     #[instrument]
     async fn insert<'a>(&self, doc: &mut D) -> Result<(), Error> {
-        Self::insert_inner(self.store(), doc).await
+        self.insert_inner(doc).await
     }
 
     /// Indirection that allows implementers of this trait to provide custom insert logic
     /// prior to executing default logic.
-    async fn insert_inner(store: Arc<Store>, doc: &mut D) -> Result<(), Error> {
+    async fn insert_inner(&self, doc: &mut D) -> Result<(), Error> {
+        let store = self.store();
         let id = doc.id();
         if !id.is_empty() {
             return Err(Error::Insert(
