@@ -1,6 +1,6 @@
 ---
 name: General issue
-about: Record an issue for the project
+about: Submit a general issue for this project
 title: ''
 labels: ''
 assignees: ''
