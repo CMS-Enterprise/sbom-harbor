@@ -13,3 +13,6 @@ pub use token::*;
 use platform::persistence::mongodb::{mongo_doc, MongoDocument};
 
 mongo_doc!(Team);
+mongo_doc!(Repository);
+mongo_doc!(BuildTarget);
+mongo_doc!(Token);
