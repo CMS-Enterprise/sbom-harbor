@@ -72,7 +72,7 @@ mod tests {
     fn can_get_fixture_dir() -> Result<(), Error> {
         let fixture_dir = fixture_dir()?;
 
-        assert!(fixture_dir.ends_with("sbom-harbor/tests/fixtures"));
+        assert!(fixture_dir.ends_with("tests/fixtures"));
 
         Ok(())
     }
@@ -81,7 +81,7 @@ mod tests {
     fn can_get_fixture_path() -> Result<(), Error> {
         let fixture_path = fixture_path("/path/to/fixture")?;
 
-        assert!(fixture_path.ends_with("sbom-harbor/tests/fixtures/path/to/fixture"));
+        assert!(fixture_path.ends_with("tests/fixtures/path/to/fixture"));
 
         Ok(())
     }
