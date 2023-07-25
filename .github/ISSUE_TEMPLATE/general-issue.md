@@ -1,6 +1,6 @@
 ---
-name: 'General issue'
-about: Suggest an idea for this project
+name: General issue
+about: Submit a general issue for this project
 title: ''
 labels: ''
 assignees: ''
