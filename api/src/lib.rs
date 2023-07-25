@@ -15,3 +15,6 @@ mod errors;
 
 /// Error type for the crate.
 pub use errors::Error;
+
+/// The primary web server.
+pub mod app;

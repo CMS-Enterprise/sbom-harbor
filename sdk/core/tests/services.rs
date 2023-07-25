@@ -9,9 +9,10 @@ fn test_team_model(test_name: &str) -> Team {
     Team {
         id: "".to_string(),
         name: test_name.to_string(),
-        members: vec![],
-        projects: vec![],
-        tokens: vec![],
+        repositories: None,
+        tokens: None,
+        members: None,
+        products: None,
     }
 }
 
@@ -31,7 +32,7 @@ async fn can_crud_team() -> Result<(), Error> {
     assert_eq!(model.id, saved.id);
     assert_eq!(model.name, saved.name);
 
-    let updated_name = format!("{}-{}", saved.name, "updated");
+    let updated_name = format!("{}-{}", saved.name.clone(), "updated");
     let mut updated = saved.clone();
     updated.name = updated_name.clone();
 

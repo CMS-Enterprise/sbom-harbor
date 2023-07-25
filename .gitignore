@@ -44,7 +44,6 @@ sdk/skaffold/generated
 **/.openapi-generator/
 
 # Third-party generator input specs
-
 sdk/generators/third-party/cyclonedx.yaml
 sdk/generators/third-party/snyk.json
 

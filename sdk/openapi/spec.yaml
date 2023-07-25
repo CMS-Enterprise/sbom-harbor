@@ -1,0 +1,1619 @@
+openapi: 3.0.1
+info:
+  title: Harbor
+  description: Harbor SBOM Management API
+  version: 0.1.0
+servers:
+  - url: https://localhost:5000
+    variables:
+      basePath:
+        default: ''
+tags:
+  - name: auth
+    description: Operations related to authentication concerns of the system.
+  - name: user
+    description: Operations related to the user entity.
+  - name: team
+    description: Operations related to the team entity.
+  - name: repository
+    description: Operations related to the repository entity.
+  - name: buildTarget
+    description: Operations related to the build target entity.
+  - name: vendor
+    description: Operations related to the vendor entity.
+  - name: product
+    description: Operations related to the product entity.
+  - name: sbom
+    description: Operations related to the sbom entity and SBOM documents.
+  - name: package
+    description: Operations related to the package entity.
+  - name: vulnerability
+    description: Operations related to the vulnerability entity.
+
+paths:
+  # Auth Paths
+  /api/v1/login:
+    post:
+      summary: Authenticate with a username and password.
+      tags:
+        - auth
+      requestBody:
+        $ref: '#/components/requestBodies/login'
+      responses:
+        "200":
+          $ref: '#/components/responses/apiKey'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+  /api/v1/user/search:
+    get:
+      summary: Search for members by email.
+      tags:
+        - auth
+      responses:
+        "200":
+          $ref: '#/components/responses/userList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/filterQuery'
+
+  # Team Paths
+  /api/v1/team:
+    post:
+      summary: Create a new team.
+      tags:
+        - team
+      requestBody:
+        $ref: '#/components/requestBodies/team'
+      responses:
+        "200":
+          $ref: '#/components/responses/team'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+  /api/v1/team/{teamId}:
+    get:
+      summary: Get an existing team.
+      tags:
+        - team
+      responses:
+        "200":
+          $ref: '#/components/responses/team'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+    put:
+      summary: Modify an existing team.
+      tags:
+        - team
+      requestBody:
+        $ref: '#/components/requestBodies/team'
+      responses:
+        "200":
+          $ref: '#/components/responses/team'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+    delete:
+      summary: Delete an existing team.
+      tags:
+        - team
+      responses:
+        "200":
+          $ref: '#/components/responses/team'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+
+  /api/v1/teams:
+    get:
+      summary: Get all teams a user has access to.
+      tags:
+        - team
+      responses:
+        "200":
+          $ref: '#/components/responses/teamList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+  /api/v1/team/{teamId}/repositories:
+    get:
+      summary: Get all repositories for a team.
+      tags:
+        - team
+        - repository
+      responses:
+        "200":
+          $ref: '#/components/responses/repositoryList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+  /api/v1/team/{teamId}/token:
+    post:
+      summary: Create a token for a team.
+      tags:
+        - team
+        - token
+      requestBody:
+        $ref: '#/components/requestBodies/token'
+      responses:
+        "200":
+          $ref: '#/components/responses/product'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+  /api/v1/team/{teamId}/tokens:
+    get:
+      summary: Get all tokens for a team.
+      tags:
+        - team
+        - token
+      responses:
+        "200":
+          $ref: '#/components/responses/tokenList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+  /api/v1/team/{teamId}/products:
+    get:
+      summary: Get all products associated with a team.
+      tags:
+        - team
+        - product
+      responses:
+        "200":
+          $ref: '#/components/responses/productList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+  /api/v1/team/{teamId}/sboms:
+    get:
+      summary: Get all sboms for all products and/or repositories associated with a team.
+      tags:
+        - team
+        - sbom
+      responses:
+        "200":
+          $ref: '#/components/responses/sbomList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+
+  # Repository Paths
+  /api/v1/repository:
+    post:
+      summary: Create a repository for a team.
+      tags:
+        - repository
+      requestBody:
+        $ref: '#/components/requestBodies/repository'
+      responses:
+        "200":
+          $ref: '#/components/responses/repository'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+  /api/v1/repository/{repositoryId}:
+    get:
+      summary: Get an existing repository.
+      tags:
+        - repository
+      responses:
+        "200":
+          $ref: '#/components/responses/repository'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/repositoryId'
+    put:
+      summary: Modify an existing repository.
+      tags:
+        - repository
+      requestBody:
+        $ref: '#/components/requestBodies/repository'
+      responses:
+        "200":
+          $ref: '#/components/responses/repository'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/repositoryId'
+    delete:
+      summary: Delete an existing repository.
+      tags:
+        - repository
+      responses:
+        "200":
+          $ref: '#/components/responses/repository'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/repositoryId'
+  /api/v1/repository/{repositoryId}/build-targets:
+    get:
+      summary: Get all build targets for a repository.
+      tags:
+        - repository
+        - buildTarget
+      responses:
+        "200":
+          $ref: '#/components/responses/buildTargetList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/repositoryId'
+  /api/v1/repository/{repositoryId}/packages:
+    get:
+      summary: Get all packages related to a repository.
+      tags:
+        - repository
+        - package
+      responses:
+        "200":
+          $ref: '#/components/responses/packageList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/repositoryId'
+  /api/v1/repository/{repositoryId}/sboms:
+    get:
+      summary: Get all sboms for build targets associated with the repository.
+      tags:
+        - team
+        - sbom
+      responses:
+        "200":
+          $ref: '#/components/responses/sbomList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/repositoryId'
+
+  # Build Target Paths
+  /api/v1/build-target:
+    post:
+      summary: Create a build target for a repository.
+      tags:
+        - buildTarget
+      requestBody:
+        $ref: '#/components/requestBodies/buildTarget'
+      responses:
+        "200":
+          $ref: '#/components/responses/buildTarget'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+  /api/v1/build-target/{buildTargetId}:
+    get:
+      summary: Get an existing build target.
+      tags:
+        - buildTarget
+      responses:
+        "200":
+          $ref: '#/components/responses/buildTarget'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/buildTargetId'
+    put:
+      summary: Modify an existing build target.
+      tags:
+        - buildTarget
+      requestBody:
+        $ref: '#/components/requestBodies/buildTarget'
+      responses:
+        "200":
+          $ref: '#/components/responses/buildTarget'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/buildTargetId'
+    delete:
+      summary: Delete an existing build target.
+      tags:
+        - buildTarget
+      responses:
+        "200":
+          $ref: '#/components/responses/buildTarget'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/buildTargetId'
+  /api/v1/build-target/{buildTargetId}/packages:
+    get:
+      summary: Get all packages associated with a build target.
+      tags:
+        - buildTarget
+      responses:
+        "200":
+          $ref: '#/components/responses/packageList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/buildTargetId'
+  /api/v1/build-target/{buildTargetId}/sboms:
+    get:
+      summary: Get all sboms associated with a build target.
+      tags:
+        - buildTarget
+        - sbom
+      responses:
+        "200":
+          $ref: '#/components/responses/sbomList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/buildTargetId'
+  /api/v1/build-target/{buildTargetId}/sbom:
+    post:
+      summary: "Upload an SBOM. The system will attempt to identify an existing package using the Package URL. If no package can be identified, a new one will be created."
+      tags:
+        - buildTarget
+        - sbom
+      requestBody:
+        $ref: '#/components/requestBodies/sbom'
+      responses:
+        "200":
+          $ref: '#/components/responses/uploadResult'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/buildTargetId'
+        - $ref: '#/components/parameters/sbomToken'
+
+  # Vendor Paths
+  /api/v1/vendor:
+    post:
+      summary: Create a new vendor entity.
+      tags:
+        - vendor
+      requestBody:
+        $ref: '#/components/requestBodies/vendor'
+      responses:
+        "200":
+          $ref: '#/components/responses/vendor'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+
+  /api/v1/vendor/{vendorId}:
+    get:
+      summary: Get an existing vendor.
+      tags:
+        - vendor
+      responses:
+        "200":
+          $ref: '#/components/responses/vendor'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+    put:
+      summary: Modify an existing vendor.
+      tags:
+        - vendor
+      requestBody:
+        $ref: '#/components/requestBodies/vendor'
+      responses:
+        "200":
+          $ref: '#/components/responses/vendor'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+    delete:
+      summary: Delete an existing vendor.
+      tags:
+        - vendor
+      responses:
+        "200":
+          $ref: '#/components/responses/vendor'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+  /api/v1/vendors:
+    get:
+      summary: Get all vendors a user has access to.
+      tags:
+        - vendor
+      responses:
+        "200":
+          $ref: '#/components/responses/vendorList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+  /api/v1/vendor/{vendorId}/tokens:
+    get:
+      summary: Get all tokens for a vendor.
+      tags:
+        - vendor
+        - tokens
+      responses:
+        "200":
+          $ref: '#/components/responses/tokenList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+  /api/v1/vendor/{vendorId}/token:
+    post:
+      summary: Create a token for a vendor.
+      tags:
+        - vendor
+        - token
+      requestBody:
+        $ref: '#/components/requestBodies/token'
+      responses:
+        "200":
+          $ref: '#/components/responses/product'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+  /api/v1/vendor/{vendorId}/products:
+    get:
+      summary: Get all products for a vendor.
+      tags:
+        - vendor
+        - product
+      responses:
+        "200":
+          $ref: '#/components/responses/productList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+  /api/v1/vendor/{vendorId}/sboms:
+    get:
+      summary: Get all sboms for all products associated with a vendor.
+      tags:
+        - vendor
+        - sbom
+      responses:
+        "200":
+          $ref: '#/components/responses/sbomList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vendorId'
+
+  # Product Paths
+  /api/v1/product:
+    post:
+      summary: Create a product for a vendor.
+      tags:
+        - product
+      requestBody:
+        $ref: '#/components/requestBodies/product'
+      responses:
+        "200":
+          $ref: '#/components/responses/product'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+  /api/v1/product/{productId}:
+    get:
+      summary: Get an existing product.
+      tags:
+        - product
+      responses:
+        "200":
+          $ref: '#/components/responses/product'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/productId'
+    put:
+      summary: Modify an existing product.
+      tags:
+        - product
+      requestBody:
+        $ref: '#/components/requestBodies/product'
+      responses:
+        "200":
+          $ref: '#/components/responses/product'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/productId'
+    delete:
+      summary: Delete an existing product.
+      tags:
+        - product
+      responses:
+        "200":
+          $ref: '#/components/responses/product'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/productId'
+  /api/v1/product/{productId}/packages:
+    get:
+      summary: Get all packages associated with a product.
+      tags:
+        - product
+      responses:
+        "200":
+          $ref: '#/components/responses/packageList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/productId'
+  /api/v1/product/{productId}/sboms:
+    get:
+      summary: Get all sboms associated with a product.
+      tags:
+        - product
+        - sbom
+      responses:
+        "200":
+          $ref: '#/components/responses/sbomList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/productId'
+  /api/v1/product/{productId}/sbom:
+    post:
+      summary: "Upload an SBOM. The system will attempt to identify an existing package using the Package URL. If no package can be identified, a new one will be created."
+      tags:
+        - product
+        - sbom
+      requestBody:
+        $ref: '#/components/requestBodies/sbom'
+      responses:
+        "200":
+          $ref: '#/components/responses/uploadResult'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/productId'
+        - $ref: '#/components/parameters/sbomToken'
+
+  #Token Paths
+  /api/v1/token/{tokenId}:
+    get:
+      summary: Get an existing token.
+      tags:
+        - token
+      responses:
+        "200":
+          $ref: '#/components/responses/token'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/tokenId'
+    delete:
+      summary: Delete an existing token.
+      tags:
+        - token
+      responses:
+        "200":
+          $ref: '#/components/responses/token'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/tokenId'
+
+  ## Sbom Paths
+  /api/v1/sbom/{sbomId}:
+    get:
+      summary: Get an sbom entity by id.
+      tags:
+        - sbom
+      responses:
+        "200":
+          $ref: '#/components/responses/sbom'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/sbomId'
+  /api/v1/sbom/{sbomId}/raw:
+    get:
+      summary: Get the full, raw sbom document for an sbom entity by id.
+      tags:
+        - sbom
+      responses:
+        "200":
+          $ref: '#/components/requestBodies/sbom'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/sbomId'
+
+  # Task Paths
+  /api/v1/tasks:
+    get:
+      summary: Get the task history for this Harbor instance.
+      tags:
+        - task
+      responses:
+        "200":
+          $ref: '#/components/responses/taskList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+  /api/v1/task/{taskId}:
+    get:
+      summary: Get the full detail of a task from task history.
+      tags:
+        - product
+      responses:
+        "200":
+          $ref: '#/components/responses/task'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/taskId'
+
+  # Vulnerability Paths
+  /api/v1/vulnerabilities:
+    get:
+      summary: Get all vulnerabilities identified in this Harbor instance.
+      tags:
+        - task
+      responses:
+        "200":
+          $ref: '#/components/responses/vulnerabilityList'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+  /api/v1/vulnerability/{vulnerabilityId}:
+    get:
+      summary: Get the full detail of a specific vulnerability.
+      tags:
+        - product
+      responses:
+        "200":
+          $ref: '#/components/responses/vulnerability'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vulnerabilityId'
+  /api/v1/vulnerability/{vulnerabilityId}/remediation:
+    get:
+      summary: Get the full remediation detail for a specific vulnerability.
+      tags:
+        - product
+      responses:
+        "200":
+          $ref: '#/components/responses/remediation'
+        "400":
+          $ref: '#/components/responses/badRequest'
+        "403":
+          $ref: '#/components/responses/forbidden'
+        "500":
+          $ref: '#/components/responses/internalServerError'
+      parameters:
+        - $ref: '#/components/parameters/vulnerabilityId'
+
+components:
+  schemas:
+    login:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    team:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        members:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/user'
+        products:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/product'
+        repositories:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/repository'
+
+    repository:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        teamId:
+          type: string
+        cloneUrl:
+          type: string
+        buildTargets:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/buildTarget'
+
+    buildTarget:
+      type: object
+      properties:
+        id:
+          type: string
+        repositoryId:
+          type: string
+        packageName:
+          type: string
+        packageManager:
+          type: string
+        language:
+          type: string
+        buildTool:
+          type: string
+        manifestPath:
+          type: string
+
+    vendor:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        products:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/product'
+        tokens:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/token'
+
+    product:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        version:
+          type: string
+        vendorId:
+          type: string
+
+    token:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        created:
+          type: string
+          format: date-time
+        enabled:
+          type: boolean
+        expires:
+          type: string
+          format: date-time
+        hash:
+          type: string
+
+    uploadResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        s3BucketName:
+          type: string
+        s3ObjectKey:
+          type: string
+
+    user:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+
+    userList:
+      type: array
+      items:
+        $ref: '#/components/schemas/user'
+
+    xref:
+      type: object
+      properties:
+        kind:
+          type: string
+        map:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      required:
+        - kind
+        - map
+
+    task:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          type: object
+          additionalProperties: true
+        count:
+          type: integer
+        timestamp:
+          type: integer
+        start:
+          type: string
+          format: date-time
+        finish:
+          type: string
+          format: date-time
+        durationSeconds:
+          type: integer
+        status:
+          type: string
+        err:
+          type: string
+        refErrs:
+          type: object
+          additionalProperties: true
+        errTotal:
+          type: integer
+      additionalProperties: true
+
+    taskRef:
+      type: object
+      properties:
+        taskId:
+          type: string
+        targetId:
+          type: string
+        err:
+          type: string
+      additionalProperties: true
+      required:
+        - taskId
+        - targetId
+
+    sbom:
+      type: object
+      properties:
+        id:
+          type: string
+        packageManager:
+          type: string
+        purl:
+          type: string
+        instance:
+          type: integer
+        kind:
+          type: object
+          additionalProperties: true
+        author:
+          type: object
+          additionalProperties: true
+        provider:
+          type: string
+        supplierName:
+          type: string
+        componentName:
+          type: string
+        version:
+          type: string
+        otherIdentifiers:
+          type: string
+          items:
+            type: string
+        dependencyRefs:
+          type: array
+          items:
+            type: string
+        timestamp:
+          type: integer
+        checksumSha256:
+          type: string
+        xrefs:
+          type: array
+          items:
+            $ref: '#/components/schemas/xref'
+        taskRefs:
+          type: array
+          items:
+            $ref: '#/components/schemas/taskRef'
+      additionalProperties: true
+
+    package:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum:
+            - primary
+            - dependency
+        packageManager:
+          type: string
+        purl:
+          type: string
+        version:
+          type: string
+        cpe:
+          type: string
+        cdx:
+          type: object
+          properties:
+            purl:
+              type: string
+            name:
+              type: string
+            packageManager:
+              type: string
+            componentType:
+              type: string
+            bomRef:
+              type: string
+            version:
+              type: string
+            dependencies:
+              type: array
+              items:
+                type: string
+          additionalProperties: true
+        dependencyRefs:
+          type: array
+          items:
+            type: string
+        xrefs:
+          type: array
+          items:
+            $ref: '#/components/schemas/xref'
+        taskRefs:
+          type: array
+          items:
+            $ref: '#/components/schemas/taskRef'
+      additionalProperties: true
+
+    vulnerability:
+      type: object
+      properties:
+        id:
+          type: string
+        purl:
+          type: string
+        provider:
+          type: string
+        severity:
+          type: string
+          enum:
+            - critical
+            - high
+            - medium
+            - low
+            - info
+            - none
+            - unknown
+        cve:
+          type: string
+        description:
+          type: string
+        epssScore:
+          type: number
+        cvss:
+          type: object
+          $ref: '#/components/schemas/cvss'
+          additionalProperties: true
+        cwes:
+          type: array
+          items:
+            $ref: '#/components/schemas/cwe'
+        remediation:
+          type:
+            - object
+            - "null"
+          $ref: '#/components/schemas/remediation'
+        raw:
+          type: string
+        taskRefs:
+          type: array
+          items:
+            $ref: '#/components/schemas/taskRef'
+      additionalProperties: true
+
+    cvss:
+      type: object
+      properties:
+        maturity:
+          type: string
+          enum:
+            - notDefined
+            - high
+            - functional
+            - proofOfConcept
+            - unproven
+        meanScore:
+          type: number
+        medianScore:
+          type: number
+        modeScore:
+          type: number
+        scores:
+          type: array
+          items:
+            type: object
+            properties:
+              score:
+                type: number
+              source:
+                type: string
+              version:
+                type: string
+                enum:
+                  - 1.0
+                  - 2.0
+                  - 3.0
+                  - 3.1
+                  - 4.0
+              vector:
+                type: string
+            additionalProperties: true
+      additionalProperties: true
+
+    cwe:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+      additionalProperties: true
+      required:
+        - id
+
+    remediation:
+      type: object
+      properties:
+        description:
+          type: string
+      additionalProperties: true
+      required:
+        - description
+
+  parameters:
+    teamId:
+      required: true
+      description: Unique identifier for a team.
+      in: path
+      name: teamId
+      schema:
+        type: string
+    repositoryId:
+      required: true
+      description: Unique identifier for a repository.
+      in: path
+      name: repositoryId
+      schema:
+        type: string
+    buildTargetId:
+      required: true
+      description: Build target within a repository.
+      in: path
+      name: buildTargetId
+      schema:
+        type: string
+    vendorId:
+      required: true
+      description: Unique identifier for a vendor.
+      in: path
+      name: vendorId
+      schema:
+        type: string
+    productId:
+      required: true
+      description: Unique identifier for a vendor product.
+      in: path
+      name: productId
+      schema:
+        type: string
+    packageId:
+      required: true
+      description: Unique identifier for a package.
+      in: path
+      name: packageId
+      schema:
+        type: string
+    tokenId:
+      required: true
+      description: Unique identifier for a token.
+      in: path
+      name: tokenId
+      schema:
+        type: string
+    sbomId:
+      required: true
+      description: Unique identifier for a sbom.
+      in: path
+      name: sbomId
+      schema:
+        type: string
+    sbomToken:
+      required: true
+      description: Secret value for an SBOM upload token.
+      in: header
+      name: sbomToken
+      schema: string
+    taskId:
+      required: true
+      description: Unique identifier for a task.
+      in: path
+      name: taskId
+      schema:
+        type: string
+    vulnerabilityId:
+      required: true
+      description: Unique identifier for a vulnerability.
+      in: path
+      name: vulnerabilityId
+      schema:
+        type: string
+    filterQuery:
+      description: Starts with text filter.
+      in: query
+      name: filter
+      schema:
+        type: string
+
+  requestBodies:
+    login:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/login'
+
+    team:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/team'
+
+    repository:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/repository'
+
+    buildTarget:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/buildTarget'
+
+    vendor:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/vendor'
+
+    product:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/product'
+
+    token:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/token'
+
+    sbom:
+      content:
+        application/json:
+          schema:
+            type: string
+#            oneOf:
+#              - $ref: 'https://gist.githubusercontent.com/DerekStrickland/9b9c4997b68b278e1f9835e235a87e52/raw/917863e9233c15af783cbab33655a53496e9e84e/cyclonedx-1.4.json'
+#              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.3/schema/bom-1.3.schema.json'
+#              - $ref: 'https://raw.githubusercontent.com/CycloneDX/specification/1.2/schema/bom-1.2.schema.json'
+
+  responses:
+    badRequest:
+      description: 'Bad Request'
+    forbidden:
+      description: 'Authorization Failure'
+    internalServerError:
+      description: "Internal Server Error"
+
+    apiKey:
+      description: 'Result of the login operation.'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+
+    team:
+      description: 'An grouping of related users, repositories, vendors, and products.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/team'
+    teamList:
+      description: 'A list of teams.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/team'
+            type: array
+
+    repository:
+      description: 'Source control repository owned by a team'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/repository'
+    repositoryList:
+      description: 'A list of repositories.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/repository'
+            type: array
+
+    buildTarget:
+      description: 'Build target contained within a repository'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/buildTarget'
+    buildTargetList:
+      description: 'A list of build targets.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/buildTarget'
+            type: array
+
+    vendor:
+      description: 'An entity that provides SBOMs for one or more products.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/vendor'
+    vendorList:
+      description: 'A list of vendors.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/vendor'
+            type: array
+
+    product:
+      description: 'An artifact from a vendor for which an SBOM can be generated, stored, and
+      tracked.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/product'
+    productList:
+      description: 'A list of products.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/product'
+            type: array
+
+    token:
+      description: 'A secret use to authenticate, authorize, and track SBOM upload operations.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/token'
+    tokenList:
+      description: 'A list of tokens.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/token'
+            type: array
+
+    uploadResult:
+      description: 'The result of an SBOM upload operation.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/uploadResult'
+
+    user:
+      description: 'Users of the system.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/user'
+
+    userList:
+      description: 'The user search matches. Queries members by email address.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/userList'
+
+    task:
+      description: 'A single Task entity'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/task'
+    taskList:
+      description: 'A list of task entities.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/task'
+            type: array
+
+    sbom:
+      description: 'A single sbom entity'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/sbom'
+    sbomList:
+      description: 'A list of sbom entities.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/sbom'
+            type: array
+
+    package:
+      description: 'A single package entity'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/package'
+    packageList:
+      description: 'A list of package entities.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/package'
+            type: array
+
+    vulnerability:
+      description: 'A single vulnerability entity'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/vulnerability'
+    vulnerabilityList:
+      description: 'A list of vulnerability entities.'
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/vulnerability'
+            type: array
+
+    remediation:
+      description: 'Remediation detail for a single vulnerability entity'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/remediation'

@@ -40,9 +40,15 @@ pub enum Error {
     /// Error in OpenTelemetry provider.
     #[error("error in opentelemetry provider: {0}")]
     OpenTelemetry(String),
+    /// Error running external process.
+    #[error("error in external process: {0}")]
+    Process(String),
     /// Error executing query.
     #[error("error executing query: {0}")]
     Query(String),
+    /// Error in runtime.
+    #[error("error in runtime: {0}")]
+    Runtime(String),
     /// Error serializing item.
     #[error("error serializing item: {0}")]
     Serde(String),

@@ -67,7 +67,7 @@ impl SbomService {
         package_manager: Option<String>,
         provider: SbomProviderKind,
         xref: Xref,
-        task: &Task,
+        task: Option<&Task>,
     ) -> Result<Sbom, Error> {
         // Load the raw SBOM into the Harbor model.
         let mut sbom = match Sbom::from_raw_cdx(
@@ -239,15 +239,5 @@ impl SbomService {
                 .await
                 .map_err(|e| Error::Entity(e.to_string())),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::Error;
-
-    #[async_std::test]
-    async fn can_compare_sboms() -> Result<(), Error> {
-        Ok(())
     }
 }

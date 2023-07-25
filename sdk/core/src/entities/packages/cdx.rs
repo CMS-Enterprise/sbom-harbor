@@ -44,7 +44,10 @@ impl PackageCdx {
         };
 
         let purl = match bom.purl() {
-            None => return Err(Error::Entity("bom_purl_none".to_string())),
+            None => match bom.try_build_purl_from_metadata(Some(component.name.clone()), None) {
+                None => return Err(Error::Entity("bom_purl_none".to_string())),
+                Some(p) => p,
+            },
             Some(purl) => purl,
         };
 

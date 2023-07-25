@@ -144,7 +144,7 @@ impl SyncTask {
                 None,
                 SbomProviderKind::HarborSyft,
                 xref,
-                task,
+                Some(task),
             )
             .await
         {
