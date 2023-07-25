@@ -1,9 +1,5 @@
 use hyper::header::InvalidHeaderValue;
 use hyper::http::uri::InvalidUri;
-use hyper::{Body, Client as NativeClient, Request, Uri};
-use hyper_rustls::HttpsConnectorBuilder;
-use serde::de::DeserializeOwned;
-use serde::Serialize;
 use std::fmt::{Display, Formatter};
 use thiserror::Error;
 
@@ -16,8 +12,6 @@ pub use hyper::{Method, StatusCode};
 pub mod body;
 
 const CONTENT_TYPE: &str = "content-type";
-const USER_AGENT: &str = "User-Agent";
-const HYPER_CLIENT: &str = "Hyper-Client";
 
 /// HTTP Content Types.
 pub enum ContentType {
@@ -34,133 +28,6 @@ impl Display for ContentType {
             ContentType::Json => write!(f, "application/json"),
         }
     }
-}
-
-/// Performs a GET request to the specified URL.
-///
-/// This function is a convenience wrapper around [request<T, U>].
-pub async fn get<T: Serialize, U: DeserializeOwned>(
-    url: &str,
-    content_type: ContentType,
-    token: &str,
-    payload: Option<T>,
-) -> Result<Option<U>, Error> {
-    request(Method::GET, url, content_type, String::from(token), payload).await
-}
-
-/// Performs a POST request to the specified URL.
-///
-/// This function is a convenience wrapper around [request<T, U>].
-pub async fn post<T: Serialize, U: DeserializeOwned>(
-    url: &str,
-    content_type: ContentType,
-    token: &str,
-    payload: Option<T>,
-) -> Result<Option<U>, Error> {
-    request(
-        Method::POST,
-        url,
-        content_type,
-        String::from(token),
-        payload,
-    )
-    .await
-}
-
-/// Performs a DELETE request to the specified URL.
-///
-/// This function is a convenience wrapper around [request<T, U>].
-pub async fn delete<T: Serialize, U: DeserializeOwned>(
-    url: &str,
-    content_type: ContentType,
-    token: &str,
-    payload: Option<T>,
-) -> Result<Option<U>, Error> {
-    request(
-        Method::DELETE,
-        url,
-        content_type,
-        String::from(token),
-        payload,
-    )
-    .await
-}
-
-/// Performs an HTTP request with the specified HTTP Method.
-///
-/// Token is optional. Due to type constraints callers must specify
-/// a type that implements [serde::Serialize] even when passing [None]
-/// as the payload.
-pub async fn request<T: Serialize, U: DeserializeOwned>(
-    method: Method,
-    url: &str,
-    content_type: ContentType,
-    token: String,
-    payload: Option<T>,
-) -> Result<Option<U>, Error> {
-    let uri: Uri = Uri::try_from(url)?;
-
-    let req_body: Body = match payload {
-        Some(p) => {
-            let body = match content_type {
-                ContentType::FormUrlEncoded => serde_urlencoded::to_string(p)?,
-                ContentType::Json => serde_json::to_string(&p)?,
-            };
-            Body::from(body)
-        }
-        None => Body::empty(),
-    };
-
-    let mut req: Request<Body> = Request::builder()
-        .method(method)
-        .uri(uri)
-        .header(CONTENT_TYPE, content_type.to_string())
-        .header(USER_AGENT, HYPER_CLIENT)
-        .body(req_body)?;
-
-    if !token.is_empty() {
-        req.headers_mut().append("Authorization", token.parse()?);
-    }
-
-    let https = HttpsConnectorBuilder::new()
-        .with_native_roots()
-        .https_only()
-        .enable_http2()
-        .build();
-
-    let client: NativeClient<_, Body> = NativeClient::builder().build(https);
-
-    let resp = match client.request(req).await {
-        Ok(r) => r,
-        Err(err) => {
-            return Err(Error::Hyper(err.to_string()));
-        }
-    };
-
-    let resp_status = resp.status();
-    let resp_body = hyper::body::to_bytes(resp.into_body()).await?;
-    let resp_body = match String::from_utf8(resp_body.to_vec()) {
-        Ok(body) => body,
-        Err(err) => return Err(Error::Body(err.to_string())),
-    };
-
-    if resp_status != StatusCode::OK {
-        return Err(Error::Remote(resp_status.as_u16(), resp_body));
-    }
-
-    // TODO: This a hack around empty JSON.
-    if resp_body.eq("{}") {
-        return Ok(None);
-    }
-
-    let result = match serde_json::from_slice(resp_body.as_ref()) {
-        Ok(r) => r,
-        Err(err) => {
-            return Err(Error::Serde(err.to_string()));
-        }
-    };
-
-    Ok(Some(result))
 }
 
 /// Represents all handled Errors for this module.

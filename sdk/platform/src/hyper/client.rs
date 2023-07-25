@@ -23,6 +23,7 @@ impl Default for Client {
 
 impl Client {
     /// Factory method to create new instances of type.
+    #[must_use]
     pub fn new() -> Self {
         let https = HttpsConnectorBuilder::new()
             .with_native_roots()
@@ -38,6 +39,10 @@ impl Client {
     /// Performs a GET request to the specified URL.
     ///
     /// This function is a convenience wrapper around [request<T, U>].
+    /// # Errors
+    ///
+    /// Will return a strongly typed module `Err` useful for tracing which aspect of the
+    /// operation failed.
     pub async fn get<T: Serialize, U: DeserializeOwned>(
         &self,
         url: &str,
@@ -52,6 +57,10 @@ impl Client {
     /// Performs a POST request to the specified URL.
     ///
     /// This function is a convenience wrapper around [request<T, U>].
+    /// # Errors
+    ///
+    /// Will return a strongly typed module `Err` useful for tracing which aspect of the
+    /// operation failed.
     pub async fn post<T: Serialize, U: DeserializeOwned>(
         &self,
         url: &str,
@@ -72,6 +81,10 @@ impl Client {
     /// Performs a DELETE request to the specified URL.
     ///
     /// This function is a convenience wrapper around [request<T, U>].
+    /// # Errors
+    ///
+    /// Will return a strongly typed module `Err` useful for tracing which aspect of the
+    /// operation failed.
     pub async fn delete<T: Serialize, U: DeserializeOwned>(
         &self,
         url: &str,
@@ -92,8 +105,12 @@ impl Client {
     /// Performs an HTTP request with the specified HTTP Method.
     ///
     /// Token is optional. Due to type constraints callers must specify
-    /// a type that implements [serde::Serialize] even when passing [None]
+    /// a type that implements [`serde::Serialize`] even when passing [None]
     /// as the payload.
+    /// # Errors
+    ///
+    /// Will return a strongly typed module `Err` useful for tracing which aspect of the
+    /// operation failed.
     pub async fn request<T: Serialize, U: DeserializeOwned>(
         &self,
         method: Method,
@@ -126,6 +143,11 @@ impl Client {
     }
 
     /// Allows making raw HTTP requests without the opinionated JSON behaviors.
+    /// # Errors
+    ///
+    /// Will return a strongly typed module `Err` useful for tracing which aspect of the
+    /// operation failed.
+    #[allow(clippy::similar_names)]
     pub async fn raw<T: Serialize>(
         &self,
         method: Method,
