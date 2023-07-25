@@ -1,13 +1,8 @@
 use crate::Error;
+use std::path::Path;
 
 /// Utility functions and types for testing persistence features.
 pub mod persistence;
-
-/// Gets the manifest directory for the currently executing binary.
-pub fn manifest_dir() -> Result<String, Error> {
-    std::env::var("CARGO_MANIFEST_DIR")
-        .map_err(|_| Error::Runtime("cannot resolve CARGO_MANIFEST_DIR".to_string()))
-}
 
 /// Allows replacing a segment of the manifest directory path with a user specified path. Useful
 /// for things like locating source code artifacts.
@@ -25,33 +20,34 @@ pub fn manifest_dir() -> Result<String, Error> {
 /// }
 /// ```
 pub fn replace_dir(old_path: &str, new_path: &str) -> Result<String, Error> {
-    let manifest_dir = manifest_dir()?;
+    let workspace_dir = workspace_dir()?;
 
-    Ok(manifest_dir.replace(old_path, new_path))
+    Ok(workspace_dir.replace(old_path, new_path))
 }
 
 /// Gets the path to the workspace root.
 pub fn workspace_dir() -> Result<String, Error> {
-    let mut workspace_dir = manifest_dir()?;
-
-    // strip all possible source paths to get to workspace root.
-    workspace_dir = workspace_dir.split("api").next().unwrap().to_string();
-    workspace_dir = workspace_dir.split("cli").next().unwrap().to_string();
-    workspace_dir = workspace_dir
-        .split("extensions")
-        .next()
+    let output = std::process::Command::new(env!("CARGO"))
+        .arg("locate-project")
+        .arg("--workspace")
+        .arg("--message-format=plain")
+        .output()
         .unwrap()
-        .to_string();
-    workspace_dir = workspace_dir.split("sdk").next().unwrap().to_string();
-
-    Ok(workspace_dir)
+        .stdout;
+    let cargo_path = Path::new(std::str::from_utf8(&output).unwrap().trim());
+    Ok(cargo_path
+        .parent()
+        .unwrap()
+        .to_path_buf()
+        .display()
+        .to_string())
 }
 
 /// Gets the path to the well-known test fixture directory.
 pub fn fixture_dir() -> Result<String, Error> {
     let mut fixture_dir = workspace_dir()?;
 
-    fixture_dir = format!("{}tests/fixtures", fixture_dir);
+    fixture_dir = format!("{}/tests/fixtures", fixture_dir);
 
     Ok(fixture_dir)
 }

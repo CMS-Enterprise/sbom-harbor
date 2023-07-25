@@ -2,9 +2,11 @@ use std::sync::Arc;
 
 use axum::extract::{Path, State};
 use axum::{debug_handler, Json};
-use harbcore::entities::vendors::{Vendor, VendorInsert};
+use harbcore::entities::vendors::Vendor;
 use harbcore::services::vendors::VendorService;
 use platform::persistence::mongodb::{Service, Store};
+use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 use tracing::instrument;
 
 use crate::auth::Claims;
@@ -55,6 +57,30 @@ pub async fn list(
         .map_err(|e| Error::InternalServerError(e.to_string()))?;
 
     Ok(Json(vendors))
+}
+
+/// Validatable insert type.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[skip_serializing_none]
+pub struct VendorInsert {
+    /// The name of the Vendor.
+    pub name: Option<String>,
+}
+
+impl VendorInsert {
+    /// Validates insert type and converts to entity.
+    #[allow(dead_code)]
+    pub fn to_entity(&self) -> Result<Vendor, Error> {
+        let name = match &self.name {
+            None => {
+                return Err(Error::InvalidParameters("name required".to_string()));
+            }
+            Some(name) => name.clone(),
+        };
+
+        Vendor::new(name).map_err(|e| Error::InvalidParameters(e.to_string()))
+    }
 }
 
 /// Post a new [Vendor].

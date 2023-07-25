@@ -88,27 +88,3 @@ impl Vendor {
         self
     }
 }
-
-/// Validatable insert type.
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-#[skip_serializing_none]
-pub struct VendorInsert {
-    /// The name of the Vendor.
-    pub name: Option<String>,
-}
-
-impl VendorInsert {
-    /// Validates insert type and converts to entity.
-    #[allow(dead_code)]
-    pub fn to_entity(&self) -> Result<Vendor, Error> {
-        let name = match &self.name {
-            None => {
-                return Err(Error::Entity("name required".to_string()));
-            }
-            Some(name) => name.clone(),
-        };
-
-        Vendor::new(name)
-    }
-}

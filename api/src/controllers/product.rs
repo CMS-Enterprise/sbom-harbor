@@ -5,13 +5,15 @@ use axum::extract::{Path, State};
 use axum::{debug_handler, Json};
 use axum_extra::json_lines::JsonLines;
 use futures_util::stream::StreamExt;
-use harbcore::entities::products::{Product, ProductInsert};
+use harbcore::entities::products::Product;
 use harbcore::entities::sboms::Sbom;
 use harbcore::services::products::ProductService;
 use harbcore::services::sboms::SbomService;
 use harbcore::services::vendors::VendorService;
 use platform::persistence::mongodb::{Service, Store};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use serde_with::skip_serializing_none;
 use tracing::instrument;
 
 use crate::auth::Claims;
@@ -66,6 +68,50 @@ pub async fn list(
         .map_err(|e| Error::InternalServerError(e.to_string()))?;
 
     Ok(Json(products))
+}
+
+/// Validatable insert type.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[skip_serializing_none]
+pub struct ProductInsert {
+    /// The name of the product.
+    pub name: Option<String>,
+
+    /// The version of the product.
+    pub version: Option<String>,
+
+    /// The unique identifier for the vendor of the [Product].
+    pub vendor_id: Option<String>,
+}
+
+impl ProductInsert {
+    /// Validates insert type and converts to entity.
+    #[allow(dead_code)]
+    pub fn to_entity(&self) -> Result<Product, Error> {
+        let name = match &self.name {
+            None => {
+                return Err(Error::InvalidParameters("name required".to_string()));
+            }
+            Some(name) => name.clone(),
+        };
+
+        let version = match &self.version {
+            None => {
+                return Err(Error::InvalidParameters("version required".to_string()));
+            }
+            Some(version) => version.clone(),
+        };
+
+        let vendor_id = match &self.vendor_id {
+            None => {
+                return Err(Error::InvalidParameters("vendor id required".to_string()));
+            }
+            Some(vendor_id) => vendor_id.clone(),
+        };
+
+        Product::new(name, version, vendor_id).map_err(|e| Error::InvalidParameters(e.to_string()))
+    }
 }
 
 /// Post a new [Product].

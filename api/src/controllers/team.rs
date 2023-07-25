@@ -1,10 +1,14 @@
 use axum::extract::{Path, State};
 use axum::{debug_handler, Json};
+use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::instrument;
 
 use harbcore::entities::teams::Team;
 use harbcore::services::teams::TeamService;
+use platform::auth::User;
 use platform::persistence::mongodb::Service;
 
 use crate::auth::Claims;
@@ -50,6 +54,33 @@ pub async fn list(
         .map_err(|e| Error::InternalServerError(e.to_string()))?;
 
     Ok(Json(teams))
+}
+
+/// Validatable insert type.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[skip_serializing_none]
+pub struct TeamInsert {
+    /// The name of the team.
+    pub name: Option<String>,
+
+    /// [User] instances that represent users that are members of the Team.
+    pub members: Option<HashMap<String, User>>,
+}
+
+impl TeamInsert {
+    /// Validates insert type and converts to entity.
+    #[allow(dead_code)]
+    pub fn to_entity(&self) -> Result<Team, Error> {
+        let name = match &self.name {
+            None => {
+                return Err(Error::InvalidParameters("name required".to_string()));
+            }
+            Some(name) => name.clone(),
+        };
+
+        Team::new(name, self.members.clone()).map_err(|e| Error::InvalidParameters(e.to_string()))
+    }
 }
 
 /// Post a new [Team].

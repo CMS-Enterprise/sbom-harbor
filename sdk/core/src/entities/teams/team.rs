@@ -75,30 +75,3 @@ impl Team {
         }
     }
 }
-
-/// Validatable insert type.
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-#[skip_serializing_none]
-pub struct TeamInsert {
-    /// The name of the team.
-    pub name: Option<String>,
-
-    /// [User] instances that represent users that are members of the Team.
-    pub members: Option<HashMap<String, User>>,
-}
-
-impl TeamInsert {
-    /// Validates insert type and converts to entity.
-    #[allow(dead_code)]
-    pub fn to_entity(&self) -> Result<Team, Error> {
-        let name = match &self.name {
-            None => {
-                return Err(Error::Entity("name required".to_string()));
-            }
-            Some(name) => name.clone(),
-        };
-
-        Team::new(name, self.members.clone())
-    }
-}

@@ -24,6 +24,7 @@ jsonwebtoken = "8.2.0"
 serde = "1.0.147"
 serde_derive = "1.0.147"
 serde_json = "1.0.87"
+serde_with = "2.3.0"
 tokio = { version = "1", features = ["full"] }
 tracing = { version = "0.1", features = ["log"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["env-filter", "fmt"] }
