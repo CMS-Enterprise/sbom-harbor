@@ -1,21 +1,20 @@
 ---
-name: Propose an Idea
-about: Used to document discussion around proposed ideas when deciding whether to
-  approve them for the roadmap.
+name: Propose an idea
+about: Propose an idea for a change to the project to be considered for the project roadmap
 title: ''
-labels: ''
+labels: 'proposed'
 assignees: ''
 
 ---
 
 **Target Audience**
-The primary audience for this request is the SaaS Governance team that manually receives SBOMs. In addition, other teams (including Harbor developers) will also be uploading and viewing SBOMs.
+<!-- Describe the target audience for this change to the project. -->
 
 **What’s the Value**
-Initial method to see existing SBOMs in Harbor.
+<!-- Describe the value of implementing the proposed idea. -->
 
 **Details**
-More to come.
+<!-- Provide more context and details for the proposal. -->
 
 **Definition of Done**
-Definition of the outcomes, that once achieved, mean the work for the proposed idea has been completed.
+<!-- Specify the outcomes that, once achieved, mean the work for the proposed idea has been completed. -->
