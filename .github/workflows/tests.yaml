@@ -18,8 +18,6 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
-    container:
-      image: rust:1.68.0
     services:
       mongo:
         image: mongo:5.0.15
@@ -32,6 +30,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@v1.2.0
+
       - name: Install latest sbom-scorecard
         run: |
           wget -O /usr/local/bin/scorecard https://github.com/eBay/sbom-scorecard/releases/download/0.0.7/sbom-scorecard-linux-amd64
