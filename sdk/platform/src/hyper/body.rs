@@ -1,7 +1,11 @@
 use crate::Error;
 use hyper::body::HttpBody;
 
-/// Converts a Hyper HttpBody to an owned String.
+/// Converts a Hyper `HttpBody` to an owned String.
+/// # Errors
+///
+/// Will return an `Err` if the body cannot be converted to `Bytes` or from `Bytes` to a UTF-8
+/// string.
 pub async fn to_string<T>(body: T) -> Result<String, Error>
 where
     T: HttpBody,
