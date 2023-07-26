@@ -6,9 +6,9 @@ to our [book](https://cms-enterprise.github.io/sbom-harbor/) for a comprehensive
 
 ## Status
 
-Harbor is under active development. We are currently working at a `0.1.0` pre-release semver level. 
-There is no guarantee of stable interfaces or backward compatability at this time. We would be 
-thrilled to have additional contributors and end-users, but we want to make sure you are aware 
+Harbor is under active development. We are currently working at a `0.1.0` pre-release semver level.
+There is no guarantee of stable interfaces or backward compatability at this time. We would be
+thrilled to have additional contributors and end-users, but we want to make sure you are aware
 of that before you decide to invest your time and resources.
 
 ## Developer System Requirements
@@ -65,23 +65,15 @@ cd sbom-harbor
 pre-commit install
 ```
 
-3. Depending on your development environment, you may also need to add the following to your
-   `/etc/hosts` file.
-
-```shell
-# Harbor DevEnv
-127.0.0.1 mongo
-```
-
 ## Project Documentation
 
 Project documentation and additional developer guidance can be found on our [GitPage](https://cms-enterprise.github.io/sbom-harbor/).
 
 ## Crate Documentation
 
-The documentation for each crate can be generated from source using `cargo` or `rustdoc`. We 
-plan to integrate the `rustdoc` output with the[project documentation](#project-documentation) 
-in time. However, that requires additional tooling that we haven't gotten to yet. That would 
+The documentation for each crate can be generated from source using `cargo` or `rustdoc`. We
+plan to integrate the `rustdoc` output with the[project documentation](#project-documentation)
+in time. However, that requires additional tooling that we haven't gotten to yet. That would
 make a great first contribution. If you are willing, a PR will definitely be considered.
 
 To generate the crate documentation, clone the repository, and then run the
@@ -123,7 +115,7 @@ out each one.
 
 ### Local Development Environment
 
-If you wish to run Harbor locally using the development environment found in the `sdk/devenv` 
+If you wish to run Harbor locally using the development environment found in the `sdk/devenv`
 directory,
 open a new terminal and run the following command.
 
@@ -133,10 +125,10 @@ cd sdk/devenv && docker compose up
 
 ### Sbom Ingestion & Enrichment
 
-Many teams at CMS have been onboarded to Snyk. That fact made a Snyk integration an appealing 
-first target. Currently, Harbor supports ingesting SBOMs using the Snyk API. A generic GitHub 
-ingestion provider is imminent. Similarly, an enrichment provider based on an Open Source 
-vulnerability data provider is on the short-term roadmap. Stay tuned for updates on how to get 
+Many teams at CMS have been onboarded to Snyk. That fact made a Snyk integration an appealing
+first target. Currently, Harbor supports ingesting SBOMs using the Snyk API. A generic GitHub
+ingestion provider is imminent. Similarly, an enrichment provider based on an Open Source
+vulnerability data provider is on the short-term roadmap. Stay tuned for updates on how to get
 started with purely Open Source tools.
 
 Make sure all environment variables are set and then run the following command.
