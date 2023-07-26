@@ -35,7 +35,7 @@ jobs:
 
       - name: Install latest sbom-scorecard
         run: |
-          wget -O /usr/local/bin/scorecard https://github.com/eBay/sbom-scorecard/releases/download/0.0.7/sbom-scorecard-linux-amd64
+          wget -q -O /usr/local/bin/scorecard https://github.com/eBay/sbom-scorecard/releases/download/0.0.7/sbom-scorecard-linux-amd64
           chmod u+x /usr/local/bin/scorecard
 
       - name: Install latest syft
