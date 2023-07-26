@@ -9,10 +9,14 @@ pub enum ResourceKind {
     Any,
     /// Specifies that a policy applies to a [Team].
     Team,
-    /// Specifies that a policy applies to a [Project].
-    Project,
-    /// Specifies that a policy applies to a [Codebase].
-    Codebase,
+    /// Specifies that a policy applies to a [Repository].
+    Repository,
+    /// Specifies that a policy applies to a [BuildTarget].
+    BuildTarget,
+    /// Specifies that a policy applies to a [Vendor].
+    Vendor,
+    /// Specifies that a policy applies to a [Product].
+    Product,
     /// Specifies that a policy applies to a [Token].
     Token,
     /// Specifies that a policy applies to a [Group].
@@ -24,8 +28,10 @@ impl Display for ResourceKind {
         match self {
             ResourceKind::Any => write!(f, "*"),
             ResourceKind::Team => write!(f, "team"),
-            ResourceKind::Project => write!(f, "project"),
-            ResourceKind::Codebase => write!(f, "codebase"),
+            ResourceKind::Repository => write!(f, "repository"),
+            ResourceKind::BuildTarget => write!(f, "buildTarget"),
+            ResourceKind::Vendor => write!(f, "vendor"),
+            ResourceKind::Product => write!(f, "product"),
             ResourceKind::Token => write!(f, "token"),
             ResourceKind::Group => write!(f, "group"),
         }

@@ -155,7 +155,7 @@ impl AuthScenario {
     where
         T: MongoDocument,
     {
-        self.store.insert::<T>(d).await?;
+        self.store.insert(d).await?;
 
         Ok(())
     }
@@ -169,9 +169,9 @@ impl AuthScenario {
             effect,
         };
 
-        self.store.insert::<Policy>(&policy).await?;
+        self.store.insert(&policy).await?;
         self.role.policies.push(policy.id);
-        self.store.update::<Role>(&self.role).await
+        self.store.update(&self.role).await
     }
 
     pub async fn assert(&self, action: Action) -> Result<Effect, Error> {
@@ -220,7 +220,7 @@ impl AuthScenario {
         let groups = self.store.query::<Group>(filter.clone()).await?;
         for mut group in groups {
             group.users.retain(|user_id| self.user.id.eq(user_id));
-            self.store.update::<Group>(&group).await?;
+            self.store.update(&group).await?;
         }
 
         Ok(())

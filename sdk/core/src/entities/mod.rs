@@ -16,6 +16,13 @@ pub mod tasks;
 /// SBOMs.
 pub mod teams;
 
+/// Persistence models that support storing, analyzing, and tracking SBOMs for vendors.
+pub mod vendors;
+
+/// Persistence models that support storing, analyzing, and tracking SBOMs for products sold by
+/// vendors.
+pub mod products;
+
 /// Model extensions that allow cross-referencing to external systems.
 pub mod xrefs;
 

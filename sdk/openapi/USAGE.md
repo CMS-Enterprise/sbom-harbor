@@ -32,7 +32,7 @@ TEST_ROUTE="/api/v2/{packageId}/sbom" k6 run script.js
 
 ## Generating client code
 
-To generate a client from the `spec-v2.yaml` OpenAPI specification in this folder,
+To generate a client from the `spec.yaml` OpenAPI specification in this folder,
 change directory to this directory and run the following.
 
 ```shell

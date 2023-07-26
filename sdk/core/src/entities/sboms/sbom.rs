@@ -93,7 +93,7 @@ impl Sbom {
         author: Author,
         package_manager: &Option<String>,
         xref: Xref,
-        task: &Task,
+        task: Option<&Task>,
     ) -> Result<Sbom, Error> {
         let bom: Bom = match Bom::parse(raw, CdxFormat::Json) {
             Ok(bom) => bom,
@@ -110,15 +110,20 @@ impl Sbom {
 
         let purl = match bom.purl() {
             None => {
-                return Err(Error::Entity("from_raw_cdx::purl_none".to_string()));
-            }
-            Some(purl) => {
-                if purl.is_empty() {
-                    return Err(Error::Entity("from_raw_cdx::purl_empty".to_string()));
+                // TODO: Integrate a default name & version/commit hash from GitHub provider.
+                match bom.try_build_purl_from_metadata(component_name.clone(), version.clone()) {
+                    None => {
+                        return Err(Error::Entity("from_raw_cdx::purl_none".to_string()));
+                    }
+                    Some(p) => p,
                 }
-                purl
             }
+            Some(p) => p,
         };
+
+        if purl.is_empty() {
+            return Err(Error::Entity("from_raw_cdx::purl_empty".to_string()));
+        }
 
         let provider = match author.clone() {
             Author::Harbor(provider) => provider,
@@ -162,7 +167,12 @@ impl Sbom {
             dependencies: None,
         };
 
-        sbom.join_task(purl, task)?;
+        match task {
+            None => {}
+            Some(task) => {
+                sbom.join_task(purl, task)?;
+            }
+        }
 
         Ok(sbom)
     }
@@ -295,5 +305,41 @@ impl Display for Author {
             Author::Harbor(provider) => write!(f, "harbor::{}", provider),
             Author::Vendor(name) => write!(f, "vendor::{}", name.to_lowercase()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::entities::xrefs::XrefKind;
+    use crate::testing::sbom_raw;
+    use crate::Error;
+    use std::collections::HashMap;
+
+    #[test]
+    fn can_parse_sbom_test_fixture() -> Result<(), Error> {
+        let raw = sbom_raw()?;
+
+        let sbom = Sbom::from_raw_cdx(
+            raw.as_str(),
+            CdxFormat::Json,
+            Author::Vendor("can_parse_sbom_test_fixture".to_string()),
+            &None,
+            Xref {
+                kind: XrefKind::Product,
+                map: HashMap::default(),
+            },
+            None,
+        )?;
+
+        assert!(sbom.dependency_refs.is_some());
+        match &sbom.dependency_refs {
+            None => {}
+            Some(dependencies) => {
+                assert!(dependencies.len() > 1);
+            }
+        }
+
+        Ok(())
     }
 }

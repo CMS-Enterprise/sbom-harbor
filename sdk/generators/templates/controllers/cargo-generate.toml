@@ -1,0 +1,15 @@
+[placeholders.operation_type]
+type = "string"
+prompt = "What type of operation is this?"
+choices = ["get", "post", "put", "delete", "list", "custom"]
+default = "post"
+
+[placeholders.request_type]
+type = "string"
+prompt = "What type does this accept? SomeStruct, String, or () for none)."
+default = "()"
+
+[placeholders.response_type]
+type = "string"
+prompt = "What type does this return? (e.g. SomeStruct, String, or () for none)."
+default = "()"

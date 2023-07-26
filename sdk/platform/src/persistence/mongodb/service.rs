@@ -36,6 +36,13 @@ where
     /// Insert a document into a [Collection].
     #[instrument]
     async fn insert<'a>(&self, doc: &mut D) -> Result<(), Error> {
+        self.insert_inner(doc).await
+    }
+
+    /// Indirection that allows implementers of this trait to provide custom insert logic
+    /// prior to executing default logic.
+    async fn insert_inner(&self, doc: &mut D) -> Result<(), Error> {
+        let store = self.store();
         let id = doc.id();
         if !id.is_empty() {
             return Err(Error::Insert(
@@ -46,7 +53,7 @@ where
         let id = Uuid::new_v4().to_string();
         doc.set_id(id);
 
-        self.store().insert::<D>(doc).await
+        store.insert::<D>(doc).await
     }
 
     /// Update a document within a [Collection].
@@ -86,5 +93,13 @@ where
     #[instrument]
     async fn query(&self, filter: HashMap<&str, &str>) -> Result<Vec<D>, Error> {
         self.store().query::<D>(filter).await
+    }
+
+    /// Check to see if document is unique for given attributes within a [Collection].
+    async fn is_duplicate(&self, filter: HashMap<&str, &str>) -> Result<bool, Error> {
+        match self.store().query::<D>(filter).await {
+            Ok(results) => Ok(!results.is_empty()),
+            Err(e) => Err(e),
+        }
     }
 }

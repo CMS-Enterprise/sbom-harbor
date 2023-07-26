@@ -92,3 +92,9 @@ pub mod config;
 
 /// Runtime health check helpers.
 pub mod health;
+
+/// Testing helpers.
+pub mod testing;
+
+#[macro_use]
+extern crate lazy_static;
