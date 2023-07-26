@@ -156,7 +156,7 @@ pub fn test_context(db_name: Option<&str>) -> Result<Context, Error> {
     };
 
     Ok(Context {
-        host: "mongo".to_string(),
+        host: "localhost".to_string(),
         username: "root".to_string(),
         password: "harbor".to_string(),
         port: 27017,
