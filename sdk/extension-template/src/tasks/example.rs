@@ -113,7 +113,8 @@ mod tests {
     #[async_std::test]
     #[ignore = "debug manual only"]
     async fn can_run() -> Result<(), Error> {
-        let cx = harbcore::config::dev_context(None).map_err(|e| Error::Config(e.to_string()))?;
+        let cx =
+            harbcore::config_util::dev_context(None).map_err(|e| Error::Config(e.to_string()))?;
 
         let mut task: Task = Task::new(TaskKind::Extension("example".to_string()))
             .map_err(|e| Error::Task(e.to_string()))?;

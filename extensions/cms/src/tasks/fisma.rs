@@ -211,7 +211,7 @@ impl TaskProvider for FismaTask {
 mod tests {
     use super::*;
     use crate::Error;
-    use harbcore::config::*;
+    use harbcore::config_util::*;
     use harbcore::entities::tasks::TaskKind;
 
     #[async_std::test]

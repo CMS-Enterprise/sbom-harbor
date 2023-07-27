@@ -16,8 +16,12 @@ pub struct ExampleArgs {
 /// The Example Command handler.
 pub async fn execute(args: &ExampleArgs) -> Result<(), Error> {
     let cx = match &args.debug {
-        false => harbcore::config::harbor_context().map_err(|e| Error::Config(e.to_string()))?,
-        true => harbcore::config::dev_context(None).map_err(|e| Error::Config(e.to_string()))?,
+        false => {
+            harbcore::config_util::harbor_context().map_err(|e| Error::Config(e.to_string()))?
+        }
+        true => {
+            harbcore::config_util::dev_context(None).map_err(|e| Error::Config(e.to_string()))?
+        }
     };
 
     let mut task = Task::new(TaskKind::Extension("example".to_string()))

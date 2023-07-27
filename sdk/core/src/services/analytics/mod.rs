@@ -3,7 +3,7 @@ pub mod sboms;
 
 use std::collections::HashMap;
 
-use crate::{config, Error};
+use crate::{config_util, Error};
 use async_trait::async_trait;
 use platform::filesystem::make_file_name_safe;
 use platform::persistence::s3;
@@ -89,7 +89,7 @@ impl StorageProvider for S3StorageProvider {
     async fn write(&self, purl: &str, json: Value, provider_name: &str) -> Result<String, Error> {
         let metadata = HashMap::<String, String>::new();
         let s3_store = s3::Store::new_from_env().await?;
-        let bucket_name = config::harbor_bucket()?;
+        let bucket_name = config_util::harbor_bucket()?;
 
         let mut object_key = get_s3_key_name(purl)?;
         object_key = format!("analytic-{}/{}", provider_name, object_key);

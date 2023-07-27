@@ -23,7 +23,7 @@ pub struct GitHubArgs {
 
 pub(crate) async fn execute(args: &IngestArgs) -> Result<(), Error> {
     let storage: Box<dyn StorageProvider>;
-    let token = harbcore::config::github_pat().map_err(|e| Error::Config(e.to_string()))?;
+    let token = harbcore::config_util::github_pat().map_err(|e| Error::Config(e.to_string()))?;
 
     let org = match &args.github_args {
         Some(gh_args) => match &gh_args.org {
@@ -41,13 +41,13 @@ pub(crate) async fn execute(args: &IngestArgs) -> Result<(), Error> {
     let cx = match &args.debug {
         false => {
             storage = Box::new(S3StorageProvider {});
-            harbcore::config::harbor_context().map_err(|e| Error::Config(e.to_string()))?
+            harbcore::config_util::harbor_context().map_err(|e| Error::Config(e.to_string()))?
         }
         true => {
             storage = Box::new(FileSystemStorageProvider::new(
                 "/tmp/harbor-debug/sboms/github".to_string(),
             ));
-            harbcore::config::dev_context(None).map_err(|e| Error::Config(e.to_string()))?
+            harbcore::config_util::dev_context(None).map_err(|e| Error::Config(e.to_string()))?
         }
     };
 

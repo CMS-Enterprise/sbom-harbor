@@ -7,7 +7,7 @@ pub use service::*;
 use std::fmt::Debug;
 use std::io::BufReader;
 
-use crate::{config, Error};
+use crate::{config_util, Error};
 
 use crate::entities::sboms::Sbom;
 use crate::entities::xrefs;
@@ -98,7 +98,7 @@ impl StorageProvider for S3StorageProvider {
 
         // TODO: Probably want to inject these values.
         let s3_store = s3::Store::new_from_env().await?;
-        let bucket_name = config::harbor_bucket()?;
+        let bucket_name = config_util::harbor_bucket()?;
         let mut object_key = format!("{}-{}", purl, sbom.instance);
         object_key = to_safe_object_key(object_key.as_str())?;
         object_key = format!("sboms/{}.json", object_key);

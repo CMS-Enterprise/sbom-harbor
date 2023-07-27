@@ -24,13 +24,13 @@ pub(crate) async fn execute(args: &AnalyzeArgs) -> Result<(), Error> {
     let cx = match &args.debug {
         false => {
             storage = Arc::new(S3StorageProvider {});
-            harbcore::config::harbor_context().map_err(|e| Error::Config(e.to_string()))?
+            harbcore::config_util::harbor_context().map_err(|e| Error::Config(e.to_string()))?
         }
         true => {
             storage = Arc::new(FileSystemStorageProvider::new(
                 "/tmp/harbor-debug/analyze/sbom-detail".to_string(),
             ));
-            harbcore::config::dev_context(None).map_err(|e| Error::Config(e.to_string()))?
+            harbcore::config_util::dev_context(None).map_err(|e| Error::Config(e.to_string()))?
         }
     };
 

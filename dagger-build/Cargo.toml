@@ -1,0 +1,33 @@
+[package]
+name = "dagger-build"
+version.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+edition.workspace = true
+documentation.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+readme.workspace = true
+description = "Build harness for building and running Dev and CI environments with dynamic secrets."
+
+[dependencies]
+dagger-sdk = "0.2.22"
+thiserror = "1.0"
+
+[dev-dependencies]
+async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
+
+[dependencies.platform]
+path = "../sdk/platform"
+version = "0.1.0"
+
+[[bin]]
+name = "dagger-build"
+path = "src/bin/main.rs"
+
+[lib]
+name = "dagger_build"
+path = "src/lib.rs"
+proc-macro = false
+crate-type = ["lib"]

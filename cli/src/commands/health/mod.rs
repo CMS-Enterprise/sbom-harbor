@@ -1,6 +1,6 @@
 use crate::Error;
 use clap::Parser;
-use harbcore::config::*;
+use harbcore::config_util::*;
 
 /// The CommandFactory function for the `health` command.
 pub async fn execute(args: &HealthArgs) -> Result<(), Error> {

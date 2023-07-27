@@ -3,7 +3,7 @@ pub use sync::*;
 
 #[cfg(test)]
 mod tests {
-    use crate::config::{dev_context, snyk_token};
+    use crate::config_util::{dev_context, snyk_token};
     use crate::entities::tasks::{Task, TaskKind};
     use crate::services::packages::PackageService;
     use crate::services::snyk::SnykService;

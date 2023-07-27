@@ -16,8 +16,12 @@ pub struct FismaArgs {
 /// The Example Command handler.
 pub async fn execute(args: &FismaArgs) -> Result<(), Error> {
     let cx = match &args.debug {
-        false => harbcore::config::harbor_context().map_err(|e| Error::Config(e.to_string()))?,
-        true => harbcore::config::dev_context(None).map_err(|e| Error::Config(e.to_string()))?,
+        false => {
+            harbcore::config_util::harbor_context().map_err(|e| Error::Config(e.to_string()))?
+        }
+        true => {
+            harbcore::config_util::dev_context(None).map_err(|e| Error::Config(e.to_string()))?
+        }
     };
 
     let token = std::env::var("SNYK_TOKEN")

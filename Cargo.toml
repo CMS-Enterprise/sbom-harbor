@@ -5,7 +5,8 @@ members = [
     "extensions/cms",
     "sdk/platform",
     "cli",
-    "sdk/extension-template"
+    "sdk/extension-template",
+    "dagger-build",
 ]
 
 [workspace.package]

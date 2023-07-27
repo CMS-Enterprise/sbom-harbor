@@ -1,8 +1,46 @@
-use crate::Error;
+use std::collections::HashMap;
+
 use platform::config::from_env;
 use platform::encoding::url_encode;
 use platform::persistence::mongodb::Context;
 use serde::{Deserialize, Serialize};
+
+use crate::Error;
+
+pub struct Settings {
+    pub process: Option<Vec<String>>,
+    pub cx: Option<Context>,
+    pub log_level: Option<String>,
+    pub jwt_config: Option<HashMap<String, String>>,
+    pub file_store: Option<String>,
+    pub snyk_token: Option<String>,
+    pub github_token: Option<String>,
+    pub ion_channel_token: Option<String>,
+}
+
+impl Settings {
+    pub fn new(file_path: Option<String>) -> Result<Self, Error> {
+        match from_file() {}
+        Ok(Self {
+            cx: harbor_context()?,
+            log_level: log_level()?,
+            jwt_config: jwt_config()?,
+            file_store: file_store()?,
+            snyk_token: snyk_token()?,
+            github_token: github_token()?,
+            ion_channel_token: ion_channel_token()?,
+        })
+    }
+}
+
+fn from_file(file_path: Option<String>) -> Result<Option<Settings>, Error> {
+    let file_path = match file_path {
+        None => "config.toml",
+        Some(f) => f.as_str(),
+    };
+
+    let
+}
 
 /// Returns the Snyk API token from an environment variable.
 pub fn snyk_token() -> Result<String, Error> {
@@ -12,16 +50,24 @@ pub fn snyk_token() -> Result<String, Error> {
     }
 }
 
-/// Returns the GitHub PAT token from an environment variable.
-pub fn github_pat() -> Result<String, Error> {
+/// Returns the GitHub token from an environment variable.
+pub fn github_token() -> Result<String, Error> {
     match from_env("GITHUB_PAT") {
         None => Err(Error::Config("GITHUB_PAT token not set".to_string())),
         Some(v) => Ok(v),
     }
 }
 
-/// Returns the Harbor S3 bucket name.
-pub fn harbor_bucket() -> Result<String, Error> {
+/// Returns the Ion Channel token from an environment variable.
+pub fn ion_channel_token() -> Result<String, Error> {
+    match from_env("ION_CHANNEL_TOKEN") {
+        None => Err(Error::Config("ION_CHANNEL_TOKEN token not set".to_string())),
+        Some(v) => Ok(v),
+    }
+}
+
+/// Returns the file store path for the configured provider.
+pub fn file_store() -> Result<String, Error> {
     match from_env("HARBOR_FILE_STORE") {
         None => Err(Error::Config("Harbor bucket not set".to_string())),
         Some(v) => Ok(v),
@@ -101,4 +147,21 @@ impl DocDbConfig {
             connection_uri: Some(connection_uri),
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn can_load_local_config() -> Result<(), Error> {}
+
+    #[test]
+    fn can_load_dev_config() -> Result<(), Error> {}
+
+    #[test]
+    fn can_load_prod_config() -> Result<(), Error> {}
+
+    #[test]
+    fn can_load_user_config() -> Result<(), Error> {}
 }

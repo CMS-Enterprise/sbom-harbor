@@ -13,8 +13,12 @@ use crate::Error;
 /// dispatching command to the correct logic handler based on args passed.
 pub async fn execute(args: &EnrichArgs) -> Result<(), Error> {
     let cx = match &args.debug {
-        false => harbcore::config::harbor_context().map_err(|e| Error::Config(e.to_string()))?,
-        true => harbcore::config::dev_context(None).map_err(|e| Error::Config(e.to_string()))?,
+        false => {
+            harbcore::config_util::harbor_context().map_err(|e| Error::Config(e.to_string()))?
+        }
+        true => {
+            harbcore::config_util::dev_context(None).map_err(|e| Error::Config(e.to_string()))?
+        }
     };
 
     let store = Arc::new(

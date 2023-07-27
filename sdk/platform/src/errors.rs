@@ -49,8 +49,11 @@ pub enum Error {
     /// Error in S3 provider.
     #[error("error in S3 provider: {0}")]
     S3(String),
+    /// Error in AWS Secrets provider.
+    #[error("error in secrets provider: {0}")]
+    Secrets(String),
     /// Error in Time module.
-    #[error("error in time modoule: {0}")]
+    #[error("error in time module: {0}")]
     Time(String),
     /// Error executing update.
     #[error("error executing update: {0}")]

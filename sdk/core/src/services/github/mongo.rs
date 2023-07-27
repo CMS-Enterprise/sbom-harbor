@@ -9,7 +9,7 @@ use uuid::Uuid;
 use platform::errors::Error as PlatformError;
 
 #[allow(unused_imports)]
-use crate::config::dev_context;
+use crate::config_util::dev_context;
 use crate::services::github::error::Error;
 use crate::services::github::Commit;
 use platform::persistence::mongodb::{MongoDocument, Service as MongoService, Store as MongoStore};

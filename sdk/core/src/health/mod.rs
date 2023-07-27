@@ -1,4 +1,4 @@
-use crate::config::{dev_context, harbor_bucket, harbor_context};
+use crate::config_util::{dev_context, harbor_bucket, harbor_context};
 use crate::Error;
 use platform::persistence::mongodb::client_from_context;
 use platform::persistence::s3::Store;

@@ -49,3 +49,6 @@ pub mod git;
 
 /// Module for common string generating functions
 pub mod str;
+
+/// Module for common secrets management and access functions.
+pub mod secrets;

@@ -13,7 +13,7 @@ use std::io::BufReader;
 use crate::entities::enrichments::Vulnerability;
 use crate::entities::xrefs;
 use crate::entities::xrefs::Xref;
-use crate::{config, Error};
+use crate::{config_util, Error};
 
 // TODO: This could maybe be generalized and combined with Sbom version.
 /// Abstract storage provider for vulnerabilities.
@@ -118,7 +118,7 @@ impl StorageProvider for S3StorageProvider {
 
         // TODO: Probably want to inject these values.
         let s3_store = s3::Store::new_from_env().await?;
-        let bucket_name = config::harbor_bucket()?;
+        let bucket_name = config_util::harbor_bucket()?;
 
         let object_key = format!("vulnerabilities-{}-{}", provider, to_safe_object_key(purl)?);
 

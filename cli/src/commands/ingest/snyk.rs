@@ -28,18 +28,18 @@ pub struct SnykArgs {
 /// dispatching command to the correct logic handler based on args passed.
 pub(crate) async fn execute(args: &IngestArgs) -> Result<(), Error> {
     let storage: Box<dyn StorageProvider>;
-    let token = harbcore::config::snyk_token().map_err(|e| Error::Config(e.to_string()))?;
+    let token = harbcore::config_util::snyk_token().map_err(|e| Error::Config(e.to_string()))?;
 
     let cx = match &args.debug {
         false => {
             storage = Box::new(S3StorageProvider {});
-            harbcore::config::harbor_context().map_err(|e| Error::Config(e.to_string()))?
+            harbcore::config_util::harbor_context().map_err(|e| Error::Config(e.to_string()))?
         }
         true => {
             storage = Box::new(FileSystemStorageProvider::new(
                 "/tmp/harbor-debug/sboms".to_string(),
             ));
-            harbcore::config::dev_context(None).map_err(|e| Error::Config(e.to_string()))?
+            harbcore::config_util::dev_context(None).map_err(|e| Error::Config(e.to_string()))?
         }
     };
 

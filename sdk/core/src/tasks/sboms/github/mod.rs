@@ -33,7 +33,7 @@ pub fn get_cataloger_to_build_target_map() -> HashMap<String, Vec<String>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::config::{dev_context, snyk_token};
+    use crate::config_util::{dev_context, snyk_token};
     use crate::entities::tasks::{Task, TaskKind};
     use crate::services::github::mongo::GitHubProviderMongoService;
     use crate::services::github::service::GitHubService;

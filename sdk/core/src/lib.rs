@@ -87,7 +87,7 @@ pub mod auth;
 /// DB Migrations for the Harbor database.
 mod migrations;
 
-/// Runtime configuration helpers.
+/// Runtime configuration.
 pub mod config;
 
 /// Runtime health check helpers.
