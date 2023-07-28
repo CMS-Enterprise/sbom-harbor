@@ -1,0 +1,10 @@
+package main
+
+_local: {
+	secretNames: {
+		DbConnectionJson: "secrets manager key name goes here"
+		SnykToken:        "secrets manager key name goes here"
+		IonChannelToken:  "secrets manager key name goes here"
+		GitHubPAT:        "secrets manager key name goes here"
+	}
+}
