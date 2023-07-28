@@ -15,6 +15,9 @@ pub enum Error {
     /// Invalid subcommand.
     #[error("invalid subcommand: {0}")]
     InvalidSubcommand(String),
+    /// IonChannel provider error.
+    #[error("ion channel provider: {0}")]
+    IonChannel(String),
     /// Snyk service error.
     #[error("snyk provider: {0}")]
     Snyk(String),

@@ -12,6 +12,22 @@ pub fn snyk_token() -> Result<String, Error> {
     }
 }
 
+/// Returns the Ion Channel API token from an environment variable.
+pub fn ion_channel_token() -> Result<String, Error> {
+    match from_env("ION_CHANNEL_TOKEN") {
+        None => Err(Error::Config("Ion Channel token not set".to_string())),
+        Some(v) => Ok(v),
+    }
+}
+
+/// Returns the Ion Channel Org ID from an environment variable.
+pub fn ion_channel_org_id() -> Result<String, Error> {
+    match from_env("ION_CHANNEL_ORG_ID") {
+        None => Err(Error::Config("Ion Channel Org ID not set".to_string())),
+        Some(v) => Ok(v),
+    }
+}
+
 /// Returns the GitHub PAT token from an environment variable.
 pub fn github_pat() -> Result<String, Error> {
     match from_env("GITHUB_PAT") {
