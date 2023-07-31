@@ -10,7 +10,6 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=harbor
-    hostname: mongo
     ports:
       - "27017:27017"
     command: mongod
