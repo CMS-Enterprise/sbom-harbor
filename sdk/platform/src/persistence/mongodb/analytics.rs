@@ -19,7 +19,7 @@ pub struct Pipeline {
     store: Arc<Store>,
     /// This variable holds all of the Stages to be executed
     /// in the pipeline.
-    stages: Mutex<Vec<Stage>>,
+    pub stages: Mutex<Vec<Stage>>,
 }
 
 impl Pipeline {

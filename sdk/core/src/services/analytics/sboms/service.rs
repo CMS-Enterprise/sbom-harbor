@@ -338,6 +338,8 @@ impl AnalyticService {
 
     /// Generates a Detail Analytic Report. Specification is here:
     pub(crate) async fn generate_detail(&self, purl: String) -> Result<Option<String>, Error> {
+        self.pipeline.clear();
+
         self.pipeline
             .add_stage(report_analytic_stage_1(purl.clone()));
 
@@ -479,5 +481,51 @@ mod tests {
         assert!(result.is_ok());
         let path = result.unwrap().unwrap();
         assert!(path.contains("pkg:npm/bic-api@1.0.0"));
+    }
+
+    #[tokio::test]
+    #[ignore = "debug manual only"]
+    async fn can_clear_pipeline() -> Result<(), Error> {
+        // Mock store and storage provider
+        let cxt: &Context = &test_context(Some("harbor")).expect("Unable to create a test context");
+        let raw_store = MongoStore::new(cxt)
+            .await
+            .expect("Unable to unwrap MongoStore");
+        let store = Arc::new(raw_store);
+        let storage = Arc::new(MockStorageProvider);
+
+        let service = AnalyticService {
+            store: store.clone(),
+            storage,
+            pipeline: Pipeline::new(store),
+        };
+
+        let primary_purls = service.get_primary_purls().await?.unwrap();
+
+        for purl in primary_purls {
+            println!("==> generating detail report for purl {}", purl);
+
+            service.pipeline.add_stage(report_analytic_stage_1(purl));
+            service.pipeline.add_stage(sort_by_timestamp_desc());
+            service.pipeline.add_stage(limit_1());
+            service.pipeline.add_stage(fisma_xref_array());
+            service.pipeline.add_stage(fisma_xref());
+            service.pipeline.add_stage(report_analytic_stage_2());
+            service.pipeline.add_stage(report_analytic_stage_3());
+            service.pipeline.add_stage(report_analytic_stage_4_and_7());
+            service.pipeline.add_stage(report_analytic_stage_5());
+            service.pipeline.add_stage(report_analytic_stage_6());
+            service.pipeline.add_stage(report_analytic_stage_4_and_7());
+            service.pipeline.add_stage(report_analytic_stage_8());
+            service.pipeline.add_stage(report_analytic_stage_9());
+            service.pipeline.add_stage(report_analytic_stage_10());
+            service.pipeline.add_stage(report_analytic_stage_11());
+
+            assert_eq!(service.pipeline.stages.lock().unwrap().len(), 15);
+            service.pipeline.clear();
+            assert_eq!(service.pipeline.stages.lock().unwrap().len(), 0);
+        }
+
+        Ok(())
     }
 }
