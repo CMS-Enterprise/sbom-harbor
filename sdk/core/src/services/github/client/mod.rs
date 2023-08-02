@@ -389,7 +389,7 @@ mod test {
         };
 
         let page_num = 1;
-        let num_per_page = 100 as u32;
+        let num_per_page = 100_u32;
 
         let client = Client::new(pat);
         let repo_page = client

@@ -67,7 +67,7 @@ mod tests {
         let provider = SyncTask::new(
             mongo_service,
             GitHubService::new(org, token),
-            SbomService::new(store.clone(), Some(storage), Some(package_service)),
+            SbomService::new(store, Some(storage), Some(package_service)),
         )?;
 
         Ok(provider)
