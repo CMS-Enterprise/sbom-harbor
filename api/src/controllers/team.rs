@@ -120,8 +120,6 @@ pub async fn put(
         return Err(Error::InvalidParameters("id mismatch".to_string()));
     }
 
-    let team = team;
-
     service
         .update(&team)
         .await
