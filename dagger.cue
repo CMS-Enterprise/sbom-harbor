@@ -36,18 +36,16 @@ dagger.#Plan & {
 			// load local files
 			".": read: {
 				contents: dagger.#FS
-				exclude: [
-					".git*",
-					".vscode",
-					"cue.mod",
-					".editorconfig",
-					".env*",
-					"*.cue",
-					"*.md",
-					"target",
-					"adr",
-					"devenv",
-					"docs",
+				include: [
+					"Cargo.toml",
+					"Cargo.lock",
+					"api",
+					"cli",
+					"extensions",
+					"tests",
+					"sdk/core",
+					"sdk/extension-template",
+					"sdk/platform",
 				]
 			}
 
@@ -71,7 +69,7 @@ dagger.#Plan & {
 		_image: docker.#Build & {
 			steps: [
 				docker.#Pull & {
-					source: "rust:1.71.0"
+					source: "rust:1.71.0-slim"
 				},
 
 				docker.#Run & {
@@ -85,11 +83,35 @@ dagger.#Plan & {
 				docker.#Run & {
 					command: {
 						name: "apt-get"
-						args: ["install", "jq", "curl", "ca-certificates"]
+						args: ["install", "jq", "curl", "ca-certificates", "unzip", "pkg-config", "libssl-dev"]
 						flags: {
 							"-y":                      true
 							"--no-install-recommends": true
 						}
+					}
+				},
+
+				// update toolchain channels
+				docker.#Run & {
+					command: {
+						name: "rustup"
+						args: ["update"]
+					}
+				},
+
+				// default to nightly channel
+				docker.#Run & {
+					command: {
+						name: "rustup"
+						args: ["default", "nightly"]
+					}
+				},
+
+				// add compilation target
+				docker.#Run & {
+					command: {
+						name: "rustup"
+						args: ["target", "add", "aarch64-unknown-linux-gnu"]
 					}
 				},
 
@@ -166,7 +188,7 @@ dagger.#Plan & {
 				}
 				command: {
 					name: "bash"
-					flags: "-c": "echo 'Hello, Clarice. I know your secrets.'"
+					flags: "-c": "cargo update && cargo test"
 				}
 				workdir: "/src"
 			}
