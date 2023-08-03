@@ -338,7 +338,9 @@ impl AnalyticService {
 
     /// Generates a Detail Analytic Report. Specification is here:
     pub(crate) async fn generate_detail(&self, purl: String) -> Result<Option<String>, Error> {
+        println!("==> pipeline stages on enter {}", self.pipeline.len());
         self.pipeline.clear();
+        println!("==> pipeline stages after clear {}", self.pipeline.len());
 
         self.pipeline
             .add_stage(report_analytic_stage_1(purl.clone()));
@@ -380,6 +382,8 @@ impl AnalyticService {
                 )))
             }
         };
+
+        println!("==> pipeline stages after execute {}", self.pipeline.len());
 
         match self
             .storage
@@ -521,9 +525,9 @@ mod tests {
             service.pipeline.add_stage(report_analytic_stage_10());
             service.pipeline.add_stage(report_analytic_stage_11());
 
-            assert_eq!(service.pipeline.stages.lock().unwrap().len(), 15);
+            assert_eq!(service.pipeline.len(), 15);
             service.pipeline.clear();
-            assert_eq!(service.pipeline.stages.lock().unwrap().len(), 0);
+            assert!(service.pipeline.is_empty());
         }
 
         Ok(())
