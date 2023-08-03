@@ -83,7 +83,7 @@ dagger.#Plan & {
 				docker.#Run & {
 					command: {
 						name: "apt-get"
-						args: ["install", "jq", "curl", "ca-certificates", "unzip", "pkg-config", "libssl-dev"]
+						args: ["install", "jq", "curl", "ca-certificates", "unzip", "pkg-config", "libssl-dev", "git"]
 						flags: {
 							"-y":                      true
 							"--no-install-recommends": true
@@ -119,7 +119,23 @@ dagger.#Plan & {
 				docker.#Run & {
 					command: {
 						name: "bash"
-						flags: "-c": "curl https://awscli.amazonaws.com/awscli-exe-linux-\(_arch[client.platform.arch]).zip -o ./awscliv2.zip && unzip -q ./awscliv2.zip && ./aws/install"
+						flags: "-c": "curl -s https://awscli.amazonaws.com/awscli-exe-linux-\(_arch[client.platform.arch]).zip -o ./awscliv2.zip && unzip -q ./awscliv2.zip && ./aws/install"
+					}
+				},
+
+				// install scorescard
+				docker.#Run & {
+					command: {
+						name: "bash"
+						flags: "-c": "curl -sSfL https://github.com/eBay/sbom-scorecard/releases/download/0.0.7/sbom-scorecard-linux-\(client.platform.arch) -o /usr/local/bin/scorecard && chmod u+x /usr/local/bin/scorecard && ls -la /usr/local/bin/scorecard"
+					}
+				},
+
+				// install syft
+				docker.#Run & {
+					command: {
+						name: "bash"
+						flags: "-c": "curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin && chmod u+x /usr/local/bin/syft"
 					}
 				},
 
@@ -182,9 +198,11 @@ dagger.#Plan & {
 					DB_PORT:           _DbConnection.output.port.contents
 					DB_USERNAME:       _DbConnection.output.username.contents
 					DB_PASSWORD:       _DbConnection.output.password.contents
+					DB_NAME:           _local.dbName
 					SNYK_TOKEN:        _getSecrets.export.secrets.SnykToken
 					ION_CHANNEL_TOKEN: _getSecrets.export.secrets.IonChannelToken
 					GITHUB_PAT:        _getSecrets.export.secrets.GitHubPAT
+					SBOM_SCORECARD:    "/usr/local/bin/scorecard"
 				}
 				command: {
 					name: "bash"
