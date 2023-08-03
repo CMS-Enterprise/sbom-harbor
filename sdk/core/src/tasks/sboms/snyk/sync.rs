@@ -98,7 +98,7 @@ impl SyncTask {
     pub(crate) async fn process_target(
         &self,
         task: &Task,
-        project: &mut Project,
+        project: &Project,
     ) -> Result<(), Error> {
         if project.status == ProjectStatus::Inactive {
             self.handle_inactive(project)?;

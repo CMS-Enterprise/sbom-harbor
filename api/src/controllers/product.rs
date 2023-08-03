@@ -145,8 +145,6 @@ pub async fn put(
         return Err(Error::InvalidParameters("id mismatch".to_string()));
     }
 
-    let product = product;
-
     service
         .update(&product)
         .await

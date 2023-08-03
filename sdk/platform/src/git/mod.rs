@@ -19,7 +19,7 @@ impl Service {
     }
 
     /// Clones a git repository to the specified clone path.
-    pub fn clone_repo(&self, clone_path: &str) -> Result<(), Error> {
+    pub fn clone_repo(&self, clone_path: &str, pat: Option<String>) -> Result<(), Error> {
         println!("==> Cloning repo: {}", self.repo_url);
 
         let path = Path::new(clone_path);
@@ -31,9 +31,17 @@ impl Service {
                 self.repo_url, clone_path
             );
         } else {
-            match Repository::clone(self.repo_url.as_str(), clone_path) {
+            let url = match pat {
+                None => self.repo_url.clone(),
+                Some(pat) => {
+                    let url_no_protocol = &self.repo_url[8..];
+                    format!("https://{}@{}", pat, url_no_protocol)
+                }
+            };
+
+            match Repository::clone(url.as_str(), clone_path) {
                 Err(err) => {
-                    println!("==> Error cloning Repository");
+                    println!("==> Error cloning Repository: {}", self.repo_url.as_str());
                     return Err(Error::GitClientError(err));
                 }
                 _ => {
@@ -90,11 +98,19 @@ impl Service {
 
 #[cfg(test)]
 mod tests {
-
     use crate::filesystem::get_tmp_location;
+    use crate::git::error::Error;
     use crate::git::Service as Git;
     use crate::str::get_random_string;
+    use std::env;
     use std::path::Path;
+
+    #[test]
+    fn substring_test() {
+        let url = "https://github.com/harbor-test-org/private-node-repo.git";
+        let no_https = &url[8..];
+        assert_eq!("github.com/harbor-test-org/private-node-repo.git", no_https);
+    }
 
     #[tokio::test]
     async fn test_good_clone() {
@@ -103,12 +119,34 @@ mod tests {
         let repo_url = "https://github.com/harbor-test-org/java-repo.git".to_string();
         let git_svc = Git::new(repo_url);
         git_svc
-            .clone_repo(repo_location)
+            .clone_repo(repo_location, None)
             .expect("TEST ERROR: Unable to clone repo");
 
         let path = Path::new(repo_location);
         assert!(path.is_dir());
         Git::remove_clone(repo_location).expect("Error removing clone");
+    }
+
+    #[tokio::test]
+    #[ignore = "debug manual only"]
+    async fn test_clone_private() -> Result<(), Error> {
+        let repo_location = "/tmp/test-private-repo";
+
+        let pat = match env::var("GITHUB_PAT") {
+            Ok(pat) => pat,
+            Err(_err) => return Err(Error::CloneError(String::from("No PAT?"))),
+        };
+
+        let repo_url = "https://github.com/harbor-test-org/private-node-repo.git".to_string();
+        let git_svc = Git::new(repo_url);
+        git_svc
+            .clone_repo(repo_location, Some(pat))
+            .expect("TEST ERROR: Unable to clone repo");
+
+        let path = Path::new(repo_location);
+        assert!(path.is_dir());
+
+        Ok(Git::remove_clone(repo_location).expect("Error removing clone"))
     }
 
     #[tokio::test]
@@ -119,7 +157,7 @@ mod tests {
 
         let repo_url = format!("https://github.com/harbor-test-org/{}.git", rand_str);
         let git_svc = Git::new(repo_url);
-        match git_svc.clone_repo(repo_location.as_str()) {
+        match git_svc.clone_repo(repo_location.as_str(), None) {
             Ok(_) => panic!("Should not be able to clone repo"),
             _ => (),
         }
@@ -133,7 +171,7 @@ mod tests {
         let git_svc = Git::new(repo_url);
 
         git_svc
-            .clone_repo(repo_location.as_str())
+            .clone_repo(repo_location.as_str(), None)
             .expect("Unable to clone Repo!");
         let result = git_svc.find("pom.xml".to_string(), repo_location.clone());
         Git::remove_clone(repo_location.as_str()).expect("Error removing clone");
@@ -156,7 +194,7 @@ mod tests {
 
         // Clone the repo
         git_svc
-            .clone_repo(repo_location.as_str())
+            .clone_repo(repo_location.as_str(), None)
             .expect("Unable to clone Repo!");
 
         // Find the build file

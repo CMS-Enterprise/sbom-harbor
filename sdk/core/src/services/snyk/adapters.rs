@@ -31,6 +31,7 @@ impl Group {
 }
 
 /// Adapter over a native Snyk Org.
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub(crate) struct Organization {
     pub id: String,
     pub name: String,

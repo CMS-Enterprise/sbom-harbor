@@ -1,6 +1,7 @@
 use crate::entities::sboms::SbomProviderKind;
 use crate::Error;
 
+use crate::config::github_pat;
 use crate::entities::tasks::Task;
 use crate::entities::xrefs::{Xref, XrefKind};
 use crate::services::github::client::Repo;
@@ -9,7 +10,7 @@ use crate::services::github::service::GitHubService;
 use crate::services::github::Commit;
 use crate::services::sboms::SbomService;
 use crate::services::syft::Service as Syft;
-use crate::tasks::sboms::github::get_cataloger_to_build_target_map;
+use crate::tasks::sboms::github::BUILD_TARGETS;
 use crate::tasks::TaskProvider;
 use async_trait::async_trait;
 use platform::persistence::mongodb::{Service, Store};
@@ -74,17 +75,8 @@ impl TaskProvider for SyncTask {
 
         let mut errors = HashMap::new();
 
-        let cataloger_to_build_file_map = get_cataloger_to_build_target_map();
-        println!(
-            "==> Acquired cataloger to build target map, map contains: {} keys",
-            cataloger_to_build_file_map.len()
-        );
-
         for repo in &mut repos {
-            let name = repo
-                .full_name
-                .clone()
-                .unwrap_or(String::from("name/missing"));
+            let name = repo.full_name.clone();
 
             let url = match repo.html_url.clone() {
                 Some(url) => url,
@@ -92,10 +84,7 @@ impl TaskProvider for SyncTask {
             };
 
             if !SyncTask::should_skip(repo, name, url.clone()) {
-                match self
-                    .process_repo(repo, task, &cataloger_to_build_file_map)
-                    .await
-                {
+                match self.process_repo(repo, task).await {
                     Ok(option) => match option {
                         Some(raw_sboms) => {
                             for sbom in raw_sboms {
@@ -164,18 +153,13 @@ impl SyncTask {
         Ok(errors)
     }
 
-    fn get_state_values(&self, repo: &Repo) -> Result<(String, String), Error> {
+    fn get_state_values(&self, repo: &Repo) -> Result<(String, String, String), Error> {
         let url: String = match repo.html_url.clone() {
             Some(url) => url,
             None => return Err(Error::GitHub("==> No URL for Repository".to_string())),
         };
 
-        let full_name: String = match repo.full_name.clone() {
-            Some(full_name) => full_name,
-            None => return Err(Error::GitHub("==> Repo is missing full_name".to_string())),
-        };
-
-        Ok((url, full_name))
+        Ok((url, repo.full_name.clone(), repo.version.clone()))
     }
 
     /// Method to help finding documents in DocumentDB
@@ -256,11 +240,10 @@ impl SyncTask {
 
     async fn process_repo(
         &self,
-        repo: &mut Repo,
+        repo: &Repo,
         task: &mut Task,
-        cataloger_to_build_file_map: &HashMap<String, Vec<String>>,
     ) -> Result<Option<Vec<String>>, Error> {
-        let (url, full_name) = self.get_state_values(repo)?;
+        let (url, full_name, version) = self.get_state_values(repo)?;
 
         // The url is the id of the document
         let mut document = match self.find_document(url.as_str()).await {
@@ -286,7 +269,7 @@ impl SyncTask {
 
             let clone_path = self
                 .github
-                .clone_repo(url.as_str())
+                .clone_repo(url.as_str(), Some(github_pat()?))
                 .map_err(|err| Error::GitHub(format!("Error attempting clone repo: {}", err)))?;
 
             let syft = Syft::new(clone_path.clone());
@@ -295,16 +278,19 @@ impl SyncTask {
 
             let mut total_build_targets = 0;
 
-            for (cataloger, build_targets) in cataloger_to_build_file_map {
+            for (cataloger, build_targets) in BUILD_TARGETS.iter() {
                 for build_target in build_targets {
                     println!(
                         "==> Looking for build targets named: {}, using cataloger: {}",
                         build_target, cataloger
                     );
 
-                    let build_target_locations_result =
-                        self.github
-                            .find(url.to_string(), build_target.clone(), clone_path.clone());
+                    // TODO refactor .find() to take a &str
+                    let build_target_locations_result = self.github.find(
+                        url.to_string(),
+                        String::from(*build_target),
+                        clone_path.clone(),
+                    );
 
                     let build_target_locations = match build_target_locations_result {
                         Ok(build_target_locations) => build_target_locations,
@@ -329,7 +315,7 @@ impl SyncTask {
                             if !location_under_ignored_dir(build_target_location.clone()) {
                                 // Slice off the name of the file and the leading '/' as
                                 // execute() function only takes a path
-                                let search_string = format!("/{}", build_target.as_str());
+                                let search_string = format!("/{}", build_target);
                                 let trimmed_build_target_location =
                                     build_target_location.replace(search_string.as_str(), "");
 
@@ -338,10 +324,11 @@ impl SyncTask {
                                     build_target_location, cataloger
                                 );
 
+                                // TODO Refactor execute() to take &str
                                 let syft_result = syft.execute(
                                     full_name.to_owned(),
-                                    last_hash.to_string(),
-                                    Some(cataloger.clone()),
+                                    version.to_owned(),
+                                    Some(String::from(*cataloger)),
                                     Some(trimmed_build_target_location),
                                 );
 
@@ -369,7 +356,7 @@ impl SyncTask {
                 );
 
                 syft_results.push(
-                    syft.execute(full_name.to_owned(), last_hash.to_string(), None, None)
+                    syft.execute(full_name.to_owned(), version.to_string(), None, None)
                         .map_err(|err| {
                             Error::GitHub(format!("Error using Syft on a Repo: {}", err))
                         })?,
@@ -403,7 +390,7 @@ impl SyncTask {
 #[cfg(test)]
 mod test {
 
-    use crate::services::github::client::Repo;
+    use crate::services::github::client::{default_version, Repo};
     use crate::tasks::sboms::github::sync::location_under_ignored_dir;
     use crate::tasks::sboms::github::SyncTask;
 
@@ -425,14 +412,15 @@ mod test {
         let test_url = String::from("test url, ignore");
 
         let test_repo = Repo {
-            full_name: None,
+            full_name: String::from(""),
             html_url: None,
             default_branch: None,
             language: None,
             archived: Some(true),
             disabled: None,
             empty: false,
-            last_hash: "".to_string(),
+            last_hash: String::from(""),
+            version: default_version(),
         };
 
         if !SyncTask::should_skip(&test_repo, test_name, test_url) {
@@ -448,14 +436,15 @@ mod test {
         let test_url = String::from("test url, ignore");
 
         let test_repo = Repo {
-            full_name: None,
+            full_name: String::from(""),
             html_url: None,
             default_branch: None,
             language: None,
             archived: None,
             disabled: Some(true),
             empty: false,
-            last_hash: "".to_string(),
+            last_hash: String::from(""),
+            version: default_version(),
         };
 
         if !SyncTask::should_skip(&test_repo, test_name, test_url) {
@@ -471,14 +460,15 @@ mod test {
         let test_url = String::from("test url, ignore");
 
         let test_repo = Repo {
-            full_name: None,
+            full_name: String::from(""),
             html_url: None,
             default_branch: None,
             language: None,
             archived: None,
             disabled: None,
             empty: true,
-            last_hash: "".to_string(),
+            last_hash: String::from(""),
+            version: default_version(),
         };
 
         if !SyncTask::should_skip(&test_repo, test_name, test_url) {
