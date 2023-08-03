@@ -41,6 +41,16 @@ impl Pipeline {
         self.stages.lock().unwrap().clear();
     }
 
+    /// Gets the current count of stages in the pipeline.
+    pub fn len(&self) -> usize {
+        self.stages.lock().unwrap().len()
+    }
+
+    /// Indicates whether the current pipeline has any queued stages.
+    pub fn is_empty(&self) -> bool {
+        self.stages.lock().unwrap().is_empty()
+    }
+
     /// This method executes the Analytic and returns the results as a Serde Value
     pub async fn execute_on(&self, collection: &str) -> Result<Value, Error> {
         if self.stages.lock().unwrap().len() == 0 {
@@ -54,7 +64,7 @@ impl Pipeline {
         let collection = db.collection::<Document>(collection);
 
         // Set the options for the aggregation
-        let options = AggregateOptions::builder().build();
+        let options = AggregateOptions::builder().allow_disk_use(true).build();
 
         // Map the stages over to Documents
         let doc_pipeline = self
