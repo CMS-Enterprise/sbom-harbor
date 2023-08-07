@@ -110,6 +110,19 @@ fn generate_purl(
     }
 }
 
+fn create_component_name(full_name: String, sub_path_opt: Option<String>) -> String {
+    let parts = full_name.split('/').collect::<Vec<&str>>();
+    let namespace_and_name = parts.join(":");
+
+    if let Some(sub_path) = sub_path_opt {
+        if !sub_path.is_empty() {
+            return format!("{}:{}", namespace_and_name, sub_path)
+        }
+    }
+
+    namespace_and_name
+}
+
 fn ensure_purl_in_metadata(
     sbom: Bom,
     full_name: String,
@@ -126,6 +139,11 @@ fn ensure_purl_in_metadata(
                 None => create_component(full_name, version, cataloger, sub_path),
                 Some(component) => {
                     let mut unboxed_component = *component;
+
+                    unboxed_component.name = create_component_name(
+                        full_name.clone(),
+                        sub_path.clone()
+                    );
 
                     if unboxed_component.purl.is_none() {
                         let purl = generate_purl(full_name, version, cataloger, sub_path);
@@ -164,10 +182,11 @@ fn create_component(
     sub_path: Option<String>,
 ) -> Component {
     let component_type: ComponentType = ComponentType::Application;
-    let name = String::from(".");
+    let name = create_component_name(full_name.clone(), sub_path.clone());
     let purl = generate_purl(full_name, commit_hash, cataloger, sub_path);
 
-    let mut component: Component = Component::new(component_type, name);
+    let mut component: Component = Component::new(component_type, name.clone());
+    component.name = name;
     component.purl = Some(purl);
 
     component
@@ -390,10 +409,7 @@ mod test {
     use crate::entities::cyclonedx::{Bom, Component, Metadata};
     use crate::entities::sboms::{Author, CdxFormat, Sbom};
     use crate::entities::xrefs::{Xref, XrefKind};
-    use crate::services::syft::{
-        create_component, create_metadata, ensure_purl_in_metadata, generate_purl, Error,
-        Service as Syft, CATALOGERS,
-    };
+    use crate::services::syft::{create_component, create_metadata, ensure_purl_in_metadata, generate_purl, Error, Service as Syft, CATALOGERS, create_component_name};
     use crate::testing::sbom_raw;
 
     fn test_created_component(
@@ -440,6 +456,31 @@ mod test {
         let purl_type = CATALOGERS.get(cataloger.as_str()).unwrap().to_string();
         let sub_path = String::from("sub/path");
         (full_name, commit_hash, purl_type, cataloger, sub_path)
+    }
+
+    #[test]
+    fn test_create_component_name_no_subpath() {
+        let full_name = String::from("ns/name");
+        let component_name = create_component_name(full_name, None);
+
+        assert_eq!("ns:name", component_name);
+    }
+
+    #[test]
+    fn test_create_component_name_empty_subpath() {
+        let full_name = String::from("ns/name");
+        let component_name = create_component_name(full_name, Some(String::from("")));
+
+        assert_eq!("ns:name", component_name);
+    }
+
+    #[test]
+    fn test_create_component_name_non_empty_subpath() {
+        let sub_path = "/path/to/build/target";
+        let full_name = String::from("ns/name");
+        let component_name = create_component_name(full_name, Some(String::from(sub_path)));
+
+        assert_eq!(format!("ns:name:{}", sub_path), component_name);
     }
 
     #[test]
