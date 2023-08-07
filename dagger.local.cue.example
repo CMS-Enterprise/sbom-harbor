@@ -1,6 +1,7 @@
 package main
 
 _local: {
+  awsProfile: "dev profile name goes here"
 	secretNames: {
 		DbConnectionJson: "secrets manager key name goes here"
 		SnykToken:        "secrets manager key name goes here"
