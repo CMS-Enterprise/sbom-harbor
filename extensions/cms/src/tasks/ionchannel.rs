@@ -151,7 +151,7 @@ mod tests {
     use harbcore::config::*;
     use harbcore::entities::tasks::TaskKind;
 
-    #[async_std::test]
+    #[tokio::test]
     #[ignore = "debug manual only"]
     async fn can_run_metrics() -> Result<(), Error> {
         let cx = dev_context(None).map_err(|e| Error::Config(e.to_string()))?;
@@ -169,5 +169,79 @@ mod tests {
             .execute(&mut task)
             .await
             .map_err(|e| Error::Fisma(e.to_string()))
+    }
+
+    #[async_std::test]
+    #[ignore = "debug manual only"]
+    async fn can_debug_metrics() -> Result<(), Error> {
+        let cx = dev_context(None).map_err(|e| Error::Config(e.to_string()))?;
+        let token = ion_channel_token().map_err(|e| Error::Config(e.to_string()))?;
+        let org_id = ion_channel_org_id().map_err(|e| Error::Config(e.to_string()))?;
+        let store = Arc::new(
+            Store::new(&cx)
+                .await
+                .map_err(|e| Error::Config(e.to_string()))?,
+        );
+        let packages = PackageService::new(store.clone());
+        let ionchannel = IonChannelService::new(store.clone(), token.clone(), org_id.clone());
+
+        println!("==> fetching packages");
+
+        // Retrieve the list of Packages.
+        let packages: Vec<Package> = match packages
+            .query(HashMap::from([(
+                "kind",
+                format!("{}", PackageKind::Dependency).as_str(),
+            )]))
+            .await
+        {
+            Ok(packages) => packages,
+            Err(e) => {
+                return Err(Error::Snyk(format!("run::{}", e)));
+            }
+        };
+
+        let total = packages.len();
+        println!("==> processing metrics for {} packages...", total);
+
+        let mut iteration = 0;
+
+        for package in packages.iter() {
+            iteration += 1;
+
+            let purl = match &package.purl {
+                None => {
+                    continue;
+                }
+                Some(purl) => purl.as_str(),
+            };
+
+            let mut result = match ionchannel
+                .debug_metrics(None, Some(purl.clone()), None)
+                .await
+            {
+                Ok(r) => r,
+                Err(e) => {
+                    println!(
+                        "==> error processing metrics iteration {}: {}",
+                        iteration, e
+                    );
+                    errors.insert(purl.to_string(), e.to_string());
+                    continue;
+                }
+            };
+
+            match ionchannel.insert(&mut result).await {
+                Ok(_) => {}
+                Err(e) => {
+                    println!(
+                        "==> error processing metrics iteration {}: {}",
+                        iteration, e
+                    );
+                }
+            }
+        }
+
+        Ok(())
     }
 }

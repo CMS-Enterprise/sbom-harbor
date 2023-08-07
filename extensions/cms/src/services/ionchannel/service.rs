@@ -1,4 +1,5 @@
 use platform::persistence::mongodb::{Context, Service, Store};
+use platform::testing::persistence::mongodb::DebugEntity;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -16,6 +17,12 @@ pub struct IonChannelService {
 }
 
 impl Service<Metric> for IonChannelService {
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
+    }
+}
+
+impl Service<DebugEntity> for IonChannelService {
     fn store(&self) -> Arc<Store> {
         self.store.clone()
     }
@@ -43,6 +50,26 @@ impl IonChannelService {
         };
 
         response.to_metrics()
+    }
+
+    pub async fn debug_metrics(
+        &self,
+        repo_id: Option<&str>,
+        package_id: Option<&str>,
+        product_id: Option<&str>,
+    ) -> Result<DebugEntity, Error> {
+        let response = match self
+            .client
+            .debug_metrics(repo_id, package_id, product_id)
+            .await
+        {
+            Ok(metrics) => metrics,
+            Err(e) => {
+                return Err(Error::IonChannel(e.to_string()));
+            }
+        };
+
+        Ok(response)
     }
 
     /// Save a set of metrics to the data store.

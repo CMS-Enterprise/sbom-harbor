@@ -4,6 +4,7 @@ use platform::hyper::{ContentType, Method, StatusCode};
 use platform::json;
 use platform::json::sanitize_ndjson;
 use platform::persistence::mongodb::MongoDocument;
+use platform::testing::persistence::mongodb::DebugEntity;
 use platform::{hyper, mongo_doc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -124,6 +125,42 @@ impl Client {
             )),
             Some(r) => Ok(r),
         }
+    }
+
+    pub async fn debug_metrics(
+        &self,
+        repo_id: Option<&str>,
+        package_id: Option<&str>,
+        product_id: Option<&str>,
+    ) -> Result<DebugEntity, Error> {
+        let token = self.token();
+        let (status_code, body) = self
+            .inner
+            .raw(
+                Method::POST,
+                "https://api.ionchannel.io/v1/score/getMetricsForEntity",
+                ContentType::Json,
+                token.as_str(),
+                Some(MetricsRequest {
+                    repo_id: repo_id.map(|id| id.to_string()),
+                    package_id: package_id.map(|id| id.to_string()),
+                    product_id: product_id.map(|id| id.to_string()),
+                }),
+            )
+            .await
+            .map_err(|e| Error::IonChannel(e.to_string()))?;
+
+        if status_code != StatusCode::OK {
+            return Err(Error::IonChannel(
+                "ion-channel failed to list metrics".to_string(),
+            ));
+        }
+
+        Ok(DebugEntity {
+            id: "".to_string(),
+            kind: Some("ionchannel".to_string()),
+            data: Some(body),
+        })
     }
 }
 
