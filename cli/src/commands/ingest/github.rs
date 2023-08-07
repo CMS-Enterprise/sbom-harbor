@@ -98,8 +98,9 @@ mod test {
             snyk_args: None,
         };
 
-        Ok(execute(&ingest_args)
-            .await
-            .expect("Panic at github ingest provider execute!"))
+        execute(&ingest_args)
+        .await
+        .expect("Panic at github ingest provider execute!");
+        Ok(())
     }
 }

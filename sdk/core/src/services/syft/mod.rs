@@ -404,7 +404,6 @@ mod test {
         sub_path: Option<String>,
     ) {
         let purl = test_component.purl.unwrap();
-
         assert!(purl.contains(full_name.as_str()));
         assert!(purl.contains(commit_hash.as_str()));
         assert!(purl.contains(purl_type.unwrap().as_str()));
@@ -449,7 +448,7 @@ mod test {
         let (full_name, commit_hash, purl_type, cataloger, sub_path) = get_test_data(None);
 
         let created_metadata = ensure_purl_in_metadata(
-            sbom.clone(),
+            sbom,
             full_name.clone(),
             commit_hash.clone(),
             Some(cataloger.clone()),
@@ -473,7 +472,7 @@ mod test {
         let (full_name, commit_hash, purl_type, cataloger, sub_path) = get_test_data(None);
 
         let created_metadata = ensure_purl_in_metadata(
-            sbom.clone(),
+            sbom,
             full_name.clone(),
             commit_hash.clone(),
             Some(cataloger.clone()),
@@ -505,7 +504,7 @@ mod test {
         let sbom: Bom = get_test_bom(Some(Box::new(metadata)));
 
         let created_metadata = ensure_purl_in_metadata(
-            sbom.clone(),
+            sbom,
             full_name.clone(),
             commit_hash.clone(),
             Some(cataloger.clone()),
@@ -705,9 +704,9 @@ mod test {
         let syft = Syft::new(repo_loc.clone());
 
         let syft_result = syft.execute(
-            full_name.to_string(),
-            commit_hash.to_string(),
-            Some(cataloger.clone()),
+            full_name,
+            commit_hash,
+            Some(cataloger),
             None,
         );
 

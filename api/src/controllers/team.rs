@@ -89,15 +89,9 @@ impl TeamInsert {
 pub async fn post(
     _claims: Claims,
     State(service): State<DynTeamService>,
-    Json(team): Json<Team>,
+    Json(team): Json<TeamInsert>,
 ) -> Result<Json<Team>, Error> {
-    if !team.id.is_empty() {
-        return Err(Error::InvalidParameters(
-            "client generated id invalid".to_string(),
-        ));
-    }
-
-    let mut team = team;
+    let mut team: Team = team.to_entity()?;
 
     service
         .insert(&mut team)

@@ -103,7 +103,7 @@ async fn test_add_document() {
             match svc.find(id.as_str()).await {
                 Ok(opt) => match opt {
                     Some(doc) => {
-                        assert_eq!(id, doc.id.clone());
+                        assert_eq!(id, doc.id);
                         assert_eq!(last_hash, doc.last_hash.unwrap());
                     }
                     None => panic!("No value in Option: Missing GitHubSbomProviderEntry"), // test panic

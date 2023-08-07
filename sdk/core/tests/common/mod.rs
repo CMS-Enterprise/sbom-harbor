@@ -20,7 +20,7 @@ impl Scenario {
                 let cx = dev_context(None)?;
                 Arc::new(Store::new(&cx).await?)
             }
-            Some(s) => s.clone(),
+            Some(s) => s,
         };
 
         Ok(Self { store })
@@ -43,7 +43,7 @@ impl Scenario {
             {
                 Ok(_) => Ok(entity.clone()),
                 Err(e) => {
-                    return Err(Error::Entity(e.to_string()));
+                    Err(Error::Entity(e.to_string()))
                 }
             }
         })
@@ -65,7 +65,7 @@ impl Scenario {
             {
                 Ok(_) => Ok(()),
                 Err(e) => {
-                    return Err(Error::Entity(e.to_string()));
+                    Err(Error::Entity(e.to_string()))
                 }
             }
         })

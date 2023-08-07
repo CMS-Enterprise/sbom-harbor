@@ -9,7 +9,7 @@ use harbcore::testing::sbom_fixture_path;
 use harbor_api::app::{app, Config};
 use harbor_api::Error;
 use http::Method;
-use mime;
+
 use platform::persistence::mongodb::{MongoDocument, Store};
 use serde::Serialize;
 use serde_json::json;

@@ -206,22 +206,22 @@ mod tests {
             assert!(!result.starts_with('-'));
             assert!(!result.ends_with('-'));
             assert!(!result.contains("--"));
-            assert!(!result.contains("@"));
+            assert!(!result.contains('@'));
             assert!(!result.contains('/'));
             assert!(!result.contains("//"));
-            assert!(!result.contains("."));
-            assert!(!result.contains(","));
-            assert!(!result.contains("+"));
-            assert!(!result.contains("^"));
-            assert!(!result.contains("#"));
-            assert!(!result.contains("$"));
-            assert!(!result.contains("!"));
-            assert!(!result.contains("%"));
-            assert!(!result.contains("*"));
-            assert!(!result.contains("("));
-            assert!(!result.contains(")"));
-            assert!(!result.contains("{"));
-            assert!(!result.contains("}"));
+            assert!(!result.contains('.'));
+            assert!(!result.contains(','));
+            assert!(!result.contains('+'));
+            assert!(!result.contains('^'));
+            assert!(!result.contains('#'));
+            assert!(!result.contains('$'));
+            assert!(!result.contains('!'));
+            assert!(!result.contains('%'));
+            assert!(!result.contains('*'));
+            assert!(!result.contains('('));
+            assert!(!result.contains(')'));
+            assert!(!result.contains('{'));
+            assert!(!result.contains('}'));
         }
 
         Ok(())

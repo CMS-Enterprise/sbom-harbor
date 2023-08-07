@@ -179,6 +179,6 @@ mod tests {
 
         service
             .remove_clone(clone_path.as_str())
-            .expect(format!("Unable to remove clone path: {}", clone_path).as_str());
+            .unwrap_or_else(|_| panic!("Unable to remove clone path: {}", clone_path));
     }
 }

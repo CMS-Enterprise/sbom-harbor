@@ -44,7 +44,7 @@ async fn can_validate_insert_product() -> Result<(), Error> {
         Err(e) => errors.push(e.to_string()),
     }
 
-    assert!(errors.is_empty(), "{}", errors.join("\n").to_string());
+    assert!(errors.is_empty(), "{}", errors.join("\n"));
 
     Ok(())
 }
@@ -58,7 +58,7 @@ fn product_service(store: Arc<Store>) -> ProductService {
             Some(Box::new(FileSystemStorageProvider::new(
                 "/tmp/harbor/sboms".to_string(),
             ))),
-            Some(PackageService::new(store.clone())),
+            Some(PackageService::new(store)),
         ))),
     )
 }
