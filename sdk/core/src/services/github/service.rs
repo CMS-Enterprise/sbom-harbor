@@ -125,6 +125,24 @@ impl MongoService<Commit> for GitHubService {
 
     /// Insert a document into a [Collection].
     async fn insert<'a>(&self, doc: &mut Commit) -> Result<(), PlatformError> {
+
+        if doc.id.is_empty() {
+            return Err(
+                PlatformError::Mongo(
+                    String::from("==> commit::id::empty")
+                )
+            )
+        }
+
+
+        if doc.url.is_empty() {
+            return Err(
+                PlatformError::Mongo(
+                    String::from("==> commit::url::empty")
+                )
+            )
+        }
+
         self.store.insert(doc).await?;
         Ok(())
     }
