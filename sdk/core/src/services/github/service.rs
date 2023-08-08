@@ -15,7 +15,7 @@ use platform::Error as PlatformError;
 pub struct GitHubService {
     org: String,
     client: GitHubClient,
-    pub(crate) store: Arc<Store>
+    store: Arc<Store>
 }
 
 /// Impl for GitHubSbomProvider
@@ -23,7 +23,7 @@ impl GitHubService {
     /// new method sets the organization for the struct
     pub fn new(org: String, pat: String, store: Arc<Store>) -> Self {
         let client = GitHubClient::new(pat);
-        GitHubService {
+        Self {
             org,
             client,
             store

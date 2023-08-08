@@ -100,7 +100,7 @@ impl TaskProvider for SyncTask {
 
 impl Service<Task> for SyncTask {
     fn store(&self) -> Arc<Store> {
-        self.github.store.clone()
+        self.github.store()
     }
 }
 
