@@ -24,7 +24,6 @@ lazy_static! {
 mod tests {
     use crate::config::{dev_context, snyk_token};
     use crate::entities::tasks::{Task, TaskKind};
-    use crate::services::github::mongo::GitHubProviderMongoService;
     use crate::services::github::service::GitHubService;
     use crate::services::packages::PackageService;
     use crate::services::sboms::{FileSystemStorageProvider, SbomService};
@@ -59,15 +58,13 @@ mod tests {
         let token = snyk_token()?;
         let cx = dev_context(None)?;
         let store = Arc::new(Store::new(&cx).await?);
-        let mongo_service = GitHubProviderMongoService::new(store.clone());
         let package_service = PackageService::new(store.clone());
         let storage = Box::new(FileSystemStorageProvider::new(
             "/tmp/harbor-debug/sboms/github".to_string(),
         ));
 
         let provider = SyncTask::new(
-            mongo_service,
-            GitHubService::new(org, token),
+            GitHubService::new(org, token, store.clone()),
             SbomService::new(store, Some(storage), Some(package_service)),
         )?;
 
