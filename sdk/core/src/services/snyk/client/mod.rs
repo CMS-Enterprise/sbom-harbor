@@ -20,7 +20,7 @@ const V1_URL: &str = "https://snyk.io/api/v1";
 const V3_URL: &str = "https://api.snyk.io/rest";
 const ORGS_ROUTE: &str = "/orgs";
 
-fn orgs_url() -> String {
+pub fn orgs_url() -> String {
     format!("{}{}", V1_URL, ORGS_ROUTE)
 }
 
@@ -35,7 +35,7 @@ fn issues_url(org_id: &str, purl: &str) -> String {
     format!("{}{}", V3_URL, route)
 }
 
-fn projects_url(org_id: &str) -> String {
+pub fn projects_url(org_id: &str) -> String {
     let route = format!("/orgs/{}/projects?version={}", org_id, API_VERSION);
     format!("{}{}", V3_URL, route)
 }

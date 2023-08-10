@@ -1,29 +1,14 @@
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 use std::sync::Arc;
 use serde_derive::{Deserialize, Serialize};
-/// Rust structs that represent the models/schemas relevant to the endpoints the client supports from
-/// the Snyk OpenAPI specification.
-
 use serde_json::Value;
-
 use platform::{hyper, mongo_doc};
 use platform::hyper::ContentType;
 use platform::persistence::mongodb::{MongoDocument, Service as MongoService, Store as MongoStore};
 use crate::services::snyk::API_VERSION;
 use crate::Error;
+use crate::services::snyk::client::{orgs_url, projects_url};
 
-const V1_URL: &str = "https://snyk.io/api/v1";
-const V3_URL: &str = "https://api.snyk.io/rest";
-const ORGS_ROUTE: &str = "/orgs";
-
-fn orgs_url() -> String {
-    format!("{}{}", V1_URL, ORGS_ROUTE)
-}
-
-fn projects_url(org_id: &str) -> String {
-    let route = format!("/orgs/{}/projects?version={}", org_id, API_VERSION);
-    format!("{}{}", V3_URL, route)
-}
 
 /// A purpose build Snyk HTTP Client.
 #[derive(Debug)]
@@ -81,8 +66,11 @@ impl Client {
     }
 }
 
-struct SnykValue(value);
-mongo_doc!(SnykValue);
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct EnrichedSnykOrg {
+    id: String
+}
+mongo_doc!(EnrichedSnykOrg);
 
 #[derive(Clone, Debug)]
 pub struct DbSvc {
@@ -90,26 +78,9 @@ pub struct DbSvc {
 }
 
 // #[async_trait]
-impl MongoService<Value> for DbSvc {
+impl MongoService<EnrichedSnykOrg> for DbSvc {
     fn store(&self) -> Arc<MongoStore> {
         self.store.clone()
-    }
-}
-
-/// Struct to define a GitHub Commit
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct EnrichedSnykOrg {
-    pub id: String,
-    pub org: Value,
-}
-mongo_doc!(EnrichedSnykOrg);
-
-impl EnrichedSnykOrg {
-    fn new(slug: String, org: Value) -> Self {
-        Self {
-            id: slug,
-            org
-        }
     }
 }
 
@@ -162,8 +133,10 @@ mod tests {
                 .unwrap().get("data").unwrap().as_array().unwrap();
             let combined_org_and_projects = combine((*map).clone(), (*projects_arr).clone());
             let mut org_value = Value::Object(combined_org_and_projects);
-            db_svc.insert(&mut org_value).await.expect("Error inserting EnrichedSnykOrg...");
-            break;
+
+            println!("Inserting: {}", slug);
+            db_svc.store().insert_serde("EnrichedSnykOrgs", &mut org_value)
+                .await.expect("Error inserting EnrichedSnykOrg...");
         }
 
         Ok(())

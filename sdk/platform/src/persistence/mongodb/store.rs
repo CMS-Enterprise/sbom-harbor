@@ -3,6 +3,7 @@ use mongodb::bson::{doc, Bson, Document, SerializerOptions};
 use mongodb::{bson, Client, Collection, Database};
 use std::collections::HashMap;
 use std::fmt::Debug;
+use serde_json::Value;
 use tracing::instrument;
 
 use crate::persistence::mongodb::{Context, MongoDocument};
@@ -111,6 +112,20 @@ impl Store {
         D: MongoDocument,
     {
         let collection = self.collection::<D>();
+        let result = collection.insert_one(doc, None).await?;
+
+        match result.inserted_id {
+            Bson::ObjectId(_) => Ok(()),
+            _ => Err(Error::Insert("invalid result id format".to_string())),
+        }
+    }
+
+    /// Insert an item in Mongo.
+    #[instrument]
+    pub async fn insert_serde(&self, collection: &str, doc: &Value) -> Result<(), Error> {
+
+        let database = self.database();
+        let collection = database.collection::<Value>(collection);
         let result = collection.insert_one(doc, None).await?;
 
         match result.inserted_id {
