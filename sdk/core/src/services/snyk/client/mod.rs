@@ -1,6 +1,7 @@
 /// Rust structs that represent the models/schemas relevant to the endpoints the client supports from
 /// the Snyk OpenAPI specification.
 pub mod models;
+mod rawclient;
 
 use tracing::debug;
 
