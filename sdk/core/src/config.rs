@@ -118,3 +118,20 @@ impl DocDbConfig {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::Error;
+
+    #[test]
+    fn can_get_bucket() -> Result<(), Error> {
+        let bucket = std::env::var("TEST_ENVAR").map_err(|e| Error::Config(e.to_string()))?;
+
+        println!("{}", bucket);
+
+        assert!(!bucket.is_empty());
+
+        Ok(())
+    }
+}

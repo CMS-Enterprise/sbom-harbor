@@ -4,12 +4,10 @@ use platform::hyper::{ContentType, Method, StatusCode};
 use platform::json;
 use platform::json::sanitize_ndjson;
 use platform::persistence::mongodb::MongoDocument;
-use platform::testing::persistence::mongodb::DebugEntity;
 use platform::{hyper, mongo_doc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_with::skip_serializing_none;
-use uuid::Uuid;
 
 use crate::Error;
 
@@ -133,33 +131,48 @@ impl Client {
         package_id: Option<&str>,
         product_id: Option<&str>,
     ) -> Result<DebugEntity, Error> {
+        let context = package_id.unwrap();
         let token = self.token();
-        let (status_code, body) = self
-            .inner
-            .raw(
-                Method::POST,
-                "https://api.ionchannel.io/v1/score/getMetricsForEntity",
-                ContentType::Json,
-                token.as_str(),
-                Some(MetricsRequest {
-                    repo_id: repo_id.map(|id| id.to_string()),
-                    package_id: package_id.map(|id| id.to_string()),
-                    product_id: product_id.map(|id| id.to_string()),
-                }),
-            )
-            .await
-            .map_err(|e| Error::IonChannel(e.to_string()))?;
+        // let (status_code, body) = self
+        //     .inner
+        //     .raw(
+        //         Method::POST,
+        //         "https://api.ionchannel.io/v1/score/getMetricsForEntity",
+        //         ContentType::Json,
+        //         token.as_str(),
+        //         Some(MetricsRequest {
+        //             repo_id: repo_id.map(|id| id.to_string()),
+        //             package_id: package_id.map(|id| id.to_string()),
+        //             product_id: product_id.map(|id| id.to_string()),
+        //         }),
+        //     )
+        //     .await
+        //     .map_err(|e| Error::IonChannel(e.to_string()))?;
+        //
+        // if status_code != StatusCode::OK {
+        //     return Err(Error::IonChannel(
+        //         "ion-channel failed to list metrics".to_string(),
+        //     ));
+        // }
 
-        if status_code != StatusCode::OK {
-            return Err(Error::IonChannel(
-                "ion-channel failed to list metrics".to_string(),
-            ));
-        }
+        let result = self.metrics(repo_id, package_id, product_id).await?;
+        let body = serde_json::to_string(&result)?;
+
+        // Attempt to convert to a MetricsResponse. If not possible, then just keep raw string.
+        // let data = match result.data { //serde_json::from_str::<MetricsResponse>(body.as_str()) {
+        //     Ok(r) => r.data.clone(),
+        //     Err(e) => {
+        //         eprintln!("error converting metrics response: {}", body);
+        //         None
+        //     }
+        // };
 
         Ok(DebugEntity {
             id: "".to_string(),
             kind: Some("ionchannel".to_string()),
-            data: Some(body),
+            context: Some(context.to_string()),
+            data: result.data.clone(),
+            raw: Some(body),
         })
     }
 }
@@ -349,6 +362,39 @@ pub struct Binding {
     pub attribute: Option<String>,
     /// Data source of the metric.
     pub source: Option<String>,
+}
+
+mongo_doc!(DebugEntity);
+
+/// Type to persist arbitrary data structures to mongo for development and debugging.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct DebugEntity {
+    /// Unique id required by framework.
+    pub id: String,
+    /// Free text discriminator to allow filtering types during local debugging.
+    pub kind: Option<String>,
+    /// Useful for keeping track of arbitrary context values for the request being debugged.
+    pub context: Option<String>,
+    /// The deserialized target entity.
+    pub data: Option<MetricsResult>,
+    /// Provides a way to return the raw result string if conversion to the generic type fails.
+    pub raw: Option<String>,
+}
+
+mongo_doc!(DebugMetric);
+/// Type to persist arbitrary data structures to mongo for development and debugging.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct DebugMetric {
+    /// Unique id required by framework.
+    pub id: String,
+    /// Free text discriminator to allow filtering types during local debugging.
+    pub kind: Option<String>,
+    /// Useful for keeping track of arbitrary context values for the request being debugged.
+    pub context: Option<String>,
+    /// The deserialized target entity.
+    pub data: Option<Metric>,
+    /// Error when retrieving metrics.
+    pub err: Option<String>,
 }
 
 #[cfg(test)]

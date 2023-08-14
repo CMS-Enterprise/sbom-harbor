@@ -18,6 +18,9 @@ pub enum Error {
     /// IonChannel provider error.
     #[error("ion channel provider: {0}")]
     IonChannel(String),
+    /// Serde error.
+    #[error("serde error: {0}")]
+    Serde(#[from] serde_json::Error),
     /// Snyk service error.
     #[error("snyk provider: {0}")]
     Snyk(String),

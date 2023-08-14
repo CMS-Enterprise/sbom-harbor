@@ -147,6 +147,7 @@ impl TaskProvider for IonChannelTask {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::services::ionchannel::{DebugEntity, DebugMetric};
     use crate::Error;
     use harbcore::config::*;
     use harbcore::entities::tasks::TaskKind;
@@ -216,30 +217,57 @@ mod tests {
                 Some(purl) => purl.as_str(),
             };
 
-            let mut result = match ionchannel
-                .debug_metrics(None, Some(purl.clone()), None)
-                .await
-            {
+            println!("==> processing iteration {} for purl {}", iteration, purl);
+
+            let mut result = match ionchannel.metrics(None, Some(purl.clone()), None).await {
                 Ok(r) => r,
                 Err(e) => {
                     println!(
                         "==> error processing metrics iteration {}: {}",
                         iteration, e
                     );
-                    errors.insert(purl.to_string(), e.to_string());
+
+                    let mut debug = DebugMetric {
+                        id: "".to_string(),
+                        kind: Some("ionchannel".to_string()),
+                        context: Some(purl.to_string()),
+                        data: None,
+                        err: Some(e.to_string()),
+                    };
+                    match ionchannel.insert(&mut debug).await {
+                        Ok(_) => {}
+                        Err(e) => {
+                            println!(
+                                "==> error inserting metrics error iteration {}: {}",
+                                iteration, e
+                            );
+                        }
+                    }
                     continue;
                 }
             };
 
-            match ionchannel.insert(&mut result).await {
-                Ok(_) => {}
-                Err(e) => {
-                    println!(
-                        "==> error processing metrics iteration {}: {}",
-                        iteration, e
-                    );
+            for m in result {
+                let mut debug = DebugMetric {
+                    id: "".to_string(),
+                    kind: Some("ionchannel".to_string()),
+                    context: Some(purl.to_string()),
+                    data: Some(m),
+                    err: None,
+                };
+
+                match ionchannel.insert(&mut debug).await {
+                    Ok(_) => {}
+                    Err(e) => {
+                        println!(
+                            "==> error processing metrics iteration {}: {}",
+                            iteration, e
+                        );
+                    }
                 }
             }
+
+            println!("==> success iteration {} for purl {}", iteration, purl);
         }
 
         Ok(())

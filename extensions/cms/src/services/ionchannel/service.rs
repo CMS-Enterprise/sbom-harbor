@@ -1,5 +1,4 @@
 use platform::persistence::mongodb::{Context, Service, Store};
-use platform::testing::persistence::mongodb::DebugEntity;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -23,6 +22,12 @@ impl Service<Metric> for IonChannelService {
 }
 
 impl Service<DebugEntity> for IonChannelService {
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
+    }
+}
+
+impl Service<DebugMetric> for IonChannelService {
     fn store(&self) -> Arc<Store> {
         self.store.clone()
     }
