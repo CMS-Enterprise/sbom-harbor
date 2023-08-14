@@ -73,8 +73,7 @@ impl StorageProvider for FileSystemStorageProvider {
         let file_name = format!("{}-{}.json", provider, make_file_name_safe(purl)?);
         let file_path = format!("{}/{}", self.out_dir, file_name);
 
-        let json_raw = serde_json::to_string(vulnerabilities)
-            .map_err(|e| Error::Serde(format!("write::to_string::{}", e)))?;
+        let json_raw = serde_json::to_string(vulnerabilities).map_err(Error::Serde)?;
 
         match std::fs::write(file_path.as_str(), json_raw) {
             Ok(_) => {}
@@ -122,8 +121,7 @@ impl StorageProvider for S3StorageProvider {
 
         let object_key = format!("vulnerabilities-{}-{}", provider, to_safe_object_key(purl)?);
 
-        let json_raw = serde_json::to_vec(vulnerabilities)
-            .map_err(|e| Error::Serde(format!("write::to_string::{}", e)))?;
+        let json_raw = serde_json::to_vec(vulnerabilities).map_err(Error::Serde)?;
 
         // TODO: Add checksum to vulnerabilities files and relate Sboms to Vulnerabilities.
         let reader = BufReader::new(json_raw.as_slice());

@@ -95,8 +95,8 @@ mod test {
         };
 
         execute(&ingest_args)
-        .await
-        .expect("Panic at github ingest provider execute!");
+            .await
+            .expect("Panic at github ingest provider execute!");
         Ok(())
     }
 }

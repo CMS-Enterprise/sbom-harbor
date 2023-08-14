@@ -60,6 +60,21 @@ impl Store {
         database.collection::<D>(D::collection().as_str())
     }
 
+    /// Drop collection.  Necessary to re-construct collections
+    /// to build data sets.
+    pub async fn drop_collection<D>(&self) -> Result<(), Error>
+    where
+        D: MongoDocument,
+    {
+        let database = self.database();
+        let collection = database.collection::<D>(D::collection().as_str());
+        collection
+            .drop(None)
+            .await
+            .map_err(|err| Error::Mongo(err.to_string()))?;
+        Ok(())
+    }
+
     /// Find the first item that matches the id and is allowed.
     #[instrument]
     pub async fn find<D>(&self, id: &str) -> Result<Option<D>, Error>

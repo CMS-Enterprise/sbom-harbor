@@ -1,21 +1,20 @@
-use std::sync::Arc;
-use async_trait::async_trait;
 use crate::services::github::client::{Client as GitHubClient, Repo};
 use crate::services::github::error::Error;
+use crate::services::github::Commit;
+use async_trait::async_trait;
 use platform::git::Service as Git;
+use platform::persistence::mongodb::Service as MongoService;
 use platform::persistence::mongodb::Store;
 use platform::str::get_random_string;
-use crate::services::github::Commit;
-use platform::persistence::mongodb::Service as MongoService;
 use platform::Error as PlatformError;
-
+use std::sync::Arc;
 
 /// Definition of the GitHubProvider
 #[derive(Debug)]
 pub struct GitHubService {
     org: String,
     client: GitHubClient,
-    store: Arc<Store>
+    store: Arc<Store>,
 }
 
 /// Impl for GitHubSbomProvider
@@ -23,11 +22,7 @@ impl GitHubService {
     /// new method sets the organization for the struct
     pub fn new(org: String, pat: String, store: Arc<Store>) -> Self {
         let client = GitHubClient::new(pat);
-        Self {
-            org,
-            client,
-            store
-        }
+        Self { org, client, store }
     }
 
     /// Use the GitHub Client to get all of the repositories
@@ -125,22 +120,12 @@ impl MongoService<Commit> for GitHubService {
 
     /// Insert a document into a [Collection].
     async fn insert<'a>(&self, doc: &mut Commit) -> Result<(), PlatformError> {
-
         if doc.id.is_empty() {
-            return Err(
-                PlatformError::Mongo(
-                    String::from("==> commit::id::empty")
-                )
-            )
+            return Err(PlatformError::Mongo(String::from("==> commit::id::empty")));
         }
 
-
         if doc.url.is_empty() {
-            return Err(
-                PlatformError::Mongo(
-                    String::from("==> commit::url::empty")
-                )
-            )
+            return Err(PlatformError::Mongo(String::from("==> commit::url::empty")));
         }
 
         self.store.insert(doc).await?;
@@ -150,12 +135,12 @@ impl MongoService<Commit> for GitHubService {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    use crate::config::dev_context;
     use crate::services::github::error::Error;
     use crate::services::github::service::GitHubService;
     use platform::config::from_env;
     use platform::persistence::mongodb::Store;
-    use crate::config::dev_context;
+    use std::sync::Arc;
 
     async fn test_store() -> Arc<Store> {
         let ctx = dev_context(None).unwrap();
@@ -176,7 +161,7 @@ mod tests {
         let service = GitHubService::new(
             String::from("harbor-test-org"),
             test_pat,
-            test_store().await
+            test_store().await,
         );
 
         service
@@ -202,7 +187,7 @@ mod tests {
         let service = GitHubService::new(
             String::from("harbor-test-org"),
             test_pat,
-            test_store().await
+            test_store().await,
         );
 
         let repos = service.get_repos().await;
@@ -224,7 +209,7 @@ mod tests {
         let service = GitHubService::new(
             String::from("harbor-test-org"),
             test_pat.clone(),
-            test_store().await
+            test_store().await,
         );
 
         let clone_path = match service.clone_repo(repo, Some(test_pat)) {

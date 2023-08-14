@@ -95,11 +95,7 @@ impl SyncTask {
     }
 
     /// Generates an [Sbom] and associated types from a Snyk [Project].
-    pub(crate) async fn process_target(
-        &self,
-        task: &Task,
-        project: &Project,
-    ) -> Result<(), Error> {
+    pub(crate) async fn process_target(&self, task: &Task, project: &Project) -> Result<(), Error> {
         if project.status == ProjectStatus::Inactive {
             self.handle_inactive(project)?;
             return Ok(());

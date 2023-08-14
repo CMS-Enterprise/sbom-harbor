@@ -85,6 +85,8 @@ pub enum VulnerabilityProviderKind {
     IonChannel,
     /// Snyk provider.
     Snyk,
+    /// Purl2Cpe provider.
+    Purl2Cpe,
     /// Custom provider.
     Custom(String),
 }
@@ -95,6 +97,7 @@ impl Display for VulnerabilityProviderKind {
             VulnerabilityProviderKind::Epss => write!(f, "epss"),
             VulnerabilityProviderKind::IonChannel => write!(f, "ion-channel"),
             VulnerabilityProviderKind::Snyk => write!(f, "snyk"),
+            VulnerabilityProviderKind::Purl2Cpe => write!(f, "purl2cpe"),
             VulnerabilityProviderKind::Custom(name) => write!(f, "custom-{}", name),
         }
     }

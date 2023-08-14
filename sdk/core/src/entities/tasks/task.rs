@@ -1,4 +1,5 @@
 use crate::entities::analytics::AnalyticProviderKind;
+use crate::entities::datasets::ConstructionProviderKind;
 use crate::entities::enrichments::VulnerabilityProviderKind;
 use crate::entities::sboms::SbomProviderKind;
 use crate::Error;
@@ -98,6 +99,8 @@ pub enum TaskKind {
     Extension(String),
     /// [Task] was performed to execute an Analytic.
     Analytics(AnalyticProviderKind),
+    /// [Task] was performed to construct a data set
+    Construction(ConstructionProviderKind),
 }
 
 impl Display for TaskKind {
@@ -107,6 +110,7 @@ impl Display for TaskKind {
             TaskKind::Sbom(kind) => write!(f, "sbom::{}", kind),
             TaskKind::Extension(name) => write!(f, "extension::{}", name),
             TaskKind::Analytics(kind) => write!(f, "analytic::{}", kind),
+            TaskKind::Construction(kind) => write!(f, "construction::{}", kind),
         }
     }
 }

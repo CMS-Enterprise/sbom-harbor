@@ -1,3 +1,4 @@
+use crate::services::purl2cpe::service::Error as Purl2CpeError;
 use thiserror::Error;
 
 /// Represents all exposed Errors for this crate.
@@ -27,9 +28,12 @@ pub enum Error {
     /// Sbom provider error.
     #[error("sbom provider error: {0}")]
     Sbom(String),
+    /// Serialization error
+    #[error(transparent)]
+    Serde(#[from] serde_json::Error),
     /// Serialization error.
-    #[error("serialization error: {0}")]
-    Serde(String),
+    #[error(transparent)]
+    SerdeYaml(#[from] serde_yaml::Error),
     /// GitHub provider error.
     #[error("github error: {0}")]
     GitHub(String),
@@ -48,6 +52,12 @@ pub enum Error {
     /// Sbom Scorecard processing error
     #[error("Sbom Scorecard processing error: {0}")]
     SbomScorecard(String),
+    /// Error from IO
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    /// Error from platform Git service
+    #[error(transparent)]
+    Purl2Cpe(#[from] Purl2CpeError),
 }
 
 impl From<platform::Error> for Error {

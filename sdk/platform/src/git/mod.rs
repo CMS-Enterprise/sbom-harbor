@@ -7,6 +7,7 @@ use git2::{Repository, TreeWalkResult};
 use std::path::Path;
 
 /// Git Service
+#[derive(Debug)]
 pub struct Service {
     /// This value is the url of the repository
     repo_url: String,

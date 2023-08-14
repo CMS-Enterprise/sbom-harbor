@@ -116,7 +116,7 @@ fn create_component_name(full_name: String, sub_path_opt: Option<String>) -> Str
 
     if let Some(sub_path) = sub_path_opt {
         if !sub_path.is_empty() {
-            return format!("{}:{}", namespace_and_name, sub_path)
+            return format!("{}:{}", namespace_and_name, sub_path);
         }
     }
 
@@ -140,10 +140,8 @@ fn ensure_purl_in_metadata(
                 Some(component) => {
                     let mut unboxed_component = *component;
 
-                    unboxed_component.name = create_component_name(
-                        full_name.clone(),
-                        sub_path.clone()
-                    );
+                    unboxed_component.name =
+                        create_component_name(full_name.clone(), sub_path.clone());
 
                     if unboxed_component.purl.is_none() {
                         let purl = generate_purl(full_name, version, cataloger, sub_path);
@@ -251,16 +249,10 @@ impl Service {
         };
 
         let output: String = String::from_utf8_lossy(&output.stdout).to_string();
-        let mut sbom: Bom = Bom::parse(output.as_str(), CdxFormat::Json)
-            .map_err(Error::Core)?;
+        let mut sbom: Bom = Bom::parse(output.as_str(), CdxFormat::Json).map_err(Error::Core)?;
 
-        let metadata = ensure_purl_in_metadata(
-            sbom.clone(),
-            full_name,
-            version,
-            cataloger,
-            sub_path
-        );
+        let metadata =
+            ensure_purl_in_metadata(sbom.clone(), full_name, version, cataloger, sub_path);
 
         sbom.metadata = Some(Box::new(metadata));
 
@@ -393,7 +385,7 @@ pub enum Error {
 
     /// Handle errors from core functions
     #[error(transparent)]
-    Core(#[from] CoreError)
+    Core(#[from] CoreError),
 }
 
 /// Module for testing
@@ -409,7 +401,10 @@ mod test {
     use crate::entities::cyclonedx::{Bom, Component, Metadata};
     use crate::entities::sboms::{Author, CdxFormat, Sbom};
     use crate::entities::xrefs::{Xref, XrefKind};
-    use crate::services::syft::{create_component, create_metadata, ensure_purl_in_metadata, generate_purl, Error, Service as Syft, CATALOGERS, create_component_name};
+    use crate::services::syft::{
+        create_component, create_component_name, create_metadata, ensure_purl_in_metadata,
+        generate_purl, Error, Service as Syft, CATALOGERS,
+    };
     use crate::testing::sbom_raw;
 
     fn test_created_component(
@@ -744,17 +739,12 @@ mod test {
 
         let syft = Syft::new(repo_loc.clone());
 
-        let syft_result = syft.execute(
-            full_name,
-            commit_hash,
-            Some(cataloger),
-            None,
-        );
+        let syft_result = syft.execute(full_name, commit_hash, Some(cataloger), None);
 
         Git::remove_clone(repo_loc.as_str()).map_err(|err| Error::Syft(format!("{}", err)))?;
 
-        let sbom = Bom::parse(syft_result.unwrap().as_str(), CdxFormat::Json)
-            .map_err(Error::Core)?;
+        let sbom =
+            Bom::parse(syft_result.unwrap().as_str(), CdxFormat::Json).map_err(Error::Core)?;
 
         let metadata = sbom.metadata.unwrap();
         let component = metadata.component.unwrap();
@@ -800,8 +790,7 @@ mod test {
                         Some(trimmed_pom_path.to_string()),
                     );
 
-                    let sbom = Bom::parse(sbom.as_str(), CdxFormat::Json)
-                        .map_err(Error::Core)?;
+                    let sbom = Bom::parse(sbom.as_str(), CdxFormat::Json).map_err(Error::Core)?;
 
                     let metadata = sbom.metadata.unwrap();
                     let component = metadata.component.unwrap();
