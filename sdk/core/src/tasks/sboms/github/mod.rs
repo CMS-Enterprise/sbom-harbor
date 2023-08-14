@@ -16,6 +16,7 @@ lazy_static! {
             ("python-index-cataloger", vec!["requirements.txt"]),
             ("ruby-gemfile-cataloger", vec!["Gemfile"]),
             ("rust-cargo-lock-cataloger", vec!["Cargo.lock"]),
+            ("go-mod-file-cataloger", vec!["go.mod"]),
         ])
     };
 }
