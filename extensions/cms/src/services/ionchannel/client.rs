@@ -5,7 +5,7 @@ use platform::json;
 use platform::json::sanitize_ndjson;
 use platform::persistence::mongodb::MongoDocument;
 use platform::{hyper, mongo_doc};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::json;
 use serde_with::skip_serializing_none;
 
@@ -65,11 +65,15 @@ impl Client {
             .inner
             .raw(
                 Method::POST,
-                "https://api.ionchannel.io/v1/report/getSBOM?sbom_type=CycloneDX&include_dependencies=true&team_top_level=false",
+                "https://api.ionchannel.io/v1/report/getSBOM",
                 ContentType::Json,
                 &self.token(),
                 Some(SbomRequest {
                     sbom_id: id.to_string(),
+                    minify: true,
+                    sbom_type: "CycloneDX".to_string(),
+                    include_dependencies: true,
+                    team_top_level: false,
                 }),
             )
             .await
@@ -79,14 +83,13 @@ impl Client {
             return Err(Error::IonChannel(response.0.to_string()));
         }
 
+        // let response: SbomResponse = serde_json::from_str(response.1.as_str())?;
+
         let obj = json!(response.1);
-        let _data = obj[0].clone();
-        let raw = match obj[0]["data"].as_str() {
+        let raw = match obj.as_str() {
             None => return Err(Error::IonChannel("sbom_data_none".to_string())),
             Some(e) => e,
         };
-
-        // let raw = sanitize_ndjson(raw).map_err(|e| Error::IonChannel(e.to_string()))?;
 
         let bom = Bom::parse(raw, CdxFormat::Json).map_err(|e| Error::IonChannel(e.to_string()))?;
 
@@ -208,6 +211,10 @@ pub struct Software {
 #[skip_serializing_none]
 pub struct SbomRequest {
     pub sbom_id: String,
+    pub minify: bool,
+    pub sbom_type: String,
+    pub include_dependencies: bool,
+    pub team_top_level: bool,
 }
 
 /// Response to a SBOM_ENDPOINT request.
