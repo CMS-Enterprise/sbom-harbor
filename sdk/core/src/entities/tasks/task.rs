@@ -71,6 +71,8 @@ impl Task {
 
     /// Add an error string for a specific target.
     pub fn ref_errs(&mut self, target_id: String, err: String) {
+        let target_id = platform::persistence::s3::to_safe_object_key(target_id.as_str())
+            .unwrap_or(format!("invalid-target-id-{}", uuid::Uuid::new_v4()));
         match self.ref_errs.clone() {
             None => {
                 self.ref_errs = Some(HashMap::from([(target_id, err)]));
