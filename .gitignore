@@ -47,6 +47,6 @@ sdk/skaffold/generated
 sdk/generators/third-party/cyclonedx.yaml
 sdk/generators/third-party/snyk.json
 
-
 /devenv/
+**/*.pem
 

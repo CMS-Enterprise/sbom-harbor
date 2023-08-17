@@ -48,7 +48,7 @@ pub fn dev_context(db_name: Option<&str>) -> Result<Context, Error> {
 
 /// Returns a Context specific to the Harbor teams deployment environment.
 pub fn harbor_context() -> Result<Context, Error> {
-    let raw_config = match from_env("DOCDB_CONFIG") {
+    let raw_config = match from_env("DB_CONFIG") {
         None => {
             return Err(Error::Config("DocumentDB config not set".to_string()));
         }
