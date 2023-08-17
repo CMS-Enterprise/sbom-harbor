@@ -11,6 +11,11 @@ There is no guarantee of stable interfaces or backward compatability at this tim
 thrilled to have additional contributors and end-users, but we want to make sure you are aware
 of that before you decide to invest your time and resources.
 
+## Security
+
+For more information about our Security, Vulnerability, and Responsible
+Disclosure Policies, see [SECURITY.md](SECURITY.md).
+
 ## Developer System Requirements
 
 - [Rust toolchain](https://www.rust-lang.org/tools/install)
@@ -19,6 +24,8 @@ of that before you decide to invest your time and resources.
 - [docker compose](https://docs.docker.com/compose/install/) (optional - used for local environment)
 - [GitLeaks](https://github.com/gitleaks/gitleaks/tree/master#installing)
 - [pre-commit](https://pre-commit.com/index.html#install)
+- [direnv](https://direnv.net/)
+- [aws cli](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 
 ## Environment
 
@@ -48,6 +55,12 @@ support the `docker-compose` configuration found in the `sdk/devenv` folder.
   "username":"<redacted>"
 }
 ```
+
+Secrets are programattically pulled into the environment via `direnv` and the script in `sdk/devenv/.envrc`. On the terminal, when you `cd sdk/devenv`, the `direnv` shell extension will automatically load the secrets into the  necessary environment variables. Once you change to another directory they will be automatically unloaded.
+1. Copy `sdk/devenv/.env.example` into `sdk/devenv/.env`
+2. Add values for the aws profile and secret names
+3. `cd sdk/devenv`
+4. `direnv allow .`
 
 ## Getting Started as a Contributor
 

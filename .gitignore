@@ -39,6 +39,7 @@ extensions/*
 sdk/api/bundle.json
 sdk/api/output.json
 sdk/devenv/mongodb/
+sdk/devenv/.env
 sdk/skaffold/generated
 **/.openapi-generator/
 
@@ -47,4 +48,5 @@ sdk/generators/third-party/cyclonedx.yaml
 sdk/generators/third-party/snyk.json
 
 
-devenv/
+/devenv/
+
