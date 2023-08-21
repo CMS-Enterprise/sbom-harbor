@@ -38,6 +38,8 @@ pub struct Cli {
 /// The set of supported Commands.
 #[derive(Debug, Subcommand)]
 pub enum Commands {
-    /// Fisma command - synchronizes FISMA IDs with Primary packages.
+    /// Synchronizes FISMA IDs with Primary packages.
     Fisma(commands::fisma::FismaArgs),
+    /// Exports data to S3 for processing by the ETL backend.
+    Export(commands::export::ExportArgs),
 }

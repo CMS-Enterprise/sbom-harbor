@@ -7,6 +7,7 @@ async fn main() -> Result<(), Error> {
 
     match &cli.command {
         Some(Commands::Fisma(args)) => commands::fisma::execute(args).await,
+        Some(Commands::Export(args)) => commands::export::execute(args).await,
         _ => {
             println!("command not found");
             std::process::exit(1);

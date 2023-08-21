@@ -72,37 +72,6 @@ fn limit_1() -> Stage {
     }))
 }
 
-/// Adds the Fisma Xref from the xrefs vector as a field on the document.
-fn fisma_xref_array() -> Stage {
-    Stage::new(json!({
-        "$addFields": {
-          "fismaXref": {
-            "$filter": {
-                    "input": "$xrefs",
-                    "as": "xref",
-                    "cond": {
-                        "$eq": [
-                            "$$xref.kind",
-                            "external::fisma"
-                        ]
-                    }
-                }
-          },
-        }
-    }))
-}
-
-/// Adds the first element of the Xref array as a field on the document.
-fn fisma_xref() -> Stage {
-    Stage::new(json!({
-        "$addFields": {
-          "fismaId": {
-            "$arrayElemAt": ["$fismaXref", 0],
-          },
-        }
-    }))
-}
-
 /// Stage 2 in the Report analytic
 fn report_analytic_stage_2() -> Stage {
     // Notice in that we are completing the extraction of the FISMA ID from the previous step, in
@@ -117,7 +86,6 @@ fn report_analytic_stage_2() -> Stage {
             "packageManager": 1,
             "provider": 1,
             "dependencyRefs": 1,
-            "fismaId": "$fismaId.map.id" // project the id from the map
         }
     }))
 }
@@ -181,9 +149,6 @@ fn report_analytic_stage_6() -> Stage {
           },
           "created": {
             "$first": "$created"
-          },
-          "fismaId": {
-            "$first": "$fismaId"
           },
           "report": {
             "$push": "$report",
@@ -259,9 +224,6 @@ fn report_analytic_stage_11() -> Stage {
             },
             "created": {
                 "$first": "$created"
-            },
-            "fismaId": {
-                "$first": "$fismaId"
             },
             "report": {
                 "$push": {
@@ -340,7 +302,6 @@ impl AnalyticService {
     pub(crate) async fn generate_detail(&self, purl: String) -> Result<Option<String>, Error> {
         println!("==> pipeline stages on enter {}", self.pipeline.len());
         self.pipeline.clear();
-        println!("==> pipeline stages after clear {}", self.pipeline.len());
 
         self.pipeline
             .add_stage(report_analytic_stage_1(purl.clone()));
@@ -348,10 +309,6 @@ impl AnalyticService {
         self.pipeline.add_stage(sort_by_timestamp_desc());
 
         self.pipeline.add_stage(limit_1());
-
-        self.pipeline.add_stage(fisma_xref_array());
-
-        self.pipeline.add_stage(fisma_xref());
 
         self.pipeline.add_stage(report_analytic_stage_2());
 
@@ -512,8 +469,6 @@ mod tests {
             service.pipeline.add_stage(report_analytic_stage_1(purl));
             service.pipeline.add_stage(sort_by_timestamp_desc());
             service.pipeline.add_stage(limit_1());
-            service.pipeline.add_stage(fisma_xref_array());
-            service.pipeline.add_stage(fisma_xref());
             service.pipeline.add_stage(report_analytic_stage_2());
             service.pipeline.add_stage(report_analytic_stage_3());
             service.pipeline.add_stage(report_analytic_stage_4_and_7());
