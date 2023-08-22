@@ -6,6 +6,9 @@ pub enum Error {
     /// Configuration error.
     #[error("config: {0}")]
     Config(String),
+    /// Export provider error.
+    #[error("fisma provider: {0}")]
+    Export(String),
     /// Fisma provider error.
     #[error("fisma provider: {0}")]
     Fisma(String),
