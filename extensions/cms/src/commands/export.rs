@@ -1,8 +1,13 @@
 use clap::Parser;
 use harbcore::entities::tasks::{Task, TaskKind};
+use harbcore::services::analytics::{
+    FileSystemStorageProvider, S3StorageProvider, StorageProvider,
+};
 use harbcore::tasks::TaskProvider;
+use platform::persistence::mongodb::Store;
+use std::sync::Arc;
 
-use crate::tasks::fisma::FismaTask;
+use crate::tasks::export::{ExportService, ExportTask};
 use crate::Error;
 
 /// Specifies the CLI args for the Export command.
@@ -15,26 +20,38 @@ pub struct ExportArgs {
 
 /// The Export Command handler.
 pub async fn execute(args: &ExportArgs) -> Result<(), Error> {
+    let storage: Arc<dyn StorageProvider>;
+
     let cx = match &args.debug {
-        false => harbcore::config::harbor_context().map_err(|e| Error::Config(e.to_string()))?,
-        true => harbcore::config::dev_context(None).map_err(|e| Error::Config(e.to_string()))?,
+        false => {
+            storage = Arc::new(S3StorageProvider {});
+            harbcore::config::harbor_context().map_err(|e| Error::Config(e.to_string()))?
+        }
+        true => {
+            storage = Arc::new(FileSystemStorageProvider::new(
+                "/tmp/harbor-debug/extensions/export".to_string(),
+            ));
+            harbcore::config::dev_context(None).map_err(|e| Error::Config(e.to_string()))?
+        }
     };
 
-    let token = std::env::var("SNYK_TOKEN")
-        .map_err(|e| Error::Config(e.to_string()))
-        .unwrap();
+    let store = Arc::new(
+        Store::new(&cx)
+            .await
+            .map_err(|e| Error::Export(e.to_string()))?,
+    );
 
-    let mut task = Task::new(TaskKind::Extension("fisma".to_string()))
-        .map_err(|e| Error::Fisma(e.to_string()))?;
+    let service = ExportService::new(store, storage);
 
-    let provider = FismaTask::new(cx, token)
-        .await
-        .map_err(|e| Error::Fisma(e.to_string()))?;
+    let mut task = Task::new(TaskKind::Extension("export".to_string()))
+        .map_err(|e| Error::Export(e.to_string()))?;
+
+    let provider = ExportTask::new(service);
 
     provider
         .execute(&mut task)
         .await
-        .map_err(|e| Error::Fisma(e.to_string()))
+        .map_err(|e| Error::Export(e.to_string()))
 }
 
 #[cfg(test)]
