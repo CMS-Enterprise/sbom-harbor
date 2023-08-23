@@ -54,7 +54,7 @@ impl TaskProvider for SyncTask {
         let total = ids_and_purls_with_null_cpe.len();
         println!("==> found {} dependant packages with a null cpe.", total);
         task.count = total as u64;
-        <SyncTask as Service<Task>>::store(&self).update(task).await
+        <SyncTask as Service<Task>>::store(self).update(task).await
             .map_err(|err| Error::Task(err.to_string()))?;
 
         for id_and_purl in ids_and_purls_with_null_cpe.clone() {
