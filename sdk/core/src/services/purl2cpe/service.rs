@@ -74,7 +74,59 @@ fn find_cpe(version: String, cpes: Vec<String>) -> Option<String> {
     final_cpe
 }
 
+fn error_result(msg: &str) -> Result<Option<String>, Error> {
+    Err(Error::Purl2Cpe(String::from(msg)))
+}
+
 impl Purl2CpeService {
+    async fn do_find(&self, purl: String, version: Option<String>) -> Result<Option<String>, Error> {
+
+        // If there are percent encoded chars in the purl, like
+        // the at-sign for npm packages, we need to decode the string
+        // so that it matches what is in the Purl2Cpe Collection
+        let decoded_purl_str = decode(purl.as_str()).map_err(Error::PercentEncoding)?;
+
+        match self.store.find::<Purl2Cpes>(decoded_purl_str.deref()).await {
+            // If the database is erroring out, then we can't go on.
+            Err(err) => {
+                return error_result(
+                    format!("==> unable to get cpe, database error: {}", err).as_str(),
+                )
+            }
+
+            // The Database gave us a response
+            Ok(option) => match option {
+                // The response was empty
+                None => {
+                    println!(
+                        "==> unable to get cpe for purl({}), database response is empty",
+                        purl
+                    );
+
+                    Ok(None)
+                }
+
+                // The response had CPEs!
+                Some(purl_2_cpes) => {
+                    let cpes: Vec<String> = purl_2_cpes.cpes;
+
+                    // If there is only one cpe, then return it.
+                    if cpes.len() == 1 {
+                        let cpe = cpes.get(0).unwrap().to_owned();
+                        return Ok(Some(cpe));
+                    }
+
+                    let version_str = match version {
+                        None => String::from("*"),
+                        Some(version) => version,
+                    };
+
+                    Ok(find_cpe(version_str, cpes))
+                }
+            },
+        }
+    }
+
     /// Creates a new Purl2CpeService
     pub fn new(store: Arc<Store>) -> Self {
         Purl2CpeService { store }
@@ -108,9 +160,6 @@ impl Purl2CpeService {
 
     /// Method to get a cpe for a purl
     pub async fn get_cpe(&self, full_purl: String) -> Result<Option<String>, Error> {
-        fn error_result(msg: &str) -> Result<Option<String>, Error> {
-            Err(Error::Purl2Cpe(String::from(msg)))
-        }
 
         let at_sign = '@';
 
@@ -118,105 +167,28 @@ impl Purl2CpeService {
             return error_result("==> unable to process, purl is empty");
         }
 
-        return if full_purl.contains(at_sign) {
-            let full_purl: Vec<&str> = full_purl.split(at_sign).collect();
-            let purl = full_purl.first();
-            let version = String::from(*full_purl.get(1).unwrap());
+        match full_purl.contains(at_sign) {
+            false => self.do_find(full_purl, None).await,
+            true => {
+                let full_purl: Vec<&str> = full_purl.split(at_sign).collect();
+                let purl = full_purl.first();
+                let version = String::from(*full_purl.get(1).unwrap());
 
-            let purl_str = match purl {
-                Some(purl_str) => {
-                    println!(
-                        "==> purl({}) contains version({})",
-                        purl_str,
-                        version.clone()
-                    );
-                    *purl_str
-                }
-                None => {
-                    return error_result("==> unable to get cpe, purl is None while unwrapping")
-                }
-            };
-
-            // If there are percent encoded chars in the purl, like
-            // the at-sign for npm packages, we need to decode the string
-            // so that it matches what is in the Purl2Cpe Collection
-            let decoded_purl_str = decode(purl_str).map_err(Error::PercentEncoding)?;
-
-            match self.store.find::<Purl2Cpes>(decoded_purl_str.deref()).await {
-                // If the database is erroring out, then we can't go on.
-                Err(err) => {
-                    return error_result(
-                        format!("==> unable to get cpe, database error: {}", err).as_str(),
-                    )
-                }
-
-                // The Database gave us a response
-                Ok(option) => match option {
-                    // The response was empty
-                    None => {
+                let purl_str = match purl {
+                    None => return error_result("==> unable to get cpe, purl is None"),
+                    Some(purl_str) => {
                         println!(
-                            "==> unable to get cpe for purl({}), database response is empty",
-                            purl_str
+                            "==> purl({}) contains version({})",
+                            purl_str,
+                            version.clone()
                         );
-
-                        Ok(None)
+                        *purl_str
                     }
+                }.to_string();
 
-                    // The response had CPEs!
-                    Some(purl_2_cpes) => {
-                        let cpes: Vec<String> = purl_2_cpes.cpes;
-
-                        // If there is only one cpe, then return it.
-                        if cpes.len() == 1 {
-                            let cpe = cpes.get(0).unwrap().to_owned();
-                            return Ok(Some(cpe));
-                        }
-
-                        Ok(find_cpe(version, cpes))
-                    }
-                },
+                self.do_find(purl_str, Some(version)).await
             }
-        } else {
-            // If there are percent encoded chars in the purl, like
-            // the at-sign for npm packages, we need to decode the string
-            // so that it matches what is in the Purl2Cpe Collection
-            let decoded_purl_str = decode(full_purl.as_str()).map_err(Error::PercentEncoding)?;
-
-            match self.store.find::<Purl2Cpes>(decoded_purl_str.deref()).await {
-                // If the database is erroring out, then we can't go on.
-                Err(err) => {
-                    return error_result(
-                        format!("==> unable to get cpe, database error: {}", err).as_str(),
-                    )
-                }
-
-                // The Database gave us a response
-                Ok(option) => match option {
-                    // The response was empty
-                    None => {
-                        println!(
-                            "==> unable to get cpe for purl({}), database response is empty",
-                            full_purl
-                        );
-
-                        Ok(None)
-                    }
-
-                    // the response had CPEs!
-                    Some(purl_2_cpes) => {
-                        let cpes: Vec<String> = purl_2_cpes.cpes;
-
-                        // If there is only one cpe, then return it.
-                        if cpes.len() == 1 {
-                            let cpe = cpes.get(0).unwrap().to_owned();
-                            return Ok(Some(cpe));
-                        }
-
-                        Ok(find_cpe(String::from("*"), cpes))
-                    }
-                },
-            }
-        };
+        }
     }
 
     /// Clones the purl2cpe repository at:
