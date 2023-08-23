@@ -55,8 +55,7 @@ pub fn harbor_context() -> Result<Context, Error> {
         Some(raw_config) => raw_config,
     };
 
-    let cfg: DocDbConfig = serde_json::from_str(raw_config.as_str())
-        .map_err(|e| Error::Serde(format!("invalid DocumentDB config::{}", e)))?;
+    let cfg: DocDbConfig = serde_json::from_str(raw_config.as_str()).map_err(Error::Serde)?;
 
     Ok(cfg.to_context())
 }

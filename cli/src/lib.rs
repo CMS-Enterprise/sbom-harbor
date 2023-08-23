@@ -29,6 +29,8 @@ pub struct Cli {
 /// The set of supported Commands.
 #[derive(Debug, Subcommand)]
 pub enum Commands {
+    /// Construct a data set
+    Construct(commands::construct::ConstructArgs),
     /// Enrich an SBOM.
     Enrich(commands::enrich::EnrichArgs),
     /// Ingest one or more SBOMs from a directory or from an external SBOM Provider.

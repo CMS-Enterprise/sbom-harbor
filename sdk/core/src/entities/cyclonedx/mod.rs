@@ -32,10 +32,7 @@ impl Bom {
     pub fn parse(raw: &str, format: CdxFormat) -> Result<Bom, Error> {
         match format {
             CdxFormat::Json => {
-                let bom = serde_json::from_str::<Bom>(raw).map_err(|e| {
-                    Error::Serde(format!("error serializing CycloneDx SBOM - {}", e))
-                })?;
-
+                let bom = serde_json::from_str::<Bom>(raw).map_err(Error::Serde)?;
                 Ok(bom)
             }
             CdxFormat::Xml => Err(Error::Runtime("CycloneDx XML not supported".to_string())),

@@ -42,9 +42,7 @@ impl Scenario {
                 .map_err(|e| Error::Entity(e.to_string()))
             {
                 Ok(_) => Ok(entity.clone()),
-                Err(e) => {
-                    Err(Error::Entity(e.to_string()))
-                }
+                Err(e) => Err(Error::Entity(e.to_string())),
             }
         })
     }
@@ -64,9 +62,7 @@ impl Scenario {
                 .map_err(|e| Error::Entity(e.to_string()))
             {
                 Ok(_) => Ok(()),
-                Err(e) => {
-                    Err(Error::Entity(e.to_string()))
-                }
+                Err(e) => Err(Error::Entity(e.to_string())),
             }
         })
     }

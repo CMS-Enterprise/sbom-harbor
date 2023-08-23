@@ -31,3 +31,6 @@ pub mod enrichments;
 
 /// Models for Analytics
 pub mod analytics;
+
+/// Models for data set construction
+pub mod datasets;

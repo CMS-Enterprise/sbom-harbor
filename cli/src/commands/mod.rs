@@ -9,3 +9,6 @@ pub mod analyze;
 
 /// Contains functions to support the `health` Command.
 pub mod health;
+
+/// Contains the types and functions to support the `construct` command
+pub mod construct;

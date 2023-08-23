@@ -3,6 +3,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 
+use crate::entities::datasets::PurlPlusId;
 use crate::services::analytics::StorageProvider;
 use crate::Error;
 use platform::mongo_doc;
@@ -243,13 +244,13 @@ fn report_analytic_stage_11() -> Stage {
 /// Service to create and run analytics on DocumentDB
 pub struct AnalyticService {
     pub(crate) store: Arc<MongoStore>,
-    pub(crate) storage: Arc<dyn StorageProvider>,
+    pub(crate) storage: Option<Arc<dyn StorageProvider>>,
     pub(crate) pipeline: Pipeline,
 }
 
 impl AnalyticService {
     /// Creates a new AnalyticService
-    pub fn new(store: Arc<MongoStore>, storage: Arc<dyn StorageProvider>) -> Self {
+    pub fn new(store: Arc<MongoStore>, storage: Option<Arc<dyn StorageProvider>>) -> Self {
         let pipeline = Pipeline::new(store.clone());
 
         AnalyticService {
@@ -298,6 +299,61 @@ impl AnalyticService {
         }
     }
 
+    /// Method to get dependent packages that have a null cpe.
+    pub async fn get_dependant_package_purls_with_null_cpe(
+        &self,
+    ) -> Result<Vec<PurlPlusId>, Error> {
+        // Analytic is executed on the "Package" collection
+        let collection = "Package";
+
+        // Make sure the pipeline is clear. Is this necessary?
+        self.pipeline.clear();
+
+        // ==> Add the stages
+
+        // Get all of the documents that are dependencies and have a null `cpe` field.
+        // from the "Package" collection.
+        self.pipeline.add_stage(Stage::new(
+            json!({ "$match": { "kind": "dependency", "cpe": null } }),
+        ));
+
+        // Project only the purl field and ignore the rest of the other fields
+        self.pipeline
+            .add_stage(Stage::new(json!({ "$project": { "purl": 1, "id": 1 } })));
+
+        // Group all of the documents into a single document by pushing all of the
+        // purls into an array called "purls"
+        self.pipeline.add_stage(Stage::new(json!({ "$group":
+            { "_id": "", "purls": { "$push": { "id": "$id", "purl": "$purl" } } }
+        })));
+
+        // Execute the Analytic and return the Serde Value object
+        let json = match self.pipeline.execute_on(collection).await {
+            Ok(json) => json,
+            Err(err) => {
+                return Err(Error::Analytic(format!(
+                    "Problem executing analytic: {}",
+                    err
+                )))
+            }
+        };
+
+        if json.as_object().unwrap().is_empty() {
+            return Ok(vec![])
+        }
+
+        // Deserialize the Serde Value object into this ad-hoc struct
+        #[derive(Deserialize, Debug)]
+        struct DeserializedValue {
+            purls: Vec<PurlPlusId>,
+        }
+        let deserialized_value =
+            serde_json::from_value::<DeserializedValue>(json).map_err(Error::Serde)?;
+
+        // Return the Vector of purls
+        Ok(deserialized_value.purls)
+    }
+
     /// Generates a Detail Analytic Report. Specification is here:
     pub(crate) async fn generate_detail(&self, purl: String) -> Result<Option<String>, Error> {
         println!("==> pipeline stages on enter {}", self.pipeline.len());
@@ -342,11 +398,12 @@ impl AnalyticService {
 
         println!("==> pipeline stages after execute {}", self.pipeline.len());
 
-        match self
-            .storage
-            .write(purl.as_str(), json, "detailed-report")
-            .await
-        {
+        let storage = match self.storage.clone() {
+            Some(storage) => storage,
+            None => return Err(Error::Analytic(String::from("No storage provider set"))),
+        };
+
+        match storage.write(purl.as_str(), json, "detailed-report").await {
             Ok(path) => Ok(Some(path)),
             Err(e) => Err(Error::Analytic(format!(
                 "vulnerability::store_by_purl::write::{}",
@@ -400,6 +457,28 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "debug manual only"]
+    async fn test_get_dependant_package_purls_with_null_cpe() {
+        // Mock store and storage provider
+        let cxt: &Context = &test_context(Some("harbor")).expect("Unable to create a test context");
+        let raw_store = MongoStore::new(cxt)
+            .await
+            .expect("Unable to unwrap MongoStore");
+        let store = Arc::new(raw_store);
+        let storage = Arc::new(MockStorageProvider);
+
+        // Create AnalyticService
+        let analytic_service = AnalyticService::new(store, Some(storage));
+
+        let purls: Vec<PurlPlusId> = analytic_service
+            .get_dependant_package_purls_with_null_cpe()
+            .await
+            .expect("Error getting package deps with null cpe");
+
+        println!(">>>>> Purls: {:#?}", purls)
+    }
+
+    #[tokio::test]
+    #[ignore = "debug manual only"]
     async fn test_get_primary_purls() {
         // Mock store and storage provider
         let cxt: &Context = &test_context(Some("harbor")).expect("Unable to create a test context");
@@ -410,7 +489,7 @@ mod tests {
         let storage = Arc::new(MockStorageProvider);
 
         // Create AnalyticService
-        let analytic_service = AnalyticService::new(store, storage);
+        let analytic_service = AnalyticService::new(store, Some(storage));
 
         // Execute get_primary_purls
         let result = analytic_service.get_primary_purls().await;
@@ -431,7 +510,7 @@ mod tests {
         let storage = Arc::new(MockStorageProvider);
 
         // Create AnalyticService
-        let analytic_service = AnalyticService::new(store, storage);
+        let analytic_service = AnalyticService::new(store, Some(storage));
 
         // Execute generate_detail
         let result = analytic_service
@@ -453,7 +532,7 @@ mod tests {
             .await
             .expect("Unable to unwrap MongoStore");
         let store = Arc::new(raw_store);
-        let storage = Arc::new(MockStorageProvider);
+        let storage: Option<Arc<dyn StorageProvider>> = Some(Arc::new(MockStorageProvider));
 
         let service = AnalyticService {
             store: store.clone(),

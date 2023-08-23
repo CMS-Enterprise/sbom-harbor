@@ -145,7 +145,7 @@ pub(crate) struct Issue {}
 
 impl IssueSnyk {
     pub(crate) fn to_vulnerability(&self, purl: &str) -> Vulnerability {
-        let raw = match serde_json::to_string(&self).map_err(|e| Error::Serde(e.to_string())) {
+        let raw = match serde_json::to_string(&self).map_err(Error::Serde) {
             Ok(raw) => Some(raw),
             Err(_) => None,
         };

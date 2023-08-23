@@ -27,6 +27,9 @@ pub enum Error {
     /// Sbom runtime error.
     #[error("sbom: {0}")]
     Sbom(String),
+    /// Construction runtime error.
+    #[error("construction: {0}")]
+    Construction(String),
 }
 
 impl From<harbcore::Error> for Error {

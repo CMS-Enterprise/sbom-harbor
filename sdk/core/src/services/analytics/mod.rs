@@ -56,8 +56,7 @@ impl StorageProvider for FileSystemStorageProvider {
         let target_dir = format!("{}/analytic-{}", self.out_dir, provider_name);
         let file_name = get_file_name(purl)?;
         let file_path = format!("{}/{}", target_dir, file_name);
-        let json_raw = serde_json::to_string(&json)
-            .map_err(|e| Error::Serde(format!("write::to_string::{}", e)))?;
+        let json_raw = serde_json::to_string(&json).map_err(Error::Serde)?;
 
         match std::fs::create_dir_all(target_dir.clone()) {
             Ok(_) => {}
@@ -94,8 +93,7 @@ impl StorageProvider for S3StorageProvider {
         let mut object_key = get_s3_key_name(purl)?;
         object_key = format!("analytic-{}/{}", provider_name, object_key);
 
-        let json_raw = serde_json::to_vec(&json)
-            .map_err(|e| Error::Serde(format!("write::to_string::{}", e)))?;
+        let json_raw = serde_json::to_vec(&json).map_err(Error::Serde)?;
 
         let json_string = json.to_string();
         let cursor = Cursor::new(json_string.into_bytes());

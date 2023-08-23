@@ -16,6 +16,9 @@ pub mod enrichments;
 /// Contains all [TaskProvider] implementations related to ingestion tasks.
 pub mod sboms;
 
+/// Contains all [TaskProvider] implementations related to dats set construction.
+pub mod construction;
+
 /// Provides a [Template Method](https://en.wikipedia.org/wiki/Template_method_pattern) for running
 /// and logging Task operations.
 #[async_trait]

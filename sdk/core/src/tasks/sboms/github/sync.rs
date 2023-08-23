@@ -200,27 +200,22 @@ impl SyncTask {
     /* PUBLIC */
 
     /// Factory method to create new instance of type.
-    pub fn new(
-        github: GitHubService,
-        sboms: SbomService,
-    ) -> Result<SyncTask, Error> {
-        Ok(SyncTask {
-            github,
-            sboms,
-        })
+    pub fn new(github: GitHubService, sboms: SbomService) -> Result<SyncTask, Error> {
+        Ok(SyncTask { github, sboms })
     }
 
     async fn update_db(&self, last_hash: &str, url: &str) -> Result<(), Error> {
         let mut commit = Commit {
             id: String::from(last_hash),
-            url: String::from(url)
+            url: String::from(url),
         };
 
-        self.github.insert(&mut commit).await.map_err(
-            |err| Error::GitHub(format!(
+        self.github.insert(&mut commit).await.map_err(|err| {
+            Error::GitHub(format!(
                 "==> Failed to insert Commit into mongo with url: {}({})",
                 url, err
-            )))?;
+            ))
+        })?;
 
         Ok(())
     }
@@ -230,22 +225,21 @@ impl SyncTask {
         repo: &Repo,
         task: &mut Task,
     ) -> Result<Option<Vec<String>>, Error> {
-
         let (url, full_name, version, last_hash) = self.get_state_values(repo)?;
 
         match self.find_commit(last_hash.as_str()).await? {
-
             // No Commit exists in the database, so it should be processed
             None => {
-
-                println!("==> No document exists in mongo with last_hash({}), creating", last_hash);
+                println!(
+                    "==> No document exists in mongo with last_hash({}), creating",
+                    last_hash
+                );
 
                 let pat = Some(github_pat()?);
-                let clone_path = self.github
+                let clone_path = self
+                    .github
                     .clone_repo(url.as_str(), pat)
-                    .map_err(|err| Error::GitHub(
-                        format!("Error cloning Repo: {}", err)
-                    ))?;
+                    .map_err(|err| Error::GitHub(format!("Error cloning Repo: {}", err)))?;
                 let syft = Syft::new(clone_path.clone());
 
                 let mut syft_results: Vec<String> = vec![];
@@ -308,7 +302,10 @@ impl SyncTask {
                                     let syft_result_value = match syft_result {
                                         Ok(value) => value,
                                         Err(err) => {
-                                            task.ref_errs(build_target.to_string(), err.to_string());
+                                            task.ref_errs(
+                                                build_target.to_string(),
+                                                err.to_string(),
+                                            );
                                             continue;
                                         }
                                     };
@@ -348,7 +345,10 @@ impl SyncTask {
             // If a commit with that id exists already, then the repo has
             // already been processed and we can skip it.
             Some(_) => {
-                println!("==> latest commit from repo ({}) has been found, skipping", repo.html_url);
+                println!(
+                    "==> latest commit from repo ({}) has been found, skipping",
+                    repo.html_url
+                );
                 Ok(None)
             }
         }

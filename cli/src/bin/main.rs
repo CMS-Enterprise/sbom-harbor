@@ -9,6 +9,7 @@ async fn main() -> Result<(), Error> {
         Some(Commands::Ingest(ingest)) => commands::ingest::execute(ingest).await,
         Some(Commands::Analyze(analyze)) => commands::analyze::execute(analyze).await,
         Some(Commands::Health(health)) => commands::health::execute(health).await,
+        Some(Commands::Construct(construct)) => commands::construct::execute(construct).await,
         _ => {
             println!("command not found");
             std::process::exit(1);

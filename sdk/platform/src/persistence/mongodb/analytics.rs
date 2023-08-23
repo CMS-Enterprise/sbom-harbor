@@ -99,9 +99,11 @@ impl Pipeline {
             None => {
                 self.clear();
 
-                Err(Error::Mongo(String::from(
-                    "No result from DocumentDB Aggregate",
-                )))
+                // Return an Empty value - this is temporary
+                // TODO Refactor this method to return an Option<Value> rather than
+                //  an actual Value.  This way we can know fore sure that there wasn't
+                //  an Error, but an actual empty result.
+                Ok(json!({}))
             }
         }
     }

@@ -43,3 +43,6 @@ pub mod vendors;
 /// The [products] module contains domain and persistence logic related to the management of
 /// [Product] entities.
 pub mod products;
+
+/// The [purl2cpe] for exposing the service that is responsible for deriving a cpe for a purl
+pub mod purl2cpe;
