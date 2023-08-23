@@ -46,8 +46,14 @@ impl TaskProvider for ConstructionTask {
 
         println!("==> Purl2Cpes collection dropped, rebuilding...");
 
+        // Create an Errors map to return at the end of the task
         let mut errors = HashMap::<String, String>::new();
+
+        // Save the directory we start in to change back at the end
         let orig_dir = env::current_dir().map_err(Error::Io)?;
+
+        // Get the clone path for the repo we're getting the data from:
+        // https://github.com/scanoss/purl2cpe
         let clone_path = self.service.clone_purl2cpe_repo()?;
         let file_path = Path::new(&clone_path);
 
@@ -62,6 +68,13 @@ impl TaskProvider for ConstructionTask {
             .find_purl_yaml_files()
             .map_err(Error::Purl2Cpe)?;
 
+        // Update task to prepare for the data set creation
+        let total = purl_file_names.len();
+        println!("==> found {} files with a purl for lookup.", total);
+        task.count = total as u64;
+        self.store().update(task).await
+            .map_err(|err| Error::Task(err.to_string()))?;
+
         for purl_file_name in purl_file_names {
             // The cpes.yaml files are in the same directory as the purls.
             // So, all we should have to do is change the name
@@ -73,7 +86,6 @@ impl TaskProvider for ConstructionTask {
                 Ok(yaml) => yaml,
                 Err(err) => {
                     task.err_total += 1;
-                    task.ref_errs(purl_file_name.clone(), err.to_string());
                     errors.insert(purl_file_name.clone(), err.to_string());
                     continue;
                 }
@@ -86,7 +98,6 @@ impl TaskProvider for ConstructionTask {
                 Ok(yaml) => yaml,
                 Err(err) => {
                     task.err_total += 1;
-                    task.ref_errs(cpe_file_name.clone(), err.to_string());
                     errors.insert(cpe_file_name.clone(), err.to_string());
                     continue;
                 }

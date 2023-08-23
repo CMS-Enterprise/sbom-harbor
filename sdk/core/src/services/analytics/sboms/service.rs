@@ -338,6 +338,10 @@ impl AnalyticService {
             }
         };
 
+        if json.as_object().unwrap().is_empty() {
+            return Ok(vec![])
+        }
+
         // Deserialize the Serde Value object into this ad-hoc struct
         #[derive(Deserialize, Debug)]
         struct DeserializedValue {

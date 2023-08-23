@@ -22,6 +22,24 @@ pub struct SyncTask {
     purl_2_cpe_service: Purl2CpeService,
 }
 
+impl Service<Package> for SyncTask {
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
+    }
+}
+
+impl Service<Purl2Cpes> for SyncTask {
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
+    }
+}
+
+impl Service<Task> for SyncTask {
+    fn store(&self) -> Arc<Store> {
+        self.store.clone()
+    }
+}
+
 #[async_trait]
 impl TaskProvider for SyncTask {
     async fn run(&self, task: &mut Task) -> Result<HashMap<String, String>, Error> {
@@ -36,6 +54,8 @@ impl TaskProvider for SyncTask {
         let total = ids_and_purls_with_null_cpe.len();
         println!("==> found {} dependant packages with a null cpe.", total);
         task.count = total as u64;
+        <SyncTask as Service<Task>>::store(&self).update(task).await
+            .map_err(|err| Error::Task(err.to_string()))?;
 
         for id_and_purl in ids_and_purls_with_null_cpe.clone() {
             let id = id_and_purl.id.clone();
@@ -59,7 +79,6 @@ impl TaskProvider for SyncTask {
             let cpe = match cpe_opt {
                 None => {
                     println!("==> CPE for {}, id({}) is None", purl.clone(), id.clone());
-
                     task.err_total += 1;
                     errors.insert(id.clone(), format!("no_cpe_for_{}", purl.clone()));
                     String::from("unknown")
@@ -92,25 +111,9 @@ impl TaskProvider for SyncTask {
             }
         }
 
+        println!("==> finished processing Packages for purl to cpe");
+
         Ok(errors)
-    }
-}
-
-impl Service<Package> for SyncTask {
-    fn store(&self) -> Arc<Store> {
-        self.store.clone()
-    }
-}
-
-impl Service<Purl2Cpes> for SyncTask {
-    fn store(&self) -> Arc<Store> {
-        self.store.clone()
-    }
-}
-
-impl Service<Task> for SyncTask {
-    fn store(&self) -> Arc<Store> {
-        self.store.clone()
     }
 }
 
