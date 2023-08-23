@@ -33,6 +33,10 @@ impl TaskProvider for SyncTask {
             .get_dependant_package_purls_with_null_cpe()
             .await?;
 
+        let total = ids_and_purls_with_null_cpe.len();
+        println!("==> found {} dependant packages with a null cpe.", total);
+        task.count = total as u64;
+
         for id_and_purl in ids_and_purls_with_null_cpe.clone() {
             let id = id_and_purl.id.clone();
             let purl = id_and_purl.purl.clone();
@@ -45,16 +49,8 @@ impl TaskProvider for SyncTask {
 
             let cpe_opt = match self.purl_2_cpe_service.get_cpe(purl.to_string()).await {
                 Err(err) => {
-                    println!(
-                        "==> Error getting cpe for: {}, id({}): {}",
-                        purl.clone(),
-                        id.clone(),
-                        err
-                    );
-
                     task.err_total += 1;
-                    task.ref_errs(id.clone(), format!("no_cpe_for_{}", err));
-                    errors.insert(id.clone(), format!("no_cpe_for_{}", err));
+                    errors.insert(id.clone(), err.to_string());
                     continue;
                 }
                 Ok(cpe_opt) => cpe_opt,
@@ -65,10 +61,7 @@ impl TaskProvider for SyncTask {
                     println!("==> CPE for {}, id({}) is None", purl.clone(), id.clone());
 
                     task.err_total += 1;
-                    let value = format!("no_cpe_for_{}", purl.clone());
-                    task.ref_errs(id.clone(), format!("no_cpe_for_{}", value.clone()));
-                    errors.insert(id.clone(), format!("no_cpe_for_{}", value.clone()));
-
+                    errors.insert(id.clone(), format!("no_cpe_for_{}", purl.clone()));
                     String::from("unknown")
                 }
                 Some(cpe) => {
@@ -87,18 +80,8 @@ impl TaskProvider for SyncTask {
                 .await
             {
                 Err(err) => {
-                    println!(
-                        "==> Error attempting to update Package: {}, id({}), with cpe({}): {}",
-                        purl.clone(),
-                        id.clone(),
-                        cpe,
-                        err
-                    );
-
                     task.err_total += 1;
-                    let value = format!("unable_to_update_document_{}", err);
-                    task.ref_errs(id.clone(), format!("no_cpe_for_{}", value.clone()));
-                    errors.insert(id.clone(), format!("no_cpe_for_{}", value));
+                    errors.insert(id.clone(), err.to_string());
                 }
                 Ok(()) => {
                     println!(
