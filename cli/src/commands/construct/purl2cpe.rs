@@ -1,10 +1,11 @@
 use crate::commands::construct::ConstructArgs;
 use crate::Error;
-use harbcore::entities::datasets::ConstructionProviderKind;
 use harbcore::entities::tasks::{Task, TaskKind};
 use harbcore::tasks::TaskProvider;
 use platform::persistence::mongodb::Store;
 use std::sync::Arc;
+
+use harbcore::entities::datasets::ConstructionProviderKind;
 
 use harbcore::services::purl2cpe::service::Purl2CpeService;
 use harbcore::tasks::construction::dataset::purl2cpe::ConstructionTask;
