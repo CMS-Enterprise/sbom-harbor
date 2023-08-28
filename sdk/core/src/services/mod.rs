@@ -44,5 +44,10 @@ pub mod vendors;
 /// [Product] entities.
 pub mod products;
 
-/// The [purl2cpe] for exposing the service that is responsible for deriving a cpe for a purl
+/// The [purl2cpe] module is for exposing the service that is responsible for deriving a cpe for a purl
 pub mod purl2cpe;
+
+/// The [nvd] module contains domain and persistence logic for interacting with the National
+/// Vulnerability Database
+pub mod nvd;
+
