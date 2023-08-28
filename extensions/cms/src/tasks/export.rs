@@ -377,6 +377,9 @@ impl ExportService {
                 "fismaId": {
                     "$first": "$fismaId"
                 },
+                "created": {
+                    "$first": "$created"
+                },
                 "report": {
                     "$push": {
                         "name": "$report.name",
