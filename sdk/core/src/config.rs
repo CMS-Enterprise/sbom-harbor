@@ -20,6 +20,14 @@ pub fn github_pat() -> Result<String, Error> {
     }
 }
 
+/// Returns the GitHub PAT token from an environment variable.
+pub fn nvd_api_key() -> Result<String, Error> {
+    match from_env("NVD_API_KEY") {
+        None => Err(Error::Config("NVD_API_KEY is not set".to_string())),
+        Some(v) => Ok(v),
+    }
+}
+
 /// Returns the Harbor S3 bucket name.
 pub fn harbor_bucket() -> Result<String, Error> {
     match from_env("HARBOR_FILE_STORE") {

@@ -4,6 +4,7 @@ use hyper::{Body, Client as NativeClient, Request, Uri};
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use crate::hyper::token::Token;
 
 const USER_AGENT: &str = "User-Agent";
 const HARBOR: &str = "SBOM-Harbor";
@@ -12,7 +13,7 @@ const HARBOR: &str = "SBOM-Harbor";
 /// and a conventional set of abstractions over low level methods.
 #[derive(Debug)]
 pub struct Client {
-    inner: NativeClient<HttpsConnector<HttpConnector>, hyper::Body>,
+    inner: NativeClient<HttpsConnector<HttpConnector>, Body>,
 }
 
 impl Default for Client {
@@ -47,10 +48,10 @@ impl Client {
         &self,
         url: &str,
         content_type: ContentType,
-        token: &str,
+        token: Option<Token>,
         payload: Option<T>,
     ) -> Result<Option<U>, Error> {
-        self.request(Method::GET, url, content_type, String::from(token), payload)
+        self.request(Method::GET, url, content_type, token, payload)
             .await
     }
 
@@ -65,14 +66,14 @@ impl Client {
         &self,
         url: &str,
         content_type: ContentType,
-        token: &str,
+        token: Option<Token>,
         payload: Option<T>,
     ) -> Result<Option<U>, Error> {
         self.request(
             Method::POST,
             url,
             content_type,
-            String::from(token),
+            token,
             payload,
         )
         .await
@@ -89,14 +90,14 @@ impl Client {
         &self,
         url: &str,
         content_type: ContentType,
-        token: &str,
+        token: Option<Token>,
         payload: Option<T>,
     ) -> Result<Option<U>, Error> {
         self.request(
             Method::DELETE,
             url,
             content_type,
-            String::from(token),
+            token,
             payload,
         )
         .await
@@ -116,7 +117,7 @@ impl Client {
         method: Method,
         url: &str,
         content_type: ContentType,
-        token: String,
+        token: Option<Token>,
         payload: Option<T>,
     ) -> Result<Option<U>, Error> {
         let result = self.raw(method, url, content_type, token, payload).await?;
@@ -153,7 +154,7 @@ impl Client {
         method: Method,
         url: &str,
         content_type: ContentType,
-        token: String,
+        token: Option<Token>,
         payload: Option<T>,
     ) -> Result<(StatusCode, String), Error> {
         let uri: Uri = Uri::try_from(url)?;
@@ -175,8 +176,9 @@ impl Client {
             .header(USER_AGENT, HARBOR)
             .body(req_body)?;
 
-        if !token.is_empty() {
-            req.headers_mut().append("Authorization", token.parse()?);
+        if let Some(token) = token {
+            let key = token.key.leak();
+            req.headers_mut().insert(&*key, token.value.parse()?);
         }
 
         // TODO get the right status somehow
@@ -204,6 +206,7 @@ impl Client {
 mod tests {
     use crate::hyper::client::Client;
     use crate::hyper::{ContentType, Error, Method, StatusCode};
+    use crate::hyper::token::Token;
 
     #[async_std::test]
     async fn can_make_get_request() -> Result<(), Error> {
@@ -214,7 +217,7 @@ mod tests {
                 Method::GET,
                 "https://api.first.org/data/v1/epss?cve=CVE-2022-27225",
                 ContentType::Json,
-                "".to_string(),
+                None::<Token>,
                 None::<String>,
             )
             .await?;

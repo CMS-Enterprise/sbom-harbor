@@ -1,6 +1,7 @@
 use platform::hyper;
 use platform::hyper::ContentType;
 use serde::{Deserialize, Serialize};
+use platform::hyper::token::Token;
 
 use crate::Error;
 
@@ -32,7 +33,7 @@ impl Client {
             .get(
                 &org_tags_url(),
                 ContentType::Json,
-                &self.token(),
+                Some(Token::new(self.token())),
                 None::<OrgTagObjectListGetResponse>,
             )
             .await

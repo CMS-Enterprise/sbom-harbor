@@ -14,6 +14,7 @@ use models::{
     CommonIssueModel, IssuesResponse, ListOrgProjects200Response,
     ListOrgProjects200ResponseDataInner, OrgV1, OrgsResponse,
 };
+use platform::hyper::token::Token;
 
 const V1_URL: &str = "https://snyk.io/api/v1";
 const V3_URL: &str = "https://api.snyk.io/rest";
@@ -71,7 +72,7 @@ impl Client {
             .get(
                 &orgs_url(),
                 ContentType::Json,
-                &self.token(),
+                Some(Token::new(self.token.clone())),
                 None::<OrgsResponse>,
             )
             .await?;
@@ -91,7 +92,7 @@ impl Client {
             .get(
                 &projects_url(org_id),
                 ContentType::Json,
-                &self.token(),
+                Some(Token::new(self.token.clone())),
                 None::<ListOrgProjects200Response>,
             )
             .await?;
@@ -116,7 +117,7 @@ impl Client {
                 hyper::Method::GET,
                 &sbom_url(org_id, project_id, format),
                 ContentType::Json,
-                self.token(),
+                Some(Token::new(self.token.clone())),
                 None::<String>,
             )
             .await?;
@@ -147,7 +148,7 @@ impl Client {
             .get(
                 &issues_url(org_id, purl),
                 ContentType::Json,
-                &self.token(),
+                Some(Token::new(self.token.clone())),
                 None::<IssuesResponse>,
             )
             .await?;

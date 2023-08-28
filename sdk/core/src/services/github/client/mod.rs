@@ -8,6 +8,7 @@ use platform::hyper::{ContentType, Error as HyperError};
 
 use crate::services::github::Commit;
 use platform::hyper::Client as HttpClient;
+use platform::hyper::token::Token;
 
 use crate::services::github::error::Error;
 
@@ -51,7 +52,7 @@ impl Client {
             .get(
                 org_url.as_str(),
                 ContentType::Json,
-                self.token.as_str(),
+                Some(Token::new(self.token.clone())),
                 None::<String>,
             )
             .await
@@ -92,7 +93,7 @@ impl Client {
             .get(
                 github_last_commit_url.as_str(),
                 ContentType::Json,
-                self.token.as_str(),
+                Some(Token::new(self.token.clone())),
                 None::<String>,
             )
             .await;
@@ -132,7 +133,7 @@ impl Client {
             .get(
                 latest_release_url.as_str(),
                 ContentType::Json,
-                self.token.as_str(),
+                Some(Token::new(self.token.clone())),
                 None::<String>,
             )
             .await
@@ -183,7 +184,7 @@ impl Client {
             .get(
                 github_org_url.as_str(),
                 ContentType::Json,
-                self.token.as_str(),
+                Some(Token::new(self.token.clone())),
                 None::<String>,
             )
             .await;

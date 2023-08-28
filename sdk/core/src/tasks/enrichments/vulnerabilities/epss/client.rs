@@ -19,7 +19,7 @@ impl Client {
 
         let response: Option<EpssResponse> = self
             .inner
-            .get(uri.as_str(), ContentType::Json, "", None::<EpssResponse>)
+            .get(uri.as_str(), ContentType::Json, None, None::<EpssResponse>)
             .await?;
 
         let response = match response {

@@ -11,6 +11,9 @@ pub use hyper::{Method, StatusCode};
 /// Utility functions for interacting with a Hyper `HttpBody`.
 pub mod body;
 
+/// Utility to specify a token with the header key
+pub mod token;
+
 const CONTENT_TYPE: &str = "content-type";
 
 /// HTTP Content Types.

@@ -1,5 +1,6 @@
 #![feature(async_fn_in_trait)]
 #![feature(error_iter)]
+#![feature(string_leak)]
 #![allow(incomplete_features)]
 #![warn(missing_docs)]
 
