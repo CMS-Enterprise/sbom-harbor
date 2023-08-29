@@ -7,347 +7,347 @@ use uuid::Uuid;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct NvdVulnerabilityV2 {
     #[serde(rename = "resultsPerPage")]
-    results_per_page: i32,
+    pub results_per_page: i32,
     #[serde(rename = "startIndex")]
-    start_index: i32,
+    pub start_index: i32,
     #[serde(rename = "totalResults")]
-    total_results: i32,
+    pub total_results: i32,
     #[serde(rename = "format")]
-    format_str: Option<String>,
-    version: Option<String>,
-    timestamp: Option<NaiveDateTime>,
-    vulnerabilities: Option<Vec<DefCveItem>>,
+    pub format_str: Option<String>,
+    pub version: Option<String>,
+    pub timestamp: Option<NaiveDateTime>,
+    pub vulnerabilities: Option<Vec<DefCveItem>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DefCveItem {
-    cve: Option<CveItem>,
+    pub cve: Option<CveItem>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CveItem {
-    id: Option<String>,
+    pub id: Option<String>,
     #[serde(rename = "sourceIdentifier")]
-    source_identifier: Option<String>,
+    pub source_identifier: Option<String>,
     #[serde(rename = "vulnStatus")]
-    vuln_status: Option<String>,
-    published: Option<NaiveDateTime>,
+    pub vuln_status: Option<String>,
+    pub published: Option<NaiveDateTime>,
     #[serde(rename = "lastModified")]
-    last_modified: Option<NaiveDateTime>,
+    pub last_modified: Option<NaiveDateTime>,
     #[serde(rename = "evaluatorComment")]
-    evaluator_comment: Option<String>,
+    pub evaluator_comment: Option<String>,
     #[serde(rename = "evaluatorSolution")]
-    evaluator_solution: Option<String>,
+    pub evaluator_solution: Option<String>,
     #[serde(rename = "evaluatorImpact")]
-    evaluator_impact: Option<String>,
+    pub evaluator_impact: Option<String>,
     #[serde(rename = "cisaExploitAdd")]
-    cisa_exploit_add: Option<NaiveDateTime>,
+    pub cisa_exploit_add: Option<NaiveDateTime>,
     #[serde(rename = "cisaActionDue")]
-    cisa_action_due: Option<NaiveDateTime>,
+    pub cisa_action_due: Option<NaiveDateTime>,
     #[serde(rename = "cisaRequiredAction")]
-    cisa_required_action: Option<String>,
+    pub cisa_required_action: Option<String>,
     #[serde(rename = "cisaVulnerabilityName")]
-    cisa_vulnerability_name: Option<String>,
-    descriptions: Option<Vec<LangString>>,
-    references: Option<Vec<Reference>>,
-    metrics: Option<Metrics>,
-    weaknesses: Option<Vec<Weakness>>,
-    configurations: Option<Vec<Config>>,
+    pub cisa_vulnerability_name: Option<String>,
+    pub descriptions: Option<Vec<LangString>>,
+    pub references: Option<Vec<Reference>>,
+    pub metrics: Option<Metrics>,
+    pub weaknesses: Option<Vec<Weakness>>,
+    pub configurations: Option<Vec<Config>>,
     #[serde(rename = "vendorComments")]
-    vendor_comments: Option<Vec<VendorComment>>,
+    pub vendor_comments: Option<Vec<VendorComment>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LangString {
-    lang: Option<String>,
-    value: Option<String>,
+    pub lang: Option<String>,
+    pub value: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Reference {
-    url: Option<String>,
-    source: Option<String>,
-    tags: Option<Vec<String>>,
+    pub url: Option<String>,
+    pub source: Option<String>,
+    pub tags: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VendorComment {
-    organization: Option<String>,
-    comment: Option<String>,
+    pub organization: Option<String>,
+    pub comment: Option<String>,
     #[serde(rename = "lastModified")]
-    last_modified: Option<NaiveDateTime>,
+    pub last_modified: Option<NaiveDateTime>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Weakness {
-    source: Option<String>,
+    pub source: Option<String>,
     #[serde(rename = "type")]
-    type_str: Option<String>,
-    description: Option<Vec<LangString>>,
+    pub type_str: Option<String>,
+    pub description: Option<Vec<LangString>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    operator: Option<String>,
-    negate: Option<Option<bool>>,
-    nodes: Option<Vec<Node>>,
+    pub operator: Option<String>,
+    pub negate: Option<Option<bool>>,
+    pub nodes: Option<Vec<Node>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Node {
-    operator: Option<String>,
-    negate: Option<bool>,
+    pub operator: Option<String>,
+    pub negate: Option<bool>,
     #[serde(rename = "cpeMatch")]
-    cpe_match: Option<Vec<CpeMatch>>,
+    pub cpe_match: Option<Vec<CpeMatch>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CpeMatch {
-    vulnerable: Option<bool>,
-    criteria: Option<String>,
+    pub vulnerable: Option<bool>,
+    pub criteria: Option<String>,
     #[serde(rename = "matchCriteriaId")]
-    match_criteria_id: Option<Uuid>,
+    pub match_criteria_id: Option<Uuid>,
     #[serde(rename = "versionStartExcluding")]
-    version_start_excluding: Option<String>,
+    pub version_start_excluding: Option<String>,
     #[serde(rename = "versionStartIncluding")]
-    version_start_including: Option<String>,
+    pub version_start_including: Option<String>,
     #[serde(rename = "versionEndExcluding")]
-    version_end_excluding: Option<String>,
+    pub version_end_excluding: Option<String>,
     #[serde(rename = "versionEndIncluding")]
-    version_end_including: Option<String>,
+    pub version_end_including: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Metrics {
     #[serde(rename = "cvssMetricV31")]
-    cvss_metric_v31: Option<Vec<CvssV31>>,
+    pub cvss_metric_v31: Option<Vec<CvssV31>>,
     #[serde(rename = "cvssMetricV30")]
-    cvss_metric_v30: Option<Vec<CvssV30>>,
+    pub cvss_metric_v30: Option<Vec<CvssV30>>,
     #[serde(rename = "cvssMetricV2")]
-    cvss_metric_v2: Option<Vec<CvssV20>>,
+    pub cvss_metric_v2: Option<Vec<CvssV20>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Cvss {
-    source: Option<String>,
+    pub source: Option<String>,
     #[serde(rename = "type")]
-    type_str: Option<String>,
+    pub type_str: Option<String>,
     #[serde(rename = "cvssData")]
-    cvss_data: Option<HashMap<String, Value>>,
+    pub cvss_data: Option<HashMap<String, Value>>,
     #[serde(rename = "baseSeverity")]
-    base_severity: Option<String>,
+    pub base_severity: Option<String>,
     #[serde(rename = "exploitabilityScore")]
-    exploitability_score: Option<f64>,
+    pub exploitability_score: Option<f64>,
     #[serde(rename = "impactScore")]
-    impact_score: Option<f64>,
+    pub impact_score: Option<f64>,
     #[serde(rename = "acInsufInfo")]
-    ac_insuf_info: Option<bool>,
+    pub ac_insuf_info: Option<bool>,
     #[serde(rename = "obtainAllPrivilege")]
-    obtain_all_privilege: Option<bool>,
+    pub obtain_all_privilege: Option<bool>,
     #[serde(rename = "obtainUserPrivilege")]
-    obtain_user_privilege: Option<bool>,
+    pub obtain_user_privilege: Option<bool>,
     #[serde(rename = "obtainOtherPrivilege")]
-    obtain_other_privilege: Option<bool>,
+    pub obtain_other_privilege: Option<bool>,
     #[serde(rename = "userInteractionRequired")]
-    user_interaction_required: Option<bool>,
+    pub user_interaction_required: Option<bool>,
 }
 
 /* CVSS 3.1 Schema Structs */
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CvssV31 {
-    license: Option<Vec<String>>,
+    pub license: Option<Vec<String>>,
     #[serde(rename = "$schema")]
-    schema: Option<String>,
-    title: Option<String>,
+    pub schema: Option<String>,
+    pub title: Option<String>,
     #[serde(rename = "type")]
-    type_: Option<String>,
-    definitions: Option<HashMap<String, DefinitionTypeV31>>,
-    properties: Option<PropertiesV31>,
-    required: Option<Vec<String>>,
+    pub type_: Option<String>,
+    pub definitions: Option<HashMap<String, DefinitionTypeV31>>,
+    pub properties: Option<PropertiesV31>,
+    pub required: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DefinitionTypeV31 {
     #[serde(rename = "type")]
-    type_: Option<String>,
+    pub type_: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    enum_: Option<Vec<String>>,
+    pub enum_: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    minimum: Option<f64>,
+    pub minimum: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    maximum: Option<f64>,
+    pub maximum: Option<f64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PropertiesV31 {
-    version: Option<PropertyV31>,
-    vector_string: Option<PropertyV31>,
+    pub version: Option<PropertyV31>,
+    pub vector_string: Option<PropertyV31>,
     #[serde(rename = "attackVector")]
-    attack_vector: Option<PropertyReferenceV31>,
+    pub attack_vector: Option<PropertyReferenceV31>,
     #[serde(rename = "attackComplexity")]
-    attack_complexity: Option<PropertyReferenceV31>,
+    pub attack_complexity: Option<PropertyReferenceV31>,
     #[serde(rename = "privilegesRequired")]
     privileges_required: Option<PropertyReferenceV31>,
     #[serde(rename = "userInteraction")]
-    user_interaction: Option<PropertyReferenceV31>,
-    scope: Option<PropertyReferenceV31>,
+    pub user_interaction: Option<PropertyReferenceV31>,
+    pub scope: Option<PropertyReferenceV31>,
     #[serde(rename = "confidentialityImpact")]
-    confidentiality_impact: Option<PropertyReferenceV31>,
+    pub confidentiality_impact: Option<PropertyReferenceV31>,
     #[serde(rename = "integrityImpact")]
-    integrity_impact: Option<PropertyReferenceV31>,
+    pub integrity_impact: Option<PropertyReferenceV31>,
     #[serde(rename = "availabilityImpact")]
-    availability_impact: Option<PropertyReferenceV31>,
-    base_score: Option<PropertyReferenceV31>,
-    base_severity: Option<PropertyReferenceV31>,
+    pub availability_impact: Option<PropertyReferenceV31>,
+    pub base_score: Option<PropertyReferenceV31>,
+    pub base_severity: Option<PropertyReferenceV31>,
     #[serde(rename = "exploitCodeMaturity")]
-    exploit_code_maturity: Option<PropertyReferenceV31>,
+    pub exploit_code_maturity: Option<PropertyReferenceV31>,
     #[serde(rename = "remediationLevel")]
-    remediation_level: Option<PropertyReferenceV31>,
+    pub remediation_level: Option<PropertyReferenceV31>,
     #[serde(rename = "reportConfidence")]
-    report_confidence: Option<PropertyReferenceV31>,
-    temporal_score: Option<PropertyReferenceV31>,
-    temporal_severity: Option<PropertyReferenceV31>,
+    pub report_confidence: Option<PropertyReferenceV31>,
+    pub temporal_score: Option<PropertyReferenceV31>,
+    pub temporal_severity: Option<PropertyReferenceV31>,
     #[serde(rename = "confidentialityRequirement")]
-    confidentiality_requirement: Option<PropertyReferenceV31>,
+    pub confidentiality_requirement: Option<PropertyReferenceV31>,
     #[serde(rename = "integrityRequirement")]
-    integrity_requirement: Option<PropertyReferenceV31>,
+    pub integrity_requirement: Option<PropertyReferenceV31>,
     #[serde(rename = "availabilityRequirement")]
-    availability_requirement: Option<PropertyReferenceV31>,
+    pub availability_requirement: Option<PropertyReferenceV31>,
     #[serde(rename = "modifiedAttackVector")]
-    modified_attack_vector: Option<PropertyReferenceV31>,
+    pub modified_attack_vector: Option<PropertyReferenceV31>,
     #[serde(rename = "modifiedAttackComplexity")]
-    modified_attack_complexity: Option<PropertyReferenceV31>,
+    pub modified_attack_complexity: Option<PropertyReferenceV31>,
     #[serde(rename = "modifiedPrivilegesRequired")]
-    modified_privileges_required: Option<PropertyReferenceV31>,
+    pub modified_privileges_required: Option<PropertyReferenceV31>,
     #[serde(rename = "modifiedUserInteraction")]
-    modified_user_interaction: Option<PropertyReferenceV31>,
+    pub modified_user_interaction: Option<PropertyReferenceV31>,
     #[serde(rename = "modifiedScope")]
-    modified_scope: Option<PropertyReferenceV31>,
+    pub modified_scope: Option<PropertyReferenceV31>,
     #[serde(rename = "modifiedConfidentialityImpact")]
-    modified_confidentiality_impact: Option<PropertyReferenceV31>,
+    pub modified_confidentiality_impact: Option<PropertyReferenceV31>,
     #[serde(rename = "modifiedIntegrityImpact")]
-    modified_integrity_impact: Option<PropertyReferenceV31>,
+    pub modified_integrity_impact: Option<PropertyReferenceV31>,
     #[serde(rename = "modifiedAvailabilityImpact")]
-    modified_availability_impact: Option<PropertyReferenceV31>,
-    environmental_score: Option<PropertyReferenceV31>,
-    environmental_severity: Option<PropertyReferenceV31>,
+    pub modified_availability_impact: Option<PropertyReferenceV31>,
+    pub environmental_score: Option<PropertyReferenceV31>,
+    pub environmental_severity: Option<PropertyReferenceV31>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PropertyV31 {
-    description: Option<String>,
+    pub description: Option<String>,
     #[serde(rename = "type")]
-    type_: Option<String>,
+    pub type_: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    enum_: Option<Vec<String>>,
+    pub enum_: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pattern: Option<String>,
+    pub pattern: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PropertyReferenceV31 {
     #[serde(rename = "$ref")]
-    ref_: Option<String>,
+    pub ref_: Option<String>,
 }
 
 /* CVSS 3.0 Schema Structs */
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CvssV30 {
-    license: Option<Vec<String>>,
+    pub license: Option<Vec<String>>,
     #[serde(rename = "$schema")]
-    schema: Option<String>,
-    title: Option<String>,
+    pub schema: Option<String>,
+    pub title: Option<String>,
     #[serde(rename = "type")]
-    type_: Option<String>,
-    definitions: Option<HashMap<String, DefinitionTypeV30>>,
-    properties: Option<PropertiesV30>,
-    required: Option<Vec<String>>,
+    pub type_: Option<String>,
+    pub definitions: Option<HashMap<String, DefinitionTypeV30>>,
+    pub properties: Option<PropertiesV30>,
+    pub required: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DefinitionTypeV30 {
     #[serde(rename = "type")]
-    type_: Option<String>,
+    pub type_: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    enum_: Option<Vec<String>>,
+    pub enum_: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    minimum: Option<f64>,
+    pub minimum: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    maximum: Option<f64>,
+    pub maximum: Option<f64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PropertiesV30 {
-    version: Option<PropertyV30>,
-    vector_string: Option<PropertyV30>,
+    pub version: Option<PropertyV30>,
+    pub vector_string: Option<PropertyV30>,
     #[serde(rename = "attackVector")]
-    attack_vector: Option<PropertyReferenceV30>,
+    pub attack_vector: Option<PropertyReferenceV30>,
     #[serde(rename = "attackComplexity")]
-    attack_complexity: Option<PropertyReferenceV30>,
+    pub attack_complexity: Option<PropertyReferenceV30>,
     #[serde(rename = "privilegesRequired")]
-    privileges_required: Option<PropertyReferenceV30>,
+    pub privileges_required: Option<PropertyReferenceV30>,
     #[serde(rename = "userInteraction")]
-    user_interaction: Option<PropertyReferenceV30>,
-    scope: Option<PropertyReferenceV30>,
+    pub user_interaction: Option<PropertyReferenceV30>,
+    pub scope: Option<PropertyReferenceV30>,
     #[serde(rename = "confidentialityImpact")]
-    confidentiality_impact: Option<PropertyReferenceV30>,
+    pub confidentiality_impact: Option<PropertyReferenceV30>,
     #[serde(rename = "integrityImpact")]
-    integrity_impact: Option<PropertyReferenceV30>,
+    pub integrity_impact: Option<PropertyReferenceV30>,
     #[serde(rename = "availabilityImpact")]
-    availability_impact: Option<PropertyReferenceV30>,
-    base_score: Option<PropertyReferenceV30>,
-    base_severity: Option<PropertyReferenceV30>,
+    pub availability_impact: Option<PropertyReferenceV30>,
+    pub base_score: Option<PropertyReferenceV30>,
+    pub base_severity: Option<PropertyReferenceV30>,
     #[serde(rename = "exploitCodeMaturity")]
-    exploit_code_maturity: Option<PropertyReferenceV30>,
+    pub exploit_code_maturity: Option<PropertyReferenceV30>,
     #[serde(rename = "remediationLevel")]
-    remediation_level: Option<PropertyReferenceV30>,
+    pub remediation_level: Option<PropertyReferenceV30>,
     #[serde(rename = "reportConfidence")]
-    report_confidence: Option<PropertyReferenceV30>,
-    temporal_score: Option<PropertyReferenceV30>,
-    temporal_severity: Option<PropertyReferenceV30>,
+    pub report_confidence: Option<PropertyReferenceV30>,
+    pub temporal_score: Option<PropertyReferenceV30>,
+    pub temporal_severity: Option<PropertyReferenceV30>,
     #[serde(rename = "confidentialityRequirement")]
-    confidentiality_requirement: Option<PropertyReferenceV30>,
+    pub confidentiality_requirement: Option<PropertyReferenceV30>,
     #[serde(rename = "integrityRequirement")]
-    integrity_requirement: Option<PropertyReferenceV30>,
+    pub integrity_requirement: Option<PropertyReferenceV30>,
     #[serde(rename = "availabilityRequirement")]
-    availability_requirement: Option<PropertyReferenceV30>,
+    pub availability_requirement: Option<PropertyReferenceV30>,
     #[serde(rename = "modifiedAttackVector")]
-    modified_attack_vector: Option<PropertyReferenceV30>,
+    pub modified_attack_vector: Option<PropertyReferenceV30>,
     #[serde(rename = "modifiedAttackComplexity")]
-    modified_attack_complexity: Option<PropertyReferenceV30>,
+    pub modified_attack_complexity: Option<PropertyReferenceV30>,
     #[serde(rename = "modifiedPrivilegesRequired")]
-    modified_privileges_required: Option<PropertyReferenceV30>,
+    pub modified_privileges_required: Option<PropertyReferenceV30>,
     #[serde(rename = "modifiedUserInteraction")]
-    modified_user_interaction: Option<PropertyReferenceV30>,
+    pub modified_user_interaction: Option<PropertyReferenceV30>,
     #[serde(rename = "modifiedScope")]
-    modified_scope: Option<PropertyReferenceV30>,
+    pub modified_scope: Option<PropertyReferenceV30>,
     #[serde(rename = "modifiedConfidentialityImpact")]
-    modified_confidentiality_impact: Option<PropertyReferenceV30>,
+    pub modified_confidentiality_impact: Option<PropertyReferenceV30>,
     #[serde(rename = "modifiedIntegrityImpact")]
-    modified_integrity_impact: Option<PropertyReferenceV30>,
+    pub modified_integrity_impact: Option<PropertyReferenceV30>,
     #[serde(rename = "modifiedAvailabilityImpact")]
-    modified_availability_impact: Option<PropertyReferenceV30>,
-    environmental_score: Option<PropertyReferenceV30>,
-    environmental_severity: Option<PropertyReferenceV30>,
+    pub modified_availability_impact: Option<PropertyReferenceV30>,
+    pub environmental_score: Option<PropertyReferenceV30>,
+    pub environmental_severity: Option<PropertyReferenceV30>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PropertyV30 {
-    description: Option<String>,
+    pub description: Option<String>,
     #[serde(rename = "type")]
-    type_: Option<String>,
+    pub type_: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    enum_: Option<Vec<String>>,
+    pub enum_: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pattern: Option<String>,
+    pub pattern: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PropertyReferenceV30 {
     #[serde(rename = "$ref")]
-    ref_: Option<String>,
+    pub ref_: Option<String>,
 }
 
 /* CVSS 2.0 Schema Structs */

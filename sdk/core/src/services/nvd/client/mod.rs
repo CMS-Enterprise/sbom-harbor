@@ -3,7 +3,7 @@ use platform::hyper::ContentType;
 use crate::services::nvd::client::models::NvdVulnerabilityV2;
 use platform::hyper::Client as HttpClient;
 use platform::hyper::token::Token;
-use crate::services::nvd::client::Error::NvdClientError;
+use crate::services::nvd::client::Error::NvdClient;
 
 /// NVD response specific models
 mod models;
@@ -24,10 +24,11 @@ impl Client {
         }
     }
 
-    pub async fn get_page_of_vulnerabilities(&self) -> Result<NvdVulnerabilityV2, Error> {
-
-        let start_index = 0;
-        let results_per_page = 2;
+    pub async fn get_page_of_vulnerabilities(
+        &self,
+        start_index: i32,
+        results_per_page: i32
+    ) -> Result<NvdVulnerabilityV2, Error> {
 
         let url = format!("{}/?startIndex={}&resultsPerPage={}",
               BASE_URL, start_index, results_per_page);
@@ -50,7 +51,7 @@ impl Client {
 
         match option {
             None => Err(
-                NvdClientError(
+                NvdClient(
                     String::from("Response form NVD is empty")
                 )
             ),
@@ -66,7 +67,7 @@ pub enum Error {
     NvdResponse(#[from] platform::hyper::Error),
 
     #[error("vulnerability provider error: {0}")]
-    NvdClientError(String)
+    NvdClient(String)
 }
 
 #[cfg(test)]
@@ -76,15 +77,19 @@ mod tests {
     use crate::services::nvd::client::Client;
     use crate::services::nvd::client::Error;
     use platform::hyper::Client as HttpClient;
-    use crate::services::nvd::client::models::NvdVulnerabilityV2;
+    use crate::services::nvd::client::models::{DefCveItem, NvdVulnerabilityV2};
 
 
     #[tokio::test]
     async fn test_get_page_of_vulnerabilities() -> Result<(), Error> {
+
+        let num_per_page = 3;
+
         let key = nvd_api_key().unwrap();
         let client = Client::new(HttpClient::new(), key);
-        let page = client.get_page_of_vulnerabilities().await?;
-        println!("{:#?}", page);
+        let page = client.get_page_of_vulnerabilities(0, num_per_page).await?;
+        let vulnerabilities: Vec<DefCveItem> = page.vulnerabilities.unwrap();
+        assert_eq!(num_per_page, vulnerabilities.len() as i32);
         Ok(())
     }
 }
