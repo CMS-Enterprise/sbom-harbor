@@ -162,27 +162,15 @@ pub struct CvssV31 {
     pub title: Option<String>,
     #[serde(rename = "type")]
     pub type_: Option<String>,
-    pub definitions: Option<HashMap<String, DefinitionTypeV31>>,
+    pub definitions: Option<HashMap<String, DefinitionType>>,
     pub properties: Option<PropertiesV31>,
     pub required: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct DefinitionTypeV31 {
-    #[serde(rename = "type")]
-    pub type_: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub enum_: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub minimum: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub maximum: Option<f64>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct PropertiesV31 {
-    pub version: Option<PropertyV31>,
-    pub vector_string: Option<PropertyV31>,
+    pub version: Option<Property>,
+    pub vector_string: Option<Property>,
     #[serde(rename = "attackVector")]
     pub attack_vector: Option<PropertyReferenceV31>,
     #[serde(rename = "attackComplexity")]
@@ -235,7 +223,7 @@ pub struct PropertiesV31 {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PropertyV31 {
+pub struct Property {
     pub description: Option<String>,
     #[serde(rename = "type")]
     pub type_: Option<String>,
@@ -261,13 +249,13 @@ pub struct CvssV30 {
     pub title: Option<String>,
     #[serde(rename = "type")]
     pub type_: Option<String>,
-    pub definitions: Option<HashMap<String, DefinitionTypeV30>>,
+    pub definitions: Option<HashMap<String, DefinitionType>>,
     pub properties: Option<PropertiesV30>,
     pub required: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct DefinitionTypeV30 {
+pub struct DefinitionType {
     #[serde(rename = "type")]
     pub type_: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -280,8 +268,8 @@ pub struct DefinitionTypeV30 {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PropertiesV30 {
-    pub version: Option<PropertyV30>,
-    pub vector_string: Option<PropertyV30>,
+    pub version: Option<Property>,
+    pub vector_string: Option<Property>,
     #[serde(rename = "attackVector")]
     pub attack_vector: Option<PropertyReferenceV30>,
     #[serde(rename = "attackComplexity")]
@@ -331,17 +319,6 @@ pub struct PropertiesV30 {
     pub modified_availability_impact: Option<PropertyReferenceV30>,
     pub environmental_score: Option<PropertyReferenceV30>,
     pub environmental_severity: Option<PropertyReferenceV30>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct PropertyV30 {
-    pub description: Option<String>,
-    #[serde(rename = "type")]
-    pub type_: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub enum_: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub pattern: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
