@@ -27,7 +27,7 @@ impl Client {
     pub async fn get_page_of_vulnerabilities(&self) -> Result<NvdVulnerabilityV2, Error> {
 
         let start_index = 0;
-        let results_per_page = 2;
+        let results_per_page = 50;
 
         let url = format!("{}/?startIndex={}&resultsPerPage={}",
               BASE_URL, start_index, results_per_page);

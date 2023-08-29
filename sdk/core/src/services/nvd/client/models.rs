@@ -16,8 +16,8 @@ pub struct NvdVulnerabilityV2 {
     format_str: Option<String>,
     version: Option<String>,
     timestamp: Option<NaiveDateTime>,
-    // vulnerabilities: Option<Vec<DefCveItem>>,
-    vulnerabilities: Option<Value>,
+    vulnerabilities: Option<Vec<DefCveItem>>,
+    // vulnerabilities: Option<Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
