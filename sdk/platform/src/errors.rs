@@ -28,6 +28,9 @@ pub enum Error {
     /// Error making HTTP Request.
     #[error("error in HTTP request: {0}")]
     Http(String),
+    /// Error in json module.
+    #[error("error in json provider: {0}")]
+    Json(String),
     /// Error executing insert.
     #[error("error executing insert: {0}")]
     Insert(String),

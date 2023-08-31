@@ -109,6 +109,7 @@ impl Client {
         format: SbomFormat,
     ) -> Result<Option<String>, Error> {
         let url = &sbom_url(org_id, project_id, format.clone());
+        let token = self.token();
         debug!(url);
         let response = self
             .inner
@@ -116,7 +117,7 @@ impl Client {
                 hyper::Method::GET,
                 &sbom_url(org_id, project_id, format),
                 ContentType::Json,
-                self.token(),
+                token.as_str(),
                 None::<String>,
             )
             .await?;

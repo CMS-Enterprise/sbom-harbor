@@ -6,9 +6,6 @@
 //! The Platform crate encapsulates all functionality related to underlying platform services (e.g. databases,
 //! AWS Managed services). It also includes a generic authorization module based on AWS IAM.
 
-/// Core crate
-extern crate core;
-
 /// The `auth` module provides a reusable RBAC model inspired by the AWS IAM model. It was initially
 /// developed to solve multi-tenant database access, but as a general purpose RBAC model, it should be
 /// usable in a variety of scenarios.
@@ -55,3 +52,6 @@ pub mod git;
 
 /// Module for common string generating functions
 pub mod str;
+
+/// Module for common json functions.
+pub mod json;

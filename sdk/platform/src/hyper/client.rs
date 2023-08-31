@@ -50,7 +50,7 @@ impl Client {
         token: &str,
         payload: Option<T>,
     ) -> Result<Option<U>, Error> {
-        self.request(Method::GET, url, content_type, String::from(token), payload)
+        self.request(Method::GET, url, content_type, token, payload)
             .await
     }
 
@@ -68,14 +68,8 @@ impl Client {
         token: &str,
         payload: Option<T>,
     ) -> Result<Option<U>, Error> {
-        self.request(
-            Method::POST,
-            url,
-            content_type,
-            String::from(token),
-            payload,
-        )
-        .await
+        self.request(Method::POST, url, content_type, token, payload)
+            .await
     }
 
     /// Performs a DELETE request to the specified URL.
@@ -92,14 +86,8 @@ impl Client {
         token: &str,
         payload: Option<T>,
     ) -> Result<Option<U>, Error> {
-        self.request(
-            Method::DELETE,
-            url,
-            content_type,
-            String::from(token),
-            payload,
-        )
-        .await
+        self.request(Method::DELETE, url, content_type, token, payload)
+            .await
     }
 
     /// Performs an HTTP request with the specified HTTP Method.
@@ -116,7 +104,7 @@ impl Client {
         method: Method,
         url: &str,
         content_type: ContentType,
-        token: String,
+        token: &str,
         payload: Option<T>,
     ) -> Result<Option<U>, Error> {
         let result = self.raw(method, url, content_type, token, payload).await?;
@@ -153,7 +141,7 @@ impl Client {
         method: Method,
         url: &str,
         content_type: ContentType,
-        token: String,
+        token: &str,
         payload: Option<T>,
     ) -> Result<(StatusCode, String), Error> {
         let uri: Uri = Uri::try_from(url)?;
@@ -214,7 +202,7 @@ mod tests {
                 Method::GET,
                 "https://api.first.org/data/v1/epss?cve=CVE-2022-27225",
                 ContentType::Json,
-                "".to_string(),
+                "",
                 None::<String>,
             )
             .await?;
