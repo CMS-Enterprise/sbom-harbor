@@ -128,6 +128,12 @@ pub struct Remediation {
     pub description: String,
 }
 
+// impl From<DefCveItem> for Vulnerability {
+//     fn from(value: DefCveItem) -> Self {
+//         todo!()
+//     }
+// }
+
 #[cfg(test)]
 mod tests {
     use crate::entities::enrichments::{Vulnerability, VulnerabilityProviderKind};

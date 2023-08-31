@@ -6,10 +6,11 @@ use platform::hyper::token::Token;
 use crate::services::nvd::client::Error::NvdClient;
 
 /// NVD response specific models
-mod models;
+pub mod models;
 
 const BASE_URL: &str = "https://services.nvd.nist.gov/rest/json/cves/2.0";
 
+#[derive(Debug, Clone)]
 pub struct Client {
     http_client: HttpClient,
     api_key: String,
@@ -24,6 +25,11 @@ impl Client {
         }
     }
 
+    pub async fn get_total_vulnerabilities(&self) -> Result<i32, Error> {
+        let response = self.get_page_of_vulnerabilities(0, 1).await?;
+        Ok(response.total_results)
+    }
+
     pub async fn get_page_of_vulnerabilities(
         &self,
         start_index: i32,
@@ -32,6 +38,8 @@ impl Client {
 
         let url = format!("{}/?startIndex={}&resultsPerPage={}",
               BASE_URL, start_index, results_per_page);
+
+        println!("Http Call: {}", url);
 
         let option: Option<NvdVulnerabilityV2> = self
             .http_client
@@ -47,7 +55,7 @@ impl Client {
                 None::<String>,
             )
             .await
-            .map_err(Error::NvdResponse)?;
+            .map_err(Error::Http)?;
 
         match option {
             None => Err(
@@ -55,7 +63,13 @@ impl Client {
                     String::from("Response form NVD is empty")
                 )
             ),
-            Some(nvd_response) => Ok(nvd_response),
+            Some(nvd_response) => {
+                let tr = nvd_response.total_results;
+                let si = nvd_response.start_index;
+                let rpp = nvd_response.results_per_page;
+                println!("Total Results: {}, Start index: {}, Results Per Page: {}", tr, si, rpp);
+                Ok(nvd_response)
+            },
         }
     }
 }
@@ -64,7 +78,7 @@ impl Client {
 pub enum Error {
     /// Error derived from our Http Client
     #[error(transparent)]
-    NvdResponse(#[from] platform::hyper::Error),
+    Http(#[from] platform::hyper::Error),
 
     #[error("vulnerability provider error: {0}")]
     NvdClient(String)
@@ -88,6 +102,8 @@ mod tests {
         let key = nvd_api_key().unwrap();
         let client = Client::new(HttpClient::new(), key);
         let page = client.get_page_of_vulnerabilities(0, num_per_page).await?;
+        println!("{:#?}", page);
+
         let vulnerabilities: Vec<DefCveItem> = page.vulnerabilities.unwrap();
         assert_eq!(num_per_page, vulnerabilities.len() as i32);
         Ok(())

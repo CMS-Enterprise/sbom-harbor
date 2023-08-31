@@ -16,14 +16,14 @@ use crate::Error;
 
 use serde_yaml::from_reader;
 
-/// Synchronizes SBOMS for a GitHub Group with Harbor.
+/// Builds data set for purl2cpe.
 #[derive(Debug)]
 pub struct ConstructionTask {
     pub(in crate::tasks::construction::dataset) service: Purl2CpeService,
 }
 
 impl ConstructionTask {
-    /// Creates a new AnalyticExecutionTask
+    /// Creates a new Purl2Cpe ConstructionTask
     pub fn new(service: Purl2CpeService) -> Self {
         Self { service }
     }

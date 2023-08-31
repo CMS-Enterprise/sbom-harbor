@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use chrono::NaiveDateTime;
 use serde_json::Value;
 use uuid::Uuid;
+use platform::persistence::mongodb::{MongoDocument, mongo_doc};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NvdVulnerabilityV2 {
     #[serde(rename = "resultsPerPage")]
     pub results_per_page: i32,
@@ -19,12 +20,19 @@ pub struct NvdVulnerabilityV2 {
     pub vulnerabilities: Option<Vec<DefCveItem>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DefCveItem {
+    #[serde(default = "empty_string")]
+    pub id: String,
     pub cve: Option<CveItem>,
 }
+mongo_doc!(DefCveItem);
 
-#[derive(Debug, Serialize, Deserialize)]
+fn empty_string() -> String {
+    String::from("")
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CveItem {
     pub id: Option<String>,
     #[serde(rename = "sourceIdentifier")]
@@ -57,20 +65,20 @@ pub struct CveItem {
     pub vendor_comments: Option<Vec<VendorComment>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LangString {
     pub lang: Option<String>,
     pub value: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Reference {
     pub url: Option<String>,
     pub source: Option<String>,
     pub tags: Option<Vec<String>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VendorComment {
     pub organization: Option<String>,
     pub comment: Option<String>,
@@ -78,7 +86,7 @@ pub struct VendorComment {
     pub last_modified: Option<NaiveDateTime>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Weakness {
     pub source: Option<String>,
     #[serde(rename = "type")]
@@ -86,14 +94,14 @@ pub struct Weakness {
     pub description: Option<Vec<LangString>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     pub operator: Option<String>,
     pub negate: Option<Option<bool>>,
     pub nodes: Option<Vec<Node>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Node {
     pub operator: Option<String>,
     pub negate: Option<bool>,
@@ -101,7 +109,7 @@ pub struct Node {
     pub cpe_match: Option<Vec<CpeMatch>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CpeMatch {
     pub vulnerable: Option<bool>,
     pub criteria: Option<String>,
@@ -117,7 +125,7 @@ pub struct CpeMatch {
     pub version_end_including: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Metrics {
     #[serde(rename = "cvssMetricV31")]
     pub cvss_metric_v31: Option<Vec<CvssV31>>,
@@ -127,7 +135,7 @@ pub struct Metrics {
     pub cvss_metric_v2: Option<Vec<CvssV20>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Cvss {
     pub source: Option<String>,
     #[serde(rename = "type")]
@@ -154,7 +162,7 @@ pub struct Cvss {
 
 /* CVSS 3.1 Schema Structs */
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CvssV31 {
     pub license: Option<Vec<String>>,
     #[serde(rename = "$schema")]
@@ -167,7 +175,7 @@ pub struct CvssV31 {
     pub required: Option<Vec<String>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PropertiesV31 {
     pub version: Option<Property>,
     pub vector_string: Option<Property>,
@@ -222,7 +230,7 @@ pub struct PropertiesV31 {
     pub environmental_severity: Option<PropertyReferenceV31>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Property {
     pub description: Option<String>,
     #[serde(rename = "type")]
@@ -233,7 +241,7 @@ pub struct Property {
     pub pattern: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PropertyReferenceV31 {
     #[serde(rename = "$ref")]
     pub ref_: Option<String>,
@@ -241,7 +249,7 @@ pub struct PropertyReferenceV31 {
 
 /* CVSS 3.0 Schema Structs */
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CvssV30 {
     pub license: Option<Vec<String>>,
     #[serde(rename = "$schema")]
@@ -254,7 +262,7 @@ pub struct CvssV30 {
     pub required: Option<Vec<String>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DefinitionType {
     #[serde(rename = "type")]
     pub type_: Option<String>,
@@ -266,7 +274,7 @@ pub struct DefinitionType {
     pub maximum: Option<f64>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PropertiesV30 {
     pub version: Option<Property>,
     pub vector_string: Option<Property>,
@@ -321,7 +329,7 @@ pub struct PropertiesV30 {
     pub environmental_severity: Option<PropertyReferenceV30>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PropertyReferenceV30 {
     #[serde(rename = "$ref")]
     pub ref_: Option<String>,
@@ -329,7 +337,7 @@ pub struct PropertyReferenceV30 {
 
 /* CVSS 2.0 Schema Structs */
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CvssV20 {
     pub version: Option<String>,
     #[serde(rename = "vectorString")]
@@ -370,7 +378,7 @@ pub struct CvssV20 {
     pub environmental_score: Option<ScoreTypeV20>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AccessVectorTypeV20 {
     Network,
@@ -378,7 +386,7 @@ pub enum AccessVectorTypeV20 {
     Local,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AccessComplexityTypeV20 {
     High,
@@ -386,7 +394,7 @@ pub enum AccessComplexityTypeV20 {
     Low,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AuthenticationTypeV20 {
     Multiple,
@@ -394,7 +402,7 @@ pub enum AuthenticationTypeV20 {
     None,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum CiaTypeV20 {
     None,
@@ -402,7 +410,7 @@ pub enum CiaTypeV20 {
     Complete,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ExploitabilityTypeV20 {
     Unproven,
@@ -412,7 +420,7 @@ pub enum ExploitabilityTypeV20 {
     NotDefined,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum RemediationLevelTypeV20 {
     OfficialFix,
@@ -422,7 +430,7 @@ pub enum RemediationLevelTypeV20 {
     NotDefined,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ReportConfidenceTypeV20 {
     Unconfirmed,
@@ -431,7 +439,7 @@ pub enum ReportConfidenceTypeV20 {
     NotDefined,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum CollateralDamagePotentialTypeV20 {
     None,
@@ -442,7 +450,7 @@ pub enum CollateralDamagePotentialTypeV20 {
     NotDefined,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TargetDistributionTypeV20 {
     None,
@@ -452,7 +460,7 @@ pub enum TargetDistributionTypeV20 {
     NotDefined,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum CiaRequirementTypeV20 {
     Low,
@@ -461,7 +469,7 @@ pub enum CiaRequirementTypeV20 {
     NotDefined,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ScoreTypeV20 {
     #[serde(rename = "type")]
     pub type_field: Option<String>,

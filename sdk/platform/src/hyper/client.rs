@@ -11,7 +11,7 @@ const HARBOR: &str = "SBOM-Harbor";
 
 /// Wrapper type over a native Hyper Client. Allows for consistent, concise instance construction
 /// and a conventional set of abstractions over low level methods.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Client {
     inner: NativeClient<HttpsConnector<HttpConnector>, Body>,
 }
