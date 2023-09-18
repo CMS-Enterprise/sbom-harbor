@@ -1,3 +1,9 @@
+# Decommissioned!
+
+:warning: This project has been decommissioned and is no longer maintained or supported.
+
+---
+
 [![TESTS](https://github.com/CMS-Enterprise/sbom-harbor/actions/workflows/tests.yaml/badge.svg)](https://github.com/CMS-Enterprise/sbom-harbor/actions/workflows/tests.yaml)
 # Overview
 
