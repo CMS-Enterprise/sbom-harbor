@@ -1,0 +1,36 @@
+# Title for the gitleaks configuration file.
+title = "Gitleaks Rules"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "sbom-api-token"
+description = "Harbor SBOM API Tokens"
+regex = '''sbom-api-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[8|9aA|bB][0-9a-f]{3}-[0-9a-f]{12}'''
+tags = ["credentials","hardcoded","api"]
+keywords = [
+  "authorization",
+  "harbor",
+  "sbom",
+  "api",
+  "token",
+]
+
+[[rules]]
+id = "generic-uuid-v4"
+description = "Generic UUID v4"
+regex = '''[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[8|9aA|bB][0-9a-f]{3}-[0-9a-f]{12}'''
+tags = ["credentials","hardcoded","uuid"]
+keywords = [
+  "uuid",
+  "token",
+]
+
+[allowlist]
+description = "global allowlist. whitelisting paths"
+paths = [
+  '''test/*''',
+  '''.yarn/*'''
+]
+stopwords = ['''EXAMPLE''']

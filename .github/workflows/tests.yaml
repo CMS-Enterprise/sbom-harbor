@@ -1,0 +1,74 @@
+name: TESTS
+
+env:
+  GITHUB_PAT: notarealpat
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:5.0.15
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: harbor
+        options: >-
+          --health-cmd "echo 'db.getMongo()' | mongo --norc --quiet --host=localhost:27017"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 27017:27017
+    steps:
+      - name: Apt Update
+        run: sudo apt-get update
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@v1.2.0
+
+      - name: Install latest sbom-scorecard
+        run: |
+          wget -q -O /usr/local/bin/scorecard https://github.com/eBay/sbom-scorecard/releases/download/0.0.7/sbom-scorecard-linux-amd64
+          chmod u+x /usr/local/bin/scorecard
+
+      - name: Install latest syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          chmod u+x /usr/local/bin/syft
+
+      - name: CHECKOUT
+        uses: actions/checkout@v3
+
+      - name: CACHE
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: INSTALL - dependencies
+        run: cargo fetch
+
+      - name: LINT
+        run: cargo clippy -- -Dwarnings
+
+      - name: TEST - unit & integration
+        run: cargo test
+        env:
+          SBOM_SCORECARD: /usr/local/bin/scorecard
